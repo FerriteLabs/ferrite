@@ -1,0 +1,335 @@
+[workspace]
+exclude = ["sdk/ferrite-rs"]
+members = [
+    "crates/ferrite-core",
+    "crates/ferrite-search",
+    "crates/ferrite-ai",
+    "crates/ferrite-graph",
+    "crates/ferrite-timeseries",
+    "crates/ferrite-document",
+    "crates/ferrite-streaming",
+    "crates/ferrite-cloud",
+    "crates/ferrite-k8s",
+    "crates/ferrite-enterprise",
+    "crates/ferrite-plugins",
+    "crates/ferrite-studio",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.80"
+authors = ["Jose David Baena"]
+license = "Apache-2.0"
+repository = "https://github.com/ferritelabs/ferrite"
+
+[workspace.lints.rust]
+# Structural suppressions
+missing_docs = "allow"       # TODO: enable progressively starting with ferrite-core public API
+private_interfaces = "allow"
+rust_2018_idioms = { level = "allow", priority = -1 }
+# Unused code: split from blanket `unused` for granular future tightening
+dead_code = "warn"
+unused_imports = "warn"
+unused_variables = "warn"
+unused_mut = "warn"
+unused_assignments = "warn"
+unused_must_use = "warn"
+unused_macros = "allow"
+
+[workspace.lints.clippy]
+uninlined_format_args = "allow"
+unwrap_used = "deny"
+
+[workspace.dependencies]
+# ── Workspace crates ──────────────────────────────────────────────────────────
+ferrite-core = { path = "crates/ferrite-core" }
+ferrite-search = { path = "crates/ferrite-search" }
+ferrite-ai = { path = "crates/ferrite-ai" }
+ferrite-graph = { path = "crates/ferrite-graph" }
+ferrite-timeseries = { path = "crates/ferrite-timeseries" }
+ferrite-document = { path = "crates/ferrite-document" }
+ferrite-streaming = { path = "crates/ferrite-streaming" }
+ferrite-cloud = { path = "crates/ferrite-cloud" }
+ferrite-k8s = { path = "crates/ferrite-k8s" }
+ferrite-enterprise = { path = "crates/ferrite-enterprise" }
+ferrite-plugins = { path = "crates/ferrite-plugins" }
+ferrite-studio = { path = "crates/ferrite-studio" }
+
+# ── Async runtime ─────────────────────────────────────────────────────────────
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+futures = "0.3"
+
+# ── Data structures and buffers ───────────────────────────────────────────────
+bytes = { version = "1", features = ["serde"] }
+dashmap = "6"
+crossbeam = "0.8"
+parking_lot = "0.12"
+ordered-float = { version = "4", features = ["serde"] }
+
+# ── Error handling ────────────────────────────────────────────────────────────
+thiserror = "1"
+anyhow = "1"
+
+# ── Serialization ─────────────────────────────────────────────────────────────
+serde = { version = "1", features = ["derive"] }
+serde_json = "1.0.145"
+toml = "0.8"
+bincode = "1"
+
+# ── Observability ─────────────────────────────────────────────────────────────
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
+metrics = "0.24"
+metrics-exporter-prometheus = "0.16"
+log = "0.4"
+
+# ── HTTP ──────────────────────────────────────────────────────────────────────
+hyper = { version = "1", features = ["server", "http1"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+http-body-util = "0.1"
+reqwest = { version = "0.12", features = ["json", "rustls-tls", "blocking"], default-features = false }
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+rand = "0.8"
+regex = "1.11"
+chrono = { version = "0.4.42", features = ["serde"] }
+uuid = { version = "1.19.0", features = ["v4"] }
+base64 = "0.22.1"
+humantime = "2.1"
+urlencoding = "2.1"
+num_cpus = "1.17.0"
+scopeguard = "1.2.0"
+crc32fast = "1.4"
+flate2 = "1.0"
+lz4_flex = "0.11.3"
+memmap2 = "0.9"
+clap = { version = "4", features = ["derive", "env", "string"] }
+
+# ── Optional / heavy deps ────────────────────────────────────────────────────
+rustls = { version = "0.23" }
+tokio-rustls = { version = "0.26" }
+rustls-pemfile = { version = "2" }
+object_store = { version = "0.11", features = ["aws", "azure", "gcp"] }
+mlua = { version = "0.10", features = ["lua54", "vendored", "serialize"] }
+argon2 = { version = "0.5" }
+chacha20poly1305 = { version = "0.10" }
+wasmtime = { version = "27" }
+ort = { version = "2.0.0-rc.11" }
+ndarray = { version = "0.16" }
+
+# ── CLI / TUI ────────────────────────────────────────────────────────────────
+clap_complete = { version = "4" }
+rustyline = { version = "14" }
+colored = { version = "2" }
+atty = { version = "0.2" }
+ratatui = { version = "0.29", features = ["all-widgets"] }
+crossterm = { version = "0.28", features = ["event-stream"] }
+
+# ── OpenTelemetry ─────────────────────────────────────────────────────────────
+opentelemetry = { version = "0.22" }
+opentelemetry_sdk = { version = "0.22", features = ["rt-tokio"] }
+opentelemetry-otlp = { version = "0.15", features = ["tonic"] }
+tracing-opentelemetry = { version = "0.23" }
+opentelemetry-semantic-conventions = { version = "0.14" }
+
+# ── Dev dependencies ──────────────────────────────────────────────────────────
+criterion = { version = "0.5", features = ["html_reports"] }
+proptest = "1"
+tokio-test = "0.4"
+tempfile = "3"
+
+[package]
+name = "ferrite"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+description = "A high-performance, tiered-storage key-value store designed as a drop-in Redis replacement"
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/ferritelabs/ferrite"
+documentation = "https://docs.rs/ferrite"
+readme = "README.md"
+keywords = ["redis", "cache", "key-value", "database", "storage"]
+categories = ["database", "caching"]
+default-run = "ferrite"
+
+[lib]
+doctest = false
+
+[lints]
+workspace = true
+
+[dependencies]
+# Workspace crates
+ferrite-core.workspace = true
+ferrite-search.workspace = true
+ferrite-ai.workspace = true
+ferrite-graph.workspace = true
+ferrite-timeseries.workspace = true
+ferrite-document.workspace = true
+ferrite-streaming.workspace = true
+ferrite-cloud = { workspace = true, optional = true }
+ferrite-k8s = { workspace = true, optional = true }
+ferrite-enterprise = { workspace = true, optional = true }
+ferrite-plugins.workspace = true
+ferrite-studio = { workspace = true, optional = true }
+
+# Core deps
+tokio.workspace = true
+bytes.workspace = true
+dashmap.workspace = true
+crossbeam.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+metrics.workspace = true
+metrics-exporter-prometheus.workspace = true
+hyper.workspace = true
+hyper-util.workspace = true
+http-body-util.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+toml.workspace = true
+bincode.workspace = true
+parking_lot.workspace = true
+memmap2.workspace = true
+rand.workspace = true
+regex.workspace = true
+log.workspace = true
+ordered-float.workspace = true
+crc32fast.workspace = true
+flate2.workspace = true
+async-trait.workspace = true
+futures.workspace = true
+chrono.workspace = true
+humantime.workspace = true
+base64.workspace = true
+lz4_flex.workspace = true
+urlencoding.workspace = true
+uuid.workspace = true
+num_cpus.workspace = true
+scopeguard.workspace = true
+clap.workspace = true
+
+# Optional deps
+rustls = { workspace = true, optional = true }
+tokio-rustls = { workspace = true, optional = true }
+rustls-pemfile = { workspace = true, optional = true }
+object_store = { workspace = true, optional = true }
+reqwest = { workspace = true, optional = true }
+mlua = { workspace = true, optional = true }
+argon2 = { workspace = true, optional = true }
+chacha20poly1305 = { workspace = true, optional = true }
+clap_complete = { workspace = true, optional = true }
+rustyline = { workspace = true, optional = true }
+colored = { workspace = true, optional = true }
+atty = { workspace = true, optional = true }
+wasmtime = { workspace = true, optional = true }
+ort = { workspace = true, optional = true }
+ndarray = { workspace = true, optional = true }
+ratatui = { workspace = true, optional = true }
+crossterm = { workspace = true, optional = true }
+opentelemetry = { workspace = true, optional = true }
+opentelemetry_sdk = { workspace = true, optional = true }
+opentelemetry-otlp = { workspace = true, optional = true }
+tracing-opentelemetry = { workspace = true, optional = true }
+opentelemetry-semantic-conventions = { workspace = true, optional = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+tokio-uring = { version = "0.5", optional = true }
+nix = { version = "0.29", features = ["uio"] }
+
+[dev-dependencies]
+criterion.workspace = true
+proptest.workspace = true
+tokio-test.workspace = true
+tempfile.workspace = true
+
+[features]
+# Default: Core + standard extensions
+default = ["scripting", "tls", "cloud", "crypto", "cli"]
+lite = []
+experimental = ["ferrite-k8s", "ferrite-enterprise", "ferrite-studio"]
+io-uring = ["ferrite-core/io-uring"]
+otel = ["opentelemetry", "opentelemetry_sdk", "opentelemetry-otlp", "tracing-opentelemetry", "opentelemetry-semantic-conventions", "ferrite-core/otel"]
+tui = ["ratatui", "crossterm"]
+wasm = ["wasmtime", "ferrite-plugins/wasm"]
+onnx = ["ort", "ndarray", "ferrite-ai/onnx"]
+scripting = ["mlua"]
+tls = ["rustls", "tokio-rustls", "rustls-pemfile"]
+cloud = ["ferrite-cloud", "ferrite-core/cloud"]
+crypto = ["ferrite-core/crypto"]
+cli = ["rustyline", "colored", "atty", "clap_complete"]
+all = ["default", "experimental", "otel", "tui", "wasm", "onnx", "io-uring"]
+
+[[bin]]
+name = "ferrite"
+path = "src/main.rs"
+
+[[bin]]
+name = "ferrite-cli"
+path = "src/bin/ferrite_cli/main.rs"
+required-features = ["cli"]
+
+[[bin]]
+name = "ferrite-migrate"
+path = "src/bin/ferrite_migrate/main.rs"
+required-features = ["cli", "experimental"]
+
+[[bin]]
+name = "ferrite-tui"
+path = "src/bin/ferrite_tui/main.rs"
+required-features = ["tui"]
+
+[[bin]]
+name = "ferrite-bench"
+path = "src/bin/ferrite_bench/main.rs"
+required-features = ["cli"]
+
+[[bin]]
+name = "ferrite-wasm"
+path = "src/bin/ferrite_wasm/main.rs"
+required-features = ["wasm"]
+
+[[bench]]
+name = "throughput"
+harness = false
+
+[[bench]]
+name = "latency"
+harness = false
+
+[[bench]]
+name = "vector_bench"
+harness = false
+
+[[bench]]
+name = "tiered_storage"
+harness = false
+
+# Optimize dependencies even in dev mode — reduces code size and speeds up tests.
+# Your own crate stays at opt-level 0 for fast iteration.
+[profile.dev.package."*"]
+opt-level = 1
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+# Fast release profile for local development (cargo build --profile release-fast).
+# Uses thin LTO and multiple codegen units for much faster builds than full release.
+[profile.release-fast]
+inherits = "release"
+lto = "thin"
+codegen-units = 4
+strip = false
+
+[profile.bench]
+lto = "thin"

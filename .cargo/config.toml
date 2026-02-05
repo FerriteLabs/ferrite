@@ -1,0 +1,25 @@
+# Cargo configuration for faster development builds.
+#
+# These settings significantly reduce link times during development.
+# They do not affect release builds or CI (which use profile.release in Cargo.toml).
+
+# Limit parallel jobs to prevent OOM and machine freezes during compilation.
+# Adjust based on your machine's RAM (rule of thumb: 1 job per 2-4 GB RAM).
+[build]
+jobs = 4
+
+# macOS: uncomment after installing lld (brew install llvm) for ~20-30% faster linking.
+# [target.aarch64-apple-darwin]
+# rustflags = ["-C", "link-arg=-fuse-ld=/opt/homebrew/opt/llvm/bin/ld64.lld"]
+#
+# [target.x86_64-apple-darwin]
+# rustflags = ["-C", "link-arg=-fuse-ld=/usr/local/opt/llvm/bin/ld64.lld"]
+
+# Linux: use mold linker if available (install with: apt install mold / dnf install mold)
+[target.x86_64-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=mold"]
+
+[target.aarch64-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=mold"]

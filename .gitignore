@@ -1,0 +1,28 @@
+# Build
+/target
+fuzz/target/
+
+# Rust
+**/*.rs.bk
+*.pdb
+
+# Environment
+.env
+.env.*
+
+# Logs
+*.log
+
+# Coverage
+coverage/
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

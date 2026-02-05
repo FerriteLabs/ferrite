@@ -1,0 +1,6 @@
+[toolchain]
+channel = "1.88"
+components = ["clippy", "rustfmt"]
+# Note: The workspace MSRV is 1.80 (see Cargo.toml rust-version).
+# This toolchain file pins the development toolchain for contributors.
+# CI verifies builds against the actual MSRV separately.
