@@ -1,0 +1,257 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -Dwarnings
+
+# Cancel in-progress runs for the same PR/branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Detect changed crates ───────────────────────────────────────────────────
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      core: ${{ steps.filter.outputs.core }}
+      extensions: ${{ steps.filter.outputs.extensions }}
+      top-level: ${{ steps.filter.outputs.top-level }}
+      any-rust: ${{ steps.filter.outputs.any-rust }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            core:
+              - 'crates/ferrite-core/**'
+            extensions:
+              - 'crates/ferrite-search/**'
+              - 'crates/ferrite-ai/**'
+              - 'crates/ferrite-graph/**'
+              - 'crates/ferrite-timeseries/**'
+              - 'crates/ferrite-document/**'
+              - 'crates/ferrite-streaming/**'
+              - 'crates/ferrite-cloud/**'
+              - 'crates/ferrite-k8s/**'
+              - 'crates/ferrite-enterprise/**'
+              - 'crates/ferrite-plugins/**'
+              - 'crates/ferrite-studio/**'
+            top-level:
+              - 'src/**'
+              - 'tests/**'
+              - 'benches/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+            any-rust:
+              - '**/*.rs'
+              - '**/Cargo.toml'
+              - 'Cargo.lock'
+
+  # ── Format check (fast, always runs) ────────────────────────────────────────
+  fmt:
+    name: Format
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.any-rust == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all --check
+
+  # ── Clippy (runs on changed crates) ─────────────────────────────────────────
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.any-rust == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: clippy
+      - name: Clippy (workspace)
+        if: needs.changes.outputs.core == 'true' || needs.changes.outputs.top-level == 'true'
+        run: cargo clippy --workspace -- -D warnings
+      - name: Clippy (extensions only)
+        if: needs.changes.outputs.core != 'true' && needs.changes.outputs.top-level != 'true' && needs.changes.outputs.extensions == 'true'
+        run: |
+          for crate_dir in crates/ferrite-*/; do
+            name=$(basename "$crate_dir")
+            if git diff --name-only ${{ github.event.pull_request.base.sha || 'HEAD~1' }} | grep -q "$crate_dir"; then
+              echo "::group::Clippy $name"
+              cargo clippy -p "$name" -- -D warnings
+              echo "::endgroup::"
+            fi
+          done
+
+  # ── MSRV check ──────────────────────────────────────────────────────────────
+  msrv:
+    name: MSRV Check
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.any-rust == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.80
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: msrv
+      - run: cargo check --workspace
+
+  # ── Test (runs on changed crates) ───────────────────────────────────────────
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: changes
+    if: needs.changes.outputs.any-rust == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: test-${{ matrix.os }}
+      - name: Test (full workspace)
+        if: needs.changes.outputs.core == 'true' || needs.changes.outputs.top-level == 'true'
+        run: cargo test --workspace
+      - name: Test (changed extensions only)
+        if: needs.changes.outputs.core != 'true' && needs.changes.outputs.top-level != 'true' && needs.changes.outputs.extensions == 'true'
+        shell: bash
+        run: |
+          for crate_dir in crates/ferrite-*/; do
+            name=$(basename "$crate_dir")
+            if git diff --name-only ${{ github.event.pull_request.base.sha || 'HEAD~1' }} | grep -q "$crate_dir"; then
+              echo "::group::Test $name"
+              cargo test -p "$name"
+              echo "::endgroup::"
+            fi
+          done
+
+  # ── Full workspace check on main pushes ─────────────────────────────────────
+  full-check:
+    name: Full Workspace Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: full
+      - run: cargo test --workspace --all-features
+      - run: cargo clippy --workspace --all-features -- -D warnings
+
+  # ── All-features check (catches feature-gated bugs) ─────────────────────────
+  all-features:
+    name: All Features Check
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.any-rust == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: all-features
+      - name: Check (all features)
+        run: cargo check --workspace --all-features
+      - name: Clippy (all features)
+        run: cargo clippy --workspace --all-features -- -D warnings
+      - name: Test (all features)
+        run: cargo test --workspace --all-features
+
+  # ── Security scanning ───────────────────────────────────────────────────────
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.any-rust == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install cargo-deny
+        run: cargo install cargo-deny --locked
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+      - name: cargo deny check
+        run: cargo deny check --all-features
+      - name: cargo audit
+        run: cargo audit
+
+  # ── Code coverage ────────────────────────────────────────────────────────────
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.any-rust == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: coverage
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Generate coverage
+        run: cargo llvm-cov --workspace --lcov --output-path lcov.info
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: lcov.info
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: lcov.info
+
+  # ── Secret scanning ──────────────────────────────────────────────────────────
+  gitleaks:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ── Unused dependencies check ────────────────────────────────────────────────
+  udeps:
+    name: Unused Dependencies
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.any-rust == 'true'
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: udeps
+      - name: Install cargo-udeps
+        uses: taiki-e/install-action@cargo-udeps
+      - name: Check unused dependencies
+        run: cargo +nightly udeps --workspace
