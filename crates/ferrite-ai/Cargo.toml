@@ -1,0 +1,49 @@
+[package]
+name = "ferrite-ai"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+description = "AI/ML features for Ferrite — vector search, semantic caching, RAG"
+license.workspace = true
+repository.workspace = true
+readme = "README.md"
+keywords = ["vector", "embeddings", "rag", "semantic", "ferrite"]
+categories = ["database", "science"]
+
+[lib]
+doctest = false
+
+[lints]
+workspace = true
+
+[dependencies]
+tokio.workspace = true
+bytes.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+async-trait.workspace = true
+futures.workspace = true
+chrono.workspace = true
+rand.workspace = true
+uuid.workspace = true
+parking_lot.workspace = true
+ordered-float.workspace = true
+dashmap.workspace = true
+metrics.workspace = true
+regex.workspace = true
+reqwest.workspace = true
+crc32fast.workspace = true
+ort = { workspace = true, optional = true }
+ndarray = { workspace = true, optional = true }
+
+[features]
+default = []
+onnx = ["ort", "ndarray"]
+
+[dev-dependencies]
+tokio-test.workspace = true
+tempfile.workspace = true
