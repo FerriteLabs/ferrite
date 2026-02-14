@@ -1,0 +1,42 @@
+# Example FerriteCluster — minimal production-ready deployment
+#
+# Apply with:
+#   kubectl apply -f crates/ferrite-k8s/manifests/example-cluster.yaml
+#
+# Check status:
+#   kubectl get ferriteclusters
+#   kubectl describe ferritecluster my-ferrite
+apiVersion: ferrite.io/v1
+kind: FerriteCluster
+metadata:
+  name: my-ferrite
+  namespace: default
+  labels:
+    app: ferrite
+    environment: production
+spec:
+  replicas: 3
+  version: "0.1.0"
+  imagePullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: "2"
+      memory: "4Gi"
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+  persistence:
+    enabled: true
+    size: "10Gi"
+    aofEnabled: true
+    checkpointEnabled: true
+  tls:
+    enabled: false
+  auth:
+    enabled: false
+  metrics:
+    enabled: true
+    port: 9090
+  config:
+    maxMemory: "3gb"
+    maxConnections: 10000

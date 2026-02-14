@@ -1,0 +1,39 @@
+[package]
+name = "ferrite-k8s"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+description = "Kubernetes operator and integration for Ferrite"
+license.workspace = true
+repository.workspace = true
+readme = "README.md"
+keywords = ["kubernetes", "operator", "k8s", "ferrite"]
+categories = ["database"]
+
+[lib]
+doctest = false
+
+[lints]
+workspace = true
+
+[dependencies]
+tokio.workspace = true
+bytes.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+async-trait.workspace = true
+futures.workspace = true
+chrono.workspace = true
+rand.workspace = true
+uuid.workspace = true
+parking_lot.workspace = true
+base64.workspace = true
+reqwest = { workspace = true, optional = true }
+
+[dev-dependencies]
+tokio-test.workspace = true
+tempfile.workspace = true
