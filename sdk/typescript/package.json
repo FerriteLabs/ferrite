@@ -1,0 +1,60 @@
+{
+  "name": "@ferrite/ai",
+  "version": "0.1.0",
+  "description": "Semantic caching SDKs for LLM frameworks, backed by Ferrite",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "keywords": [
+    "ferrite",
+    "redis",
+    "llm",
+    "semantic-cache",
+    "langchain",
+    "openai",
+    "ai",
+    "vector-search"
+  ],
+  "author": "Ferrite Labs <hello@ferritelabs.dev>",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ferritelabs/ferrite.git",
+    "directory": "sdk/typescript"
+  },
+  "homepage": "https://docs.ferritelabs.dev/sdks/typescript-sdk",
+  "bugs": {
+    "url": "https://github.com/ferritelabs/ferrite/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "ioredis": "^5.3.0"
+  },
+  "peerDependencies": {
+    "@langchain/core": ">=0.1.0",
+    "openai": ">=4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@langchain/core": {
+      "optional": true
+    },
+    "openai": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0"
+  }
+}

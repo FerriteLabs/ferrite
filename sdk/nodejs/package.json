@@ -1,0 +1,52 @@
+{
+  "name": "@ferrite/client",
+  "version": "0.1.0",
+  "description": "Official Node.js/TypeScript client for Ferrite key-value store",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint src/ tests/",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "keywords": [
+    "ferrite",
+    "redis",
+    "database",
+    "key-value",
+    "vector-search",
+    "client"
+  ],
+  "author": "Ferrite Labs <hello@ferritelabs.dev>",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ferritelabs/ferrite.git",
+    "directory": "sdk/nodejs"
+  },
+  "homepage": "https://docs.ferritelabs.dev/sdk/typescript",
+  "bugs": {
+    "url": "https://github.com/ferritelabs/ferrite/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "ioredis": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.4.0"
+  }
+}
