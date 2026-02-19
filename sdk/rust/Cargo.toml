@@ -1,0 +1,18 @@
+[package]
+name = "ferrite-client"
+version = "0.1.0"
+edition = "2021"
+description = "Official Rust client for Ferrite key-value store"
+license = "Apache-2.0"
+repository = "https://github.com/ferritelabs/ferrite"
+readme = "README.md"
+keywords = ["ferrite", "redis", "database", "key-value", "vector-search"]
+categories = ["database", "asynchronous"]
+
+[dependencies]
+redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+bytes = "1"
+thiserror = "1"

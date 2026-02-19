@@ -1,0 +1,31 @@
+[package]
+name = "ferrite-rs"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.80"
+authors = ["Jose David Baena"]
+license = "Apache-2.0"
+repository = "https://github.com/ferritelabs/ferrite"
+description = "Official Rust client SDK for Ferrite — a high-performance Redis-compatible key-value store"
+readme = "README.md"
+keywords = ["ferrite", "redis", "client", "cache", "key-value"]
+categories = ["database", "caching", "network-programming"]
+
+[dependencies]
+tokio = { version = "1", features = ["net", "io-util", "rt", "sync", "time", "macros"] }
+bytes = "1"
+thiserror = "1"
+parking_lot = "0.12"
+
+# TLS (optional)
+tokio-rustls = { version = "0.26", optional = true }
+rustls = { version = "0.23", optional = true }
+rustls-pemfile = { version = "2", optional = true }
+webpki-roots = { version = "0.26", optional = true }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full"] }
+
+[features]
+default = []
+tls = ["tokio-rustls", "rustls", "rustls-pemfile", "webpki-roots"]
