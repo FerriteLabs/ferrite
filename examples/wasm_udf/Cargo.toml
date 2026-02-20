@@ -1,0 +1,28 @@
+[package]
+name = "ferrite-wasm-udf-examples"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Example WASM User-Defined Functions for Ferrite"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+
+[profile.release]
+opt-level = "s"         # Optimize for size
+lto = true
+codegen-units = 1
+strip = true
+
+# Build instructions:
+#   rustup target add wasm32-unknown-unknown
+#   cargo build --target wasm32-unknown-unknown --release
+#
+# The resulting .wasm file will be at:
+#   target/wasm32-unknown-unknown/release/ferrite_wasm_udf_examples.wasm
+#
+# To load into Ferrite:
+#   WASM.LOAD rate_limiter <wasm-bytes>
+#   WASM.CALL rate_limiter KEYS user:123 ARGS 100 60

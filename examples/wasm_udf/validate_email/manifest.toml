@@ -1,0 +1,11 @@
+[module]
+name = "validate-email"
+version = "1.0.0"
+author = "Ferrite Labs"
+description = "Email format validation UDF for Ferrite"
+license = "Apache-2.0"
+categories = ["validation"]
+tags = ["email", "validation", "format"]
+min_ferrite_version = "0.1.0"
+
+[dependencies]

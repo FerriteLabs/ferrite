@@ -1,0 +1,11 @@
+[module]
+name = "json-transform"
+version = "1.0.0"
+author = "Ferrite Labs"
+description = "JSON transformation UDF — flatten, rename keys, filter fields"
+license = "Apache-2.0"
+categories = ["transformation", "data-processing"]
+tags = ["json", "transform", "flatten", "filter"]
+min_ferrite_version = "0.1.0"
+
+[dependencies]

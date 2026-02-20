@@ -1,0 +1,129 @@
+# GitHub Actions workflow for testing Java applications with Ferrite
+# Copy this file to .github/workflows/test.yml in your repository
+
+name: Java CI with Ferrite
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      ferrite:
+        image: ghcr.io/josedab/ferrite:latest
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "ferrite-cli PING"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    strategy:
+      matrix:
+        java-version: ['17', '21']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Wait for Ferrite
+        run: |
+          for i in {1..30}; do
+            if nc -z localhost 6379; then
+              echo "Ferrite is ready!"
+              break
+            fi
+            echo "Waiting for Ferrite..."
+            sleep 1
+          done
+
+      - name: Build with Maven
+        run: mvn -B package --file pom.xml
+        env:
+          FERRITE_HOST: localhost
+          FERRITE_PORT: 6379
+          REDIS_URL: redis://localhost:6379
+
+      - name: Run tests
+        run: mvn -B test
+        env:
+          FERRITE_HOST: localhost
+          FERRITE_PORT: 6379
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-results-${{ matrix.java-version }}
+          path: target/surefire-reports/
+
+  test-gradle:
+    runs-on: ubuntu-latest
+
+    services:
+      ferrite:
+        image: ghcr.io/josedab/ferrite:latest
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "ferrite-cli PING"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    strategy:
+      matrix:
+        java-version: ['17', '21']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ matrix.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Wait for Ferrite
+        run: |
+          for i in {1..30}; do
+            if nc -z localhost 6379; then
+              echo "Ferrite is ready!"
+              break
+            fi
+            echo "Waiting for Ferrite..."
+            sleep 1
+          done
+
+      - name: Build with Gradle
+        run: ./gradlew build
+        env:
+          FERRITE_HOST: localhost
+          FERRITE_PORT: 6379
+          REDIS_URL: redis://localhost:6379
+
+      - name: Run tests
+        run: ./gradlew test
+        env:
+          FERRITE_HOST: localhost
+          FERRITE_PORT: 6379
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: gradle-test-results-${{ matrix.java-version }}
+          path: build/reports/tests/

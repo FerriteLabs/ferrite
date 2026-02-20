@@ -1,0 +1,72 @@
+# GitHub Actions workflow for testing Python applications with Ferrite
+# Copy this file to .github/workflows/test.yml in your repository
+
+name: Python CI with Ferrite
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      ferrite:
+        image: ghcr.io/josedab/ferrite:latest
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "ferrite-cli PING"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio
+
+      - name: Wait for Ferrite
+        run: |
+          for i in {1..30}; do
+            if nc -z localhost 6379; then
+              echo "Ferrite is ready!"
+              break
+            fi
+            echo "Waiting for Ferrite..."
+            sleep 1
+          done
+
+      - name: Run tests
+        run: pytest
+        env:
+          FERRITE_HOST: localhost
+          FERRITE_PORT: 6379
+          REDIS_URL: redis://localhost:6379
+
+      - name: Run tests with coverage
+        run: pytest --cov=. --cov-report=xml
+        env:
+          FERRITE_HOST: localhost
+          FERRITE_PORT: 6379
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.xml
