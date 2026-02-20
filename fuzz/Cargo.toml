@@ -1,0 +1,46 @@
+[package]
+name = "ferrite-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[workspace]
+
+[dependencies]
+libfuzzer-sys = "0.4"
+bytes = "1"
+ferrite-core = { path = "../crates/ferrite-core", default-features = false }
+ferrite = { path = "..", default-features = false }
+
+[[bin]]
+name = "fuzz_resp_parser"
+path = "fuzz_targets/fuzz_resp_parser.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_resp_roundtrip"
+path = "fuzz_targets/fuzz_resp_roundtrip.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_gossip_message"
+path = "fuzz_targets/fuzz_gossip_message.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_wal_record"
+path = "fuzz_targets/fuzz_wal_record.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_command_parser"
+path = "fuzz_targets/fuzz_command_parser.rs"
+doc = false
+
+[[bin]]
+name = "fuzz_config_parser"
+path = "fuzz_targets/fuzz_config_parser.rs"
+doc = false
