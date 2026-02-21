@@ -1,0 +1,36 @@
+# cargo-release configuration
+# Install: cargo install cargo-release
+# Usage:   cargo release patch --workspace --execute
+#          cargo release minor --workspace --execute
+
+[workspace]
+# All crates share the same version (synchronized releases)
+shared-version = true
+# Consolidate commits and tags at the workspace level
+consolidate-commits = true
+# Tag format: v0.1.0 (not per-crate tags)
+tag-name = "v{{version}}"
+# Commit message format
+tag-message = "Release {{version}}"
+pre-release-commit-message = "chore: release {{version}}"
+
+# Sign tags (enable if you have GPG set up)
+# sign-tag = true
+# sign-commit = true
+
+# Push to remote after release
+push-remote = "origin"
+
+# Publish to crates.io in dependency order
+publish = true
+
+# Crates.io publish ordering (leaves first, root last):
+# 1. Extension crates (no workspace deps — can publish in any order)
+#    ferrite-search, ferrite-ai, ferrite-graph, ferrite-timeseries,
+#    ferrite-document, ferrite-streaming, ferrite-cloud, ferrite-k8s,
+#    ferrite-enterprise, ferrite-plugins, ferrite-studio
+# 2. ferrite-core (no workspace deps)
+# 3. ferrite (top-level — depends on all above)
+
+# Pre-release checks
+allow-branch = ["main"]
