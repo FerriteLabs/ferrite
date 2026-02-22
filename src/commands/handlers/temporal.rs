@@ -273,6 +273,7 @@ pub fn temporal_help() -> Frame {
 
 /// Parse a time specification into a timestamp.
 /// Supports: Unix timestamps, relative offsets (-1h, -24h, -7d)
+#[allow(dead_code)] // Planned for v0.2 — used for temporal command time parsing
 fn parse_time_spec(spec: &str) -> Result<u64, String> {
     // Relative time: -1h, -30m, -7d, -1w
     if spec.starts_with('-') && spec.len() > 1 {

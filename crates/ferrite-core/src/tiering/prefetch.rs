@@ -129,6 +129,7 @@ impl PrefetchStats {
 pub struct PrefetchEngine {
     config: PrefetchConfig,
     stats: RwLock<PrefetchStats>,
+    #[allow(dead_code)] // Planned for v0.2 — stored for prefetch engine enable/disable
     active: AtomicBool,
     current_memory_used: AtomicU64,
     prefetch_queue: RwLock<BinaryHeap<PrefetchCandidate>>,

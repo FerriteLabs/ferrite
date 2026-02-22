@@ -341,10 +341,12 @@ impl RdmaKvHeader {
 /// Connection pool for managing multiple connections to a peer
 pub struct ConnectionPool {
     /// Peer address
+    #[allow(dead_code)] // Planned for v0.2 — stored for connection pool peer identification
     peer_addr: SocketAddr,
     /// Available connections
     connections: RwLock<Vec<Arc<RdmaConnection>>>,
     /// Connection semaphore
+    #[allow(dead_code)] // Planned for v0.2 — stored for connection pool concurrency limiting
     semaphore: Semaphore,
     /// Next connection index (round-robin)
     next_index: AtomicU64,
@@ -411,6 +413,7 @@ pub struct DoorbellBatcher {
     /// Batch size
     batch_size: usize,
     /// Batch timeout
+    #[allow(dead_code)] // Planned for v0.2 — stored for batch flush timeout
     timeout: Duration,
     /// Pending requests
     pending: Mutex<Vec<BatchedWork>>,
@@ -423,6 +426,7 @@ pub struct DoorbellBatcher {
 /// Work item for batching
 struct BatchedWork {
     /// Request ID
+    #[allow(dead_code)] // Planned for v0.2 — stored for request tracking and response correlation
     id: u64,
     /// Connection
     conn: Arc<RdmaConnection>,
@@ -521,6 +525,7 @@ pub struct RdmaProtocolHandler {
     /// RDMA transport
     transport: Arc<RdmaTransport>,
     /// Memory pool
+    #[allow(dead_code)] // Planned for v0.2 — stored for RDMA memory allocation
     memory_pool: Arc<MemoryPool>,
     /// Connection pools per peer
     connection_pools: RwLock<HashMap<SocketAddr, Arc<ConnectionPool>>>,

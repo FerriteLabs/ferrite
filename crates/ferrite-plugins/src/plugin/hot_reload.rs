@@ -106,14 +106,14 @@ impl HotReloader {
 
         loop {
             tokio::select! {
-                _ = tokio::time::sleep(self.config.poll_interval) => {
+                () = tokio::time::sleep(self.config.poll_interval) => {
                     let events = self.check_for_changes();
                     for event in &events {
                         self.handle_event(event);
                     }
                     all_events.extend(events);
                 }
-                _ = self.shutdown.notified() => {
+                () = self.shutdown.notified() => {
                     info!("hot-reload watcher shutting down");
                     break;
                 }

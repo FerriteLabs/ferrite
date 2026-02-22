@@ -229,7 +229,7 @@ pub struct ReconcileTimer<'a> {
     metrics: &'a OperatorMetrics,
 }
 
-impl<'a> Drop for ReconcileTimer<'a> {
+impl Drop for ReconcileTimer<'_> {
     fn drop(&mut self) {
         let duration = self.start.elapsed();
         self.metrics

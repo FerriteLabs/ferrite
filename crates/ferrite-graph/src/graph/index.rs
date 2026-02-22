@@ -146,6 +146,7 @@ pub struct PropertyIndex {
     /// Full-text index (for string properties)
     text_index: HashMap<String, HashSet<VertexId>>,
     /// Index type
+    #[allow(dead_code)] // Planned for v0.2 — stored for index type selection logic
     index_type: PropertyIndexType,
 }
 
@@ -367,6 +368,7 @@ impl Ord for OrderedValue {
 /// Composite index for multiple properties
 pub struct CompositeIndex {
     /// Label
+    #[allow(dead_code)] // Planned for v0.2 — stored for composite index label filtering
     label: String,
     /// Properties (in order)
     properties: Vec<String>,

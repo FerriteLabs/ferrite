@@ -169,10 +169,13 @@ pub struct DocumentQuery {
     /// Logical operators at root level
     logical_ops: Vec<QueryOperator>,
     /// Sort specification
+    #[allow(dead_code)] // Planned for v0.2 — stored for query result sorting
     sort: Option<Vec<(String, SortOrder)>>,
     /// Skip count
+    #[allow(dead_code)] // Planned for v0.2 — stored for query result pagination
     skip: Option<usize>,
     /// Limit count
+    #[allow(dead_code)] // Planned for v0.2 — stored for query result pagination
     limit: Option<usize>,
 }
 
@@ -622,7 +625,7 @@ impl DocumentQuery {
                             coords.first().and_then(|v| v.as_f64()),
                             coords.get(1).and_then(|v| v.as_f64()),
                         ) {
-                            let dist = ((px - x).powi(2) + (py - y).powi(2)).sqrt();
+                            let dist = (px - x).hypot(py - y);
                             return max_distance.map(|d| dist <= d).unwrap_or(true);
                         }
                     }
@@ -673,7 +676,7 @@ impl DocumentQuery {
                 top_right,
             } => x >= bottom_left.0 && x <= top_right.0 && y >= bottom_left.1 && y <= top_right.1,
             GeoShape::Circle { center, radius } => {
-                let dist = ((x - center.0).powi(2) + (y - center.1).powi(2)).sqrt();
+                let dist = (x - center.0).hypot(y - center.1);
                 dist <= *radius
             }
             GeoShape::Polygon(points) => {

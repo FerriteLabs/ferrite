@@ -321,7 +321,7 @@ impl App {
     }
 
     fn handle_overview_key(&mut self, key: KeyCode) -> AsyncAction {
-        if let KeyCode::Char('r') = key { self.paused = false }
+        if key == KeyCode::Char('r') { self.paused = false }
         AsyncAction::None
     }
 

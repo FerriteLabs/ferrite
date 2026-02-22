@@ -101,7 +101,7 @@ impl AdaptiveEngine {
         }
 
         // Ensure we reset the flag when done
-        let _guard = scopeguard::guard((), |_| {
+        let _guard = scopeguard::guard((), |()| {
             self.adapting.store(false, Ordering::SeqCst);
         });
 

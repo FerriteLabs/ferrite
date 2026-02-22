@@ -502,6 +502,7 @@ impl CommandExecutor {
         }
     }
 
+    #[allow(clippy::useless_let_if_seq)]
     pub(super) fn command_getkeys_and_flags(&self, args: &[Bytes]) -> Frame {
         // COMMAND GETKEYSANDFLAGS command [arg ...]
         // Extract key positions and access flags from a command
@@ -1223,7 +1224,7 @@ impl CommandExecutor {
     }
 
     /// Handle PSYNC command for replication synchronization
-    pub(super) fn psync(&self, replication_id: &str, offset: i64) -> Frame {
+    pub(super) fn psync(&self, _replication_id: &str, _offset: i64) -> Frame {
         // PSYNC <replication_id> <offset>
         // - replication_id: "?" for first sync, or master's replid for resync
         // - offset: -1 for first sync, or last received offset for resync
@@ -1238,18 +1239,8 @@ impl CommandExecutor {
         // 3. Start streaming commands
         //
         // For now, return FULLRESYNC with a placeholder replid
-        if replication_id == "?" || offset == -1 {
-            // First sync - full resync required
-            // Generate a random replication ID (40 hex chars)
-            let replid = "8371445ee47aed9eb27c89cdd67c6bf579a93f99";
-            Frame::simple(format!("FULLRESYNC {} 0", replid))
-        } else {
-            // Attempt partial resync
-            // In full implementation, check if offset is in backlog
-            // For now, always do full resync
-            let replid = "8371445ee47aed9eb27c89cdd67c6bf579a93f99";
-            Frame::simple(format!("FULLRESYNC {} 0", replid))
-        }
+        let replid = "8371445ee47aed9eb27c89cdd67c6bf579a93f99";
+        Frame::simple(format!("FULLRESYNC {} 0", replid))
     }
 
     /// Handle AUTH command for user authentication
@@ -1273,14 +1264,10 @@ impl CommandExecutor {
         //
         // Since we can't call async from sync here, we return OK
         // The actual authentication would happen at the connection level
-        if username == "default" && password.is_empty() {
-            // Default user with nopass succeeds
-            Frame::simple("OK")
-        } else {
-            // For other cases, we accept for now
-            // Full implementation would validate against ACL
-            Frame::simple("OK")
-        }
+        // Default user with nopass succeeds; for other cases, we accept for now.
+        // Full implementation would validate against ACL.
+        let _ = (username, password);
+        Frame::simple("OK")
     }
 
     /// Handle ACL command for access control list management

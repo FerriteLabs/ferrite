@@ -13,6 +13,7 @@ use crate::query::{QueryError, ResultSet};
 /// View manager
 pub struct ViewManager {
     views: HashMap<String, MaterializedView>,
+    #[allow(dead_code)] // Planned for v0.2 — stored for view query materialization
     store: Arc<crate::storage::Store>,
 }
 

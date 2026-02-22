@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
+use tracing::warn;
 
 use super::document::{Document, DocumentId};
 use super::index::DocumentIndex;
@@ -52,6 +53,7 @@ pub struct Collection {
     /// Total data size
     data_size: u64,
     /// Creation time
+    #[allow(dead_code)] // Planned for v0.2 — stored for collection metadata queries
     created_at: u64,
 }
 
@@ -104,7 +106,7 @@ impl Collection {
                     ValidationAction::Error => return Err(e),
                     ValidationAction::Warn => {
                         // Log warning but continue
-                        eprintln!("Validation warning: {}", e);
+                        warn!("Validation warning: {}", e);
                     }
                 }
             }
@@ -271,9 +273,7 @@ impl Collection {
             if let Some(value) = doc.get_field(field) {
                 // Convert to string for HashSet (not ideal but works)
                 let key = serde_json::to_string(value).unwrap_or_default();
-                if !values.contains(&key) {
-                    values.insert(key);
-                }
+                values.insert(key);
             }
         }
 

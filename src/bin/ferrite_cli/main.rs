@@ -2,6 +2,7 @@
 //!
 //! A feature-rich command-line interface with REPL, tab completion,
 //! and multiple output formats.
+#![allow(clippy::print_stdout, clippy::print_stderr)]
 
 mod client;
 mod commands;

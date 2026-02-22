@@ -198,6 +198,7 @@ pub enum MatchSource {
 #[derive(Debug, Clone)]
 struct VectorEntry {
     /// Chunk ID
+    #[allow(dead_code)] // Planned for v0.2 — stored for chunk-level retrieval tracking
     chunk_id: ChunkId,
     /// The chunk data
     chunk: Chunk,

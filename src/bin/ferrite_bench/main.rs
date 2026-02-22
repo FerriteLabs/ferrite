@@ -3,6 +3,7 @@
 //! Runs configurable workloads against a Ferrite [`Store`] and optionally
 //! against a remote Redis instance for side-by-side comparison. Produces
 //! throughput, latency percentiles, and a formatted report.
+#![allow(clippy::print_stdout, clippy::print_stderr)]
 
 use std::collections::HashMap;
 use std::process::ExitCode;

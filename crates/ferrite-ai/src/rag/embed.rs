@@ -112,9 +112,11 @@ pub enum EmbeddingProviderType {
 #[async_trait]
 pub trait EmbeddingProvider: Send + Sync {
     /// Get provider name
+    #[allow(dead_code)] // Planned for v0.2 — used for provider identification in logs
     fn name(&self) -> &str;
 
     /// Get embedding dimension
+    #[allow(dead_code)] // Planned for v0.2 — used for vector dimension validation
     fn dimension(&self) -> usize;
 
     /// Generate embedding for a single text
@@ -124,6 +126,7 @@ pub trait EmbeddingProvider: Send + Sync {
     async fn embed_batch(&self, texts: &[String]) -> Result<Vec<EmbeddingResult>, EmbeddingError>;
 
     /// Get provider statistics
+    #[allow(dead_code)] // Planned for v0.2 — used for provider metrics reporting
     fn stats(&self) -> &EmbedderStats;
 }
 
@@ -489,6 +492,7 @@ struct OpenAIEmbeddingData {
 
 #[derive(Debug, Deserialize)]
 struct OpenAIUsage {
+    #[allow(dead_code)] // Planned for v0.2 — stored for API usage tracking
     prompt_tokens: usize,
     total_tokens: usize,
 }
@@ -503,6 +507,7 @@ struct OpenAIErrorResponse {
 struct OpenAIError {
     message: String,
     #[serde(rename = "type")]
+    #[allow(dead_code)] // Planned for v0.2 — stored for error classification
     error_type: Option<String>,
 }
 
@@ -812,7 +817,7 @@ impl LocalEmbeddingProvider {
         // Handle different output shapes
         let embedding: Vec<f32> = if shape.len() == 2 {
             // Shape [1, dim] - sentence embedding
-            tensor.iter().cloned().collect()
+            tensor.iter().copied().collect()
         } else if shape.len() == 3 {
             // Shape [1, seq_len, hidden_dim] - need mean pooling
             let hidden_dim = shape[2];

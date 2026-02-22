@@ -302,6 +302,7 @@ impl MigrationRateLimiter {
 }
 
 /// Callback type for migration completion
+#[allow(dead_code)] // Planned for v0.2 — type alias for migration completion callbacks
 pub type MigrationCallback = Box<dyn Fn(&Migration) + Send + Sync>;
 
 /// Migration executor handles background data movement
@@ -315,6 +316,7 @@ pub struct MigrationExecutor {
     /// Next migration ID
     next_id: AtomicU64,
     /// Shutdown signal sender
+    #[allow(dead_code)] // Planned for v0.2 — stored for graceful executor shutdown
     shutdown_tx: Option<mpsc::Sender<()>>,
     /// Whether executor is running
     running: Arc<std::sync::atomic::AtomicBool>,

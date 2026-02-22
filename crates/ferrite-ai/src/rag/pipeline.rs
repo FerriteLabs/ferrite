@@ -448,12 +448,14 @@ impl From<super::embed::EmbeddingError> for RagError {
 }
 
 /// Builder for creating a RAG pipeline
+#[allow(dead_code)] // Planned for v0.2 — builder pattern for RAG pipeline configuration
 pub struct RagPipelineBuilder {
     config: RagConfig,
 }
 
 impl RagPipelineBuilder {
     /// Create a new builder
+    #[allow(dead_code)] // Planned for v0.2 — builder entry point
     pub fn new() -> Self {
         Self {
             config: RagConfig::default(),
@@ -461,36 +463,42 @@ impl RagPipelineBuilder {
     }
 
     /// Use fast configuration
+    #[allow(dead_code)] // Planned for v0.2 — builder preset for fast mode
     pub fn fast(mut self) -> Self {
         self.config = RagConfig::fast();
         self
     }
 
     /// Use accurate configuration
+    #[allow(dead_code)] // Planned for v0.2 — builder preset for accurate mode
     pub fn accurate(mut self) -> Self {
         self.config = RagConfig::accurate();
         self
     }
 
     /// Set embedding dimension
+    #[allow(dead_code)] // Planned for v0.2 — builder method for embedding dimension
     pub fn dimension(mut self, dim: usize) -> Self {
         self.config = self.config.with_dimension(dim);
         self
     }
 
     /// Set embedding provider type
+    #[allow(dead_code)] // Planned for v0.2 — builder method for provider selection
     pub fn provider(mut self, provider: EmbeddingProviderType) -> Self {
         self.config = self.config.with_provider(provider);
         self
     }
 
     /// Set chunking strategy
+    #[allow(dead_code)] // Planned for v0.2 — builder method for chunking strategy
     pub fn chunking(mut self, strategy: ChunkingStrategy) -> Self {
         self.config.chunking.strategy = strategy;
         self
     }
 
     /// Set chunk size
+    #[allow(dead_code)] // Planned for v0.2 — builder method for chunk size
     pub fn chunk_size(mut self, size: usize) -> Self {
         self.config.chunking.strategy = ChunkingStrategy::FixedSize {
             size,
@@ -500,42 +508,49 @@ impl RagPipelineBuilder {
     }
 
     /// Set similarity metric
+    #[allow(dead_code)] // Planned for v0.2 — builder method for similarity metric
     pub fn similarity(mut self, metric: SimilarityMetric) -> Self {
         self.config.retriever.metric = metric;
         self
     }
 
     /// Set context format
+    #[allow(dead_code)] // Planned for v0.2 — builder method for context format
     pub fn context_format(mut self, format: ContextFormat) -> Self {
         self.config.context.format = format;
         self
     }
 
     /// Set max tokens for context
+    #[allow(dead_code)] // Planned for v0.2 — builder method for max context tokens
     pub fn max_tokens(mut self, tokens: usize) -> Self {
         self.config.context.max_tokens = tokens;
         self
     }
 
     /// Enable hybrid search
+    #[allow(dead_code)] // Planned for v0.2 — builder method for hybrid search toggle
     pub fn hybrid_search(mut self, enabled: bool) -> Self {
         self.config.retriever.hybrid_search = enabled;
         self
     }
 
     /// Set default top-k results
+    #[allow(dead_code)] // Planned for v0.2 — builder method for top-k results
     pub fn top_k(mut self, k: usize) -> Self {
         self.config.retriever.default_top_k = k;
         self
     }
 
     /// Set minimum chunk size
+    #[allow(dead_code)] // Planned for v0.2 — builder method for minimum chunk size
     pub fn min_chunk_size(mut self, size: usize) -> Self {
         self.config.chunking.min_chunk_size = size;
         self
     }
 
     /// Build the pipeline
+    #[allow(dead_code)] // Planned for v0.2 — builder finalizer
     pub fn build(self) -> RagPipeline {
         RagPipeline::new(self.config)
     }

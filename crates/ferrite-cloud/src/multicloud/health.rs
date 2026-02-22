@@ -53,6 +53,7 @@ impl HealthStatus {
 
 /// Health check result
 #[derive(Debug, Clone)]
+#[allow(dead_code)] // Planned for v0.2 — will be returned by health check endpoint
 pub struct HealthCheckResult {
     /// Target name
     pub target: String,

@@ -176,16 +176,14 @@ pub fn ts_add(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     let mut i = 3;
     while i < args.len() {
         let arg = String::from_utf8_lossy(&args[i]).to_uppercase();
+        i += 1;
         if arg == "LABELS" {
-            i += 1;
             while i + 1 < args.len() {
                 let label = String::from_utf8_lossy(&args[i]).to_string();
                 let val = String::from_utf8_lossy(&args[i + 1]).to_string();
                 label_strs.push(format!("{}:{}", label, val));
                 i += 2;
             }
-        } else {
-            i += 1;
         }
     }
 

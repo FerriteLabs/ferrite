@@ -243,14 +243,13 @@ impl RateLimiter {
             }
 
             let new_value = current - n;
-            match self.tokens.compare_exchange_weak(
+            if self.tokens.compare_exchange_weak(
                 current,
                 new_value,
                 Ordering::Relaxed,
                 Ordering::Relaxed,
-            ) {
-                Ok(_) => return true,
-                Err(_) => continue,
+            ).is_ok() {
+                return true;
             }
         }
     }

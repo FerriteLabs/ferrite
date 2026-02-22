@@ -352,6 +352,7 @@ pub struct GeoSearchOptions {
     pub center: GeoSearchCenter,
     pub shape: GeoSearchShape,
     pub count: Option<usize>,
+    #[allow(dead_code)]
     pub any: bool,
     pub asc: bool,
     pub with_coord: bool,
@@ -430,12 +431,7 @@ pub fn geosearch(store: &Arc<Store>, db: u8, key: &Bytes, options: &GeoSearchOpt
 
             // Apply count limit
             if let Some(count) = options.count {
-                if options.any {
-                    // For ANY, just truncate (already have random-ish order before sort)
-                    matches.truncate(count);
-                } else {
-                    matches.truncate(count);
-                }
+                matches.truncate(count);
             }
 
             // Get distance unit for output

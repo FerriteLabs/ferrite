@@ -129,6 +129,7 @@ pub struct Index {
     /// Index name
     name: String,
     /// Configuration
+    #[allow(dead_code)] // Planned for v0.2 — stored for index config-driven behavior
     config: IndexConfig,
     /// Analyzer
     analyzer: Arc<dyn Analyzer>,
@@ -167,6 +168,7 @@ pub struct IndexMetrics {
 
 /// Per-document field lengths for accurate BM25 scoring
 #[derive(Debug, Default)]
+#[allow(dead_code)] // Planned for v0.2 — will replace inline HashMap for BM25 field lengths
 struct DocFieldLengths {
     /// Map of doc_id -> field_name -> length
     lengths: HashMap<DocumentId, HashMap<String, u32>>,
@@ -457,7 +459,7 @@ impl Index {
 
                 // Apply minimum_should_match if there are must clauses
                 if !bool_query.must.is_empty() && !bool_query.should.is_empty() {
-                    let _min_match = bool_query.minimum_should_match;
+                    let _ = bool_query.minimum_should_match;
                     for clause in &bool_query.should {
                         let clause_docs = self.find_matching_documents(clause)?;
                         for (doc_id, terms) in clause_docs {

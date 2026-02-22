@@ -102,10 +102,12 @@ pub struct ReplicationState {
     /// Master replication ID
     master_replid: RwLock<ReplicationId>,
     /// Secondary replication ID (for PSYNC2)
+    #[allow(dead_code)] // Planned for v0.2 — stored for PSYNC2 failover support
     master_replid2: RwLock<Option<ReplicationId>>,
     /// Current replication offset
     master_repl_offset: AtomicU64,
     /// Secondary offset (for PSYNC2)
+    #[allow(dead_code)] // Planned for v0.2 — stored for PSYNC2 partial resync
     second_repl_offset: AtomicU64,
     /// Connected replicas count
     connected_replicas: AtomicU64,

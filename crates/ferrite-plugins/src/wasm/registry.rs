@@ -43,6 +43,7 @@ pub struct FunctionRegistry {
     /// WASM executor
     executor: Arc<WasmExecutor>,
     /// Default resource limits
+    #[allow(dead_code)] // Planned for v0.2 — stored for default module resource limits
     default_limits: ResourceLimits,
     /// Maximum number of functions
     max_functions: usize,

@@ -393,11 +393,14 @@ pub struct MigrationResult {
 /// Step execution result
 #[derive(Clone, Debug)]
 struct StepResult {
+    #[allow(dead_code)] // Planned for v0.2 — stored for migration step progress reporting
     step_index: usize,
+    #[allow(dead_code)] // Planned for v0.2 — stored for migration step status tracking
     success: bool,
     keys_transferred: u64,
     bytes_transferred: u64,
     duration_ms: u64,
+    #[allow(dead_code)] // Planned for v0.2 — stored for migration error reporting
     error: Option<String>,
 }
 

@@ -102,19 +102,19 @@ impl ScalingManager {
         current_replicas: i32,
         desired_replicas: i32,
     ) -> Result<ScalePlan, OperatorError> {
-        let direction = if desired_replicas > current_replicas {
-            ScaleDirection::Up
-        } else if desired_replicas < current_replicas {
-            ScaleDirection::Down
-        } else {
-            return Ok(ScalePlan {
-                direction: ScaleDirection::None,
-                current_replicas,
-                desired_replicas,
-                actions: vec![],
-                requires_migration: false,
-                migration_state: None,
-            });
+        let direction = match desired_replicas.cmp(&current_replicas) {
+            std::cmp::Ordering::Greater => ScaleDirection::Up,
+            std::cmp::Ordering::Less => ScaleDirection::Down,
+            std::cmp::Ordering::Equal => {
+                return Ok(ScalePlan {
+                    direction: ScaleDirection::None,
+                    current_replicas,
+                    desired_replicas,
+                    actions: vec![],
+                    requires_migration: false,
+                    migration_state: None,
+                });
+            }
         };
 
         let validation = self.validate_scale(cluster, desired_replicas);

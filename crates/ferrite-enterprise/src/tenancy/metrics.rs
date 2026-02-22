@@ -220,6 +220,7 @@ pub struct TenantMetricsCollector {
     /// Per-tenant metrics
     metrics: RwLock<HashMap<String, Arc<TenantMetrics>>>,
     /// Collection interval
+    #[allow(dead_code)] // Planned for v0.2 — stored for periodic metrics collection scheduling
     collection_interval: Duration,
     /// Historical data (for billing)
     history: RwLock<Vec<MetricsHistoryEntry>>,

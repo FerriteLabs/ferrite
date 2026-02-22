@@ -682,8 +682,7 @@ impl AllPaths {
         }
 
         for neighbor in storage.out_neighbors(current) {
-            if !visited.contains(&neighbor) {
-                visited.insert(neighbor);
+            if visited.insert(neighbor) {
                 current_path.push(neighbor);
 
                 Self::dfs_all_paths(

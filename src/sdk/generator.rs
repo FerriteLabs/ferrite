@@ -250,7 +250,7 @@ impl SdkGenerator {
         readme
     }
 
-    /// Generate quick start code for language
+    #[allow(clippy::literal_string_with_formatting_args)]
     fn generate_quick_start(&self, language: &Language) -> String {
         match language {
             Language::TypeScript => r#"```typescript
@@ -434,7 +434,7 @@ async fn test_del() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    /// Generate examples for language
+    #[allow(clippy::literal_string_with_formatting_args)]
     fn generate_examples(&self, language: &Language) -> String {
         match language {
             Language::TypeScript => r#"/**

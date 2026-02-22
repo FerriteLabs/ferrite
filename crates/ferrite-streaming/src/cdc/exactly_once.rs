@@ -141,10 +141,13 @@ pub struct TransactionEvent {
 
 /// An in-flight transaction.
 struct Transaction {
+    #[allow(dead_code)] // Planned for v0.2 — stored for transaction deduplication
     id: u64,
+    #[allow(dead_code)] // Planned for v0.2 — stored for transaction attribution
     producer_id: String,
     state: TransactionState,
     events: Vec<TransactionEvent>,
+    #[allow(dead_code)] // Planned for v0.2 — stored for transaction timeout tracking
     created_at: SystemTime,
 }
 

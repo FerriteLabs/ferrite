@@ -339,6 +339,7 @@ pub struct FederatedQueryEngine {
     sources: Arc<parking_lot::RwLock<HashMap<String, DataSource>>>,
     cache: Arc<parking_lot::RwLock<HashMap<String, CachedResult>>>,
     metrics: Arc<FederatedMetrics>,
+    #[allow(dead_code)] // Planned for v0.2 — stored for federated query timeout enforcement
     default_timeout: Duration,
 }
 

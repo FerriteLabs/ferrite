@@ -65,6 +65,7 @@ struct RegionSyncStatus {
     last_sync: u64,
     items_synced: u64,
     errors: u64,
+    #[allow(dead_code)] // Planned for v0.2 — stored for sync lag monitoring
     lag_ms: u64,
 }
 

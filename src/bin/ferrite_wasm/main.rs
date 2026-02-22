@@ -22,6 +22,7 @@
 //!
 //! It uses Ferrite's embedded mode (`Database::open_memory()`) to run
 //! entirely in the browser without any network calls.
+#![allow(clippy::print_stdout, clippy::print_stderr)]
 
 // When building for wasm32, we use wasm-bindgen
 #[cfg(target_arch = "wasm32")]

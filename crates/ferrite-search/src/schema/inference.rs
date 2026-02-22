@@ -159,6 +159,7 @@ struct FieldStats {
 }
 
 impl FieldStats {
+    #[allow(dead_code)] // Planned for v0.2 — convenience constructor for field statistics
     fn new() -> Self {
         Self::default()
     }

@@ -352,6 +352,7 @@ pub struct CompressedGraph {
     /// Edge weights
     weights: Vec<f64>,
     /// Edge IDs
+    #[allow(dead_code)] // Planned for v0.2 — stored for compressed graph edge lookups
     edge_ids: Vec<EdgeId>,
 }
 

@@ -17,6 +17,7 @@ pub struct AutoTuner {
     /// History of tuning decisions
     history: Vec<TuningDecision>,
     /// Configuration
+    #[allow(dead_code)] // Planned for v0.2 — stored for tuner parameter access
     config: TunerConfig,
 }
 

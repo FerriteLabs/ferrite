@@ -649,7 +649,9 @@ pub struct QueryStats {
 
 /// Query engine for executing FerriteQL queries
 pub struct QueryEngine {
+    #[allow(dead_code)] // Planned for v0.2 — stored for query execution against store
     store: Arc<Store>,
+    #[allow(dead_code)] // Planned for v0.2 — stored for query engine configuration
     config: QueryConfig,
     parser: QueryParser,
     planner: QueryPlanner,

@@ -2,6 +2,7 @@
 
 use std::sync::Arc;
 use tokio::sync::{mpsc, RwLock};
+use tracing::info;
 
 use super::{StreamError, StreamEvent};
 
@@ -344,7 +345,7 @@ impl Sink for ConsoleSink {
             OutputFormat::Custom(formatter) => formatter(&event),
         };
 
-        println!("[{}] {}", self.name, output);
+        info!(sink = %self.name, "{}", output);
         Ok(())
     }
 

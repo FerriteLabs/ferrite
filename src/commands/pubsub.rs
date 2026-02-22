@@ -42,9 +42,10 @@ pub fn pubsub_numpat(manager: &SharedSubscriptionManager) -> Frame {
 // --- Sharded Pub/Sub (Redis 7.0+) ---
 
 /// SPUBLISH shardchannel message
-/// Publish a message to a shard channel (slot-based routing)
-/// For now, this behaves the same as PUBLISH but is conceptually distinct
-/// In a cluster setup, SPUBLISH routes messages based on slot
+///
+/// Publish a message to a shard channel (slot-based routing).
+/// For now, this behaves the same as PUBLISH but is conceptually distinct.
+/// In a cluster setup, SPUBLISH routes messages based on slot.
 pub fn spublish(manager: &SharedSubscriptionManager, channel: &Bytes, message: &Bytes) -> Frame {
     // In sharded pub/sub, messages are routed based on the channel's slot
     // For single-node operation, this behaves like regular PUBLISH

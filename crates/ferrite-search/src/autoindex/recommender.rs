@@ -336,14 +336,14 @@ impl Recommender {
 
         match &index_type {
             IndexType::BTree => {
-                reasons.push("B-tree supports range queries and ordering".to_string())
+                reasons.push("B-tree supports range queries and ordering".to_string());
             }
             IndexType::Hash => reasons.push("Hash index optimal for exact lookups".to_string()),
             IndexType::Secondary(field) => {
-                reasons.push(format!("Field '{}' frequently accessed", field))
+                reasons.push(format!("Field '{}' frequently accessed", field));
             }
             IndexType::Compound(_) => {
-                reasons.push("Multiple fields commonly accessed together".to_string())
+                reasons.push("Multiple fields commonly accessed together".to_string());
             }
             _ => {}
         }

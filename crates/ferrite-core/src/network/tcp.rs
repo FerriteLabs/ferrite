@@ -151,6 +151,7 @@ pub struct TcpConnection {
     /// Statistics
     stats: TcpConnectionStats,
     /// Configuration
+    #[allow(dead_code)] // Planned for v0.2 — stored for TCP connection configuration
     config: TcpConfig,
 }
 

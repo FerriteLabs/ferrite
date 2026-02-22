@@ -126,12 +126,16 @@ pub struct CostAwarePlanner {
 #[derive(Debug, Clone)]
 struct TableStats {
     /// Estimated row count
+    #[allow(dead_code)] // Planned for v0.2 — stored for cost estimation cardinality
     row_count: u64,
     /// Average row size
+    #[allow(dead_code)] // Planned for v0.2 — stored for I/O cost estimation
     avg_row_size: u64,
     /// Index availability
+    #[allow(dead_code)] // Planned for v0.2 — stored for index selection in query planning
     indexes: Vec<String>,
     /// Storage tier
+    #[allow(dead_code)] // Planned for v0.2 — stored for tier-aware cost calculation
     tier: StorageTier,
 }
 
@@ -195,7 +199,7 @@ impl CostAwarePlanner {
         plans.push(memory_plan);
 
         // Plan 2: Index lookup (if available)
-        if query.contains("where") || query.contains("=") {
+        if query.contains("where") || query.contains('=') {
             let mut index_plan = OptimizedPlan::new(query, "index_lookup")
                 .with_rows(10)
                 .with_tier(StorageTier::LocalSsd);

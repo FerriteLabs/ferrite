@@ -2,6 +2,7 @@
 //!
 //! Provides commands to analyze, plan, execute, and validate
 //! migrations from Redis to Ferrite.
+#![allow(clippy::print_stdout, clippy::print_stderr)]
 
 use std::process::ExitCode;
 

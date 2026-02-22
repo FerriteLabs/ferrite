@@ -61,7 +61,12 @@ impl ObjectId {
 
     /// Get hex representation
     pub fn to_hex(&self) -> String {
-        self.bytes.iter().map(|b| format!("{:02x}", b)).collect()
+        use std::fmt::Write;
+        let mut s = String::with_capacity(self.bytes.len() * 2);
+        for b in &self.bytes {
+            let _ = write!(s, "{b:02x}");
+        }
+        s
     }
 
     /// Get timestamp from ObjectId

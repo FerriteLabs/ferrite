@@ -366,6 +366,7 @@ pub struct Sink {
     /// Event queue
     queue: mpsc::Sender<ChangeEvent>,
     /// Queue receiver (for processing)
+    #[allow(dead_code)] // Planned for v0.2 — stored for background sink processing loop
     queue_rx: RwLock<Option<mpsc::Receiver<ChangeEvent>>>,
     /// Queue size counter for tracking lag
     queue_size: AtomicU64,

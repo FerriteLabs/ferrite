@@ -110,7 +110,7 @@ impl Operator {
                     tracing::info!("Received shutdown signal");
                     break;
                 }
-                _ = tokio::time::sleep(self.config.reconcile_interval) => {
+                () = tokio::time::sleep(self.config.reconcile_interval) => {
                     // Periodic reconciliation
                     self.reconcile_all().await?;
                 }

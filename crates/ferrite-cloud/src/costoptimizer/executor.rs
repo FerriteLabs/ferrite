@@ -165,10 +165,12 @@ pub struct CostAwareExecutor {
 #[derive(Debug, Clone)]
 struct ExecutionRecord {
     /// Query string
+    #[allow(dead_code)] // Planned for v0.2 — stored for execution plan caching
     query: String,
     /// Execution metrics
     metrics: CostMetrics,
     /// Timestamp
+    #[allow(dead_code)] // Planned for v0.2 — stored for execution history tracking
     timestamp: u64,
 }
 

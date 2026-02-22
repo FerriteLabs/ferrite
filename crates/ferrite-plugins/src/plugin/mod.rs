@@ -392,6 +392,7 @@ impl Default for PluginManager {
 /// Command handler for plugin commands
 pub struct CommandHandler {
     /// Plugin name
+    #[allow(dead_code)] // Planned for v0.2 — stored for command attribution and logging
     plugin_name: String,
     /// Command specification
     spec: CommandSpec,
@@ -436,8 +437,10 @@ impl CommandHandler {
 /// Data type handler for plugin data types
 pub struct DataTypeHandler {
     /// Plugin name
+    #[allow(dead_code)] // Planned for v0.2 — stored for data type registration lookups
     plugin_name: String,
     /// Data type specification
+    #[allow(dead_code)] // Planned for v0.2 — stored for data type validation
     spec: DataTypeSpec,
 }
 
@@ -489,7 +492,7 @@ impl EventHookRegistry {
 
         for hook in hooks {
             match hook.execute(&context).await {
-                Ok(HookResult::Continue) => continue,
+                Ok(HookResult::Continue) => {},
                 Ok(HookResult::Abort(reason)) => return Ok(HookResult::Abort(reason)),
                 Ok(HookResult::Modified(data)) => return Ok(HookResult::Modified(data)),
                 Err(e) => {

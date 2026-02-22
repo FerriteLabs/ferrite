@@ -34,7 +34,7 @@
 //! let result = cache.get(&similar_call)?;  // Returns cached result!
 //! ```
 
-use super::{DistanceMetric, IndexType, SemanticCache, SemanticConfig, SemanticError};
+use super::{DistanceMetric, EmbeddingModelConfig, IndexType, SemanticCache, SemanticConfig, SemanticError};
 use bytes::Bytes;
 use dashmap::DashMap;
 use parking_lot::RwLock;
@@ -382,7 +382,7 @@ impl FunctionCache {
             index_type: IndexType::Hnsw,
             distance_metric: DistanceMetric::Cosine,
             auto_embed: false,
-            embedding_model: Default::default(),
+            embedding_model: EmbeddingModelConfig::default(),
         };
 
         let semantic_cache = SemanticCache::new(semantic_config);

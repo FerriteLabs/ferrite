@@ -323,7 +323,7 @@ impl HostFunction for SetFunction {
         let key_len = args[1] as usize;
         let val_ptr = args[2] as usize;
         let val_len = args[3] as usize;
-        let _options = args[4];
+        let _ = args[4];
         let ttl_ms = args[5];
 
         // Read key and value from memory
@@ -765,6 +765,7 @@ impl HostFunctions {
     }
 
     /// Get a function by name
+    #[allow(dead_code)] // Planned for v0.2 — function lookup for WASM host calls
     pub fn get(&self, name: &str) -> Option<&dyn HostFunction> {
         self.functions
             .iter()

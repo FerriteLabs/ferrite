@@ -332,6 +332,7 @@ impl Compression for GorillaCompressor {
             prev_ts = ts;
 
             // Decode value
+            #[allow(clippy::same_functions_in_if_condition)]
             let value_bits = if !reader.read_bit()? {
                 prev_value_bits
             } else if !reader.read_bit()? {

@@ -187,6 +187,7 @@ pub fn distance(a: &[f32], b: &[f32], metric: DistanceMetric) -> f32 {
 
 /// Calculate similarity based on metric type (higher is better)
 #[inline]
+#[allow(dead_code)] // Planned for v0.2 — generic similarity dispatch for vector queries
 pub fn similarity(a: &[f32], b: &[f32], metric: DistanceMetric) -> f32 {
     match metric {
         DistanceMetric::Cosine => cosine_similarity(a, b),
@@ -197,6 +198,7 @@ pub fn similarity(a: &[f32], b: &[f32], metric: DistanceMetric) -> f32 {
 }
 
 /// Normalize a vector to unit length
+#[allow(dead_code)] // Planned for v0.2 — vector normalization for cosine similarity preprocessing
 pub fn normalize(vector: &mut [f32]) {
     let norm: f32 = vector.iter().map(|x| x * x).sum::<f32>().sqrt();
     if norm > 0.0 {
@@ -208,6 +210,7 @@ pub fn normalize(vector: &mut [f32]) {
 
 /// Get the L2 norm of a vector
 #[inline]
+#[allow(dead_code)] // Planned for v0.2 — norm computation for vector validation
 pub fn l2_norm(vector: &[f32]) -> f32 {
     vector.iter().map(|x| x * x).sum::<f32>().sqrt()
 }

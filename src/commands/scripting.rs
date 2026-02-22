@@ -82,6 +82,7 @@ impl ScriptCache {
 /// This is a self-contained SHA-1 implementation (FIPS 180-4) that produces
 /// hashes compatible with Redis EVALSHA lookups. The algorithm processes
 /// 512-bit blocks and produces a 160-bit (20-byte / 40 hex char) digest.
+#[allow(clippy::many_single_char_names)]
 fn sha1_hex(data: &[u8]) -> String {
     // Initial hash values (FIPS 180-4 section 5.3.1)
     let mut h0: u32 = 0x67452301;

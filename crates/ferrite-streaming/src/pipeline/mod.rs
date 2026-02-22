@@ -375,7 +375,9 @@ pub enum PipelineStatus {
 
 #[derive(Debug, Default)]
 struct PipelineManagerStats {
+    #[allow(dead_code)] // Planned for v0.2 — stored for pipeline metrics reporting
     total_events_processed: AtomicU64,
+    #[allow(dead_code)] // Planned for v0.2 — stored for pipeline error rate tracking
     total_events_failed: AtomicU64,
     active_pipelines: AtomicU64,
 }

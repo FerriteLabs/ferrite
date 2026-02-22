@@ -127,6 +127,7 @@ pub struct LoginResponse {
 /// A stored user (for the built-in user registry).
 #[derive(Debug, Clone)]
 struct StoredUser {
+    #[allow(dead_code)] // Planned for v0.2 — stored for user display and audit logging
     username: String,
     /// Password stored as-is in this placeholder (production would use argon2).
     password_hash: String,
@@ -331,10 +332,15 @@ pub enum AuthError {
 /// Generate a random hex token.
 fn generate_token() -> String {
     use rand::RngCore;
+    use std::fmt::Write;
     let mut rng = rand::thread_rng();
     let mut bytes = [0u8; 32];
     rng.fill_bytes(&mut bytes);
-    bytes.iter().map(|b| format!("{:02x}", b)).collect()
+    let mut s = String::with_capacity(64);
+    for b in &bytes {
+        let _ = write!(s, "{b:02x}");
+    }
+    s
 }
 
 /// Current epoch milliseconds.

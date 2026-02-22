@@ -52,6 +52,7 @@ pub struct IncrementalEngine {
     /// View dependencies.
     dependencies: RwLock<Vec<ViewDependency>>,
     /// Channel to receive change events from storage.
+    #[allow(dead_code)] // Planned for v0.2 — stored for incremental view refresh
     event_rx: Option<mpsc::Receiver<ChangeEvent>>,
     /// Statistics.
     stats: IncrementalStats,

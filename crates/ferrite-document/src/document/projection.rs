@@ -35,7 +35,7 @@ enum ProjectionValue {
     /// Element match
     ElemMatch(serde_json::Value),
     /// Meta score
-    Meta(String),
+    Meta(#[allow(dead_code)] String), // Planned for v0.2 — stored for projection meta scoring
     /// Positional operator
     Positional,
 }
@@ -218,7 +218,7 @@ impl Projection {
                     for (field, value) in obj {
                         if let Some(pv) = self.fields.get(field) {
                             match pv {
-                                ProjectionValue::Exclude => continue,
+                                ProjectionValue::Exclude => {},
                                 _ => {
                                     if let Some(v) = self.get_projected_value(doc, field, pv) {
                                         result.insert(field.clone(), v);

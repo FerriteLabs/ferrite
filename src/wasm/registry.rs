@@ -255,7 +255,7 @@ impl UdfRegistry {
         let simple_args: Vec<WasmValue> = wasm_args
             .iter()
             .map(|v| match v {
-                WasmValue::I64(i) if *i >= i32::MIN as i64 && *i <= i32::MAX as i64 => {
+                WasmValue::I64(i) if i32::try_from(*i).is_ok() => {
                     WasmValue::I32(*i as i32)
                 }
                 other => other.clone(),
@@ -338,7 +338,7 @@ impl UdfRegistry {
         let simple_args: Vec<WasmValue> = wasm_args
             .iter()
             .map(|v| match v {
-                WasmValue::I64(i) if *i >= i32::MIN as i64 && *i <= i32::MAX as i64 => {
+                WasmValue::I64(i) if i32::try_from(*i).is_ok() => {
                     WasmValue::I32(*i as i32)
                 }
                 other => other.clone(),

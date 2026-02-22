@@ -64,6 +64,7 @@ pub struct RedisModuleCtx {
     /// Reply buffer accumulated by reply functions
     reply: Vec<ReplyValue>,
     /// Whether the context has been marked as blocked
+    #[allow(dead_code)] // Planned for v0.2 — stored for blocking command support
     blocked: bool,
 }
 

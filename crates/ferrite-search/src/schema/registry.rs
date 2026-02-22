@@ -15,6 +15,7 @@ pub struct SchemaRegistry {
     /// Key pattern to schema mapping
     pattern_mapping: DashMap<String, String>,
     /// Configuration
+    #[allow(dead_code)] // Planned for v0.2 — stored for schema registry configuration access
     config: SchemaConfig,
 }
 

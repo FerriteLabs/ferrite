@@ -410,6 +410,7 @@ pub struct PrivacyEngine {
     /// Privacy audit log
     audit_log: Vec<PrivacyAuditEntry>,
     /// Enabled regulations
+    #[allow(dead_code)] // Planned for v0.2 — stored for regulation-specific compliance checks
     regulations: Vec<PrivacyRegulation>,
 }
 

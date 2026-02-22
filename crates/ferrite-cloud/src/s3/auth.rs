@@ -163,7 +163,7 @@ impl S3Auth {
             .unwrap_or_default()
             .as_secs();
 
-        let _expiry = now + expires_in;
+        let _ = now + expires_in;
         let date = format_date(now);
 
         // Simplified presigned URL format

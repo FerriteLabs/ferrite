@@ -271,6 +271,7 @@ pub fn bitpos(
             let len = data.len();
             let has_range = start.is_some() || end.is_some();
 
+            #[allow(clippy::branches_sharing_code)]
             if bit_mode {
                 // BIT mode - start/end are bit indices
                 let bit_len = len * 8;

@@ -520,7 +520,7 @@ pub struct BulkheadPermit<'a> {
     bulkhead: &'a Bulkhead,
 }
 
-impl<'a> Drop for BulkheadPermit<'a> {
+impl Drop for BulkheadPermit<'_> {
     fn drop(&mut self) {
         self.bulkhead.release();
     }

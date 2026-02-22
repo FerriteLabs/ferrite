@@ -163,6 +163,7 @@ impl QueryExecutor {
     }
 
     /// Convert query Value to storage Value
+    #[allow(dead_code)] // Planned for v0.2 — used for query result materialization
     fn query_value_to_storage(&self, value: &Value) -> StorageValue {
         match value {
             Value::String(s) => StorageValue::String(Bytes::from(s.clone())),

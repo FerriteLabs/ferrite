@@ -1352,7 +1352,7 @@ impl CommandRegistry {
     #[allow(dead_code)]
     pub fn get_all_names(&self) -> Vec<&'static str> {
         let mut names: Vec<_> = self.commands.keys().copied().collect();
-        names.sort();
+        names.sort_unstable();
         names
     }
 

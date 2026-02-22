@@ -257,7 +257,7 @@ fn apply_transform(
             serde_json::Value::String(s) => Ok(serde_json::Value::String(s.clone())),
             serde_json::Value::Number(n) => Ok(serde_json::Value::String(n.to_string())),
             serde_json::Value::Bool(b) => Ok(serde_json::Value::String(b.to_string())),
-            serde_json::Value::Null => Ok(serde_json::Value::String("".to_string())),
+            serde_json::Value::Null => Ok(serde_json::Value::String(String::new())),
             _ => Err(MigrationError::TransformFailed(format!(
                 "Cannot convert {:?} to string",
                 value

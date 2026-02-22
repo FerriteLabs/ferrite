@@ -148,7 +148,7 @@ impl Scorer for BM25Scorer {
     fn idf(&self, doc_freq: u32, total_docs: u32) -> f32 {
         let n = total_docs as f32;
         let df = doc_freq as f32;
-        ((n - df + 0.5) / (df + 0.5) + 1.0).ln()
+        ((n - df + 0.5) / (df + 0.5)).ln_1p()
     }
 
     fn name(&self) -> &str {
@@ -422,14 +422,14 @@ impl Scorer for DfrScorer {
                 let lambda = df / n;
                 // G model: log(1 + lambda) + tfn * log(lambda / (1 + lambda))
                 // Avoids log of negative numbers
-                (1.0 + lambda).ln() + tfn * (lambda / (1.0 + lambda)).ln()
+                (lambda).ln_1p() + tfn * (lambda / (1.0 + lambda)).ln()
             }
             DfrBasicModel::P => {
                 let lambda = df / n;
                 tfn * (tfn / lambda).ln() + (lambda - tfn) * std::f32::consts::E.ln()
             }
             DfrBasicModel::Be => {
-                let _f = df / n;
+                let _ = df / n;
                 -((n + 1.0) / (df + 0.5)).ln()
             }
             DfrBasicModel::I => self.idf(doc_freq, total_docs),

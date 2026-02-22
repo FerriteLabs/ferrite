@@ -394,7 +394,7 @@ impl DataCollector {
                         "cluster_state" => info.state = value.trim().to_string(),
                         "cluster_size" => info.cluster_size = value.parse().unwrap_or(0),
                         "cluster_slots_assigned" => {
-                            info.slots_assigned = value.parse().unwrap_or(0)
+                            info.slots_assigned = value.parse().unwrap_or(0);
                         }
                         "cluster_slots_ok" => info.slots_ok = value.parse().unwrap_or(0),
                         _ => {}

@@ -34,12 +34,16 @@ pub struct EdgeRuntime {
 /// Warm instance for reduced cold-start
 struct WarmInstance {
     /// Instance ID
+    #[allow(dead_code)] // Planned for v0.2 — stored for instance tracking
     id: String,
     /// Function ID
+    #[allow(dead_code)] // Planned for v0.2 — stored for function routing
     function_id: String,
     /// Created at
+    #[allow(dead_code)] // Planned for v0.2 — stored for instance lifecycle management
     created_at: Instant,
     /// Last used
+    #[allow(dead_code)] // Planned for v0.2 — stored for LRU eviction of warm instances
     last_used: Instant,
     /// In use
     in_use: AtomicBool,

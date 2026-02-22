@@ -692,7 +692,7 @@ fn execute_create(
             CreateElement::Node(node_pattern) => {
                 let id = next_vertex_id();
                 let labels = if node_pattern.labels.is_empty() {
-                    vec!["".to_string()]
+                    vec![String::new()]
                 } else {
                     node_pattern.labels.clone()
                 };

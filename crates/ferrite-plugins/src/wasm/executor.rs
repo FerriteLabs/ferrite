@@ -92,10 +92,13 @@ pub struct WasmExecutor {
 /// A cached WASM instance for reuse
 struct CachedInstance {
     /// Last used timestamp
+    #[allow(dead_code)] // Planned for v0.2 — stored for LRU cache eviction
     last_used: Instant,
     /// Number of times used
+    #[allow(dead_code)] // Planned for v0.2 — stored for hot-instance metrics
     use_count: u64,
     /// Memory snapshot (for fast reset)
+    #[allow(dead_code)] // Planned for v0.2 — stored for instance fast-reset
     memory_snapshot: Vec<u8>,
 }
 
@@ -511,6 +514,7 @@ impl Default for WasmExecutor {
 }
 
 /// Builder for WasmExecutor
+#[allow(dead_code)] // Planned for v0.2 — builder pattern for executor configuration
 pub struct WasmExecutorBuilder {
     host_functions: Option<Arc<HostFunctions>>,
     cache_size: usize,
@@ -518,6 +522,7 @@ pub struct WasmExecutorBuilder {
 
 impl WasmExecutorBuilder {
     /// Create a new builder
+    #[allow(dead_code)] // Planned for v0.2 — builder entry point
     pub fn new() -> Self {
         Self {
             host_functions: None,
@@ -526,12 +531,14 @@ impl WasmExecutorBuilder {
     }
 
     /// Set custom host functions
+    #[allow(dead_code)] // Planned for v0.2 — builder method for host functions
     pub fn with_host_functions(mut self, funcs: HostFunctions) -> Self {
         self.host_functions = Some(Arc::new(funcs));
         self
     }
 
     /// Set cache size
+    #[allow(dead_code)] // Planned for v0.2 — builder method for cache size
     pub fn with_cache_size(mut self, size: usize) -> Self {
         self.cache_size = size;
         self
@@ -539,6 +546,7 @@ impl WasmExecutorBuilder {
 
     /// Build the executor (without wasmtime)
     #[cfg(not(feature = "wasm"))]
+    #[allow(dead_code)] // Planned for v0.2 — builder finalizer for WASM executor
     pub fn build(self) -> WasmExecutor {
         WasmExecutor {
             host_functions: self
@@ -551,6 +559,7 @@ impl WasmExecutorBuilder {
 
     /// Build the executor (with wasmtime)
     #[cfg(feature = "wasm")]
+    #[allow(dead_code)] // Planned for v0.2 — builder finalizer for WASM executor (wasmtime)
     pub fn build(self) -> WasmExecutor {
         let mut config = Config::new();
         config.consume_fuel(true);

@@ -819,7 +819,7 @@ pub(crate) fn parse_zmpop(args: &[Frame]) -> Result<Command> {
         return Err(FerriteError::WrongArity("ZMPOP".to_string()));
     }
 
-    let keys: Result<Vec<Bytes>> = args[1..1 + numkeys].iter().map(get_bytes).collect();
+    let keys: Result<Vec<Bytes>> = args[1..=numkeys].iter().map(get_bytes).collect();
     let keys = keys?;
 
     let direction_str = get_string(&args[1 + numkeys])?.to_uppercase();

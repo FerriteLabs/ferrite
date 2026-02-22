@@ -308,6 +308,7 @@ impl ContextAssembler {
     }
 
     /// Format a chunk according to the configured format
+    #[allow(clippy::literal_string_with_formatting_args)]
     fn format_chunk(&self, content: &str, result: &RetrievalResult, index: usize) -> String {
         match &self.config.format {
             ContextFormat::Plain => {
@@ -380,6 +381,7 @@ impl Default for ContextAssembler {
 }
 
 /// Builder for creating context with fluent API
+#[allow(dead_code)] // Planned for v0.2 — builder pattern for RAG context assembly
 pub struct ContextBuilder {
     results: Vec<RetrievalResult>,
     config: ContextConfig,
@@ -389,6 +391,7 @@ pub struct ContextBuilder {
 
 impl ContextBuilder {
     /// Create a new context builder
+    #[allow(dead_code)] // Planned for v0.2 — builder entry point
     pub fn new() -> Self {
         Self {
             results: Vec::new(),
@@ -399,48 +402,56 @@ impl ContextBuilder {
     }
 
     /// Add retrieval results
+    #[allow(dead_code)] // Planned for v0.2 — builder method for retrieval results
     pub fn with_results(mut self, results: Vec<RetrievalResult>) -> Self {
         self.results = results;
         self
     }
 
     /// Set configuration
+    #[allow(dead_code)] // Planned for v0.2 — builder method for context config
     pub fn with_config(mut self, config: ContextConfig) -> Self {
         self.config = config;
         self
     }
 
     /// Set the user query
+    #[allow(dead_code)] // Planned for v0.2 — builder method for user query
     pub fn with_query(mut self, query: impl Into<String>) -> Self {
         self.query = Some(query.into());
         self
     }
 
     /// Set system prompt
+    #[allow(dead_code)] // Planned for v0.2 — builder method for system prompt
     pub fn with_system_prompt(mut self, prompt: impl Into<String>) -> Self {
         self.system_prompt = Some(prompt.into());
         self
     }
 
     /// Set max tokens
+    #[allow(dead_code)] // Planned for v0.2 — builder method for token limits
     pub fn max_tokens(mut self, tokens: usize) -> Self {
         self.config.max_tokens = tokens;
         self
     }
 
     /// Set context format
+    #[allow(dead_code)] // Planned for v0.2 — builder method for output format
     pub fn format(mut self, format: ContextFormat) -> Self {
         self.config.format = format;
         self
     }
 
     /// Build the context
+    #[allow(dead_code)] // Planned for v0.2 — builder finalizer
     pub fn build(self) -> RetrievalContext {
         let assembler = ContextAssembler::new(self.config);
         assembler.assemble(self.results)
     }
 
     /// Build a full prompt with context
+    #[allow(dead_code)] // Planned for v0.2 — builder method for full prompt generation
     pub fn build_prompt(self) -> String {
         // Extract values before consuming self in build()
         let system_prompt = self.system_prompt.clone();

@@ -188,12 +188,14 @@ struct PredictionModel {
     /// Trend component
     trend: f64,
     /// Seasonal components (if detected)
+    #[allow(dead_code)] // Planned for v0.2 — stored for seasonal pattern prediction
     seasonal: Vec<f64>,
     /// Smoothing parameter for level
     alpha: f64,
     /// Smoothing parameter for trend
     beta: f64,
     /// Smoothing parameter for seasonal
+    #[allow(dead_code)] // Planned for v0.2 — stored for seasonal smoothing computation
     gamma: f64,
     /// Whether the model is initialized
     initialized: bool,

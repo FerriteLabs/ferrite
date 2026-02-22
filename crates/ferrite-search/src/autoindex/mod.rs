@@ -384,18 +384,7 @@ impl AutoIndexEngine {
 
     /// Get current recommendations
     pub fn get_recommendations(&self) -> Vec<IndexRecommendation> {
-        // Check if analysis is needed
-        let should_analyze = {
-            let last = self.last_analysis.read();
-            last.elapsed() > Duration::from_secs(self.config.analysis_interval_secs)
-        };
-
-        if should_analyze {
-            self.analyze()
-        } else {
-            // Return cached recommendations from last analysis
-            self.analyze() // For simplicity, just re-analyze
-        }
+        self.analyze()
     }
 
     /// Apply a single recommendation

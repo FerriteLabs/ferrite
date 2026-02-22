@@ -24,6 +24,7 @@ pub struct DependencyConflict {
 }
 
 /// Resolves dependencies for a set of plugins using topological sort.
+#[allow(clippy::implicit_hasher)]
 pub fn resolve_dependencies(
     target: &str,
     dependencies: &HashMap<String, Vec<PluginDependency>>,

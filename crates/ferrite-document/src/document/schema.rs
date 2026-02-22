@@ -361,7 +361,7 @@ fn validate_array(
         }
     }
 
-    if let Some(Value::Bool(true)) = schema.get("uniqueItems") {
+    if matches!(schema.get("uniqueItems"), Some(Value::Bool(true))) {
         let mut seen = std::collections::HashSet::new();
         for (i, item) in arr.iter().enumerate() {
             let key = serde_json::to_string(item).unwrap_or_default();

@@ -356,6 +356,7 @@ impl KafkaBridge {
 
 /// Serializes CDC events to various formats
 pub struct EventSerializer {
+    #[allow(dead_code)] // Planned for v0.2 — stored for format-aware serialization
     format: SchemaFormat,
 }
 

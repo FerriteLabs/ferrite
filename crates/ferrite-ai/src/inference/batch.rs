@@ -77,6 +77,7 @@ impl BatchConfig {
 /// A pending batch request
 struct PendingRequest {
     input: InferenceInput,
+    #[allow(dead_code)] // Planned for v0.2 — stored for batch request timeout tracking
     received_at: Instant,
 }
 

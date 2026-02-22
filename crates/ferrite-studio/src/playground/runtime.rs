@@ -1013,7 +1013,7 @@ impl PlaygroundRuntime {
         }
     }
 
-    fn cmd_expire(&mut self, args: &[String]) -> Result<ExecutionResult, PlaygroundError> {
+    fn cmd_expire(&self, args: &[String]) -> Result<ExecutionResult, PlaygroundError> {
         if args.len() < 2 {
             return Ok(ExecutionResult::error(
                 "wrong number of arguments for 'expire' command",

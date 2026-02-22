@@ -66,6 +66,7 @@ struct ClassificationEntry {
     classification: DataClassification,
     labels: Vec<DataLabel>,
     sensitivity: Option<Sensitivity>,
+    #[allow(dead_code)] // Planned for v0.2 — stored for classification audit trail
     updated_at: u64,
 }
 

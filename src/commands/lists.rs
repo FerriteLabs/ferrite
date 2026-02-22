@@ -278,45 +278,49 @@ pub fn lrem(store: &Arc<Store>, db: u8, key: &Bytes, count: i64, value: &Bytes) 
 
     let mut removed = 0;
 
-    if count > 0 {
-        // Remove first N occurrences from head
-        let mut to_remove = count as usize;
-        list.retain(|v| {
-            if to_remove > 0 && v == value {
-                to_remove -= 1;
-                removed += 1;
-                false
-            } else {
-                true
-            }
-        });
-    } else if count < 0 {
-        // Remove first N occurrences from tail (iterate backwards)
-        let mut to_remove = (-count) as usize;
-        let len = list.len();
-        let mut indices_to_remove = Vec::new();
+    match count.cmp(&0) {
+        std::cmp::Ordering::Greater => {
+            // Remove first N occurrences from head
+            let mut to_remove = count as usize;
+            list.retain(|v| {
+                if to_remove > 0 && v == value {
+                    to_remove -= 1;
+                    removed += 1;
+                    false
+                } else {
+                    true
+                }
+            });
+        }
+        std::cmp::Ordering::Less => {
+            // Remove first N occurrences from tail (iterate backwards)
+            let mut to_remove = (-count) as usize;
+            let len = list.len();
+            let mut indices_to_remove = Vec::new();
 
-        for i in (0..len).rev() {
-            if to_remove > 0 && list[i] == *value {
-                indices_to_remove.push(i);
-                to_remove -= 1;
+            for i in (0..len).rev() {
+                if to_remove > 0 && list[i] == *value {
+                    indices_to_remove.push(i);
+                    to_remove -= 1;
+                }
+            }
+
+            for idx in indices_to_remove {
+                list.remove(idx);
+                removed += 1;
             }
         }
-
-        for idx in indices_to_remove {
-            list.remove(idx);
-            removed += 1;
+        std::cmp::Ordering::Equal => {
+            // Remove all occurrences
+            list.retain(|v| {
+                if v == value {
+                    removed += 1;
+                    false
+                } else {
+                    true
+                }
+            });
         }
-    } else {
-        // Remove all occurrences
-        list.retain(|v| {
-            if v == value {
-                removed += 1;
-                false
-            } else {
-                true
-            }
-        });
     }
 
     if list.is_empty() {
@@ -456,7 +460,7 @@ pub fn lmove(
     match whereto {
         ListDirection::Left => dest_list.push_front(element.clone()),
         ListDirection::Right => dest_list.push_back(element.clone()),
-    };
+    }
 
     // Update storage
     if source == destination {

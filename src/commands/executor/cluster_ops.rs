@@ -503,7 +503,7 @@ total_cluster_links_buffer_limit_exceeded:0";
                 "ERR wrong number of arguments for 'cluster|replicate' command",
             );
         }
-        let _primary_id = &args[0];
+        let _ = &args[0];
         // In a full implementation: configure this node as replica of primary_id
         Frame::simple("OK")
     }

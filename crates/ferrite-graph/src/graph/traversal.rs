@@ -488,7 +488,7 @@ impl<'a> BfsTraversal<'a> {
     }
 }
 
-impl<'a> Iterator for BfsTraversal<'a> {
+impl Iterator for BfsTraversal<'_> {
     type Item = (VertexId, usize);
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -538,7 +538,7 @@ impl<'a> DfsTraversal<'a> {
     }
 }
 
-impl<'a> Iterator for DfsTraversal<'a> {
+impl Iterator for DfsTraversal<'_> {
     type Item = (VertexId, usize);
 
     fn next(&mut self) -> Option<Self::Item> {

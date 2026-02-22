@@ -485,6 +485,7 @@ pub struct Graph {
     /// Graph storage
     storage: Arc<RwLock<GraphStorage>>,
     /// Configuration
+    #[allow(dead_code)] // Planned for v0.2 — stored for future graph config support
     config: GraphConfig,
     /// Metrics
     metrics: GraphMetrics,

@@ -106,11 +106,12 @@ pub(crate) fn parse_xrange(args: &[Frame]) -> Result<Command> {
     let start = get_string(&args[1])?;
     let end = get_string(&args[2])?;
 
-    let mut count = None;
-    if args.len() >= 5
+    let count = if args.len() >= 5
         && get_string(&args[3])?.to_uppercase() == "COUNT" {
-            count = Some(get_int(&args[4])? as usize);
-        }
+            Some(get_int(&args[4])? as usize)
+        } else {
+            None
+        };
 
     Ok(Command::XRange {
         key,
@@ -129,11 +130,12 @@ pub(crate) fn parse_xrevrange(args: &[Frame]) -> Result<Command> {
     let end = get_string(&args[1])?;
     let start = get_string(&args[2])?;
 
-    let mut count = None;
-    if args.len() >= 5
+    let count = if args.len() >= 5
         && get_string(&args[3])?.to_uppercase() == "COUNT" {
-            count = Some(get_int(&args[4])? as usize);
-        }
+            Some(get_int(&args[4])? as usize)
+        } else {
+            None
+        };
 
     Ok(Command::XRevRange {
         key,

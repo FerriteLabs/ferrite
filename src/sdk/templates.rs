@@ -271,7 +271,7 @@ impl TemplateEngine {
             "    result := c.rdb.Do(ctx, \"{}\"{})\n    return result.{}(), result.Err()\n",
             cmd.name,
             if args.is_empty() {
-                "".to_string()
+                String::new()
             } else {
                 format!(", {}", args.join(", "))
             },
@@ -353,12 +353,13 @@ impl TemplateEngine {
             "        redis::cmd(\"{}\"){}.query_async(&mut self.conn.clone()).await\n",
             cmd.name,
             if args.is_empty() {
-                "".to_string()
+                String::new()
             } else {
-                args.iter()
-                    .map(|a| format!(".arg({})", a))
-                    .collect::<Vec<_>>()
-                    .join("")
+                let mut result = String::new();
+                for a in &args {
+                    result.push_str(&format!(".arg({})", a));
+                }
+                result
             }
         )
     }

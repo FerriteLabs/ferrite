@@ -255,6 +255,7 @@ impl std::ops::BitOr for AccessFlags {
 #[derive(Debug)]
 pub struct MemoryRegion {
     /// Unique ID
+    #[allow(dead_code)] // Planned for v0.2 — stored for memory region identification
     id: u64,
     /// Start address
     addr: *mut u8,
@@ -265,8 +266,10 @@ pub struct MemoryRegion {
     /// Remote key for remote access
     rkey: u32,
     /// Access flags
+    #[allow(dead_code)] // Planned for v0.2 — stored for memory region access control
     access: AccessFlags,
     /// Whether this is a registered region
+    #[allow(dead_code)] // Planned for v0.2 — stored for deregistration tracking
     registered: bool,
     /// Pool reference for deregistration
     pool_id: Option<u64>,
@@ -710,6 +713,7 @@ pub struct CompletionQueue {
     /// CQ identifier
     id: u32,
     /// CQ size
+    #[allow(dead_code)] // Planned for v0.2 — stored for CQ capacity tracking
     size: u32,
     /// Completion channel
     completions: Mutex<Vec<WorkCompletion>>,
@@ -866,8 +870,10 @@ pub struct RdmaConnection {
     /// Queue pair
     qp: Arc<QueuePair>,
     /// Local connection info
+    #[allow(dead_code)] // Planned for v0.2 — stored for RDMA connection diagnostics
     local_info: ConnectionInfo,
     /// Remote connection info
+    #[allow(dead_code)] // Planned for v0.2 — stored for RDMA connection diagnostics
     remote_info: ConnectionInfo,
     /// Work request ID counter
     next_wr_id: AtomicU64,

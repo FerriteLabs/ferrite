@@ -8,6 +8,7 @@ use super::document::DocumentId;
 
 /// Index entry for a single document
 #[derive(Debug, Clone)]
+#[allow(dead_code)] // Planned for v0.2 — will be used in document index lookups
 struct IndexEntry {
     doc_id: DocumentId,
 }

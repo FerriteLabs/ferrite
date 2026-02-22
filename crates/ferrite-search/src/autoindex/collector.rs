@@ -110,7 +110,7 @@ impl QueryPattern {
     /// Calculate hotness score (for prioritization)
     pub fn hotness_score(&self) -> f64 {
         let recency_factor = 1.0; // Would decay based on last_seen
-        let frequency_factor = (self.frequency_per_minute + 1.0).ln();
+        let frequency_factor = self.frequency_per_minute.ln_1p();
         let latency_factor = (self.avg_latency_us as f64 / 1000.0).max(1.0); // Higher latency = more benefit
 
         recency_factor * frequency_factor * latency_factor

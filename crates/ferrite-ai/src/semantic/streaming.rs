@@ -402,7 +402,7 @@ impl StreamingEmbedder {
     }
 
     /// Create an embedding stream for multiple texts
-    pub fn stream<'a>(&'a self, texts: Vec<String>) -> EmbeddingStream<'a> {
+    pub fn stream(&self, texts: Vec<String>) -> EmbeddingStream<'_> {
         EmbeddingStream::new(self, texts)
     }
 
@@ -512,6 +512,7 @@ impl BatchProcessor {
 
                     // Sort by priority if enabled
                     if self.config.enable_priority {
+                        #[allow(clippy::iter_with_drain)]
                         let mut vec: Vec<_> = pending.drain(..).collect();
                         vec.sort_by(|a, b| b.priority.cmp(&a.priority));
                         pending.extend(vec);
@@ -682,7 +683,7 @@ impl<'a> EmbeddingStream<'a> {
         };
 
         match self.embedder.request_tx.send(request).await {
-            Ok(_) => match response_rx.await {
+            Ok(()) => match response_rx.await {
                 Ok(result) => Some(result),
                 Err(_) => Some(Err(SemanticError::Internal("Channel closed".to_string()))),
             },
