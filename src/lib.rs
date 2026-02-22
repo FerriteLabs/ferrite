@@ -1,6 +1,5 @@
-// Main crate under active development — dead_code suppressed at crate level
-// TODO: Remove when API surface stabilizes for v1.0
-#![allow(dead_code)]
+// Main crate under active development — using targeted dead_code annotations
+// #![allow(dead_code)] -- removed, using targeted annotations
 
 //! # Ferrite
 //!

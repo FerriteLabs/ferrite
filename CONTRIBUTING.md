@@ -216,6 +216,15 @@ cargo build
 cargo test
 ```
 
+### Using Nix (recommended for reproducible environment)
+
+If you have [Nix](https://nixos.org/) with flakes enabled:
+
+```bash
+nix develop    # Enters a shell with the exact Rust toolchain + all dependencies
+cargo build    # Everything just works
+```
+
 ### Development Workflow
 
 ```bash

@@ -1,6 +1,7 @@
 //! Ferrite - A high-performance, tiered-storage key-value store
 //!
 //! This is the main entry point for the Ferrite server.
+#![allow(clippy::print_stdout, clippy::print_stderr)]
 
 use std::fs;
 use std::io::Write;

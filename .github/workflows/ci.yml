@@ -112,6 +112,21 @@ jobs:
           shared-key: msrv
       - run: cargo check --workspace
 
+  # ── Documentation tests ────────────────────────────────────────────────────
+  doctest:
+    name: Documentation Tests
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.any-rust == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: doctest
+      - name: Run doc tests
+        run: cargo test --doc --all-features
+
   # ── Test (runs on changed crates) ───────────────────────────────────────────
   test:
     name: Test (${{ matrix.os }})

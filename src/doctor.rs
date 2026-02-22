@@ -71,6 +71,7 @@ pub fn run_diagnostics(config_path: Option<&str>, port: u16) -> Vec<CheckResult>
 }
 
 /// Print diagnostics report to stdout
+#[allow(clippy::print_stdout)]
 pub fn print_report(results: &[CheckResult]) {
     println!("\n🔬 Ferrite Doctor — System Diagnostics\n");
     println!("{}", "=".repeat(60));

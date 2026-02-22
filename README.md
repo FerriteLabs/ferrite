@@ -1,5 +1,7 @@
 # Ferrite
 
+[English](README.md) | [简体中文](README.zh-CN.md) | [日本語](README.ja-JP.md) | [한국어](README.ko-KR.md)
+
 A high-performance, tiered-storage key-value store designed as a drop-in Redis replacement. Built in Rust with epoch-based concurrency and io_uring-first persistence.
 
 **The speed of memory, the capacity of disk, the economics of cloud.**
