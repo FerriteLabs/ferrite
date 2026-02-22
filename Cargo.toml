@@ -42,6 +42,10 @@ unused_macros = "allow"
 uninlined_format_args = "allow"
 unwrap_used = "deny"
 
+[workspace.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
 [workspace.dependencies]
 # ── Workspace crates ──────────────────────────────────────────────────────────
 ferrite-core = { path = "crates/ferrite-core" }
