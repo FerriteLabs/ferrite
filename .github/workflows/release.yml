@@ -8,6 +8,8 @@ on:
 permissions:
   contents: write
   packages: write
+  id-token: write
+  attestations: write
 
 env:
   CARGO_TERM_COLOR: always
@@ -115,6 +117,25 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Generate SBOM for release binaries
+        uses: anchore/sbom-action@v0
+        with:
+          path: release-assets/
+          format: spdx-json
+          output-file: release-assets/sbom-spdx.json
+
+      - name: Upload SBOM to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-assets/sbom-spdx.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate SLSA provenance attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: release-assets/*.tar.gz
+
   # ── Build and push Docker image ─────────────────────────────────────────────
   docker:
     name: Docker Image
@@ -142,6 +163,7 @@ jobs:
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
+        id: docker-build
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -153,6 +175,16 @@ jobs:
           labels: |
             org.opencontainers.image.version=${{ steps.meta.outputs.version }}
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          provenance: true
+          sbom: true
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign container image with Cosign (keyless OIDC)
+        run: |
+          cosign sign --yes \
+            "ghcr.io/${{ github.repository }}@${{ steps.docker-build.outputs.digest }}"
 
   # ── Update Homebrew tap ─────────────────────────────────────────────────────
   homebrew:
