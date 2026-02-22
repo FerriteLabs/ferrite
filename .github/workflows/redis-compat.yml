@@ -1,0 +1,296 @@
+name: Redis Compatibility
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/commands/**'
+      - 'src/server/**'
+      - 'crates/ferrite-core/src/protocol/**'
+      - 'crates/ferrite-core/src/storage/**'
+      - 'tests/redis_compatibility.rs'
+      - 'scripts/redis_compat_report.sh'
+      - 'scripts/run-redis-tcl-tests.sh'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/commands/**'
+      - 'src/server/**'
+      - 'crates/ferrite-core/src/protocol/**'
+      - 'crates/ferrite-core/src/storage/**'
+      - 'tests/redis_compatibility.rs'
+      - 'scripts/redis_compat_report.sh'
+      - 'scripts/run-redis-tcl-tests.sh'
+  schedule:
+    - cron: '0 6 * * 1'  # Every Monday at 06:00 UTC
+
+env:
+  CARGO_TERM_COLOR: always
+
+concurrency:
+  group: redis-compat-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compat-unit-tests:
+    name: Compatibility Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: redis-compat
+
+      - name: Run Redis compatibility unit tests
+        run: cargo test --test redis_compatibility --release 2>&1 | tee compat-test-output.txt
+
+      - name: Generate compatibility report
+        if: always()
+        run: |
+          chmod +x scripts/redis_compat_report.sh
+          REPORT_FILE=redis-compat-report.md CARGO_ARGS="--release" \
+            ./scripts/redis_compat_report.sh || true
+
+      - name: Upload compatibility report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: redis-compat-report
+          path: redis-compat-report.md
+          retention-days: 90
+
+      - name: Extract compatibility percentage
+        if: always()
+        id: compat
+        run: |
+          if [[ -f redis-compat-report.md ]]; then
+            PCT=$(grep -oE 'Pass Rate\*\* \| \*\*[0-9]+%' redis-compat-report.md | grep -oE '[0-9]+' || echo "0")
+            echo "percentage=${PCT}" >> "$GITHUB_OUTPUT"
+            echo "::notice::Redis compatibility: ${PCT}%"
+          else
+            echo "percentage=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Post PR comment with compatibility results
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let body = '## 🔴 Redis Compatibility Report\n\nReport generation failed.';
+            try {
+              body = fs.readFileSync('redis-compat-report.md', 'utf8');
+            } catch (e) {}
+
+            // Find and update existing comment or create new one
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const marker = '<!-- redis-compat-report -->';
+            const existing = comments.find(c => c.body.includes(marker));
+            const fullBody = marker + '\n' + body;
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body: fullBody,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: fullBody,
+              });
+            }
+
+  redis-compat:
+    name: Redis Compatibility Integration
+    runs-on: ubuntu-latest
+    needs: compat-unit-tests
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: redis-compat
+
+      - name: Build Ferrite
+        run: cargo build --release --bin ferrite --bin ferrite-cli
+
+      - name: Start Ferrite server
+        run: |
+          ./target/release/ferrite --port 6379 &
+          FERRITE_PID=$!
+          echo "FERRITE_PID=${FERRITE_PID}" >> $GITHUB_ENV
+          sleep 2
+          # Verify server is running
+          ./target/release/ferrite-cli PING
+
+      - name: Install Redis tools
+        run: sudo apt-get update && sudo apt-get install -y redis-tools
+
+      - name: Test basic Redis compatibility
+        run: |
+          echo "=== Testing string commands ==="
+          redis-cli -p 6379 SET testkey "hello"
+          redis-cli -p 6379 GET testkey | grep -q "hello"
+
+          echo "=== Testing list commands ==="
+          redis-cli -p 6379 RPUSH mylist a b c
+          redis-cli -p 6379 LLEN mylist | grep -q "3"
+
+          echo "=== Testing hash commands ==="
+          redis-cli -p 6379 HSET myhash field1 val1 field2 val2
+          redis-cli -p 6379 HGET myhash field1 | grep -q "val1"
+
+          echo "=== Testing set commands ==="
+          redis-cli -p 6379 SADD myset a b c
+          redis-cli -p 6379 SCARD myset | grep -q "3"
+
+          echo "=== Testing sorted set commands ==="
+          redis-cli -p 6379 ZADD myzset 1 a 2 b 3 c
+          redis-cli -p 6379 ZCARD myzset | grep -q "3"
+
+          echo "=== Testing expiry ==="
+          redis-cli -p 6379 SET expkey "temporary" EX 10
+          redis-cli -p 6379 TTL expkey | grep -q -v "\-1"
+
+          echo "=== Testing transactions ==="
+          redis-cli -p 6379 MULTI
+          redis-cli -p 6379 EXEC
+
+          echo "=== Testing INFO ==="
+          redis-cli -p 6379 INFO server | head -5
+
+          echo "All Redis compatibility tests passed!"
+
+      - name: Run redis-benchmark against Ferrite
+        run: |
+          redis-benchmark -p 6379 -t get,set -n 10000 -c 10 -q
+
+      - name: Run redis-benchmark against Redis (baseline)
+        run: |
+          redis-benchmark -p 6380 -t get,set -n 10000 -c 10 -q
+
+      - name: Generate live compatibility report
+        if: always()
+        run: |
+          REPORT_FILE=redis-live-compat-report.md \
+            ./scripts/redis-compat-report.sh || true
+
+      - name: Upload live compatibility report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: redis-live-compat-report
+          path: redis-live-compat-report.md
+          retention-days: 90
+
+      - name: Run Redis TCL compatibility smoke tests
+        run: |
+          FERRITE_BIN=./target/release/ferrite FERRITE_PORT=6381 ./scripts/run-redis-tcl-tests.sh || true
+
+      - name: Stop Ferrite
+        if: always()
+        run: |
+          if [ -n "${FERRITE_PID}" ]; then
+            kill ${FERRITE_PID} 2>/dev/null || true
+          fi
+
+  tcl-smoke-tests:
+    name: Redis TCL Smoke Tests
+    runs-on: ubuntu-latest
+    needs: [compat-unit-tests]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tcl8.6 tclsh pkg-config libssl-dev redis-tools
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-compat-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build Ferrite
+        run: cargo build --release
+
+      - name: Run TCL smoke tests
+        run: |
+          chmod +x scripts/run-redis-tcl-tests.sh
+          ./scripts/run-redis-tcl-tests.sh --output-dir tcl-results
+        env:
+          FERRITE_BIN: target/release/ferrite
+
+      - name: Parse and report results
+        if: always()
+        run: |
+          if [ -f tcl-results/summary.md ]; then
+            echo "## Redis TCL Test Results" >> $GITHUB_STEP_SUMMARY
+            cat tcl-results/summary.md >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let body = '## 🔴 Redis TCL Smoke Test Results\n\n';
+            try {
+              body += fs.readFileSync('tcl-results/summary.md', 'utf8');
+            } catch(e) {
+              body += 'No results file generated.\n';
+            }
+            const marker = '<!-- redis-tcl-smoke-report -->';
+            const fullBody = marker + '\n' + body;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body: fullBody,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: fullBody,
+              });
+            }

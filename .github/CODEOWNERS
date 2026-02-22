@@ -1,0 +1,29 @@
+# Default owners for everything
+* @josedab
+
+# Core engine
+/crates/ferrite-core/ @josedab
+/src/server/ @josedab
+/src/replication/ @josedab
+
+# Extension crates
+/crates/ferrite-ai/ @josedab
+/crates/ferrite-search/ @josedab
+/crates/ferrite-graph/ @josedab
+/crates/ferrite-timeseries/ @josedab
+/crates/ferrite-document/ @josedab
+/crates/ferrite-streaming/ @josedab
+/crates/ferrite-cloud/ @josedab
+/crates/ferrite-plugins/ @josedab
+/crates/ferrite-k8s/ @josedab
+/crates/ferrite-enterprise/ @josedab
+/crates/ferrite-studio/ @josedab
+
+# CI/CD and infrastructure
+/.github/ @josedab
+/Cargo.toml @josedab
+/Cargo.lock @josedab
+
+# Documentation
+/docs/ @josedab
+/README.md @josedab

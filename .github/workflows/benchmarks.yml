@@ -1,0 +1,71 @@
+name: Benchmarks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'crates/ferrite-core/src/storage/**'
+      - 'benches/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'crates/ferrite-core/src/storage/**'
+      - 'benches/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+concurrency:
+  group: bench-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  benchmark:
+    name: Performance Benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: bench
+
+      - name: Run throughput benchmarks
+        run: cargo bench --bench throughput -- --output-format bencher | tee throughput-output.txt
+
+      - name: Run latency benchmarks
+        run: cargo bench --bench latency -- --output-format bencher | tee latency-output.txt
+
+      - name: Combine benchmark results
+        run: cat throughput-output.txt latency-output.txt > combined-output.txt
+
+      - name: Store benchmark results
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: Ferrite Benchmarks
+          tool: 'cargo'
+          output-file-path: combined-output.txt
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # On main: update the benchmark data
+          auto-push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          # On PRs: comment with comparison
+          comment-on-alert: true
+          alert-threshold: '120%'
+          comment-always: ${{ github.event_name == 'pull_request' }}
+          fail-on-alert: false
+          alert-comment-cc-users: '@josedab'
+          # Store results in gh-pages branch
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: dev/bench

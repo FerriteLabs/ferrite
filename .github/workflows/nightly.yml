@@ -1,0 +1,58 @@
+name: Nightly Full Test Suite
+
+on:
+  schedule:
+    # Run at 03:00 UTC every day
+    - cron: '0 3 * * *'
+  workflow_dispatch: # Allow manual triggering
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  full-test:
+    name: Full Workspace Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: nightly-${{ matrix.os }}
+
+      - name: Run full workspace tests (all features)
+        run: cargo test --workspace --all-features
+        timeout-minutes: 30
+
+      - name: Run clippy (all features)
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+        timeout-minutes: 15
+
+  msrv-check:
+    name: MSRV Verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install MSRV toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.80"
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: nightly-msrv
+
+      - name: Check MSRV
+        run: cargo check --workspace
+        timeout-minutes: 15

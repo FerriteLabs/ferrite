@@ -1,0 +1,21 @@
+title: "[Show & Tell] "
+labels: ["show-and-tell"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Show off something you built with Ferrite — benchmarks, integrations, deployments, creative uses.
+  - type: textarea
+    id: description
+    attributes:
+      label: What did you build?
+      description: Tell us about your project, setup, or experiment.
+    validations:
+      required: true
+  - type: textarea
+    id: links
+    attributes:
+      label: Links / Code
+      description: Any relevant links, repos, or code snippets.
+    validations:
+      required: false

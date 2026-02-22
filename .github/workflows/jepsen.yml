@@ -1,0 +1,149 @@
+# NOTE: The "Consistency Gate" job should be added as a Required Status Check
+# in GitHub branch protection settings for the 'main' branch.
+# Settings → Branches → main → Require status checks → Add "Consistency Gate"
+
+name: Jepsen Consistency Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/replication/**'
+      - 'src/commands/handlers/cluster.rs'
+      - 'crates/ferrite-core/src/cluster/**'
+      - 'crates/ferrite-core/src/storage/**'
+      - 'tests/jepsen_*'
+  pull_request:
+    paths:
+      - 'src/replication/**'
+      - 'src/commands/handlers/cluster.rs'
+      - 'crates/ferrite-core/src/cluster/**'
+      - 'crates/ferrite-core/src/storage/**'
+      - 'tests/jepsen_*'
+  schedule:
+    - cron: '0 4 * * *'  # Nightly at 4 AM UTC
+
+concurrency:
+  group: jepsen-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linearizability:
+    name: Linearizability Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: jepsen-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run Jepsen linearizability tests
+        run: |
+          cargo test --test jepsen_linearizability --release -- --nocapture
+        env:
+          RUST_BACKTRACE: 1
+          RUST_LOG: ferrite=debug
+
+      - name: Report results
+        if: always()
+        run: |
+          echo "## Jepsen Linearizability Results" >> $GITHUB_STEP_SUMMARY
+          echo "Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+
+  cluster-failover:
+    name: Cluster Failover Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: jepsen-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run cluster failover tests
+        run: |
+          cargo test --test cluster_failover --release -- --nocapture
+        env:
+          RUST_BACKTRACE: 1
+          RUST_LOG: ferrite=debug
+
+      - name: Report results
+        if: always()
+        run: |
+          echo "## Cluster Failover Results" >> $GITHUB_STEP_SUMMARY
+          echo "Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+
+  replication-failover:
+    name: Replication Failover Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: jepsen-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run replication failover tests
+        run: |
+          cargo test --test replication_failover --release -- --nocapture
+        env:
+          RUST_BACKTRACE: 1
+          RUST_LOG: ferrite=debug
+
+      - name: Report results
+        if: always()
+        run: |
+          echo "## Replication Failover Results" >> $GITHUB_STEP_SUMMARY
+          echo "Status: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+
+  gate:
+    name: Consistency Gate
+    runs-on: ubuntu-latest
+    needs: [linearizability, cluster-failover, replication-failover]
+    if: always()
+    steps:
+      - name: Check all consistency tests passed
+        run: |
+          echo "Linearizability: ${{ needs.linearizability.result }}"
+          echo "Cluster Failover: ${{ needs.cluster-failover.result }}"
+          echo "Replication Failover: ${{ needs.replication-failover.result }}"
+
+          if [ "${{ needs.linearizability.result }}" != "success" ] || \
+             [ "${{ needs.cluster-failover.result }}" != "success" ] || \
+             [ "${{ needs.replication-failover.result }}" != "success" ]; then
+            echo "::error::One or more consistency tests failed. This PR cannot be merged."
+            exit 1
+          fi
+
+          echo "✅ All consistency tests passed."

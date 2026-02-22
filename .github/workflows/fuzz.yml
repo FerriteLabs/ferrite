@@ -1,0 +1,72 @@
+name: Fuzz Testing
+
+on:
+  pull_request:
+    paths:
+      - 'crates/ferrite-core/src/protocol/**'
+      - 'crates/ferrite-core/src/config.rs'
+      - 'crates/ferrite-core/src/cluster/**'
+      - 'crates/ferrite-core/src/transaction/**'
+      - 'src/commands/**'
+      - 'fuzz/**'
+  schedule:
+    - cron: '0 4 * * *'  # Nightly at 4am UTC
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+# Cancel in-progress runs for the same PR/branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fuzz:
+    name: Fuzz ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - fuzz_resp_parser
+          - fuzz_resp_roundtrip
+          - fuzz_command_parser
+          - fuzz_config_parser
+          - fuzz_gossip_message
+          - fuzz_wal_record
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust nightly
+        uses: dtolnay/rust-toolchain@nightly
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: fuzz-${{ matrix.target }}
+          workspaces: fuzz
+
+      - name: Install cargo-fuzz
+        run: cargo install cargo-fuzz --locked
+
+      - name: Cache fuzz corpus
+        uses: actions/cache@v4
+        with:
+          path: fuzz/corpus/${{ matrix.target }}
+          key: fuzz-corpus-${{ matrix.target }}-${{ github.sha }}
+          restore-keys: |
+            fuzz-corpus-${{ matrix.target }}-
+
+      - name: Run fuzzer
+        run: |
+          cargo +nightly fuzz run ${{ matrix.target }} -- \
+            -max_total_time=300 \
+            -max_len=65536
+
+      - name: Upload crash artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-crashes-${{ matrix.target }}
+          path: fuzz/artifacts/${{ matrix.target }}/
+          retention-days: 30

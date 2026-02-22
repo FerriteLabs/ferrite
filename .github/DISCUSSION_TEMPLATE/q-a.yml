@@ -1,0 +1,21 @@
+title: "[Q&A] "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ask a question about using Ferrite — configuration, Redis compatibility, deployment, performance tuning, or anything else.
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What would you like to know?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Any relevant details (version, OS, config, error messages).
+    validations:
+      required: false

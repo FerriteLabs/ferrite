@@ -1,0 +1,21 @@
+title: "[Idea] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Share an idea for a new feature, integration, or improvement to Ferrite.
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+      description: Describe your idea and the problem it solves.
+    validations:
+      required: true
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use Case
+      description: How would you or others use this feature?
+    validations:
+      required: false
