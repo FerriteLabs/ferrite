@@ -93,6 +93,10 @@ bench-latency: ## Run latency benchmark
 	@echo "$(BLUE)$(BOLD)Running latency benchmark...$(NC)"
 	@$(CARGO) bench --bench latency
 
+bench-epoch: ## Run epoch reclamation sweep benchmark
+	@echo "$(BLUE)$(BOLD)Running epoch reclamation benchmark...$(NC)"
+	@$(CARGO) bench --bench epoch_sweep
+
 ##@ Code Quality Targets
 
 lint: ## Run clippy linter
