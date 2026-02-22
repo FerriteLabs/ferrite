@@ -4,6 +4,40 @@ Thank you for your interest in contributing to Ferrite! We're building a high-pe
 
 **Tagline**: *The speed of memory, the capacity of disk, the economics of cloud.*
 
+## Your First Contribution (5-Minute Guide)
+
+New here? Follow these steps to make your first PR:
+
+```bash
+# 1. Fork and clone
+gh repo fork ferritelabs/ferrite --clone
+cd ferrite
+
+# 2. Set up
+cargo build            # ~2 min first build
+cargo test --lib       # ~6 sec, should see "986 passed"
+
+# 3. Pick an issue labeled "good first issue"
+#    See: https://github.com/ferritelabs/ferrite/labels/good%20first%20issue
+#    Or browse: docs/good-first-issues.md
+
+# 4. Create a branch and make your changes
+git checkout -b fix/my-improvement
+
+# 5. Verify everything works
+cargo fmt --all --check && cargo clippy --all-targets --all-features -- -D warnings && cargo test --lib
+
+# 6. Commit and push
+git add -A
+git commit -m "fix(scope): description of change"
+git push origin fix/my-improvement
+
+# 7. Open a PR on GitHub
+gh pr create --fill
+```
+
+That's it! A maintainer will review within 3-5 business days. See below for detailed guidelines.
+
 ## Table of Contents
 
 - [Code of Conduct](#code-of-conduct)

@@ -62,9 +62,9 @@ jobs:
           auto-push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           # On PRs: comment with comparison
           comment-on-alert: true
-          alert-threshold: '120%'
+          alert-threshold: '110%'
           comment-always: ${{ github.event_name == 'pull_request' }}
-          fail-on-alert: false
+          fail-on-alert: ${{ github.event_name == 'pull_request' }}
           alert-comment-cc-users: '@josedab'
           # Store results in gh-pages branch
           gh-pages-branch: gh-pages
