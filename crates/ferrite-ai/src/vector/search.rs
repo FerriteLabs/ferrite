@@ -194,10 +194,7 @@ pub fn multi_vector_search(
                 })
                 .collect();
 
-            intersection.sort_by(|a, b| {
-                a.1.partial_cmp(&b.1)
-                    .unwrap_or(std::cmp::Ordering::Equal)
-            });
+            intersection.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
             intersection.truncate(k);
 
             Ok(intersection
@@ -254,9 +251,7 @@ mod tests {
         index.add(VectorId::new("v2"), &[0.0, 1.0, 0.0]).unwrap();
         index.add(VectorId::new("v3"), &[0.0, 0.0, 1.0]).unwrap();
         index.add(VectorId::new("v4"), &[0.7, 0.7, 0.0]).unwrap();
-        index
-            .add(VectorId::new("v5"), &[0.5, 0.5, 0.5])
-            .unwrap();
+        index.add(VectorId::new("v5"), &[0.5, 0.5, 0.5]).unwrap();
         index
     }
 
@@ -370,13 +365,8 @@ mod tests {
         let q2 = [0.0f32, 1.0, 0.0];
         let queries: Vec<&[f32]> = vec![&q1, &q2];
 
-        let results = multi_vector_search(
-            &index,
-            &queries,
-            5,
-            &MultiVectorStrategy::Intersection,
-        )
-        .unwrap();
+        let results =
+            multi_vector_search(&index, &queries, 5, &MultiVectorStrategy::Intersection).unwrap();
         // Intersection should contain vectors near both queries
         // v4 [0.7, 0.7, 0.0] and v5 [0.5, 0.5, 0.5] should be in both top-k lists
         assert!(!results.is_empty());

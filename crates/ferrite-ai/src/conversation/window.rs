@@ -21,8 +21,6 @@ pub enum WindowType {
     Unlimited,
 }
 
-
-
 /// Context window configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WindowConfig {

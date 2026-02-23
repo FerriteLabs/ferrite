@@ -142,7 +142,8 @@ impl CacheStats {
         self.total_queries.fetch_add(1, Ordering::Relaxed);
         // Track similarity as integer * 1000 for atomic add
         let sim_int = (similarity * 1000.0) as u64;
-        self.similarity_sum_x1000.fetch_add(sim_int, Ordering::Relaxed);
+        self.similarity_sum_x1000
+            .fetch_add(sim_int, Ordering::Relaxed);
         self.similarity_count.fetch_add(1, Ordering::Relaxed);
     }
 
@@ -543,7 +544,7 @@ mod tests {
         let cache = EnhancedSemanticCache::new(config);
 
         let emb1 = make_normalized_embedding(0, 64);
-        let emb2 = make_normalized_embedding(1, 64);  // very similar to emb1
+        let emb2 = make_normalized_embedding(1, 64); // very similar to emb1
         let emb3 = make_normalized_embedding(200, 64); // quite different
 
         cache.set(&emb1, Bytes::from("v1"), None);

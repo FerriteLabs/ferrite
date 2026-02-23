@@ -26,8 +26,6 @@ pub enum ConversationState {
     Deleted,
 }
 
-
-
 /// A conversation session containing multiple messages
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Conversation {

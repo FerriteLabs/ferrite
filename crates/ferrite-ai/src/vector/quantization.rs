@@ -238,10 +238,8 @@ impl ProductQuantizer {
             let end = start + subspace_dim;
 
             // Extract subvectors
-            let subvectors: Vec<Vec<f32>> = vectors
-                .iter()
-                .map(|v| v[start..end].to_vec())
-                .collect();
+            let subvectors: Vec<Vec<f32>> =
+                vectors.iter().map(|v| v[start..end].to_vec()).collect();
 
             // Run k-means on this subspace
             let actual_k = num_centroids.min(subvectors.len());

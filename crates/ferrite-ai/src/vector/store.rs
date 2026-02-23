@@ -297,7 +297,10 @@ impl VectorStore {
             .write()
             .insert(name.to_string(), Arc::new(new_index));
 
-        info!("rebuilt index '{}' with config {:?}", name, config.index_type);
+        info!(
+            "rebuilt index '{}' with config {:?}",
+            name, config.index_type
+        );
         Ok(())
     }
 }

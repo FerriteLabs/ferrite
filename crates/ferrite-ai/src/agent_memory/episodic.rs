@@ -126,7 +126,7 @@ impl EpisodicMemory {
         if episodes.len() >= self.max_episodes {
             // Remove the oldest episode
             if !episodes.is_empty() {
-                let oldest_ts = system_time_to_millis(episodes[0].started_at);
+                let _oldest_ts = system_time_to_millis(episodes[0].started_at);
                 episodes.remove(0);
                 // Rebuild index since indices shifted
                 index.clear();

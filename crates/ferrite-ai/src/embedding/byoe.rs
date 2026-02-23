@@ -404,10 +404,7 @@ impl ModelRegistry {
     ) -> Result<(), EmbedError> {
         let loader = {
             let loaders = self.loaders.read();
-            loaders
-                .iter()
-                .find(|l| l.can_load(&source))
-                .cloned()
+            loaders.iter().find(|l| l.can_load(&source)).cloned()
         };
 
         if let Some(loader) = loader {

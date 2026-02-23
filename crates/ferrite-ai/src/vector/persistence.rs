@@ -248,8 +248,8 @@ pub fn deserialize_hnsw<R: Read>(mut r: R) -> Result<HnswIndex, VectorError> {
     }
 
     let mut cursor = &header_data[..];
-    let version = read_u32(&mut cursor)
-        .map_err(|e| VectorError::Internal(format!("read version: {}", e)))?;
+    let version =
+        read_u32(&mut cursor).map_err(|e| VectorError::Internal(format!("read version: {}", e)))?;
     if version != FORMAT_VERSION {
         return Err(VectorError::InvalidConfig(format!(
             "unsupported format version: {} (expected {})",
@@ -292,7 +292,9 @@ pub fn deserialize_hnsw<R: Read>(mut r: R) -> Result<HnswIndex, VectorError> {
     // Read vectors section
     let (tag, vectors_data) = read_section(&mut r)?;
     if tag != SECTION_VECTORS {
-        return Err(VectorError::Internal("expected vectors section".to_string()));
+        return Err(VectorError::Internal(
+            "expected vectors section".to_string(),
+        ));
     }
 
     let mut cursor = &vectors_data[..];
@@ -483,8 +485,7 @@ pub fn recover_hnsw<R: Read>(
                     vec.push(f32::from_le_bytes(fbuf));
                 }
                 if ok {
-                    recovered_vectors
-                        .push((format!("recovered_{}", internal_id), vec));
+                    recovered_vectors.push((format!("recovered_{}", internal_id), vec));
                 }
             }
         }
@@ -596,9 +597,7 @@ mod tests {
         index.add(VectorId::new("v1"), &[1.0, 0.0, 0.0]).unwrap();
         index.add(VectorId::new("v2"), &[0.0, 1.0, 0.0]).unwrap();
         index.add(VectorId::new("v3"), &[0.0, 0.0, 1.0]).unwrap();
-        index
-            .add(VectorId::new("v4"), &[0.7, 0.7, 0.0])
-            .unwrap();
+        index.add(VectorId::new("v4"), &[0.7, 0.7, 0.0]).unwrap();
         index
     }
 
@@ -665,8 +664,7 @@ mod tests {
         serialize_hnsw(&original, &mut buf).unwrap();
 
         // Recovery with correct params
-        let recovered =
-            recover_hnsw(&buf[..], 3, DistanceMetric::Cosine, 4, 50).unwrap();
+        let recovered = recover_hnsw(&buf[..], 3, DistanceMetric::Cosine, 4, 50).unwrap();
         assert_eq!(recovered.len(), original.len());
 
         // Should be searchable

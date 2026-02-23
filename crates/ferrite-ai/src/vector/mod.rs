@@ -189,9 +189,7 @@ pub use flat::FlatIndex;
 pub use hnsw::HnswIndex;
 pub use ivf::IvfIndex;
 pub use persistence::{deserialize_hnsw, recover_hnsw, serialize_hnsw, ChangeTracker};
-pub use quantization::{
-    ProductQuantizer, QuantizationConfig, QuantizationType, ScalarQuantizer,
-};
+pub use quantization::{ProductQuantizer, QuantizationConfig, QuantizationType, ScalarQuantizer};
 pub use search::{
     batch_search, multi_vector_search, range_search, BatchSearchResult, MultiVectorStrategy,
     RangeSearchResult,

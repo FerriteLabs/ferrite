@@ -265,7 +265,8 @@ impl HnswIndex {
             return Ok(());
         }
 
-        let ep_id = (*entry_point).ok_or(SemanticError::Internal("missing entry point".to_string()))?;
+        let ep_id =
+            (*entry_point).ok_or(SemanticError::Internal("missing entry point".to_string()))?;
         let current_max_level = self.max_level.load(Ordering::SeqCst);
 
         // Navigate from top level down to the new node's level

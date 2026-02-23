@@ -54,6 +54,8 @@ mod orchestrate;
 mod pipeline;
 mod rerank;
 mod retrieve;
+/// Document source auto-sync for watching external data sources.
+pub mod source_sync;
 
 pub use chunk::{Chunk, ChunkId, ChunkMetadata, Chunker, ChunkingConfig, ChunkingStrategy};
 pub use context::{ContextAssembler, ContextConfig, RetrievalContext};

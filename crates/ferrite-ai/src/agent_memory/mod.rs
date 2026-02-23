@@ -49,7 +49,7 @@
 //! let memories = store.recall("agent-1", "programming performance", 5)?;
 //! ```
 
-#![allow(dead_code, unused_imports, unused_variables)]
+#![allow(dead_code)]
 pub mod decay;
 pub mod episodic;
 pub mod mcp;

@@ -212,7 +212,8 @@ impl EmbeddingBatchProcessor {
                 request_rx.recv().await
             } else {
                 // Have pending requests, wait with timeout
-                tokio::time::timeout(batch_timeout, request_rx.recv()).await
+                tokio::time::timeout(batch_timeout, request_rx.recv())
+                    .await
                     .unwrap_or_default() // Timeout, process current batch
             };
 

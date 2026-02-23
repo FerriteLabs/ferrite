@@ -131,8 +131,6 @@ pub enum Priority {
     Critical = 3,
 }
 
-
-
 /// Streaming embedding request
 struct StreamRequest {
     text: String,
@@ -496,7 +494,8 @@ impl BatchProcessor {
             let request = if pending.is_empty() {
                 request_rx.recv().await
             } else {
-                tokio::time::timeout(batch_timeout, request_rx.recv()).await
+                tokio::time::timeout(batch_timeout, request_rx.recv())
+                    .await
                     .unwrap_or_default() // Timeout, process batch
             };
 

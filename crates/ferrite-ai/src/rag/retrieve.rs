@@ -268,10 +268,7 @@ impl VectorStore {
 
         {
             let mut doc_chunks = self.doc_chunks.write();
-            doc_chunks
-                .entry(doc_id)
-                .or_default()
-                .push(chunk_id);
+            doc_chunks.entry(doc_id).or_default().push(chunk_id);
         }
 
         self.stats.total_vectors.fetch_add(1, Ordering::Relaxed);

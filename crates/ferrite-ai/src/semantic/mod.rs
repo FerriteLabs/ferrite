@@ -183,18 +183,18 @@
 //! 4. **Warm the cache** with common queries at startup
 //! 5. **Use separate caches** for different domains (code, general knowledge, etc.)
 
-#![allow(dead_code, unused_imports, unused_variables)]
+#![allow(dead_code)]
 pub mod async_embeddings;
 mod cache;
 mod embeddings;
 pub mod function_cache;
+pub mod ga_cache;
 pub mod hnsw;
 pub mod llm_cache;
 pub mod metrics;
 pub mod resilience;
 pub mod semantic_cache;
 pub mod streaming;
-pub mod ga_cache;
 
 pub use async_embeddings::{
     AsyncEmbedder, AsyncEmbeddingConfig, EmbeddingBatchProcessor, EmbeddingPool,
@@ -205,6 +205,10 @@ pub use function_cache::{
     FunctionCache, FunctionCacheBuilder, FunctionCacheConfig, FunctionCacheResult,
     FunctionCacheStats, FunctionCall, FunctionCallMetadata, FunctionCostConfig, InvalidationConfig,
     PerFunctionStats,
+};
+pub use ga_cache::{
+    DistanceMetricType, GaCacheConfig, GaCacheEntry, GaCacheHit, GaCacheSnapshot, GaSemanticCache,
+    PersistenceError,
 };
 pub use hnsw::{HnswConfig, HnswIndex};
 pub use llm_cache::{
@@ -217,10 +221,6 @@ pub use resilience::{
     FallbackStrategy, ResilientEmbedder, RetryPolicy,
 };
 pub use semantic_cache::{CacheHit, CacheStats, EnhancedSemanticCache, SemanticCacheConfig};
-pub use ga_cache::{
-    DistanceMetricType, GaCacheConfig, GaCacheEntry, GaCacheHit, GaCacheSnapshot,
-    GaSemanticCache, PersistenceError,
-};
 pub use streaming::{EmbeddingStream, StreamStats, StreamingConfig, StreamingEmbedder};
 
 use serde::{Deserialize, Serialize};

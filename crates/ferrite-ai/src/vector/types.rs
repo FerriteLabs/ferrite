@@ -54,8 +54,6 @@ pub enum DistanceMetric {
     Manhattan,
 }
 
-
-
 impl fmt::Display for DistanceMetric {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -256,8 +254,6 @@ pub enum IndexType {
     /// Flat (brute force) index
     Flat,
 }
-
-
 
 impl fmt::Display for IndexType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

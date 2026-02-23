@@ -25,8 +25,6 @@ pub enum ModelFormat {
     Custom(String),
 }
 
-
-
 /// Model configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelConfig {

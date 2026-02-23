@@ -814,7 +814,9 @@ mod tests {
             .build();
 
         let zero = vec![0.0f32; 4];
-        let id = cache.set("zero", Bytes::from("zero_val"), &zero, None).unwrap();
+        let id = cache
+            .set("zero", Bytes::from("zero_val"), &zero, None)
+            .unwrap();
         assert!(id > 0);
 
         // Querying with zero vector: cosine similarity is 0 for zero vectors

@@ -211,10 +211,7 @@ pub fn filtered_search(
 
     match strategy {
         FilterStrategy::PreFilter => {
-            debug!(
-                "pre-filter search: {} entries, k={}",
-                total, k
-            );
+            debug!("pre-filter search: {} entries, k={}", total, k);
             pre_filter_search(entries, query, k, metric, &options.filter)
         }
         FilterStrategy::PostFilter => {
@@ -289,8 +286,7 @@ fn pre_filter_search(
         .filter_map(|entry| {
             entry.data.as_f32().map(|vec| {
                 let dist = distance(query, vec, metric);
-                SearchResult::new(entry.id.clone(), dist)
-                    .with_attributes(entry.attributes.clone())
+                SearchResult::new(entry.id.clone(), dist).with_attributes(entry.attributes.clone())
             })
         })
         .collect();
@@ -327,18 +323,14 @@ fn post_filter_search(
         })
         .collect();
 
-    candidates.sort_by(|a, b| {
-        a.1.partial_cmp(&b.1)
-            .unwrap_or(std::cmp::Ordering::Equal)
-    });
+    candidates.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
 
     let mut results: Vec<SearchResult> = Vec::with_capacity(k);
     for (idx, dist) in candidates.into_iter().take(overfetch_k) {
         let entry = &entries[idx];
         if filter.matches(&entry.attributes) {
             results.push(
-                SearchResult::new(entry.id.clone(), dist)
-                    .with_attributes(entry.attributes.clone()),
+                SearchResult::new(entry.id.clone(), dist).with_attributes(entry.attributes.clone()),
             );
             if results.len() >= k {
                 break;
@@ -450,9 +442,14 @@ mod tests {
         ));
         let options = FilteredSearchOptions::new(filter).with_strategy(FilterStrategy::PreFilter);
 
-        let results =
-            filtered_search(&entries, &[1.0, 0.0, 0.0], 2, DistanceMetric::Cosine, &options)
-                .unwrap();
+        let results = filtered_search(
+            &entries,
+            &[1.0, 0.0, 0.0],
+            2,
+            DistanceMetric::Cosine,
+            &options,
+        )
+        .unwrap();
 
         assert_eq!(results.len(), 2);
         // All results should be "tech"
@@ -474,9 +471,14 @@ mod tests {
         ));
         let options = FilteredSearchOptions::new(filter).with_strategy(FilterStrategy::PostFilter);
 
-        let results =
-            filtered_search(&entries, &[1.0, 0.0, 0.0], 2, DistanceMetric::Cosine, &options)
-                .unwrap();
+        let results = filtered_search(
+            &entries,
+            &[1.0, 0.0, 0.0],
+            2,
+            DistanceMetric::Cosine,
+            &options,
+        )
+        .unwrap();
 
         assert_eq!(results.len(), 2);
         for r in &results {
@@ -498,9 +500,14 @@ mod tests {
         let options = FilteredSearchOptions::new(filter);
 
         // Auto should work regardless of which strategy it picks
-        let results =
-            filtered_search(&entries, &[1.0, 0.0, 0.0], 2, DistanceMetric::Cosine, &options)
-                .unwrap();
+        let results = filtered_search(
+            &entries,
+            &[1.0, 0.0, 0.0],
+            2,
+            DistanceMetric::Cosine,
+            &options,
+        )
+        .unwrap();
         assert!(!results.is_empty());
         assert!(results.len() <= 2);
     }
@@ -514,9 +521,14 @@ mod tests {
         ));
         let options = FilteredSearchOptions::new(filter).with_strategy(FilterStrategy::PreFilter);
 
-        let results =
-            filtered_search(&entries, &[1.0, 0.0, 0.0], 5, DistanceMetric::Cosine, &options)
-                .unwrap();
+        let results = filtered_search(
+            &entries,
+            &[1.0, 0.0, 0.0],
+            5,
+            DistanceMetric::Cosine,
+            &options,
+        )
+        .unwrap();
         assert!(results.is_empty());
     }
 

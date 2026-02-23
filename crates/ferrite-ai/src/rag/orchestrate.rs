@@ -59,8 +59,6 @@ pub enum OrchestrationMode {
     },
 }
 
-
-
 /// Configuration for RAG orchestration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OrchestratorConfig {

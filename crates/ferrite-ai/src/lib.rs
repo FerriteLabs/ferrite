@@ -5,11 +5,12 @@
 //!
 //! AI/ML features for Ferrite — vector search, semantic caching, RAG
 
-pub mod vector;
-pub mod semantic;
-pub mod rag;
-pub mod graphrag;
-pub mod embedding;
-pub mod inference;
 pub mod agent_memory;
 pub mod conversation;
+pub mod embedding;
+pub mod graphrag;
+pub mod hybrid;
+pub mod inference;
+pub mod rag;
+pub mod semantic;
+pub mod vector;

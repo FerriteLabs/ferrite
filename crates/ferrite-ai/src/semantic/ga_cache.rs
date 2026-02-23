@@ -102,7 +102,11 @@ fn cosine_similarity(a: &[f32], b: &[f32]) -> f32 {
         nb += b[i] * b[i];
     }
     let denom = (na * nb).sqrt();
-    if denom > 0.0 { dot / denom } else { 0.0 }
+    if denom > 0.0 {
+        dot / denom
+    } else {
+        0.0
+    }
 }
 
 #[inline]
@@ -486,7 +490,11 @@ impl GaSemanticCache {
             if entry.is_expired(self.config.ttl) {
                 continue;
             }
-            let sim = compute_similarity(query_embedding, &entry.embedding, self.config.distance_metric);
+            let sim = compute_similarity(
+                query_embedding,
+                &entry.embedding,
+                self.config.distance_metric,
+            );
             if sim >= threshold && sim > best_sim {
                 best_sim = sim;
                 best_idx = Some(i);
@@ -523,19 +531,14 @@ impl GaSemanticCache {
     /// If `dedup_threshold` is configured and a sufficiently similar entry
     /// already exists, the existing entry is updated (merged) instead of
     /// inserting a duplicate.
-    pub fn set(
-        &self,
-        key: &str,
-        embedding: &[f32],
-        response: Bytes,
-        metadata: Option<Value>,
-    ) {
+    pub fn set(&self, key: &str, embedding: &[f32], response: Bytes, metadata: Option<Value>) {
         let mut entries = self.entries.write();
 
         // Deduplication: merge into existing entry if close enough.
         if let Some(dedup) = self.config.dedup_threshold {
             for entry in entries.iter_mut() {
-                let sim = compute_similarity(embedding, &entry.embedding, self.config.distance_metric);
+                let sim =
+                    compute_similarity(embedding, &entry.embedding, self.config.distance_metric);
                 if sim >= dedup {
                     entry.response = response;
                     entry.metadata = metadata;
@@ -567,10 +570,7 @@ impl GaSemanticCache {
     }
 
     /// Batch insert multiple entries at once.
-    pub fn set_batch(
-        &self,
-        items: &[(&str, &[f32], Bytes, Option<Value>)],
-    ) {
+    pub fn set_batch(&self, items: &[(&str, &[f32], Bytes, Option<Value>)]) {
         let mut entries = self.entries.write();
 
         for (key, embedding, response, metadata) in items {
@@ -578,7 +578,11 @@ impl GaSemanticCache {
             let mut merged = false;
             if let Some(dedup) = self.config.dedup_threshold {
                 for entry in entries.iter_mut() {
-                    let sim = compute_similarity(embedding, &entry.embedding, self.config.distance_metric);
+                    let sim = compute_similarity(
+                        embedding,
+                        &entry.embedding,
+                        self.config.distance_metric,
+                    );
                     if sim >= dedup {
                         entry.response = response.clone();
                         entry.metadata = metadata.clone();
@@ -750,7 +754,11 @@ impl GaSemanticCache {
         w.write_all(&crc.to_le_bytes())?;
         w.flush()?;
 
-        info!(entries = persist.len(), bytes = json.len(), "ga_cache: saved to disk");
+        info!(
+            entries = persist.len(),
+            bytes = json.len(),
+            "ga_cache: saved to disk"
+        );
         Ok(())
     }
 
@@ -804,7 +812,11 @@ impl GaSemanticCache {
             });
         }
         self.emit_gauges_locked(&entries);
-        info!(loaded = count, total = entries.len(), "ga_cache: loaded from disk");
+        info!(
+            loaded = count,
+            total = entries.len(),
+            "ga_cache: loaded from disk"
+        );
         Ok(count)
     }
 
@@ -929,7 +941,12 @@ mod tests {
         };
         let cache = GaSemanticCache::new(config);
         for i in 0..5u8 {
-            cache.set(&format!("q{}", i), &make_emb(i * 50, 64), Bytes::from("a"), None);
+            cache.set(
+                &format!("q{}", i),
+                &make_emb(i * 50, 64),
+                Bytes::from("a"),
+                None,
+            );
         }
         assert_eq!(cache.len(), 5);
         std::thread::sleep(Duration::from_millis(60));
@@ -948,7 +965,12 @@ mod tests {
         };
         let cache = GaSemanticCache::new(config);
         for i in 0..5u8 {
-            cache.set(&format!("q{}", i), &make_emb(i * 50, 64), Bytes::from("a"), None);
+            cache.set(
+                &format!("q{}", i),
+                &make_emb(i * 50, 64),
+                Bytes::from("a"),
+                None,
+            );
         }
         assert!(cache.len() <= 3);
         assert!(cache.snapshot().evictions >= 2);

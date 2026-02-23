@@ -56,8 +56,6 @@ pub struct LlmCacheConfig {
     pub fallback: FallbackConfig,
 }
 
-
-
 /// Embedding configuration
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct EmbeddingConfig {

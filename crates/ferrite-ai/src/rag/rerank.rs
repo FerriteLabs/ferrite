@@ -53,8 +53,6 @@ pub enum RerankStrategy {
     },
 }
 
-
-
 /// Configuration for reranking
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RerankConfig {

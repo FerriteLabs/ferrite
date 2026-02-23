@@ -34,7 +34,9 @@
 //! let result = cache.get(&similar_call)?;  // Returns cached result!
 //! ```
 
-use super::{DistanceMetric, EmbeddingModelConfig, IndexType, SemanticCache, SemanticConfig, SemanticError};
+use super::{
+    DistanceMetric, EmbeddingModelConfig, IndexType, SemanticCache, SemanticConfig, SemanticError,
+};
 use bytes::Bytes;
 use dashmap::DashMap;
 use parking_lot::RwLock;
@@ -206,8 +208,6 @@ pub struct FunctionCallMetadata {
     /// User-provided tags
     pub tags: Vec<String>,
 }
-
-
 
 /// Result of a function call cache lookup
 #[derive(Clone, Debug)]
