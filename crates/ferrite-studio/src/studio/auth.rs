@@ -6,6 +6,10 @@
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
+use argon2::{
+    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+    Argon2,
+};
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
 
@@ -129,7 +133,7 @@ pub struct LoginResponse {
 struct StoredUser {
     #[allow(dead_code)] // Planned for v0.2 — stored for user display and audit logging
     username: String,
-    /// Password stored as-is in this placeholder (production would use argon2).
+    /// Argon2-hashed password.
     password_hash: String,
     role: Role,
 }
@@ -156,12 +160,13 @@ impl AuthManager {
 
     /// Register a user (for ACL integration).
     pub fn add_user(&self, username: &str, password: &str, role: Role) {
+        let hash = hash_password(password);
         let mut users = self.users.write();
         users.insert(
             username.to_string(),
             StoredUser {
                 username: username.to_string(),
-                password_hash: password.to_string(),
+                password_hash: hash,
                 role,
             },
         );
@@ -188,8 +193,8 @@ impl AuthManager {
             .get(&request.username)
             .ok_or(AuthError::InvalidCredentials)?;
 
-        // Constant-time-ish comparison (placeholder; production uses argon2 verify).
-        if user.password_hash != request.password {
+        // Verify password using argon2 (constant-time comparison).
+        if !verify_password(&request.password, &user.password_hash) {
             return Err(AuthError::InvalidCredentials);
         }
 
@@ -327,6 +332,25 @@ pub enum AuthError {
 
     #[error("insufficient permissions")]
     Forbidden,
+}
+
+/// Hash a password using Argon2id.
+fn hash_password(password: &str) -> String {
+    let salt = SaltString::generate(&mut OsRng);
+    Argon2::default()
+        .hash_password(password.as_bytes(), &salt)
+        .expect("Argon2 hashing should not fail with valid inputs")
+        .to_string()
+}
+
+/// Verify a password against an Argon2 hash (constant-time).
+fn verify_password(password: &str, hash: &str) -> bool {
+    match PasswordHash::new(hash) {
+        Ok(parsed) => Argon2::default()
+            .verify_password(password.as_bytes(), &parsed)
+            .is_ok(),
+        Err(_) => false,
+    }
 }
 
 /// Generate a random hex token.

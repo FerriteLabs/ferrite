@@ -8,7 +8,7 @@ description = "Enterprise features — multi-tenancy, governance, audit, federat
 license.workspace = true
 repository.workspace = true
 readme = "README.md"
-keywords = ["multi-tenancy", "governance", "enterprise", "ferrite"]
+keywords = ["multi-tenancy", "governance", "enterprise", "audit", "ferrite"]
 categories = ["database"]
 
 [lib]

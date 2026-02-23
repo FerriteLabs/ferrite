@@ -268,11 +268,9 @@ pub struct EventBus {
     event_count: AtomicU64,
     dropped_count: AtomicU64,
     next_id: AtomicU64,
-    // Reserved for backpressure policy enforcement
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Planned for v0.2 — reserved for backpressure policy enforcement
     backpressure_config: BackpressureConfig,
-    // Retained for runtime reconfiguration support
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Planned for v0.2 — retained for runtime reconfiguration support
     config: EventBusConfig,
 }
 
@@ -395,8 +393,7 @@ impl std::fmt::Debug for ChainStep {
 /// A composable chain of filter → transform → sink processing steps.
 pub struct FunctionChain {
     steps: Vec<ChainStep>,
-    // Reserved for chain-level error handling
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Planned for v0.2 — reserved for chain-level error handling
     error_handler: ErrorHandling,
 }
 

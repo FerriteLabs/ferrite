@@ -8,7 +8,7 @@ description = "Kubernetes operator and integration for Ferrite"
 license.workspace = true
 repository.workspace = true
 readme = "README.md"
-keywords = ["kubernetes", "operator", "k8s", "ferrite"]
+keywords = ["kubernetes", "operator", "k8s", "cloud-native", "ferrite"]
 categories = ["database"]
 
 [lib]

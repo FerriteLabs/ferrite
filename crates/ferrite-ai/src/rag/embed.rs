@@ -794,8 +794,7 @@ impl LocalEmbeddingProvider {
     }
 
     #[cfg(feature = "onnx")]
-    // Used when onnx feature is enabled
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Planned for v0.2 — used when onnx feature is enabled
     fn extract_embedding_from_outputs(
         &self,
         outputs: ort::session::SessionOutputs<'_>,

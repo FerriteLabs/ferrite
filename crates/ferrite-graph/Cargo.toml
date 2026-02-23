@@ -8,8 +8,8 @@ description = "Graph data model and traversal operations for Ferrite"
 license.workspace = true
 repository.workspace = true
 readme = "README.md"
-keywords = ["graph", "database", "traversal", "ferrite"]
-categories = ["database"]
+keywords = ["graph", "database", "traversal", "cypher", "ferrite"]
+categories = ["database", "data-structures"]
 
 [lib]
 doctest = false

@@ -8,8 +8,8 @@ description = "JSON document store with path queries for Ferrite"
 license.workspace = true
 repository.workspace = true
 readme = "README.md"
-keywords = ["document", "json", "nosql", "ferrite"]
-categories = ["database"]
+keywords = ["document", "json", "nosql", "query", "ferrite"]
+categories = ["database", "data-structures"]
 
 [lib]
 doctest = false

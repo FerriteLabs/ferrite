@@ -8,7 +8,7 @@ description = "Web-based management UI and interactive playground for Ferrite"
 license.workspace = true
 repository.workspace = true
 readme = "README.md"
-keywords = ["dashboard", "ui", "playground", "ferrite"]
+keywords = ["dashboard", "ui", "playground", "management", "ferrite"]
 categories = ["database", "web-programming"]
 
 [lib]
@@ -35,6 +35,7 @@ hyper.workspace = true
 hyper-util.workspace = true
 http-body-util.workspace = true
 urlencoding.workspace = true
+argon2.workspace = true
 
 
 [dev-dependencies]

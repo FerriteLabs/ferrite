@@ -176,8 +176,7 @@ pub struct ReplicationProtocol {
     /// Max operations per batch
     batch_size: usize,
     /// Interval between batch flushes
-    // Reserved for timed batch flush support
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Planned for v0.2 — reserved for timed batch flush support
     batch_interval: Duration,
 }
 

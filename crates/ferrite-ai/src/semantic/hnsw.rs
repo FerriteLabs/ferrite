@@ -665,8 +665,7 @@ impl HnswIndex {
     }
 
     /// Shrink connections to maintain max degree
-    // Reserved for HNSW graph maintenance operations
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Planned for v0.2 — reserved for HNSW graph maintenance operations
     fn shrink_connections(
         &self,
         nodes: &HashMap<u64, HnswNode>,

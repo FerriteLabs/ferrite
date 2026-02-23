@@ -8,7 +8,7 @@ description = "Time-series data ingestion and downsampling for Ferrite"
 license.workspace = true
 repository.workspace = true
 readme = "README.md"
-keywords = ["timeseries", "metrics", "downsampling", "ferrite"]
+keywords = ["timeseries", "metrics", "downsampling", "iot", "ferrite"]
 categories = ["database"]
 
 [lib]

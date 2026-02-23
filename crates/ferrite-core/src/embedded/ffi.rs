@@ -780,6 +780,8 @@ mod tests {
 
     #[test]
     fn test_ffi_lifecycle() {
+        // SAFETY: Calling FFI functions in a controlled test; db pointer is obtained from
+        // ferrite_open and passed to ferrite_close exactly once.
         unsafe {
             let db = ferrite_open();
             assert!(!db.is_null());
@@ -790,6 +792,8 @@ mod tests {
 
     #[test]
     fn test_ffi_set_get() {
+        // SAFETY: FFI test — db pointer from ferrite_open is valid for the duration,
+        // key/value pointers reference stack-local byte arrays with correct lengths.
         unsafe {
             let db = ferrite_open();
 
@@ -820,6 +824,8 @@ mod tests {
 
     #[test]
     fn test_ffi_delete() {
+        // SAFETY: FFI test — db pointer from ferrite_open is valid for the duration,
+        // key/value pointers reference stack-local byte arrays with correct lengths.
         unsafe {
             let db = ferrite_open();
 
@@ -854,6 +860,8 @@ mod tests {
 
     #[test]
     fn test_ffi_stats() {
+        // SAFETY: FFI test — db pointer from ferrite_open is valid for the duration,
+        // key/value pointers reference stack-local byte arrays with correct lengths.
         unsafe {
             let db = ferrite_open();
 
@@ -879,6 +887,8 @@ mod tests {
 
     #[test]
     fn test_ffi_version() {
+        // SAFETY: ferrite_version returns a pointer to a static string literal
+        // that is valid for the lifetime of the program.
         unsafe {
             let version = ferrite_version();
             assert!(!version.is_null());

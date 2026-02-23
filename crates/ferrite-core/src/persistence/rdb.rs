@@ -722,8 +722,7 @@ pub fn load_rdb(data: &[u8], store: &Store) -> Result<usize> {
 
 /// Load RDB data into a store with optional decryption
 #[cfg(feature = "crypto")]
-// Used when crypto feature is enabled
-#[allow(dead_code)]
+#[allow(dead_code)] // Planned for v0.2 — used when crypto feature is enabled
 pub fn load_rdb_with_encryption(
     data: &[u8],
     store: &Store,
@@ -787,8 +786,7 @@ fn load_rdb_inner(data: &[u8], store: &Store) -> Result<usize> {
 
 /// Generate an encrypted RDB snapshot from the store
 #[cfg(feature = "crypto")]
-// Used when crypto feature is enabled
-#[allow(dead_code)]
+#[allow(dead_code)] // Planned for v0.2 — used when crypto feature is enabled
 pub fn generate_rdb_encrypted(store: &Store, encryption: &SharedEncryption) -> Result<Bytes> {
     let rdb_data = generate_rdb(store);
     let encrypted = encryption.encrypt(&rdb_data)?;

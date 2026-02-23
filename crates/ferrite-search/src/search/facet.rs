@@ -741,8 +741,7 @@ impl DateHistogramCollector {
 /// Cardinality collector using HyperLogLog-like approximation
 struct CardinalityCollector {
     field: String,
-    // Reserved for HyperLogLog-based cardinality estimation
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Planned for v0.2 — reserved for HyperLogLog-based cardinality estimation
     precision_threshold: u32,
     /// Use a HashSet for exact cardinality when under threshold
     unique_values: std::collections::HashSet<u64>,
@@ -811,8 +810,7 @@ impl StatsCollector {
         self.sum_of_squares += value * value;
     }
 
-    // Used by upcoming aggregation pipeline
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Planned for v0.2 — used by upcoming aggregation pipeline
     fn finalize(self) -> FieldStats {
         let avg = if self.count > 0 {
             self.sum / self.count as f64
