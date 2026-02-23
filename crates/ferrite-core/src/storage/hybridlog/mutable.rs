@@ -10,6 +10,7 @@
 //! - Configurable capacity with overflow handling
 
 use std::alloc::{alloc, dealloc, Layout};
+use std::io;
 use std::ptr::NonNull;
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 
@@ -84,35 +85,41 @@ unsafe impl Sync for MutableRegion {}
 impl MutableRegion {
     /// Create a new mutable region with the given capacity
     ///
-    /// # Panics
-    /// Panics if allocation fails
-    pub fn new(capacity: usize) -> Self {
+    /// Returns an error if memory allocation fails.
+    pub fn new(capacity: usize) -> io::Result<Self> {
         // Ensure minimum capacity
         let capacity = capacity.max(4096);
 
         // Allocate aligned memory
-        let layout =
-            Layout::from_size_align(capacity, 8).expect("Invalid layout for mutable region");
+        let layout = Layout::from_size_align(capacity, 8).map_err(|e| {
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!("invalid layout for mutable region: {e}"),
+            )
+        })?;
 
         // SAFETY: layout is valid and non-zero size
         let buffer = unsafe {
             let ptr = alloc(layout);
             if ptr.is_null() {
-                panic!("Failed to allocate mutable region buffer");
+                return Err(io::Error::new(
+                    io::ErrorKind::OutOfMemory,
+                    "failed to allocate mutable region buffer",
+                ));
             }
             // Zero-initialize the buffer
             std::ptr::write_bytes(ptr, 0, capacity);
             NonNull::new_unchecked(ptr)
         };
 
-        Self {
+        Ok(Self {
             buffer,
             capacity,
             tail: AtomicUsize::new(0),
             bytes_written: AtomicU64::new(0),
             entry_count: AtomicU64::new(0),
             access_count: AtomicU64::new(0),
-        }
+        })
     }
 
     /// Get the capacity of this region
@@ -336,12 +343,13 @@ impl MutableRegion {
 
 impl Drop for MutableRegion {
     fn drop(&mut self) {
-        let layout = Layout::from_size_align(self.capacity, 8)
-            .expect("Invalid layout for mutable region deallocation");
-
-        // SAFETY: We allocated this memory in new() with the same layout
-        unsafe {
-            dealloc(self.buffer.as_ptr(), layout);
+        // SAFETY: capacity and alignment are the same as in new().
+        // Layout::from_size_align cannot fail here because it succeeded in new().
+        if let Ok(layout) = Layout::from_size_align(self.capacity, 8) {
+            // SAFETY: We allocated this memory in new() with the same layout
+            unsafe {
+                dealloc(self.buffer.as_ptr(), layout);
+            }
         }
     }
 }
@@ -372,7 +380,7 @@ mod tests {
 
     #[test]
     fn test_mutable_region_new() {
-        let region = MutableRegion::new(4096);
+        let region = MutableRegion::new(4096).unwrap();
         assert_eq!(region.capacity(), 4096);
         assert_eq!(region.used(), 0);
         assert!(!region.is_full());
@@ -380,13 +388,13 @@ mod tests {
 
     #[test]
     fn test_mutable_region_minimum_capacity() {
-        let region = MutableRegion::new(100); // Less than 4096
+        let region = MutableRegion::new(100).unwrap(); // Less than 4096
         assert_eq!(region.capacity(), 4096);
     }
 
     #[test]
     fn test_append_and_read() {
-        let region = MutableRegion::new(4096);
+        let region = MutableRegion::new(4096).unwrap();
 
         let key = b"test_key";
         let value = b"test_value";
@@ -404,7 +412,7 @@ mod tests {
 
     #[test]
     fn test_read_value() {
-        let region = MutableRegion::new(4096);
+        let region = MutableRegion::new(4096).unwrap();
 
         let key = b"key";
         let value = b"value";
@@ -416,7 +424,7 @@ mod tests {
 
     #[test]
     fn test_multiple_appends() {
-        let region = MutableRegion::new(4096);
+        let region = MutableRegion::new(4096).unwrap();
 
         let addr1 = region.try_append(b"key1", b"value1").unwrap();
         let addr2 = region.try_append(b"key2", b"value2").unwrap();
@@ -438,7 +446,7 @@ mod tests {
 
     #[test]
     fn test_overflow_protection() {
-        let region = MutableRegion::new(4096);
+        let region = MutableRegion::new(4096).unwrap();
 
         // Fill the region with entries until it's full
         let mut count = 0;
@@ -459,7 +467,7 @@ mod tests {
 
     #[test]
     fn test_iter() {
-        let region = MutableRegion::new(4096);
+        let region = MutableRegion::new(4096).unwrap();
 
         region.try_append(b"key1", b"val1").unwrap();
         region.try_append(b"key2", b"val2").unwrap();
@@ -478,7 +486,7 @@ mod tests {
 
     #[test]
     fn test_access_tracking() {
-        let region = MutableRegion::new(4096);
+        let region = MutableRegion::new(4096).unwrap();
         assert_eq!(region.access_count(), 0);
 
         let addr = region.try_append(b"key", b"value").unwrap();
@@ -495,7 +503,7 @@ mod tests {
         use std::sync::Arc;
         use std::thread;
 
-        let region = Arc::new(MutableRegion::new(1024 * 1024)); // 1MB
+        let region = Arc::new(MutableRegion::new(1024 * 1024).unwrap()); // 1MB
         let mut handles = Vec::new();
 
         for i in 0..4 {

@@ -83,8 +83,7 @@ impl ReadAheadBuffer {
     }
 
     /// Check if the buffer is empty
-    // Reserved for disk buffer management API
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Planned for v0.2 — reserved for disk buffer management API
     fn is_empty(&self) -> bool {
         self.data.is_empty()
     }

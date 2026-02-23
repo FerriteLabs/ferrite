@@ -344,8 +344,7 @@ pub struct PooledBuffer {
     pool: Arc<IoBufferPool>,
 }
 
-// Reserved for future buffer pool API
-#[allow(dead_code)]
+#[allow(dead_code)] // Planned for v0.2 — reserved for buffer pool API
 impl PooledBuffer {
     /// Create a new pooled buffer
     pub fn new(pool: Arc<IoBufferPool>) -> Self {

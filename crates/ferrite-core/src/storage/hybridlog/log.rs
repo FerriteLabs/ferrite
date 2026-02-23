@@ -170,7 +170,7 @@ impl HybridLog {
         let readonly_path = config.data_dir.join("readonly.dat");
         let disk_path = config.data_dir.join("disk.dat");
 
-        let mutable = MutableRegion::new(config.mutable_size);
+        let mutable = MutableRegion::new(config.mutable_size)?;
         let readonly = ReadOnlyRegion::new(&readonly_path, config.readonly_size)?;
         let disk = DiskRegion::new(&disk_path, config.disk_size)?;
 
@@ -217,8 +217,7 @@ impl HybridLog {
         let readonly_path = config.data_dir.join("readonly.dat");
         let disk_path = config.data_dir.join("disk.dat");
 
-        let mutable = MutableRegion::new(config.mutable_size);
-
+        let mutable = MutableRegion::new(config.mutable_size)?;
         let readonly = if readonly_path.exists() {
             ReadOnlyRegion::open(&readonly_path, config.readonly_size)?
         } else {
