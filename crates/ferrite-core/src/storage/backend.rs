@@ -62,9 +62,7 @@ impl SerializableEntry {
         let value = deserialize_value(self.value_type, &self.data)?;
         let expires_at = self
             .expires_at_ms
-            .map(|exp_ms| {
-                std::time::UNIX_EPOCH + std::time::Duration::from_millis(exp_ms)
-            });
+            .map(|exp_ms| std::time::UNIX_EPOCH + std::time::Duration::from_millis(exp_ms));
 
         Ok((value, expires_at))
     }
@@ -135,8 +133,7 @@ fn deserialize_value(value_type: ValueType, data: &[u8]) -> io::Result<Value> {
     match value_type {
         ValueType::String => Ok(Value::String(Bytes::copy_from_slice(data))),
         ValueType::List => {
-            let items: Vec<Vec<u8>> =
-                bincode::deserialize(data).map_err(io::Error::other)?;
+            let items: Vec<Vec<u8>> = bincode::deserialize(data).map_err(io::Error::other)?;
             let list = items.into_iter().map(Bytes::from).collect();
             Ok(Value::List(list))
         }
@@ -150,8 +147,7 @@ fn deserialize_value(value_type: ValueType, data: &[u8]) -> io::Result<Value> {
             Ok(Value::Hash(hash))
         }
         ValueType::Set => {
-            let items: Vec<Vec<u8>> =
-                bincode::deserialize(data).map_err(io::Error::other)?;
+            let items: Vec<Vec<u8>> = bincode::deserialize(data).map_err(io::Error::other)?;
             let set = items.into_iter().map(Bytes::from).collect();
             Ok(Value::Set(set))
         }

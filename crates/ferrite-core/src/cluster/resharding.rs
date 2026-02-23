@@ -13,7 +13,7 @@ use parking_lot::RwLock;
 use tokio::sync::broadcast;
 use tracing::{debug, error, info, warn};
 
-use super::{ClusterManager, HashSlot, NodeId, CLUSTER_SLOTS};
+use super::{ClusterManager, NodeId, CLUSTER_SLOTS};
 
 /// Per-slot migration progress.
 #[derive(Debug, Clone)]
@@ -338,7 +338,7 @@ mod tests {
     use super::*;
     use std::net::SocketAddr;
 
-    use crate::cluster::{generate_node_id, ClusterConfig, ClusterNode};
+    use crate::cluster::{ClusterConfig, ClusterNode};
 
     fn make_cluster() -> Arc<ClusterManager> {
         let config = ClusterConfig::default();
@@ -415,7 +415,10 @@ mod tests {
             .unwrap();
 
         let result = engine.begin_slot_migration(300, "node0".to_string(), "node1".to_string(), 5);
-        assert!(matches!(result, Err(ReshardingError::SlotAlreadyMigrating(300))));
+        assert!(matches!(
+            result,
+            Err(ReshardingError::SlotAlreadyMigrating(300))
+        ));
     }
 
     #[test]
@@ -423,12 +426,8 @@ mod tests {
         let cluster = make_cluster();
         let engine = ReshardingEngine::new(ReshardingConfig::default(), cluster);
 
-        let result = engine.begin_slot_migration(
-            CLUSTER_SLOTS,
-            "a".to_string(),
-            "b".to_string(),
-            0,
-        );
+        let result =
+            engine.begin_slot_migration(CLUSTER_SLOTS, "a".to_string(), "b".to_string(), 0);
         assert!(matches!(result, Err(ReshardingError::InvalidSlot(_))));
     }
 
@@ -437,7 +436,10 @@ mod tests {
         let cluster = make_cluster();
         let engine = ReshardingEngine::new(ReshardingConfig::default(), cluster);
         let result = engine.finalize_slot_migration(999);
-        assert!(matches!(result, Err(ReshardingError::SlotNotMigrating(999))));
+        assert!(matches!(
+            result,
+            Err(ReshardingError::SlotNotMigrating(999))
+        ));
     }
 
     #[test]

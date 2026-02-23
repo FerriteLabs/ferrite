@@ -12,7 +12,7 @@ keywords = ["redis", "cache", "key-value", "database", "storage"]
 categories = ["database", "caching"]
 
 [lib]
-doctest = false
+doctest = true
 
 [lints.rust]
 missing_docs = "warn"

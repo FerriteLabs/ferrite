@@ -45,7 +45,10 @@ impl QueryAnalyzer {
         // Update pattern stats
         if let Some(ref pattern) = event.key_pattern {
             let pattern_key = self.normalize_pattern(pattern);
-            let mut stats = self.pattern_stats.write().unwrap_or_else(|e| e.into_inner());
+            let mut stats = self
+                .pattern_stats
+                .write()
+                .unwrap_or_else(|e| e.into_inner());
             let entry = stats.entry(pattern_key).or_default();
             entry.record(event.duration_us);
         }
@@ -69,18 +72,14 @@ impl QueryAnalyzer {
 
             // Track command statistics
             if let Some(ref cmd) = event.command {
-                let stats = command_stats
-                    .entry(cmd.clone())
-                    .or_default();
+                let stats = command_stats.entry(cmd.clone()).or_default();
                 stats.record(event.duration_us);
             }
 
             // Track key pattern statistics
             if let Some(ref key) = event.key_pattern {
                 let pattern = self.normalize_pattern(key);
-                let stats = key_pattern_stats
-                    .entry(pattern)
-                    .or_default();
+                let stats = key_pattern_stats.entry(pattern).or_default();
                 stats.record(event.duration_us);
             }
 
@@ -258,8 +257,14 @@ impl QueryAnalyzer {
 
     /// Clear all collected data
     pub fn clear(&self) {
-        self.slow_queries.write().unwrap_or_else(|e| e.into_inner()).clear();
-        self.pattern_stats.write().unwrap_or_else(|e| e.into_inner()).clear();
+        self.slow_queries
+            .write()
+            .unwrap_or_else(|e| e.into_inner())
+            .clear();
+        self.pattern_stats
+            .write()
+            .unwrap_or_else(|e| e.into_inner())
+            .clear();
     }
 }
 

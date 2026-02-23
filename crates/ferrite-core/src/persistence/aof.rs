@@ -319,8 +319,7 @@ pub fn replay_aof(entries: Vec<AofEntry>, store: &Store) {
                 let expire_at = entry.timestamp + expire_ms;
                 if expire_at > now {
                     // Still valid
-                    let expires_at =
-                        std::time::UNIX_EPOCH + Duration::from_millis(expire_at);
+                    let expires_at = std::time::UNIX_EPOCH + Duration::from_millis(expire_at);
                     store.set_with_expiry(
                         entry.database,
                         Bytes::from(key),
@@ -337,8 +336,7 @@ pub fn replay_aof(entries: Vec<AofEntry>, store: &Store) {
             AofCommand::Expire { key, expire_ms } => {
                 let expire_at = entry.timestamp + expire_ms;
                 if expire_at > now {
-                    let expires_at =
-                        std::time::UNIX_EPOCH + Duration::from_millis(expire_at);
+                    let expires_at = std::time::UNIX_EPOCH + Duration::from_millis(expire_at);
                     store.expire(entry.database, &Bytes::from(key), expires_at);
                 }
             }

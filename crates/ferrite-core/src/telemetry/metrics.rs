@@ -166,10 +166,7 @@ pub fn record_command(cmd_name: &str, duration_secs: f64, success: bool) {
     let attrs = [
         KeyValue::new("db.system", "ferrite"),
         KeyValue::new("db.operation", cmd_name.to_string()),
-        KeyValue::new(
-            "status",
-            if success { "ok" } else { "error" }.to_string(),
-        ),
+        KeyValue::new("status", if success { "ok" } else { "error" }.to_string()),
     ];
     commands_counter().add(1, &attrs);
     command_duration_histogram().record(duration_secs, &attrs);
@@ -232,10 +229,7 @@ pub fn set_hybridlog_tier_sizes(mutable_bytes: i64, readonly_bytes: i64, disk_by
 #[cfg(feature = "otel")]
 #[inline]
 pub fn record_replication_lag(lag_secs: f64) {
-    replication_lag_histogram().record(
-        lag_secs,
-        &[KeyValue::new("db.system", "ferrite")],
-    );
+    replication_lag_histogram().record(lag_secs, &[KeyValue::new("db.system", "ferrite")]);
 }
 
 // ---------------------------------------------------------------------------

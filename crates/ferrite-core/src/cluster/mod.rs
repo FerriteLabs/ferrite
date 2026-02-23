@@ -8,7 +8,7 @@
 //! - Gossip protocol for node discovery and failure detection
 //! - Slot migration for cluster resharding
 
-#![allow(dead_code, unused_imports, unused_variables)]
+#![allow(dead_code)]
 pub mod auto_reshard;
 pub mod cluster_metrics;
 pub mod failover;
@@ -16,6 +16,8 @@ pub mod gossip;
 pub mod health;
 pub mod migration;
 pub mod raft;
+/// Raft log replication and state machine for cluster consensus.
+pub mod raft_log;
 pub mod resharding;
 pub mod rolling_upgrade;
 mod routing;
@@ -28,6 +30,7 @@ pub use auto_reshard::{
     AutoReshardState, AutoReshardStats, PlannedMigration, RebalancePlan, RebalanceReason,
     RebalanceSummary,
 };
+pub use cluster_metrics::{MigrationMetrics, MigrationMetricsSnapshot};
 pub use failover::{
     start_failover_monitor, FailoverConfig, FailoverManager, FailoverState, FailoverStats,
     FailoverType, FailoverVote,
@@ -35,6 +38,9 @@ pub use failover::{
 pub use gossip::{
     start_gossip_service, GossipConfig, GossipHandle, GossipManager, GossipMessage,
     GossipMessageType, GossipNodeInfo, GossipStats,
+};
+pub use health::{
+    ClusterHealthSummary, HealthConfig, HealthMonitor, HealthScore, NodeHealthState, NodeMetrics,
 };
 pub use migration::{
     MigrateOptions, MigrateResult, MigrationConfig, MigrationState, SlotMigrationManager,
@@ -44,13 +50,6 @@ pub use raft::{
     AppendEntriesArgs, AppendEntriesReply, LogEntry, RaftCommand, RaftConfig, RaftError, RaftNode,
     RaftRole, RaftStatus, RequestVoteArgs, RequestVoteReply, Term,
 };
-pub use routing::{ClusterRouter, ClusterState, RouteResult, SharedRouter};
-pub use slots::{HashSlot, Redirect, SlotInfo, SlotMap, SlotMigrationState, SlotRange, CLUSTER_SLOTS};
-pub use state_manager::{ClusterNodeInfo, ClusterStateManager, RedirectResult};
-pub use cluster_metrics::{MigrationMetrics, MigrationMetricsSnapshot};
-pub use health::{
-    ClusterHealthSummary, HealthConfig, HealthMonitor, HealthScore, NodeHealthState, NodeMetrics,
-};
 pub use resharding::{
     MigrationPhase, ReshardingConfig, ReshardingEngine, ReshardingError, ReshardingStats,
     SlotMigrationProgress,
@@ -58,9 +57,12 @@ pub use resharding::{
 pub use rolling_upgrade::{
     ClusterVersion, RollingUpgradeConfig, RollingUpgradeManager, ShutdownPhase, VersionError,
 };
-pub use split_brain::{
-    PartitionStatus, SplitBrainConfig, SplitBrainDetector,
+pub use routing::{ClusterRouter, ClusterState, RouteResult, SharedRouter};
+pub use slots::{
+    HashSlot, Redirect, SlotInfo, SlotMap, SlotMigrationState, SlotRange, CLUSTER_SLOTS,
 };
+pub use split_brain::{PartitionStatus, SplitBrainConfig, SplitBrainDetector};
+pub use state_manager::{ClusterNodeInfo, ClusterStateManager, RedirectResult};
 
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -207,21 +209,21 @@ impl ClusterCommand {
                 if slot >= CLUSTER_SLOTS {
                     return err("ERR Invalid or out of range slot");
                 }
-                let count: u32 = args[1].parse().map_err(|_| {
-                    ClusterCommandParseError("ERR Invalid count".to_string())
-                })?;
+                let count: u32 = args[1]
+                    .parse()
+                    .map_err(|_| ClusterCommandParseError("ERR Invalid count".to_string()))?;
                 Ok(Self::ClusterGetKeysInSlot(slot, count))
             }
             "MEET" => {
                 if args.len() < 2 {
                     return err("ERR wrong number of arguments for 'cluster|meet' command");
                 }
-                let ip: std::net::IpAddr = args[0].parse().map_err(|_| {
-                    ClusterCommandParseError("ERR Invalid IP address".to_string())
-                })?;
-                let port: u16 = args[1].parse().map_err(|_| {
-                    ClusterCommandParseError("ERR Invalid port number".to_string())
-                })?;
+                let ip: std::net::IpAddr = args[0]
+                    .parse()
+                    .map_err(|_| ClusterCommandParseError("ERR Invalid IP address".to_string()))?;
+                let port: u16 = args[1]
+                    .parse()
+                    .map_err(|_| ClusterCommandParseError("ERR Invalid port number".to_string()))?;
                 Ok(Self::ClusterMeet(SocketAddr::new(ip, port)))
             }
             "FORGET" => {

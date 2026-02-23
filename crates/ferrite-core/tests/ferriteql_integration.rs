@@ -103,9 +103,7 @@ fn test_where_compound_and_executes() {
 #[test]
 fn test_count_star() {
     let db = setup_db();
-    let result = db
-        .query("SELECT COUNT(*) AS cnt FROM hash:user:*")
-        .unwrap();
+    let result = db.query("SELECT COUNT(*) AS cnt FROM hash:user:*").unwrap();
     assert_eq!(result.row_count(), 1);
 }
 

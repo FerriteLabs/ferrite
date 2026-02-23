@@ -21,21 +21,40 @@ pub mod epoch;
 pub(crate) mod expiration;
 pub mod hybridlog;
 mod memory;
+/// Memory allocator management, fragmentation tracking, and active defragmentation.
+pub mod memory_manager;
 pub mod streams;
 
 pub use backend::{HybridLogBackendConfig, SerializableEntry, ValueType};
 pub use hybridlog::{
-    start_background_tasks, BackgroundTaskConfig, BackgroundTaskHandle, HybridLog, HybridLogConfig,
-    HybridLogStats,
-    // Checksum & recovery
-    recovery_scan, repair_log, ChecksummedHeader, RecoverySummary,
-    // Compaction
-    CompactionConfig, CompactionMetrics, CompactionSnapshot, CompactionState,
     // Memory pressure
-    detect_pressure, EvictionPolicy, MemoryPressureConfig, MemoryPressureMetrics,
-    MemoryPressureSnapshot, PressureLevel,
+    detect_pressure,
+    // Checksum & recovery
+    recovery_scan,
+    repair_log,
+    start_background_tasks,
+    BackgroundTaskConfig,
+    BackgroundTaskHandle,
+    ChecksummedHeader,
+    // Compaction
+    CompactionConfig,
+    CompactionMetrics,
+    CompactionSnapshot,
+    CompactionState,
+    EvictionPolicy,
+    HybridLog,
+    HybridLogConfig,
+    HybridLogStats,
     // Telemetry
-    HybridLogTelemetry, LatencyTimer, TierMetrics, TierSnapshot,
+    HybridLogTelemetry,
+    LatencyTimer,
+    MemoryPressureConfig,
+    MemoryPressureMetrics,
+    MemoryPressureSnapshot,
+    PressureLevel,
+    RecoverySummary,
+    TierMetrics,
+    TierSnapshot,
 };
 pub use memory::{Database, Entry, StorageBackend, Store, Value};
 pub use streams::{

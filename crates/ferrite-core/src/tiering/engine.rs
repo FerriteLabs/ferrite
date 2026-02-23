@@ -472,7 +472,9 @@ impl TieringEngine {
                 .calculate_monthly_cost(&b.1, b.1.tier)
                 .total
                 - b.2.cost.total;
-            savings_b.partial_cmp(&savings_a).unwrap_or(std::cmp::Ordering::Equal)
+            savings_b
+                .partial_cmp(&savings_a)
+                .unwrap_or(std::cmp::Ordering::Equal)
         });
 
         suboptimal.truncate(limit);

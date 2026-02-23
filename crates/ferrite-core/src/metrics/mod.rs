@@ -3,6 +3,8 @@
 //! This module implements observability features including Prometheus metrics,
 //! structured logging, and OpenTelemetry integration.
 
+/// Production-grade metrics instrumentation with histograms and Grafana dashboard generation.
+pub mod instrumentation;
 pub mod otel;
 mod prometheus;
 mod recorder;

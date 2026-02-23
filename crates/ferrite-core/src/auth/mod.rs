@@ -3,7 +3,7 @@
 //! This module implements Redis-compatible ACL functionality for user management
 //! and command authorization.
 
-#![allow(dead_code, unused_imports, unused_variables)]
+#![allow(dead_code)]
 
 mod acl;
 mod user;

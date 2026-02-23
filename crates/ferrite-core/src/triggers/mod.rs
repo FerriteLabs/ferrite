@@ -241,6 +241,8 @@ pub mod actions;
 pub mod conditions;
 /// Trigger execution engine
 pub mod engine;
+/// FerriteFunctions runtime manager for multi-runtime function execution.
+pub mod runtime;
 
 pub use actions::{Action, ActionResult, BuiltinAction, HttpAction, PublishAction};
 pub use conditions::{Condition, EventType, Pattern};

@@ -23,6 +23,10 @@ pub struct TlsConfig {
     pub ca_file: Option<String>,
     /// Whether to require client certificates (mTLS).
     pub require_client_cert: bool,
+    /// Minimum TLS protocol version ("1.2" or "1.3"). Defaults to "1.2".
+    pub min_protocol_version: String,
+    /// Optional list of allowed cipher suites (empty = use defaults).
+    pub cipher_suites: Vec<String>,
 }
 
 impl TlsConfig {
@@ -33,6 +37,8 @@ impl TlsConfig {
             key_file,
             ca_file: None,
             require_client_cert: false,
+            min_protocol_version: "1.2".to_string(),
+            cipher_suites: Vec::new(),
         }
     }
 
@@ -40,6 +46,12 @@ impl TlsConfig {
     pub fn with_client_auth(mut self, ca_file: String, require: bool) -> Self {
         self.ca_file = Some(ca_file);
         self.require_client_cert = require;
+        self
+    }
+
+    /// Set minimum TLS protocol version.
+    pub fn with_min_protocol_version(mut self, version: String) -> Self {
+        self.min_protocol_version = version;
         self
     }
 }
@@ -525,16 +537,18 @@ impl Config {
                 Ok(true)
             }
             ConfigKey::MetricsPort => {
-                let port = value.parse::<u16>().map_err(|_| {
-                    FerriteError::Config(format!("Invalid port value: {}", value))
-                })?;
+                let port = value
+                    .parse::<u16>()
+                    .map_err(|_| FerriteError::Config(format!("Invalid port value: {}", value)))?;
                 self.metrics.port = port;
                 Ok(true)
             }
             ConfigKey::EncryptionAlgorithm => {
                 let algo = match value.to_lowercase().as_str() {
                     "aes-256-gcm" | "aes256gcm" => EncryptionAlgorithm::Aes256Gcm,
-                    "chacha20-poly1305" | "chacha20poly1305" => EncryptionAlgorithm::ChaCha20Poly1305,
+                    "chacha20-poly1305" | "chacha20poly1305" => {
+                        EncryptionAlgorithm::ChaCha20Poly1305
+                    }
                     _ => {
                         return Err(FerriteError::Config(format!(
                             "Invalid encryption algorithm: {}. Expected: aes-256-gcm, chacha20-poly1305",
@@ -715,8 +729,8 @@ impl Default for ServerConfig {
             tcp_keepalive: 300,
             timeout: 0, // 0 means no timeout
             acl_file: Some(PathBuf::from("./data/users.acl")),
-            proto_max_bulk_len: 512 * 1024 * 1024,  // 512MB (Redis default)
-            proto_max_multi_bulk_len: 1_048_576,     // 1M elements
+            proto_max_bulk_len: 512 * 1024 * 1024, // 512MB (Redis default)
+            proto_max_multi_bulk_len: 1_048_576,   // 1M elements
             proto_max_nesting_depth: 64,
         }
     }
@@ -954,6 +968,13 @@ pub struct TlsConfigSettings {
 
     /// Whether client certificates are required (mTLS)
     pub require_client_cert: bool,
+
+    /// Minimum TLS protocol version ("1.2" or "1.3")
+    pub min_protocol_version: String,
+
+    /// Optional list of allowed cipher suites (empty = use rustls defaults)
+    #[serde(default)]
+    pub cipher_suites: Vec<String>,
 }
 
 impl Default for TlsConfigSettings {
@@ -965,6 +986,8 @@ impl Default for TlsConfigSettings {
             key_file: None,
             ca_file: None,
             require_client_cert: false,
+            min_protocol_version: "1.2".to_string(),
+            cipher_suites: Vec::new(),
         }
     }
 }
@@ -988,6 +1011,11 @@ impl TlsConfigSettings {
                     "Client certificate required but no CA file specified".to_string(),
                 ));
             }
+            if self.min_protocol_version != "1.2" && self.min_protocol_version != "1.3" {
+                return Err(FerriteError::Config(
+                    "min_protocol_version must be \"1.2\" or \"1.3\"".to_string(),
+                ));
+            }
         }
         Ok(())
     }
@@ -1002,6 +1030,7 @@ impl TlsConfigSettings {
         let key_file = self.key_file.as_ref()?.to_string_lossy().to_string();
 
         let mut config = TlsConfig::new(cert_file, key_file);
+        config = config.with_min_protocol_version(self.min_protocol_version.clone());
 
         if let Some(ca_file) = &self.ca_file {
             config = config.with_client_auth(

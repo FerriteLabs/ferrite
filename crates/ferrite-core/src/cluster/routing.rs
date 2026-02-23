@@ -208,9 +208,7 @@ impl ClusterRouter {
         for key in keys.iter().skip(1) {
             let slot = HashSlot::for_key(key);
             if slot != first_slot {
-                return Err(
-                    "CROSSSLOT Keys in request don't hash to the same slot".to_string()
-                );
+                return Err("CROSSSLOT Keys in request don't hash to the same slot".to_string());
             }
         }
 

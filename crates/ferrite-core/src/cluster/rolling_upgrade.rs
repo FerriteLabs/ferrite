@@ -298,10 +298,7 @@ impl RollingUpgradeManager {
 
                 if inflight == 0 || timed_out {
                     if timed_out && inflight > 0 {
-                        warn!(
-                            inflight,
-                            "Drain timeout reached with in-flight operations"
-                        );
+                        warn!(inflight, "Drain timeout reached with in-flight operations");
                     }
                     info!("Drain complete, entering slot transfer phase");
                     *self.shutdown_phase.write() = ShutdownPhase::TransferringSlots;
@@ -408,7 +405,10 @@ mod tests {
             ClusterVersion::current(),
         );
         let result = mgr.check_version_compatibility(&ClusterVersion::new(2, 0, 0));
-        assert!(matches!(result, Err(VersionError::IncompatibleMajor { .. })));
+        assert!(matches!(
+            result,
+            Err(VersionError::IncompatibleMajor { .. })
+        ));
     }
 
     #[test]

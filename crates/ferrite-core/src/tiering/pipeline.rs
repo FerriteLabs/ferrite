@@ -580,11 +580,11 @@ impl CompressionPipeline {
             });
         }
 
-        let dict_len = u32::from_le_bytes(
-            data[0..4].try_into().map_err(|_| PipelineError::DecompressionFailed {
+        let dict_len = u32::from_le_bytes(data[0..4].try_into().map_err(|_| {
+            PipelineError::DecompressionFailed {
                 detail: "failed to read dictionary length".to_string(),
-            })?,
-        ) as usize;
+            }
+        })?) as usize;
         let decompressed = lz4_flex::decompress_size_prepended(&data[4..]).map_err(|e| {
             PipelineError::DecompressionFailed {
                 detail: e.to_string(),

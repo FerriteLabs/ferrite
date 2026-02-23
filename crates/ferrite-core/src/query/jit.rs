@@ -681,9 +681,7 @@ impl JitEngine {
             _ => {
                 // Try numeric comparison
                 match (left.as_float(), right.as_float()) {
-                    (Some(a), Some(b)) => {
-                        JitValue::Bool(a.partial_cmp(&b).is_some_and(&pred))
-                    }
+                    (Some(a), Some(b)) => JitValue::Bool(a.partial_cmp(&b).is_some_and(&pred)),
                     _ => JitValue::Null,
                 }
             }

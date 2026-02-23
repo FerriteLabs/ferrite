@@ -144,10 +144,7 @@ pub struct MemoryPressureSnapshot {
 }
 
 /// Detect the current memory pressure level
-pub fn detect_pressure(
-    used_bytes: usize,
-    config: &MemoryPressureConfig,
-) -> PressureLevel {
+pub fn detect_pressure(used_bytes: usize, config: &MemoryPressureConfig) -> PressureLevel {
     if config.memory_limit == 0 {
         return PressureLevel::None;
     }

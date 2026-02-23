@@ -335,9 +335,7 @@ impl QueryPlanner {
             },
             Expr::Nested(inner) => self.plan_expr(inner),
             Expr::Subquery(select) => {
-                let subquery_plan = self
-                    .plan_select(select)
-                    .unwrap_or(QueryPlan::EmptyRelation);
+                let subquery_plan = self.plan_select(select).unwrap_or(QueryPlan::EmptyRelation);
                 PlanExpr::InSubquery {
                     expr: Box::new(PlanExpr::Literal(Value::Null)),
                     subquery: Box::new(subquery_plan),
@@ -345,9 +343,7 @@ impl QueryPlanner {
                 }
             }
             Expr::Exists(select) => {
-                let subquery_plan = self
-                    .plan_select(select)
-                    .unwrap_or(QueryPlan::EmptyRelation);
+                let subquery_plan = self.plan_select(select).unwrap_or(QueryPlan::EmptyRelation);
                 PlanExpr::Exists {
                     subquery: Box::new(subquery_plan),
                     negated: false,
@@ -634,8 +630,11 @@ impl QueryPlanner {
             PlanExpr::BinaryOp { op, left, .. } => {
                 if matches!(
                     op,
-                    PlanBinaryOp::Equal | PlanBinaryOp::LessThan | PlanBinaryOp::GreaterThan
-                        | PlanBinaryOp::LessThanOrEqual | PlanBinaryOp::GreaterThanOrEqual
+                    PlanBinaryOp::Equal
+                        | PlanBinaryOp::LessThan
+                        | PlanBinaryOp::GreaterThan
+                        | PlanBinaryOp::LessThanOrEqual
+                        | PlanBinaryOp::GreaterThanOrEqual
                 ) && matches!(**left, PlanExpr::Column { .. })
                 {
                     return "index: possible";
@@ -696,8 +695,7 @@ impl QueryPlanner {
                 )
             }
             PlanExpr::Function { name, args, .. } => {
-                let arg_strs: Vec<String> =
-                    args.iter().map(Self::format_predicate).collect();
+                let arg_strs: Vec<String> = args.iter().map(Self::format_predicate).collect();
                 format!("{}({})", name, arg_strs.join(", "))
             }
             PlanExpr::IsNull { expr, negated } => {
@@ -1179,9 +1177,7 @@ mod tests {
     #[test]
     fn test_explain_filter_shows_index_info() {
         let parser = QueryParser::new();
-        let stmt = parser
-            .parse("SELECT * FROM users WHERE age > 21")
-            .unwrap();
+        let stmt = parser.parse("SELECT * FROM users WHERE age > 21").unwrap();
 
         let planner = QueryPlanner::new(QueryConfig::default());
         let plan = planner.plan(&stmt).unwrap();
@@ -1246,20 +1242,14 @@ mod tests {
         let plan = planner.plan(&stmt).unwrap();
         let explain = planner.explain(&plan);
 
-        assert!(
-            explain.contains("COUNT"),
-            "Should show COUNT: {}",
-            explain
-        );
+        assert!(explain.contains("COUNT"), "Should show COUNT: {}", explain);
         assert!(explain.contains("SUM"), "Should show SUM: {}", explain);
     }
 
     #[test]
     fn test_explain_distinct_shows_dedup() {
         let parser = QueryParser::new();
-        let stmt = parser
-            .parse("SELECT DISTINCT status FROM users:*")
-            .unwrap();
+        let stmt = parser.parse("SELECT DISTINCT status FROM users:*").unwrap();
 
         let planner = QueryPlanner::new(QueryConfig::default());
         let plan = planner.plan(&stmt).unwrap();

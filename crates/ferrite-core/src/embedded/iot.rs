@@ -265,9 +265,7 @@ impl SensorIngestion {
 
         // Append to sliding window.
         let mut readings = self.readings.write();
-        let window = readings
-            .entry(reading.sensor_id.clone())
-            .or_default();
+        let window = readings.entry(reading.sensor_id.clone()).or_default();
         window.push_back(reading);
         // Trim window
         while window.len() > self.config.max_readings_per_sensor {
@@ -293,9 +291,7 @@ impl SensorIngestion {
                     .update(reading.value, ts);
             }
 
-            let window = store
-                .entry(reading.sensor_id.clone())
-                .or_default();
+            let window = store.entry(reading.sensor_id.clone()).or_default();
             window.push_back(reading);
             while window.len() > self.config.max_readings_per_sensor {
                 window.pop_front();
@@ -373,14 +369,14 @@ impl EdgeAggregator {
     /// Feed a reading into the aggregator.
     pub fn add_reading(&self, sensor_id: &str, value: f64, timestamp: u64) {
         let mut current = self.current_buckets.write();
-        let bucket = current.entry(sensor_id.to_string()).or_insert_with(|| {
-            AggregationBucket {
+        let bucket = current
+            .entry(sensor_id.to_string())
+            .or_insert_with(|| AggregationBucket {
                 sensor_id: sensor_id.to_string(),
                 start_time: timestamp,
                 end_time: timestamp + self.bucket_duration.as_micros() as u64,
                 stats: SensorAggregate::default(),
-            }
-        });
+            });
 
         // Rotate bucket if the reading falls outside the current window.
         if timestamp >= bucket.end_time {

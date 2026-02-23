@@ -412,10 +412,7 @@ impl RecommendationRule for MemoryUsageRule {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::observability::analyzer::{
-        DetectedPattern, Severity as AnalyzerSeverity, SlowQuery,
-    };
-    use std::collections::HashMap;
+    use crate::observability::analyzer::{DetectedPattern, Severity as AnalyzerSeverity};
 
     #[test]
     fn test_recommendation_engine_creation() {

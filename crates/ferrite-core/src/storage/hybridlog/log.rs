@@ -354,7 +354,12 @@ impl HybridLog {
     }
 
     /// Set a value with expiration
-    pub fn set_with_expiry(&self, key: Bytes, value: Bytes, expires_at: SystemTime) -> io::Result<()> {
+    pub fn set_with_expiry(
+        &self,
+        key: Bytes,
+        value: Bytes,
+        expires_at: SystemTime,
+    ) -> io::Result<()> {
         self.set_count.fetch_add(1, Ordering::Relaxed);
 
         match self.mutable.try_append(&key, &value) {

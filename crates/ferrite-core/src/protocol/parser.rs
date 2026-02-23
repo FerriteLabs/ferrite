@@ -27,7 +27,7 @@ impl Default for ParserLimits {
     fn default() -> Self {
         Self {
             max_bulk_string_size: 512 * 1024 * 1024, // 512MB (Redis proto-max-bulk-len)
-            max_array_elements: 1_048_576,            // 1M elements
+            max_array_elements: 1_048_576,           // 1M elements
             max_nesting_depth: 64,
         }
     }
@@ -115,10 +115,7 @@ fn expected_crlf_error() -> ParseError {
 #[cold]
 #[inline(never)]
 fn bulk_string_too_large_error(size: usize, max: usize) -> ParseError {
-    ParseError::FrameTooLarge(format!(
-        "bulk string size {} exceeds limit {}",
-        size, max
-    ))
+    ParseError::FrameTooLarge(format!("bulk string size {} exceeds limit {}", size, max))
 }
 
 /// Helper to create array too large error (marked cold)
@@ -135,10 +132,7 @@ fn collection_too_large_error(kind: &str, count: usize, max: usize) -> ParseErro
 #[cold]
 #[inline(never)]
 fn nesting_too_deep_error(depth: usize, max: usize) -> ParseError {
-    ParseError::FrameTooLarge(format!(
-        "nesting depth {} exceeds limit {}",
-        depth, max
-    ))
+    ParseError::FrameTooLarge(format!("nesting depth {} exceeds limit {}", depth, max))
 }
 
 /// Parse a RESP frame from the buffer
@@ -214,7 +208,10 @@ fn check_frame(
             } else {
                 let len = len as usize;
                 if len > limits.max_bulk_string_size {
-                    return Err(bulk_string_too_large_error(len, limits.max_bulk_string_size));
+                    return Err(bulk_string_too_large_error(
+                        len,
+                        limits.max_bulk_string_size,
+                    ));
                 }
                 // Skip the data plus final \r\n
                 let total = cursor.position() as usize + len + 2;
@@ -239,7 +236,11 @@ fn check_frame(
             } else {
                 let count_usize = count as usize;
                 if count_usize > limits.max_array_elements {
-                    return Err(collection_too_large_error("array", count_usize, limits.max_array_elements));
+                    return Err(collection_too_large_error(
+                        "array",
+                        count_usize,
+                        limits.max_array_elements,
+                    ));
                 }
                 // Check each element
                 for _ in 0..count {
@@ -278,7 +279,10 @@ fn check_frame(
             }
             let len = len as usize;
             if len > limits.max_bulk_string_size {
-                return Err(bulk_string_too_large_error(len, limits.max_bulk_string_size));
+                return Err(bulk_string_too_large_error(
+                    len,
+                    limits.max_bulk_string_size,
+                ));
             }
             let total = cursor.position() as usize + len + 2;
             if cursor.get_ref().len() < total {
@@ -299,7 +303,10 @@ fn check_frame(
             }
             let len = len as usize;
             if len > limits.max_bulk_string_size {
-                return Err(bulk_string_too_large_error(len, limits.max_bulk_string_size));
+                return Err(bulk_string_too_large_error(
+                    len,
+                    limits.max_bulk_string_size,
+                ));
             }
             let total = cursor.position() as usize + len + 2;
             if cursor.get_ref().len() < total {
@@ -321,7 +328,11 @@ fn check_frame(
             }
             let count_usize = count as usize;
             if count_usize > limits.max_array_elements {
-                return Err(collection_too_large_error("map", count_usize, limits.max_array_elements));
+                return Err(collection_too_large_error(
+                    "map",
+                    count_usize,
+                    limits.max_array_elements,
+                ));
             }
             for _ in 0..count {
                 check_frame(cursor, limits, depth + 1)?; // key
@@ -341,7 +352,11 @@ fn check_frame(
             }
             let count_usize = count as usize;
             if count_usize > limits.max_array_elements {
-                return Err(collection_too_large_error("set", count_usize, limits.max_array_elements));
+                return Err(collection_too_large_error(
+                    "set",
+                    count_usize,
+                    limits.max_array_elements,
+                ));
             }
             for _ in 0..count {
                 check_frame(cursor, limits, depth + 1)?;
@@ -360,7 +375,11 @@ fn check_frame(
             }
             let count_usize = count as usize;
             if count_usize > limits.max_array_elements {
-                return Err(collection_too_large_error("push", count_usize, limits.max_array_elements));
+                return Err(collection_too_large_error(
+                    "push",
+                    count_usize,
+                    limits.max_array_elements,
+                ));
             }
             for _ in 0..count {
                 check_frame(cursor, limits, depth + 1)?;
@@ -940,7 +959,9 @@ mod tests {
         };
         // Within limit
         let mut buf = BytesMut::from("$5\r\nhello\r\n");
-        assert!(parse_frame_with_limits(&mut buf, &limits).unwrap().is_some());
+        assert!(parse_frame_with_limits(&mut buf, &limits)
+            .unwrap()
+            .is_some());
 
         // Exceeds limit
         let mut buf = BytesMut::from("$11\r\nhello world\r\n");
@@ -958,7 +979,9 @@ mod tests {
         };
         // Within limit
         let mut buf = BytesMut::from("*2\r\n+a\r\n+b\r\n");
-        assert!(parse_frame_with_limits(&mut buf, &limits).unwrap().is_some());
+        assert!(parse_frame_with_limits(&mut buf, &limits)
+            .unwrap()
+            .is_some());
 
         // Exceeds limit
         let mut buf = BytesMut::from("*3\r\n+a\r\n+b\r\n+c\r\n");
@@ -976,7 +999,9 @@ mod tests {
         };
         // Depth 1 — within limit
         let mut buf = BytesMut::from("*1\r\n+ok\r\n");
-        assert!(parse_frame_with_limits(&mut buf, &limits).unwrap().is_some());
+        assert!(parse_frame_with_limits(&mut buf, &limits)
+            .unwrap()
+            .is_some());
 
         // Depth 3 — exceeds limit
         let mut buf = BytesMut::from("*1\r\n*1\r\n*1\r\n+deep\r\n");

@@ -327,14 +327,20 @@
 //! 4. **Create views for dashboards**: Pre-compute expensive aggregations
 //! 5. **Monitor query stats**: Track slow queries and optimize
 
+/// AI-powered query advisor with index and rewrite recommendations.
+pub mod advisor;
 /// AI-driven query optimizer with workload analysis.
 pub mod ai_optimizer;
 /// Abstract syntax tree definitions for FerriteQL.
 pub mod ast;
+/// Cross-model data source registry for querying across data models.
+pub mod datasource;
 /// Query plan executor against the storage engine.
 pub mod executor;
 /// Foreign data wrapper support.
 pub mod fdw;
+/// Distributed federated query executor with scatter-gather.
+pub mod federated_executor;
 /// Federated query execution across multiple instances.
 pub mod federation;
 /// Built-in scalar and aggregate functions.
@@ -351,6 +357,12 @@ pub mod optimizer;
 pub mod parser;
 /// Query planner that converts AST to execution plans.
 pub mod planner;
+/// Versioned schema registry with evolution and online migration.
+pub mod schema_registry;
+/// Streaming materialized views with incremental computation.
+pub mod streaming_views;
+/// Real-time query subscriptions for live result updates.
+pub mod subscription;
 /// Type system and schema definitions.
 pub mod types;
 /// Materialized view management and subscriptions.

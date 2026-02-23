@@ -194,7 +194,9 @@ impl TimestampOracle {
 }
 
 /// A globally unique timestamp
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(
+    Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
+)]
 pub struct Timestamp {
     /// Physical time component (milliseconds since epoch)
     pub physical: u64,
@@ -623,15 +625,12 @@ impl PercolatorTransaction {
 
         // Commit secondary keys (can be async)
         if self.config.async_commit {
-            let secondaries: Vec<_> = keys
-                .into_iter()
-                .filter(|k| *k != primary)
-                .collect();
+            let secondaries: Vec<_> = keys.into_iter().filter(|k| *k != primary).collect();
 
             // Spawn async commit for secondaries
             for key in secondaries {
                 let lock_manager = self.lock_manager.clone();
-                
+
                 let start_ts = self.start_ts;
                 tokio::spawn(async move {
                     let _ =

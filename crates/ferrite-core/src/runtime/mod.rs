@@ -4,6 +4,12 @@
 
 /// Client registry for tracking connected clients
 pub mod clients;
+/// Runtime configuration hot-reload manager.
+pub mod config_manager;
+/// Systematic error recovery and backpressure management.
+pub mod error_recovery;
+/// Graceful shutdown coordinator and crash recovery engine.
+pub mod shutdown;
 /// Slow query log for debugging
 pub mod slowlog;
 /// Pub/Sub subscription management

@@ -130,12 +130,18 @@ impl SlowLog {
 
     /// Check if the slow log is empty
     pub fn is_empty(&self) -> bool {
-        self.entries.read().unwrap_or_else(|e| e.into_inner()).is_empty()
+        self.entries
+            .read()
+            .unwrap_or_else(|e| e.into_inner())
+            .is_empty()
     }
 
     /// Clear all entries from the slow log
     pub fn reset(&self) {
-        self.entries.write().unwrap_or_else(|e| e.into_inner()).clear();
+        self.entries
+            .write()
+            .unwrap_or_else(|e| e.into_inner())
+            .clear();
     }
 
     /// Get the current threshold in microseconds

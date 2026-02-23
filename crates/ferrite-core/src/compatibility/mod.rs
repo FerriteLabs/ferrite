@@ -4,11 +4,13 @@
 //! Ferrite's compatibility with Redis commands and behaviors. Produces
 //! a machine-readable compatibility matrix and certification score.
 
-#![allow(dead_code, unused_imports, unused_variables)]
+#![allow(dead_code)]
 pub mod certification;
 pub mod dashboard;
 pub mod report;
 pub mod suite;
+/// Redis TCL test suite compatibility tracker and matrix generator.
+pub mod tcl_compat;
 pub mod tracker;
 pub mod trend;
 

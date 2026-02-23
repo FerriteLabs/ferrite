@@ -320,9 +320,7 @@ impl SlotMap {
 
     /// Return the node that owns `slot`, if any.
     pub fn get_node_for_slot(&self, slot: u16) -> Option<&NodeId> {
-        self.slots
-            .get(slot as usize)
-            .and_then(|opt| opt.as_ref())
+        self.slots.get(slot as usize).and_then(|opt| opt.as_ref())
     }
 
     /// Determine whether `slot` should be redirected away from `my_id`.

@@ -193,7 +193,11 @@ impl PlacementOptimizer {
             OptimizationTarget::Cost => {
                 let best = viable_tiers
                     .iter()
-                    .min_by(|a, b| a.total.partial_cmp(&b.total).unwrap_or(std::cmp::Ordering::Equal))
+                    .min_by(|a, b| {
+                        a.total
+                            .partial_cmp(&b.total)
+                            .unwrap_or(std::cmp::Ordering::Equal)
+                    })
                     .cloned()
                     .unwrap_or_else(|| TierCostBreakdown::zero(stats.tier));
                 (best, PlacementReason::CostOptimal)
@@ -201,7 +205,11 @@ impl PlacementOptimizer {
             OptimizationTarget::Latency => {
                 let best = viable_tiers
                     .iter()
-                    .min_by(|a, b| a.latency_impact.partial_cmp(&b.latency_impact).unwrap_or(std::cmp::Ordering::Equal))
+                    .min_by(|a, b| {
+                        a.latency_impact
+                            .partial_cmp(&b.latency_impact)
+                            .unwrap_or(std::cmp::Ordering::Equal)
+                    })
                     .cloned()
                     .unwrap_or_else(|| TierCostBreakdown::zero(stats.tier));
                 (best, PlacementReason::LatencyConstraint)
@@ -241,7 +249,9 @@ impl PlacementOptimizer {
                             + (a.latency_impact - min_latency) / latency_range;
                         let score_b = (b.total - min_cost) / cost_range
                             + (b.latency_impact - min_latency) / latency_range;
-                        score_a.partial_cmp(&score_b).unwrap_or(std::cmp::Ordering::Equal)
+                        score_a
+                            .partial_cmp(&score_b)
+                            .unwrap_or(std::cmp::Ordering::Equal)
                     })
                     .cloned()
                     .unwrap_or_else(|| TierCostBreakdown::zero(stats.tier));

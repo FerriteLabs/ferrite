@@ -1456,7 +1456,8 @@ impl BackupManager {
         // Set TTL if present
         if let Some(ttl_ms) = entry.ttl {
             if ttl_ms > 0 {
-                let expires_at = std::time::SystemTime::now() + Duration::from_millis(ttl_ms as u64);
+                let expires_at =
+                    std::time::SystemTime::now() + Duration::from_millis(ttl_ms as u64);
                 self.store.expire(db, &key, expires_at);
             }
         }

@@ -29,17 +29,23 @@
 //! ```
 
 mod access;
+/// Automated tiering advisor with budget and SLA-aware recommendations.
+pub mod advisor;
 pub mod backend;
 pub mod compression;
 mod config;
 mod cost;
 mod engine;
+/// Smart data lifecycle manager with automated tier transitions.
+pub mod lifecycle;
 mod migration;
 mod optimizer;
 pub mod pipeline;
 pub mod predictor;
 pub mod prefetch;
 mod stats;
+/// Intelligent cache warming with ML-driven proactive key promotion.
+pub mod warming;
 
 pub use access::{AccessPattern, AccessPatternAnalyzer, AccessType};
 pub use backend::{

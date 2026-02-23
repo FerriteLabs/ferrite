@@ -114,9 +114,7 @@ pub fn simulate_crash_recovery(path: &Path, valid_count: usize) -> io::Result<u6
 ///
 /// This helper creates a shared stats object and returns closures that
 /// callers can spawn on threads.
-pub fn concurrent_workload(
-    config: WorkloadConfig,
-) -> (Arc<WorkloadStats>, WorkloadConfig) {
+pub fn concurrent_workload(config: WorkloadConfig) -> (Arc<WorkloadStats>, WorkloadConfig) {
     (Arc::new(WorkloadStats::new()), config)
 }
 
@@ -138,11 +136,7 @@ pub fn write_test_records(path: &Path, count: usize) -> io::Result<()> {
 }
 
 /// Write records then corrupt one in the middle, returning expected valid count
-pub fn write_with_mid_corruption(
-    path: &Path,
-    total: usize,
-    corrupt_at: usize,
-) -> io::Result<u64> {
+pub fn write_with_mid_corruption(path: &Path, total: usize, corrupt_at: usize) -> io::Result<u64> {
     let mut file = std::fs::File::create(path)?;
     let mut offsets = Vec::new();
 

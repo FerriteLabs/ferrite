@@ -1396,10 +1396,7 @@ impl CompatibilitySuite {
                     Some(Value::SortedSet { by_score: bs, .. }) => {
                         let all: Vec<Bytes> = bs.keys().map(|(_, m)| m.clone()).collect();
                         let sub = &all[1..4];
-                        if sub.len() == 3
-                            && sub[0] == "m1"
-                            && sub[2] == "m3"
-                        {
+                        if sub.len() == 3 && sub[0] == "m1" && sub[2] == "m3" {
                             Ok(())
                         } else {
                             Err(format!("unexpected range: {:?}", sub))
@@ -1678,7 +1675,7 @@ impl CompatibilitySuite {
             "Key",
             true,
             "KEYS lists all key names in the database",
-            |store| {
+            |_store| {
                 let store2 = Store::new(16);
                 store2.set(0, Bytes::from("ka"), Value::String(Bytes::from("1")));
                 store2.set(0, Bytes::from("kb"), Value::String(Bytes::from("2")));
@@ -1698,7 +1695,7 @@ impl CompatibilitySuite {
             "Key",
             false,
             "DEL can remove multiple keys at once",
-            |store| {
+            |_store| {
                 let store2 = Store::new(16);
                 store2.set(0, Bytes::from("dm1"), Value::String(Bytes::from("a")));
                 store2.set(0, Bytes::from("dm2"), Value::String(Bytes::from("b")));

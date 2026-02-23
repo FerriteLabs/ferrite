@@ -335,8 +335,9 @@ impl QueryExecutor {
         expr: &'a PlanExpr,
         db: u8,
         stats: &'a mut QueryStats,
-    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<PlanExpr, QueryError>> + Send + 'a>>
-    {
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = Result<PlanExpr, QueryError>> + Send + 'a>,
+    > {
         Box::pin(async move {
             match expr {
                 PlanExpr::InSubquery {

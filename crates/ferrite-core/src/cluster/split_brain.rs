@@ -4,15 +4,15 @@
 //! nodes in a minority partition into read-only mode, and provides
 //! recovery procedures to reunite the cluster.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use parking_lot::RwLock;
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 
-use super::{ClusterManager, NodeId, NodeState};
+use super::{ClusterManager, NodeId};
 
 /// Configuration for split-brain detection.
 #[derive(Debug, Clone)]
@@ -264,12 +264,7 @@ impl SplitBrainDetector {
         let heartbeats = self.heartbeats.read();
         let reachable_count = remote_primaries
             .iter()
-            .filter(|n| {
-                heartbeats
-                    .get(&n.id)
-                    .map(|h| h.reachable)
-                    .unwrap_or(false)
-            })
+            .filter(|n| heartbeats.get(&n.id).map(|h| h.reachable).unwrap_or(false))
             .count();
 
         let total = remote_primaries.len();

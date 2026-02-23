@@ -47,10 +47,7 @@ impl S3Server {
     ///
     /// The `store_ops` closure factory produces per-request store operation closures.
     /// This design allows the caller to provide any store implementation.
-    pub async fn start<F>(
-        &self,
-        store_ops: F,
-    ) -> std::io::Result<SocketAddr>
+    pub async fn start<F>(&self, store_ops: F) -> std::io::Result<SocketAddr>
     where
         F: Fn() -> StoreOps + Send + Sync + 'static,
     {
@@ -83,9 +80,7 @@ impl S3Server {
                     let handler = service_fn(move |req: Request<Incoming>| {
                         let svc = Arc::clone(&svc);
                         let ops = ops_factory();
-                        async move {
-                            Ok::<_, Infallible>(handle_s3_request(req, &svc, ops).await)
-                        }
+                        async move { Ok::<_, Infallible>(handle_s3_request(req, &svc, ops).await) }
                     });
 
                     if let Err(e) = http1::Builder::new()
@@ -136,9 +131,12 @@ async fn handle_s3_request(
             return Response::builder()
                 .status(StatusCode::BAD_REQUEST)
                 .header("Content-Type", "application/xml")
-                .body(Full::new(Bytes::from(
-                    super::s3_compat::error_xml("InvalidRequest", &msg, &path, "0"),
-                )))
+                .body(Full::new(Bytes::from(super::s3_compat::error_xml(
+                    "InvalidRequest",
+                    &msg,
+                    &path,
+                    "0",
+                ))))
                 .unwrap_or_default();
         }
     };
@@ -153,14 +151,12 @@ async fn handle_s3_request(
                     return Response::builder()
                         .status(StatusCode::BAD_REQUEST)
                         .header("Content-Type", "application/xml")
-                        .body(Full::new(Bytes::from(
-                            super::s3_compat::error_xml(
-                                "IncompleteBody",
-                                &format!("Failed to read request body: {}", e),
-                                &path,
-                                "0",
-                            ),
-                        )))
+                        .body(Full::new(Bytes::from(super::s3_compat::error_xml(
+                            "IncompleteBody",
+                            &format!("Failed to read request body: {}", e),
+                            &path,
+                            "0",
+                        ))))
                         .unwrap_or_default();
                 }
             }
@@ -176,7 +172,8 @@ async fn handle_s3_request(
         |db, key| (ops.exists)(db, key),
     );
 
-    let mut builder = Response::builder().status(StatusCode::from_u16(resp.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR));
+    let mut builder = Response::builder()
+        .status(StatusCode::from_u16(resp.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR));
 
     if !resp.content_type.is_empty() {
         builder = builder.header("Content-Type", resp.content_type);
@@ -234,8 +231,9 @@ mod tests {
         tokio::time::sleep(std::time::Duration::from_millis(50)).await;
 
         // Test GET existing key
-        let client = hyper_util::client::legacy::Client::builder(hyper_util::rt::TokioExecutor::new())
-            .build_http::<Full<Bytes>>();
+        let client =
+            hyper_util::client::legacy::Client::builder(hyper_util::rt::TokioExecutor::new())
+                .build_http::<Full<Bytes>>();
         let uri: hyper::Uri = format!("http://{}/default/testkey", addr).parse().unwrap();
         let resp = client.get(uri).await.expect("request should succeed");
         assert_eq!(resp.status(), 200);

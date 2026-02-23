@@ -150,8 +150,7 @@ pub fn recovery_scan(path: &Path) -> io::Result<RecoverySummary> {
         if header.magic != RECORD_MAGIC {
             error!(
                 offset = offset,
-                "Corrupted record: bad magic bytes at offset {}",
-                offset
+                "Corrupted record: bad magic bytes at offset {}", offset
             );
             summary.corrupted_records += 1;
             break; // Cannot reliably find the next record
@@ -224,11 +223,7 @@ pub fn repair_log(path: &Path) -> io::Result<RecoverySummary> {
 }
 
 /// Write a checksummed record to a file at the current position
-pub fn write_checksummed_record(
-    file: &mut File,
-    key: &[u8],
-    value: &[u8],
-) -> io::Result<usize> {
+pub fn write_checksummed_record(file: &mut File, key: &[u8], value: &[u8]) -> io::Result<usize> {
     let key_len = key.len() as u32;
     let value_len = value.len() as u32;
 
@@ -268,12 +263,7 @@ mod tests {
     fn test_crc_roundtrip() {
         let key = b"hello";
         let value = b"world";
-        let crc = ChecksummedHeader::compute_crc(
-            key.len() as u32,
-            value.len() as u32,
-            key,
-            value,
-        );
+        let crc = ChecksummedHeader::compute_crc(key.len() as u32, value.len() as u32, key, value);
 
         let mut header = ChecksummedHeader::new(key.len() as u32, value.len() as u32);
         header.crc32 = crc;

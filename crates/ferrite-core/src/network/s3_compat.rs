@@ -125,11 +125,7 @@ pub fn list_buckets_xml(buckets: &[String]) -> String {
 }
 
 /// Parse an HTTP request path into an S3 request.
-pub fn parse_request(
-    method: &str,
-    path: &str,
-    query: Option<&str>,
-) -> Result<S3Request, String> {
+pub fn parse_request(method: &str, path: &str, query: Option<&str>) -> Result<S3Request, String> {
     let path = path.trim_start_matches('/');
 
     if path.is_empty() {
@@ -172,15 +168,14 @@ pub fn parse_request(
 
 fn parse_query_param(query: Option<&str>, name: &str) -> Option<String> {
     query.and_then(|q| {
-        q.split('&')
-            .find_map(|pair| {
-                let (k, v) = pair.split_once('=')?;
-                if k == name {
-                    Some(v.to_string())
-                } else {
-                    None
-                }
-            })
+        q.split('&').find_map(|pair| {
+            let (k, v) = pair.split_once('=')?;
+            if k == name {
+                Some(v.to_string())
+            } else {
+                None
+            }
+        })
     })
 }
 
@@ -209,11 +204,7 @@ impl S3Service {
 
     /// Resolve a bucket name to a database index.
     pub fn resolve_bucket(&self, bucket: &str) -> u8 {
-        self.config
-            .bucket_map
-            .get(bucket)
-            .copied()
-            .unwrap_or(0) // default bucket → database 0
+        self.config.bucket_map.get(bucket).copied().unwrap_or(0) // default bucket → database 0
     }
 
     /// Handle a parsed S3 request and produce an S3 response.
@@ -248,13 +239,8 @@ impl S3Service {
                     None => S3Response {
                         status: 404,
                         content_type: "application/xml".to_string(),
-                        body: error_xml(
-                            "NoSuchKey",
-                            "The specified key does not exist.",
-                            key,
-                            "0",
-                        )
-                        .into_bytes(),
+                        body: error_xml("NoSuchKey", "The specified key does not exist.", key, "0")
+                            .into_bytes(),
                         headers: vec![],
                     },
                 }
@@ -420,7 +406,12 @@ mod tests {
 
     #[test]
     fn test_error_xml() {
-        let xml = error_xml("NoSuchKey", "The specified key does not exist.", "/mybucket/mykey", "req-1");
+        let xml = error_xml(
+            "NoSuchKey",
+            "The specified key does not exist.",
+            "/mybucket/mykey",
+            "req-1",
+        );
         assert!(xml.contains("<Code>NoSuchKey</Code>"));
         assert!(xml.contains("<Message>The specified key does not exist.</Message>"));
     }

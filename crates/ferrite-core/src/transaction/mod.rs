@@ -52,8 +52,10 @@
 //! txn.commit().await?;
 //! ```
 
-#![allow(dead_code, unused_imports, unused_variables)]
+#![allow(dead_code)]
 pub mod coordinator;
+/// Distributed lock manager with deadlock detection for cross-node ACID.
+pub mod distributed;
 pub mod isolation;
 pub mod lock;
 pub mod mvcc;

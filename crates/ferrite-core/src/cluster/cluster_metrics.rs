@@ -4,7 +4,7 @@
 //! progress and health at the metrics endpoint.
 
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use parking_lot::RwLock;
 

@@ -137,16 +137,12 @@ pub fn init_telemetry(config: &TelemetryConfig) -> Result<TelemetryHandle> {
                 .with_endpoint(&config.endpoint)
                 .build_span_exporter()
                 .map_err(|e| {
-                    FerriteError::Config(format!(
-                        "Failed to create gRPC OTLP span exporter: {e}"
-                    ))
+                    FerriteError::Config(format!("Failed to create gRPC OTLP span exporter: {e}"))
                 })?;
 
             SdkTracerProvider::builder()
                 .with_config(trace_config)
-                .with_span_processor(
-                    BatchSpanProcessor::builder(exporter, runtime::Tokio).build(),
-                )
+                .with_span_processor(BatchSpanProcessor::builder(exporter, runtime::Tokio).build())
                 .build()
         }
         OtlpProtocol::Http => {
@@ -155,16 +151,12 @@ pub fn init_telemetry(config: &TelemetryConfig) -> Result<TelemetryHandle> {
                 .with_endpoint(&config.endpoint)
                 .build_span_exporter()
                 .map_err(|e| {
-                    FerriteError::Config(format!(
-                        "Failed to create HTTP OTLP span exporter: {e}"
-                    ))
+                    FerriteError::Config(format!("Failed to create HTTP OTLP span exporter: {e}"))
                 })?;
 
             SdkTracerProvider::builder()
                 .with_config(trace_config)
-                .with_span_processor(
-                    BatchSpanProcessor::builder(exporter, runtime::Tokio).build(),
-                )
+                .with_span_processor(BatchSpanProcessor::builder(exporter, runtime::Tokio).build())
                 .build()
         }
     };

@@ -30,13 +30,19 @@
 //! PROFILE STOP
 //! ```
 
-#![allow(dead_code, unused_imports, unused_variables)]
+#![allow(dead_code)]
 pub mod advisor;
 pub mod analyzer;
 pub mod anomaly;
 pub mod chaos;
+/// Chaos engineering experiment runner with fault injection and safety validation.
+pub mod chaos_engine;
 pub mod correlation;
+/// Structured logging, latency tracking, and crash diagnostics.
+pub mod diagnostics;
 pub mod distributed_trace;
+/// eBPF zero-overhead kernel-level tracing and profiling.
+pub mod ebpf;
 pub mod heatmap;
 pub mod profiler;
 pub mod recommendations;

@@ -292,6 +292,7 @@ impl IoEngine for UringEngine {
                 let engine = self as *const UringEngine;
                 move || {
                     // SAFETY: Dereferencing engine pointer is safe because:
+                    // SAFETY: Dereferencing raw pointer to UringEngine is safe because:
                     // 1. The UringEngine reference `&'a self` is borrowed for the lifetime 'a
                     // 2. The BoxFuture returned holds this borrow and is awaited to completion
                     // 3. spawn_blocking's JoinHandle is awaited before the async block returns

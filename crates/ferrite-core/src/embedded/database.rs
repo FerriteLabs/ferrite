@@ -1213,14 +1213,10 @@ impl Database {
                             .iter()
                             .map(|v| match v {
                                 crate::query::Value::Null => QueryValue::Null,
-                                crate::query::Value::Bool(b) => {
-                                    QueryValue::String(b.to_string())
-                                }
+                                crate::query::Value::Bool(b) => QueryValue::String(b.to_string()),
                                 crate::query::Value::Int(n) => QueryValue::Int(*n),
                                 crate::query::Value::Float(f) => QueryValue::Float(*f),
-                                crate::query::Value::String(s) => {
-                                    QueryValue::String(s.clone())
-                                }
+                                crate::query::Value::String(s) => QueryValue::String(s.clone()),
                                 crate::query::Value::Bytes(b) => {
                                     QueryValue::String(String::from_utf8_lossy(b).to_string())
                                 }

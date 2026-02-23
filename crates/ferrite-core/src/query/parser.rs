@@ -9,12 +9,62 @@ use crate::query::QueryError;
 
 /// Known SQL keywords for typo suggestions.
 const KEYWORDS: &[&str] = &[
-    "SELECT", "FROM", "WHERE", "AND", "OR", "NOT", "AS", "JOIN", "INNER", "LEFT", "RIGHT",
-    "FULL", "CROSS", "ON", "GROUP", "BY", "HAVING", "ORDER", "ASC", "DESC", "LIMIT", "OFFSET",
-    "DISTINCT", "INSERT", "INTO", "VALUES", "UPDATE", "SET", "DELETE", "CREATE", "DROP", "VIEW",
-    "EXPLAIN", "EXISTS", "BETWEEN", "LIKE", "IN", "IS", "NULL", "CASE", "WHEN", "THEN", "ELSE",
-    "END", "CAST", "TRUE", "FALSE", "PREPARE", "EXECUTE", "MATERIALIZED", "REFRESH",
-    "INCREMENTAL", "COMPLETE", "FILTER", "OVER", "PARTITION",
+    "SELECT",
+    "FROM",
+    "WHERE",
+    "AND",
+    "OR",
+    "NOT",
+    "AS",
+    "JOIN",
+    "INNER",
+    "LEFT",
+    "RIGHT",
+    "FULL",
+    "CROSS",
+    "ON",
+    "GROUP",
+    "BY",
+    "HAVING",
+    "ORDER",
+    "ASC",
+    "DESC",
+    "LIMIT",
+    "OFFSET",
+    "DISTINCT",
+    "INSERT",
+    "INTO",
+    "VALUES",
+    "UPDATE",
+    "SET",
+    "DELETE",
+    "CREATE",
+    "DROP",
+    "VIEW",
+    "EXPLAIN",
+    "EXISTS",
+    "BETWEEN",
+    "LIKE",
+    "IN",
+    "IS",
+    "NULL",
+    "CASE",
+    "WHEN",
+    "THEN",
+    "ELSE",
+    "END",
+    "CAST",
+    "TRUE",
+    "FALSE",
+    "PREPARE",
+    "EXECUTE",
+    "MATERIALIZED",
+    "REFRESH",
+    "INCREMENTAL",
+    "COMPLETE",
+    "FILTER",
+    "OVER",
+    "PARTITION",
 ];
 
 /// Compute edit distance between two strings (case-insensitive).
@@ -1572,9 +1622,7 @@ mod tests {
     fn test_aggregate_functions() {
         let parser = QueryParser::new();
         let stmt = parser
-            .parse(
-                "SELECT COUNT(*), SUM(total), AVG(total), MIN(price), MAX(price) FROM orders:*",
-            )
+            .parse("SELECT COUNT(*), SUM(total), AVG(total), MIN(price), MAX(price) FROM orders:*")
             .unwrap();
 
         if let Statement::Select(select) = stmt {
@@ -1588,9 +1636,7 @@ mod tests {
     fn test_group_by_having() {
         let parser = QueryParser::new();
         let stmt = parser
-            .parse(
-                "SELECT category, COUNT(*) cnt FROM orders:* GROUP BY category HAVING cnt > 5",
-            )
+            .parse("SELECT category, COUNT(*) cnt FROM orders:* GROUP BY category HAVING cnt > 5")
             .unwrap();
 
         if let Statement::Select(select) = stmt {
@@ -1605,9 +1651,7 @@ mod tests {
     fn test_left_join() {
         let parser = QueryParser::new();
         let stmt = parser
-            .parse(
-                "SELECT u.name FROM users:* AS u LEFT JOIN orders:* AS o ON o.user_id = u.id",
-            )
+            .parse("SELECT u.name FROM users:* AS u LEFT JOIN orders:* AS o ON o.user_id = u.id")
             .unwrap();
 
         if let Statement::Select(select) = stmt {
@@ -1703,9 +1747,7 @@ mod tests {
     fn test_case_expression() {
         let parser = QueryParser::new();
         let stmt = parser
-            .parse(
-                "SELECT CASE WHEN age >= 18 THEN 'adult' ELSE 'minor' END AS tier FROM users",
-            )
+            .parse("SELECT CASE WHEN age >= 18 THEN 'adult' ELSE 'minor' END AS tier FROM users")
             .unwrap();
 
         if let Statement::Select(select) = stmt {
@@ -1961,9 +2003,7 @@ mod tests {
     #[test]
     fn test_error_no_suggestion_for_valid_identifier() {
         let parser = QueryParser::new();
-        let err = parser
-            .parse("my_variable_name * FROM users")
-            .unwrap_err();
+        let err = parser.parse("my_variable_name * FROM users").unwrap_err();
         let msg = err.to_string();
         // Should not suggest a keyword for a long identifier that's clearly not a typo
         assert!(
@@ -1979,9 +2019,7 @@ mod tests {
     fn test_in_subquery() {
         let parser = QueryParser::new();
         let stmt = parser
-            .parse(
-                "SELECT * FROM users WHERE id IN (SELECT user_id FROM active_users)",
-            )
+            .parse("SELECT * FROM users WHERE id IN (SELECT user_id FROM active_users)")
             .unwrap();
 
         if let Statement::Select(select) = stmt {
@@ -1998,9 +2036,7 @@ mod tests {
     fn test_not_in_subquery() {
         let parser = QueryParser::new();
         let stmt = parser
-            .parse(
-                "SELECT * FROM users WHERE id NOT IN (SELECT user_id FROM banned_users)",
-            )
+            .parse("SELECT * FROM users WHERE id NOT IN (SELECT user_id FROM banned_users)")
             .unwrap();
 
         if let Statement::Select(select) = stmt {
@@ -2078,7 +2114,9 @@ mod tests {
     fn test_group_by_with_multiple_aggregates() {
         let parser = QueryParser::new();
         let stmt = parser
-            .parse("SELECT category, COUNT(*), SUM(price), AVG(price) FROM products GROUP BY category")
+            .parse(
+                "SELECT category, COUNT(*), SUM(price), AVG(price) FROM products GROUP BY category",
+            )
             .unwrap();
 
         if let Statement::Select(select) = stmt {

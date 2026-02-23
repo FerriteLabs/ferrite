@@ -248,7 +248,7 @@
 //! 4. **Use edge mode** for resource-constrained devices
 //! 5. **Share Arc<Database>** instead of creating multiple instances
 
-#![allow(dead_code, unused_imports, unused_variables)]
+#![allow(dead_code)]
 mod database;
 pub mod edge;
 mod error;
@@ -257,8 +257,12 @@ pub mod iot;
 mod iterators;
 pub mod lite;
 pub mod mesh;
+/// Mobile SDK binding generator for Swift/Kotlin/C.
+pub mod mobile_sdk;
 pub mod sync;
 mod transaction;
+/// WASM-compatible storage adapter for edge environments.
+pub mod wasm_adapter;
 
 pub use database::{
     Database, DatabaseStats, EmbeddedConfig, KeyType, QueryResult, QueryResultRow,

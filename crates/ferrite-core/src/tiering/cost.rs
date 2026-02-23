@@ -124,7 +124,11 @@ impl TierCostCalculator {
         self.calculate_all_tiers(stats)
             .into_iter()
             .filter(|b| b.latency_impact <= max_latency_ms)
-            .min_by(|a, b| a.total.partial_cmp(&b.total).unwrap_or(std::cmp::Ordering::Equal))
+            .min_by(|a, b| {
+                a.total
+                    .partial_cmp(&b.total)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            })
             .map(|b| (b.tier, b))
     }
 

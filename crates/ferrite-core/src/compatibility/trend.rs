@@ -72,8 +72,7 @@ impl TrendHistory {
 
     /// Persist the history to a JSON file.
     pub fn save(&self, path: &Path) -> std::io::Result<()> {
-        let json = serde_json::to_string_pretty(self)
-            .map_err(std::io::Error::other)?;
+        let json = serde_json::to_string_pretty(self).map_err(std::io::Error::other)?;
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)?;
         }

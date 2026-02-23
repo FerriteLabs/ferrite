@@ -10,17 +10,17 @@
 
 // ── Tier 1 — Stable ──────────────────────────────────────────────────────────
 
+pub mod auth;
 pub mod config;
 pub mod error;
-pub mod startup_errors;
-pub mod storage;
-pub mod persistence;
-pub mod protocol;
 pub mod io;
 pub mod metrics;
-pub mod runtime;
-pub mod auth;
+pub mod persistence;
+pub mod protocol;
 pub mod query;
+pub mod runtime;
+pub mod startup_errors;
+pub mod storage;
 
 #[cfg(feature = "crypto")]
 pub mod crypto;
@@ -30,19 +30,21 @@ pub mod telemetry;
 // ── Tier 2 — Beta ────────────────────────────────────────────────────────────
 
 pub mod cluster;
-pub mod network;
-pub mod embedded;
-pub mod tiering;
-pub mod observability;
 pub mod compatibility;
+pub mod embedded;
+pub mod network;
+pub mod observability;
+pub mod tiering;
 pub mod transaction;
 
 // ── Modules with core deps (moved here to avoid circular deps) ───────────────
 
-pub mod temporal;
-pub mod triggers;
 pub mod audit;
 pub mod grpc;
+pub mod optimizer;
+pub mod temporal;
+pub mod triggers;
+pub mod views;
 
 // ── Public re-exports ────────────────────────────────────────────────────────
 

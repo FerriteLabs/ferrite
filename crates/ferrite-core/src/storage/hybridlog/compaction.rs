@@ -104,11 +104,7 @@ pub struct CompactionSnapshot {
 ///
 /// Returns `true` when the estimated dead space ratio exceeds the threshold
 /// and the absolute dead bytes exceed the minimum.
-pub fn should_compact(
-    total_bytes: u64,
-    live_bytes: u64,
-    config: &CompactionConfig,
-) -> bool {
+pub fn should_compact(total_bytes: u64, live_bytes: u64, config: &CompactionConfig) -> bool {
     if total_bytes == 0 {
         return false;
     }

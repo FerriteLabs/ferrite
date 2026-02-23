@@ -426,7 +426,8 @@ pub struct DoorbellBatcher {
 /// Work item for batching
 struct BatchedWork {
     /// Request ID
-    #[allow(dead_code)] // Planned for v0.2 — stored for request tracking and response correlation
+    #[allow(dead_code)]
+    // Planned for v0.2 — stored for request tracking and response correlation
     id: u64,
     /// Connection
     conn: Arc<RdmaConnection>,

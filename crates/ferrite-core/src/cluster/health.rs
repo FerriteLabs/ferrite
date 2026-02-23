@@ -9,9 +9,9 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use parking_lot::RwLock;
-use tracing::{info, warn};
+use tracing::warn;
 
-use super::{ClusterManager, NodeId, NodeState};
+use super::{ClusterManager, NodeId};
 
 /// Health score range [0.0, 1.0] where 1.0 is perfectly healthy.
 pub type HealthScore = f64;
@@ -268,11 +268,9 @@ impl HealthMonitor {
                 / self.config.latency_threshold.as_millis() as f64)
                 .min(1.0);
 
-        let error_score =
-            1.0 - (metrics.error_rate / self.config.error_rate_threshold).min(1.0);
+        let error_score = 1.0 - (metrics.error_rate / self.config.error_rate_threshold).min(1.0);
 
-        let memory_score =
-            1.0 - (metrics.memory_usage / self.config.memory_threshold).min(1.0);
+        let memory_score = 1.0 - (metrics.memory_usage / self.config.memory_threshold).min(1.0);
 
         let raw = w.latency * latency_score + w.error_rate * error_score + w.memory * memory_score;
         raw.clamp(0.0, 1.0)
