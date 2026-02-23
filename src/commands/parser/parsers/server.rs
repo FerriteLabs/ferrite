@@ -120,6 +120,20 @@ pub(crate) fn parse_module(args: &[Frame]) -> Result<Command> {
     })
 }
 
+pub(crate) fn parse_plugin(args: &[Frame]) -> Result<Command> {
+    if args.is_empty() {
+        return Err(FerriteError::WrongArity("PLUGIN".to_string()));
+    }
+
+    let subcommand = get_string(&args[0])?.to_uppercase();
+    let plugin_args: Vec<Bytes> = args[1..].iter().filter_map(|f| get_bytes(f).ok()).collect();
+
+    Ok(Command::Plugin {
+        subcommand,
+        args: plugin_args,
+    })
+}
+
 pub(crate) fn parse_bgsave(args: &[Frame]) -> Result<Command> {
     let schedule = if !args.is_empty() {
         let opt = get_string(&args[0])?.to_uppercase();

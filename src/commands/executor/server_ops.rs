@@ -1086,6 +1086,105 @@ impl CommandExecutor {
         }
     }
 
+    pub(super) fn plugin(&self, subcommand: &str, args: &[Bytes]) -> Frame {
+        use ferrite_plugins::marketplace::{Marketplace, MarketplaceConfig};
+        use std::sync::OnceLock;
+
+        static MARKETPLACE: OnceLock<Marketplace> = OnceLock::new();
+        let mp = MARKETPLACE.get_or_init(|| Marketplace::new(MarketplaceConfig::default()));
+
+        match subcommand {
+            "INSTALL" => {
+                if args.is_empty() {
+                    return Frame::error("ERR wrong number of arguments for 'PLUGIN INSTALL'");
+                }
+                let name = String::from_utf8_lossy(&args[0]).to_string();
+                let version = args
+                    .get(1)
+                    .map(|b| String::from_utf8_lossy(b).to_string())
+                    .unwrap_or_else(|| "latest".to_string());
+
+                match mp.install(&name, &version) {
+                    Ok(()) => Frame::simple("OK"),
+                    Err(e) => Frame::error(format!("ERR {}", e)),
+                }
+            }
+            "REMOVE" | "UNINSTALL" => {
+                if args.is_empty() {
+                    return Frame::error("ERR wrong number of arguments for 'PLUGIN REMOVE'");
+                }
+                let name = String::from_utf8_lossy(&args[0]).to_string();
+                match mp.uninstall(&name) {
+                    Ok(()) => Frame::simple("OK"),
+                    Err(e) => Frame::error(format!("ERR {}", e)),
+                }
+            }
+            "LIST" => {
+                let installed = mp.list_installed();
+                let mut results = Vec::with_capacity(installed.len());
+                for plugin in &installed {
+                    let mut entry = Vec::new();
+                    entry.push(Frame::bulk("name"));
+                    entry.push(Frame::bulk(plugin.metadata.name.clone()));
+                    entry.push(Frame::bulk("version"));
+                    entry.push(Frame::bulk(plugin.metadata.version.clone()));
+                    entry.push(Frame::bulk("enabled"));
+                    entry.push(Frame::Integer(if plugin.enabled { 1 } else { 0 }));
+                    entry.push(Frame::bulk("type"));
+                    entry.push(Frame::bulk(format!("{:?}", plugin.metadata.plugin_type)));
+                    results.push(Frame::array(entry));
+                }
+                Frame::array(results)
+            }
+            "ENABLE" => {
+                if args.is_empty() {
+                    return Frame::error("ERR wrong number of arguments for 'PLUGIN ENABLE'");
+                }
+                let name = String::from_utf8_lossy(&args[0]).to_string();
+                match mp.enable(&name) {
+                    Ok(()) => Frame::simple("OK"),
+                    Err(e) => Frame::error(format!("ERR {}", e)),
+                }
+            }
+            "DISABLE" => {
+                if args.is_empty() {
+                    return Frame::error("ERR wrong number of arguments for 'PLUGIN DISABLE'");
+                }
+                let name = String::from_utf8_lossy(&args[0]).to_string();
+                match mp.disable(&name) {
+                    Ok(()) => Frame::simple("OK"),
+                    Err(e) => Frame::error(format!("ERR {}", e)),
+                }
+            }
+            "INFO" => {
+                if args.is_empty() {
+                    return Frame::error("ERR wrong number of arguments for 'PLUGIN INFO'");
+                }
+                let name = String::from_utf8_lossy(&args[0]).to_string();
+                if mp.is_installed(&name) {
+                    Frame::simple("installed")
+                } else {
+                    Frame::null()
+                }
+            }
+            "HELP" => Frame::array(vec![
+                Frame::bulk("PLUGIN INSTALL <name> [version]"),
+                Frame::bulk("    Install a plugin from the marketplace."),
+                Frame::bulk("PLUGIN REMOVE <name>"),
+                Frame::bulk("    Remove an installed plugin."),
+                Frame::bulk("PLUGIN LIST"),
+                Frame::bulk("    List all installed plugins."),
+                Frame::bulk("PLUGIN ENABLE <name>"),
+                Frame::bulk("    Enable a disabled plugin."),
+                Frame::bulk("PLUGIN DISABLE <name>"),
+                Frame::bulk("    Disable an installed plugin without removing it."),
+                Frame::bulk("PLUGIN INFO <name>"),
+                Frame::bulk("    Get information about a plugin."),
+            ]),
+            _ => Frame::error(format!("ERR Unknown PLUGIN subcommand '{}'. Try PLUGIN HELP.", subcommand)),
+        }
+    }
+
     pub(super) fn bgsave(&self, schedule: bool) -> Frame {
         // BGSAVE - asynchronously save the dataset to disk
         // In a real implementation, this would fork and save in background

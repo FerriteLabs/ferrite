@@ -647,6 +647,12 @@ pub enum Command {
         args: Vec<Bytes>,
     },
 
+    /// PLUGIN subcommand [args] — marketplace plugin management
+    Plugin {
+        subcommand: String,
+        args: Vec<Bytes>,
+    },
+
     // Persistence commands
     /// BGSAVE [SCHEDULE]
     BgSave { schedule: bool },
@@ -1584,6 +1590,7 @@ impl Command {
             "RESET" => Ok(Command::Reset),
             "ROLE" => Ok(Command::Role),
             "MODULE" => parsers::server::parse_module(args),
+            "PLUGIN" => parsers::server::parse_plugin(args),
             "BGSAVE" => parsers::server::parse_bgsave(args),
             "SAVE" => Ok(Command::Save),
             "BGREWRITEAOF" => Ok(Command::BgRewriteAof),

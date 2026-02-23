@@ -383,6 +383,14 @@ const COMMAND_INFO: &[CommandInfo] = &[
         last_key: 0,
         step: 0,
     },
+    CommandInfo {
+        name: "plugin",
+        arity: -2,
+        flags: &["admin"],
+        first_key: 0,
+        last_key: 0,
+        step: 0,
+    },
 ];
 
 const COMMAND_NAMES: &[&str] = &[
@@ -501,6 +509,7 @@ const COMMAND_NAMES: &[&str] = &[
     "reset",
     "role",
     "module",
+    "plugin",
     "bgsave",
     "save",
     "bgrewriteaof",
@@ -1369,6 +1378,7 @@ impl CommandExecutor {
             Command::Reset => self.reset(),
             Command::Role => self.role(),
             Command::Module { subcommand, args } => self.module(&subcommand, &args),
+            Command::Plugin { subcommand, args } => self.plugin(&subcommand, &args),
             Command::BgSave { schedule } => self.bgsave(schedule),
             Command::Save => self.save(),
             Command::BgRewriteAof => self.bgrewriteaof(),

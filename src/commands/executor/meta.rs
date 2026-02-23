@@ -973,6 +973,12 @@ impl Command {
                 keys: vec![],
                 permission: Permission::Write,
             },
+            Command::Plugin { .. } => CommandMeta {
+                name: "PLUGIN",
+                category: "server",
+                keys: vec![],
+                permission: Permission::Write,
+            },
             Command::BgSave { .. } => CommandMeta {
                 name: "BGSAVE",
                 category: "server",
