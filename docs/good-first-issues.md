@@ -70,3 +70,25 @@ Create each as a GitHub issue with labels: `good first issue`, `help wanted`, an
 ## Issue 15: Add integration test for IDE extension against live server
 **Labels:** `good first issue`, `testing`, `vscode-ferrite`
 **Description:** The VS Code extension has build/lint CI but no integration tests against a live Ferrite server. Add a CI workflow that starts a Ferrite server in Docker and runs basic extension operations (connect, SET/GET, key browser).
+
+## Issue 16: Replace unwrap() calls in command handlers
+**Labels:** `good first issue`, `code-quality`, `help wanted`
+**Files:** `src/commands/strings.rs`, `src/commands/hashes.rs`, `src/commands/lists.rs`
+**Description:** The command handler files contain `unwrap()` calls that could panic on malformed input. Replace each with proper error propagation using `?` or `ok_or(FerriteError::...)`. Start with strings.rs (smallest surface area), then move to other handlers. Run `grep -n "unwrap()" src/commands/*.rs` to find all instances.
+
+## Issue 17: Add CLIENT INFO and CLIENT LIST improvements
+**Labels:** `good first issue`, `compatibility`, `enhancement`
+**Description:** Redis 7.0+ enriched `CLIENT INFO` and `CLIENT LIST` with fields like `lib-name`, `lib-ver`, `tot-net-in`, `tot-net-out`. Add tracking for these fields in the `Connection` struct and expose them in the CLIENT commands for better client library compatibility.
+
+## Issue 18: Add CONFIG RESETSTAT command
+**Labels:** `good first issue`, `compatibility`
+**Description:** Implement the `CONFIG RESETSTAT` command to reset server statistics counters (total_connections_received, total_commands_processed, etc.). This is used by monitoring tools and is missing from the current implementation.
+
+## Issue 19: Improve Dockerfile with distroless base image
+**Labels:** `good first issue`, `ops`, `help wanted`
+**File:** `ferrite-ops/Dockerfile`
+**Description:** The current Dockerfile uses `debian:bookworm-slim` as the runtime base. Switch to `gcr.io/distroless/cc-debian12` to reduce image size (~80MB → ~30MB) and attack surface. Verify the Ferrite binary runs correctly in the distroless environment.
+
+## Issue 20: Add MEMORY USAGE command
+**Labels:** `good first issue`, `compatibility`, `enhancement`
+**Description:** Implement `MEMORY USAGE <key>` to return the approximate memory consumption of a key and its value. This is commonly used by Redis monitoring tools and is needed for memory optimization workflows. Return the serialized size of the key + value + overhead estimate.
