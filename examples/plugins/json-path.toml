@@ -1,0 +1,37 @@
+# Plugin Manifest: JSON Path
+# Implements JSON.GET, JSON.SET, JSON.DEL with JSONPath query support
+# for querying nested JSON values stored as strings.
+
+[plugin]
+name = "ferrite-json-path"
+display_name = "JSON Path"
+version = "1.0.0"
+description = "JSONPath query support for JSON values stored in Ferrite"
+author = "FerriteLabs"
+license = "Apache-2.0"
+repository = "https://github.com/ferritelabs/ferrite-plugin-json"
+min_ferrite_version = "0.2.0"
+sdk_version = "1.0.0"
+type = "Command"
+
+[plugin.commands]
+"JSON.GET" = { arity = -2, description = "Get JSON value: JSON.GET <key> [path ...]" }
+"JSON.SET" = { arity = 4, description = "Set JSON value: JSON.SET <key> <path> <json>" }
+"JSON.DEL" = { arity = 3, description = "Delete JSON path: JSON.DEL <key> <path>" }
+"JSON.TYPE" = { arity = 3, description = "Get JSON type at path: JSON.TYPE <key> <path>" }
+"JSON.ARRAPPEND" = { arity = -4, description = "Append to array: JSON.ARRAPPEND <key> <path> <json> [json ...]" }
+"JSON.OBJLEN" = { arity = 3, description = "Object length: JSON.OBJLEN <key> <path>" }
+
+[plugin.permissions]
+read_keys = true
+write_keys = true
+network = false
+filesystem = false
+
+[plugin.resources]
+max_memory_mb = 32
+max_cpu_ms_per_call = 50
+max_fuel = 500000
+
+[plugin.tags]
+values = ["json", "jsonpath", "document", "query"]

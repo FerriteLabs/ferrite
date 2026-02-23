@@ -1,0 +1,37 @@
+# Plugin Manifest: Rate Limiter
+# Implements RATELIMIT.CHECK and RATELIMIT.RESET commands
+# using a sliding window algorithm.
+
+[plugin]
+name = "ferrite-rate-limiter"
+display_name = "Rate Limiter"
+version = "1.0.0"
+description = "Sliding window rate limiter with per-key limits"
+author = "FerriteLabs"
+license = "Apache-2.0"
+repository = "https://github.com/ferritelabs/ferrite-plugin-rate-limiter"
+min_ferrite_version = "0.2.0"
+sdk_version = "1.0.0"
+type = "Command"
+
+[plugin.commands]
+# Each command the plugin registers
+"RATELIMIT.CHECK" = { arity = 3, description = "Check if a key is rate-limited: RATELIMIT.CHECK <key> <max_requests> <window_seconds>" }
+"RATELIMIT.RESET" = { arity = 2, description = "Reset rate limit counter: RATELIMIT.RESET <key>" }
+"RATELIMIT.INFO" = { arity = 2, description = "Get current rate limit state: RATELIMIT.INFO <key>" }
+
+[plugin.permissions]
+# WASM capabilities this plugin requires
+read_keys = true
+write_keys = true
+network = false
+filesystem = false
+
+[plugin.resources]
+# Resource limits for the WASM sandbox
+max_memory_mb = 16
+max_cpu_ms_per_call = 10
+max_fuel = 100000
+
+[plugin.tags]
+values = ["rate-limiting", "security", "api-gateway"]

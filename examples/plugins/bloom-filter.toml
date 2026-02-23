@@ -1,0 +1,37 @@
+# Plugin Manifest: Bloom Filter
+# Implements BF.ADD, BF.EXISTS, BF.MADD, BF.MEXISTS commands
+# for space-efficient probabilistic set membership testing.
+
+[plugin]
+name = "ferrite-bloom-filter"
+display_name = "Bloom Filter"
+version = "1.0.0"
+description = "Space-efficient probabilistic data structure for set membership testing"
+author = "FerriteLabs"
+license = "Apache-2.0"
+repository = "https://github.com/ferritelabs/ferrite-plugin-bloom"
+min_ferrite_version = "0.2.0"
+sdk_version = "1.0.0"
+type = "DataType"
+
+[plugin.commands]
+"BF.ADD" = { arity = 3, description = "Add an element: BF.ADD <key> <element>" }
+"BF.EXISTS" = { arity = 3, description = "Check membership: BF.EXISTS <key> <element>" }
+"BF.MADD" = { arity = -3, description = "Add multiple elements: BF.MADD <key> <element> [element ...]" }
+"BF.MEXISTS" = { arity = -3, description = "Check multiple: BF.MEXISTS <key> <element> [element ...]" }
+"BF.INFO" = { arity = 2, description = "Get filter info: BF.INFO <key>" }
+"BF.RESERVE" = { arity = 4, description = "Create filter: BF.RESERVE <key> <error_rate> <capacity>" }
+
+[plugin.permissions]
+read_keys = true
+write_keys = true
+network = false
+filesystem = false
+
+[plugin.resources]
+max_memory_mb = 64
+max_cpu_ms_per_call = 5
+max_fuel = 50000
+
+[plugin.tags]
+values = ["probabilistic", "bloom-filter", "data-structure", "membership"]
