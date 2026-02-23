@@ -55,6 +55,8 @@ pub mod api_gateway;
 pub mod optimization;
 pub mod protocol;
 pub mod rdma;
+pub mod s3_compat;
+pub mod s3_server;
 pub mod tcp;
 
 pub use optimization::{

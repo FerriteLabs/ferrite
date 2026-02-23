@@ -97,6 +97,16 @@ pub enum ConfigKey {
     EncryptionKeyFile,
     /// Cluster mode enabled (`cluster.enabled`).
     ClusterEnabled,
+    /// Protocol max bulk string length (`server.proto_max_bulk_len`).
+    ServerProtoMaxBulkLen,
+    /// Protocol max array elements (`server.proto_max_multi_bulk_len`).
+    ServerProtoMaxMultiBulkLen,
+    /// Protocol max nesting depth (`server.proto_max_nesting_depth`).
+    ServerProtoMaxNestingDepth,
+    /// Storage max key size (`storage.max_key_size`).
+    StorageMaxKeySize,
+    /// Storage max value size (`storage.max_value_size`).
+    StorageMaxValueSize,
 }
 
 impl ConfigKey {
@@ -128,6 +138,11 @@ impl ConfigKey {
             ConfigKey::EncryptionAlgorithm => "encryption.algorithm",
             ConfigKey::EncryptionKeyFile => "encryption.key_file",
             ConfigKey::ClusterEnabled => "cluster.enabled",
+            ConfigKey::ServerProtoMaxBulkLen => "server.proto_max_bulk_len",
+            ConfigKey::ServerProtoMaxMultiBulkLen => "server.proto_max_multi_bulk_len",
+            ConfigKey::ServerProtoMaxNestingDepth => "server.proto_max_nesting_depth",
+            ConfigKey::StorageMaxKeySize => "storage.max_key_size",
+            ConfigKey::StorageMaxValueSize => "storage.max_value_size",
         }
     }
 
@@ -159,6 +174,11 @@ impl ConfigKey {
             "encryption.algorithm" => ConfigKey::EncryptionAlgorithm,
             "encryption.key_file" => ConfigKey::EncryptionKeyFile,
             "cluster.enabled" => ConfigKey::ClusterEnabled,
+            "server.proto_max_bulk_len" => ConfigKey::ServerProtoMaxBulkLen,
+            "server.proto_max_multi_bulk_len" => ConfigKey::ServerProtoMaxMultiBulkLen,
+            "server.proto_max_nesting_depth" => ConfigKey::ServerProtoMaxNestingDepth,
+            "storage.max_key_size" => ConfigKey::StorageMaxKeySize,
+            "storage.max_value_size" => ConfigKey::StorageMaxValueSize,
             _ => return None,
         })
     }
@@ -210,6 +230,11 @@ impl ConfigKey {
             ConfigKey::EncryptionAlgorithm,
             ConfigKey::EncryptionKeyFile,
             ConfigKey::ClusterEnabled,
+            ConfigKey::ServerProtoMaxBulkLen,
+            ConfigKey::ServerProtoMaxMultiBulkLen,
+            ConfigKey::ServerProtoMaxNestingDepth,
+            ConfigKey::StorageMaxKeySize,
+            ConfigKey::StorageMaxValueSize,
         ]
     }
 }
@@ -432,6 +457,94 @@ impl Config {
                 self.server.max_connections = max_conn;
                 Ok(true)
             }
+            ConfigKey::ServerProtoMaxBulkLen => {
+                let v = value.parse::<usize>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid integer value: {}", value))
+                })?;
+                self.server.proto_max_bulk_len = v;
+                Ok(true)
+            }
+            ConfigKey::ServerProtoMaxMultiBulkLen => {
+                let v = value.parse::<usize>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid integer value: {}", value))
+                })?;
+                self.server.proto_max_multi_bulk_len = v;
+                Ok(true)
+            }
+            ConfigKey::ServerProtoMaxNestingDepth => {
+                let v = value.parse::<usize>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid integer value: {}", value))
+                })?;
+                self.server.proto_max_nesting_depth = v;
+                Ok(true)
+            }
+            ConfigKey::StorageMaxKeySize => {
+                let v = value.parse::<usize>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid integer value: {}", value))
+                })?;
+                self.storage.max_key_size = v;
+                Ok(true)
+            }
+            ConfigKey::StorageMaxValueSize => {
+                let v = value.parse::<usize>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid integer value: {}", value))
+                })?;
+                self.storage.max_value_size = v;
+                Ok(true)
+            }
+            ConfigKey::PersistenceAofEnabled => {
+                let enabled = value.parse::<bool>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid boolean value: {}", value))
+                })?;
+                self.persistence.aof_enabled = enabled;
+                Ok(true)
+            }
+            ConfigKey::PersistenceCheckpointEnabled => {
+                let enabled = value.parse::<bool>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid boolean value: {}", value))
+                })?;
+                self.persistence.checkpoint_enabled = enabled;
+                Ok(true)
+            }
+            ConfigKey::LoggingFormat => {
+                let fmt = match value.to_lowercase().as_str() {
+                    "json" => LogFormat::Json,
+                    "pretty" | "text" => LogFormat::Pretty,
+                    _ => {
+                        return Err(FerriteError::Config(format!(
+                            "Invalid logging format: {}. Expected: json, pretty",
+                            value
+                        )));
+                    }
+                };
+                self.logging.format = fmt;
+                Ok(true)
+            }
+            ConfigKey::MetricsBind => {
+                self.metrics.bind = value.to_string();
+                Ok(true)
+            }
+            ConfigKey::MetricsPort => {
+                let port = value.parse::<u16>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid port value: {}", value))
+                })?;
+                self.metrics.port = port;
+                Ok(true)
+            }
+            ConfigKey::EncryptionAlgorithm => {
+                let algo = match value.to_lowercase().as_str() {
+                    "aes-256-gcm" | "aes256gcm" => EncryptionAlgorithm::Aes256Gcm,
+                    "chacha20-poly1305" | "chacha20poly1305" => EncryptionAlgorithm::ChaCha20Poly1305,
+                    _ => {
+                        return Err(FerriteError::Config(format!(
+                            "Invalid encryption algorithm: {}. Expected: aes-256-gcm, chacha20-poly1305",
+                            value
+                        )));
+                    }
+                };
+                self.encryption.algorithm = algo;
+                Ok(true)
+            }
             _ => Ok(false),
         }
     }
@@ -582,6 +695,15 @@ pub struct ServerConfig {
 
     /// ACL file path for persistence (None to disable)
     pub acl_file: Option<PathBuf>,
+
+    /// Maximum bulk string size in bytes (0 = default 512MB, matches Redis proto-max-bulk-len)
+    pub proto_max_bulk_len: usize,
+
+    /// Maximum number of elements in arrays/maps/sets (0 = default 1,048,576)
+    pub proto_max_multi_bulk_len: usize,
+
+    /// Maximum nesting depth for RESP frames (0 = default 64)
+    pub proto_max_nesting_depth: usize,
 }
 
 impl Default for ServerConfig {
@@ -593,6 +715,9 @@ impl Default for ServerConfig {
             tcp_keepalive: 300,
             timeout: 0, // 0 means no timeout
             acl_file: Some(PathBuf::from("./data/users.acl")),
+            proto_max_bulk_len: 512 * 1024 * 1024,  // 512MB (Redis default)
+            proto_max_multi_bulk_len: 1_048_576,     // 1M elements
+            proto_max_nesting_depth: 64,
         }
     }
 }
@@ -601,6 +726,15 @@ impl ServerConfig {
     /// Get the full bind address
     pub fn address(&self) -> String {
         format!("{}:{}", self.bind, self.port)
+    }
+
+    /// Build protocol parser limits from this config
+    pub fn parser_limits(&self) -> crate::protocol::ParserLimits {
+        crate::protocol::ParserLimits {
+            max_bulk_string_size: self.proto_max_bulk_len,
+            max_array_elements: self.proto_max_multi_bulk_len,
+            max_nesting_depth: self.proto_max_nesting_depth,
+        }
     }
 }
 
