@@ -123,8 +123,7 @@ pub fn encode_frame(frame: &Frame, buf: &mut BytesMut) {
 }
 
 /// Convenience function to encode a frame to a new BytesMut
-// Convenience helper reserved for protocol encoding API
-#[allow(dead_code)]
+#[allow(dead_code)] // Planned for v0.2 — reserved for protocol encoding API
 pub fn encode_to_bytes(frame: &Frame) -> BytesMut {
     let mut buf = BytesMut::new();
     encode_frame(frame, &mut buf);

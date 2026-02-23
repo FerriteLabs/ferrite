@@ -9,6 +9,30 @@ use std::io::Cursor;
 
 use super::Frame;
 
+/// Protocol parser limits to prevent DoS via oversized frames.
+///
+/// These are enforced during parsing before any data is allocated,
+/// protecting against memory exhaustion from malicious clients.
+#[derive(Debug, Clone)]
+pub struct ParserLimits {
+    /// Maximum bulk string size in bytes (default: 512MB, matches Redis)
+    pub max_bulk_string_size: usize,
+    /// Maximum number of elements in an array/set/map/push (default: 1,048,576)
+    pub max_array_elements: usize,
+    /// Maximum nesting depth for recursive structures (default: 64)
+    pub max_nesting_depth: usize,
+}
+
+impl Default for ParserLimits {
+    fn default() -> Self {
+        Self {
+            max_bulk_string_size: 512 * 1024 * 1024, // 512MB (Redis proto-max-bulk-len)
+            max_array_elements: 1_048_576,            // 1M elements
+            max_nesting_depth: 64,
+        }
+    }
+}
+
 /// Parse error types
 #[derive(Debug, Clone, PartialEq)]
 pub enum ParseError {
@@ -20,6 +44,9 @@ pub enum ParseError {
 
     /// Invalid UTF-8 in string data
     InvalidUtf8,
+
+    /// Frame exceeds configured size limits
+    FrameTooLarge(String),
 }
 
 impl std::fmt::Display for ParseError {
@@ -28,6 +55,7 @@ impl std::fmt::Display for ParseError {
             ParseError::Incomplete => write!(f, "incomplete data"),
             ParseError::Invalid(msg) => write!(f, "invalid protocol: {}", msg),
             ParseError::InvalidUtf8 => write!(f, "invalid UTF-8"),
+            ParseError::FrameTooLarge(msg) => write!(f, "frame too large: {}", msg),
         }
     }
 }
@@ -83,11 +111,54 @@ fn expected_crlf_error() -> ParseError {
     ParseError::Invalid("expected CRLF".to_string())
 }
 
+/// Helper to create bulk string too large error (marked cold)
+#[cold]
+#[inline(never)]
+fn bulk_string_too_large_error(size: usize, max: usize) -> ParseError {
+    ParseError::FrameTooLarge(format!(
+        "bulk string size {} exceeds limit {}",
+        size, max
+    ))
+}
+
+/// Helper to create array too large error (marked cold)
+#[cold]
+#[inline(never)]
+fn collection_too_large_error(kind: &str, count: usize, max: usize) -> ParseError {
+    ParseError::FrameTooLarge(format!(
+        "{} element count {} exceeds limit {}",
+        kind, count, max
+    ))
+}
+
+/// Helper to create nesting too deep error (marked cold)
+#[cold]
+#[inline(never)]
+fn nesting_too_deep_error(depth: usize, max: usize) -> ParseError {
+    ParseError::FrameTooLarge(format!(
+        "nesting depth {} exceeds limit {}",
+        depth, max
+    ))
+}
+
 /// Parse a RESP frame from the buffer
 ///
 /// Returns Ok(Some(frame)) if a complete frame was parsed,
 /// Ok(None) if more data is needed, or Err if the data is invalid.
+///
+/// Uses default parser limits. For custom limits, use [`parse_frame_with_limits`].
 pub fn parse_frame(buf: &mut BytesMut) -> Result<Option<Frame>, ParseError> {
+    parse_frame_with_limits(buf, &ParserLimits::default())
+}
+
+/// Parse a RESP frame from the buffer with configurable limits.
+///
+/// Enforces maximum bulk string size, array element count, and nesting depth
+/// to prevent denial-of-service via oversized frames.
+pub fn parse_frame_with_limits(
+    buf: &mut BytesMut,
+    limits: &ParserLimits,
+) -> Result<Option<Frame>, ParseError> {
     if buf.is_empty() {
         return Ok(None);
     }
@@ -95,11 +166,11 @@ pub fn parse_frame(buf: &mut BytesMut) -> Result<Option<Frame>, ParseError> {
     // Use a cursor to peek without consuming
     let mut cursor = Cursor::new(&buf[..]);
 
-    match check_frame(&mut cursor) {
+    match check_frame(&mut cursor, limits, 0) {
         Ok(len) => {
             // We have a complete frame, parse it
             cursor.set_position(0);
-            let frame = parse_frame_internal(&mut cursor)?;
+            let frame = parse_frame_internal(&mut cursor, limits, 0)?;
             // Advance the buffer
             buf.advance(len);
             Ok(Some(frame))
@@ -110,7 +181,15 @@ pub fn parse_frame(buf: &mut BytesMut) -> Result<Option<Frame>, ParseError> {
 }
 
 /// Check if a complete frame is available and return its length
-fn check_frame(cursor: &mut Cursor<&[u8]>) -> Result<usize, ParseError> {
+fn check_frame(
+    cursor: &mut Cursor<&[u8]>,
+    limits: &ParserLimits,
+    depth: usize,
+) -> Result<usize, ParseError> {
+    if depth > limits.max_nesting_depth {
+        return Err(nesting_too_deep_error(depth, limits.max_nesting_depth));
+    }
+
     match peek_byte(cursor)? {
         b'+' | b'-' => {
             // Simple string or error: read until \r\n
@@ -134,6 +213,9 @@ fn check_frame(cursor: &mut Cursor<&[u8]>) -> Result<usize, ParseError> {
                 Err(ParseError::Invalid("negative bulk string length".into()))
             } else {
                 let len = len as usize;
+                if len > limits.max_bulk_string_size {
+                    return Err(bulk_string_too_large_error(len, limits.max_bulk_string_size));
+                }
                 // Skip the data plus final \r\n
                 let total = cursor.position() as usize + len + 2;
                 if cursor.get_ref().len() < total {
@@ -155,9 +237,13 @@ fn check_frame(cursor: &mut Cursor<&[u8]>) -> Result<usize, ParseError> {
             } else if count < -1 {
                 Err(ParseError::Invalid("negative array length".into()))
             } else {
+                let count_usize = count as usize;
+                if count_usize > limits.max_array_elements {
+                    return Err(collection_too_large_error("array", count_usize, limits.max_array_elements));
+                }
                 // Check each element
                 for _ in 0..count {
-                    check_frame(cursor)?;
+                    check_frame(cursor, limits, depth + 1)?;
                 }
                 Ok(cursor.position() as usize)
             }
@@ -191,6 +277,9 @@ fn check_frame(cursor: &mut Cursor<&[u8]>) -> Result<usize, ParseError> {
                 return Err(ParseError::Invalid("negative bulk error length".into()));
             }
             let len = len as usize;
+            if len > limits.max_bulk_string_size {
+                return Err(bulk_string_too_large_error(len, limits.max_bulk_string_size));
+            }
             let total = cursor.position() as usize + len + 2;
             if cursor.get_ref().len() < total {
                 Err(ParseError::Incomplete)
@@ -209,6 +298,9 @@ fn check_frame(cursor: &mut Cursor<&[u8]>) -> Result<usize, ParseError> {
                 ));
             }
             let len = len as usize;
+            if len > limits.max_bulk_string_size {
+                return Err(bulk_string_too_large_error(len, limits.max_bulk_string_size));
+            }
             let total = cursor.position() as usize + len + 2;
             if cursor.get_ref().len() < total {
                 Err(ParseError::Incomplete)
@@ -227,9 +319,13 @@ fn check_frame(cursor: &mut Cursor<&[u8]>) -> Result<usize, ParseError> {
             if count < -1 {
                 return Err(ParseError::Invalid("negative map length".into()));
             }
+            let count_usize = count as usize;
+            if count_usize > limits.max_array_elements {
+                return Err(collection_too_large_error("map", count_usize, limits.max_array_elements));
+            }
             for _ in 0..count {
-                check_frame(cursor)?; // key
-                check_frame(cursor)?; // value
+                check_frame(cursor, limits, depth + 1)?; // key
+                check_frame(cursor, limits, depth + 1)?; // value
             }
             Ok(cursor.position() as usize)
         }
@@ -243,8 +339,12 @@ fn check_frame(cursor: &mut Cursor<&[u8]>) -> Result<usize, ParseError> {
             if count < -1 {
                 return Err(ParseError::Invalid("negative set length".into()));
             }
+            let count_usize = count as usize;
+            if count_usize > limits.max_array_elements {
+                return Err(collection_too_large_error("set", count_usize, limits.max_array_elements));
+            }
             for _ in 0..count {
-                check_frame(cursor)?;
+                check_frame(cursor, limits, depth + 1)?;
             }
             Ok(cursor.position() as usize)
         }
@@ -258,8 +358,12 @@ fn check_frame(cursor: &mut Cursor<&[u8]>) -> Result<usize, ParseError> {
             if count < -1 {
                 return Err(ParseError::Invalid("negative push length".into()));
             }
+            let count_usize = count as usize;
+            if count_usize > limits.max_array_elements {
+                return Err(collection_too_large_error("push", count_usize, limits.max_array_elements));
+            }
             for _ in 0..count {
-                check_frame(cursor)?;
+                check_frame(cursor, limits, depth + 1)?;
             }
             Ok(cursor.position() as usize)
         }
@@ -268,7 +372,11 @@ fn check_frame(cursor: &mut Cursor<&[u8]>) -> Result<usize, ParseError> {
 }
 
 /// Parse a frame from the cursor (assumes complete data is available)
-fn parse_frame_internal(cursor: &mut Cursor<&[u8]>) -> Result<Frame, ParseError> {
+fn parse_frame_internal(
+    cursor: &mut Cursor<&[u8]>,
+    limits: &ParserLimits,
+    depth: usize,
+) -> Result<Frame, ParseError> {
     match get_byte(cursor)? {
         b'+' => {
             // Simple string
@@ -308,7 +416,7 @@ fn parse_frame_internal(cursor: &mut Cursor<&[u8]>) -> Result<Frame, ParseError>
             } else {
                 let mut frames = Vec::with_capacity(count as usize);
                 for _ in 0..count {
-                    frames.push(parse_frame_internal(cursor)?);
+                    frames.push(parse_frame_internal(cursor, limits, depth + 1)?);
                 }
                 Ok(Frame::Array(Some(frames)))
             }
@@ -393,8 +501,8 @@ fn parse_frame_internal(cursor: &mut Cursor<&[u8]>) -> Result<Frame, ParseError>
             }
             let mut map = HashMap::with_capacity(count as usize);
             for _ in 0..count {
-                let key_frame = parse_frame_internal(cursor)?;
-                let value_frame = parse_frame_internal(cursor)?;
+                let key_frame = parse_frame_internal(cursor, limits, depth + 1)?;
+                let value_frame = parse_frame_internal(cursor, limits, depth + 1)?;
                 // Convert key to bytes
                 let key = match key_frame {
                     Frame::Simple(b) | Frame::Bulk(Some(b)) => b,
@@ -415,7 +523,7 @@ fn parse_frame_internal(cursor: &mut Cursor<&[u8]>) -> Result<Frame, ParseError>
             }
             let mut elements = Vec::with_capacity(count as usize);
             for _ in 0..count {
-                elements.push(parse_frame_internal(cursor)?);
+                elements.push(parse_frame_internal(cursor, limits, depth + 1)?);
             }
             Ok(Frame::Set(elements))
         }
@@ -430,7 +538,7 @@ fn parse_frame_internal(cursor: &mut Cursor<&[u8]>) -> Result<Frame, ParseError>
             }
             let mut elements = Vec::with_capacity(count as usize);
             for _ in 0..count {
-                elements.push(parse_frame_internal(cursor)?);
+                elements.push(parse_frame_internal(cursor, limits, depth + 1)?);
             }
             Ok(Frame::Push(elements))
         }
@@ -821,6 +929,128 @@ mod tests {
             encode_frame(&original, &mut encoded);
             let decoded = parse_frame(&mut encoded).unwrap().unwrap();
             assert_eq!(original, decoded, "Round-trip failed for {:?}", original);
+        }
+    }
+
+    #[test]
+    fn test_bulk_string_size_limit() {
+        let limits = ParserLimits {
+            max_bulk_string_size: 10,
+            ..Default::default()
+        };
+        // Within limit
+        let mut buf = BytesMut::from("$5\r\nhello\r\n");
+        assert!(parse_frame_with_limits(&mut buf, &limits).unwrap().is_some());
+
+        // Exceeds limit
+        let mut buf = BytesMut::from("$11\r\nhello world\r\n");
+        match parse_frame_with_limits(&mut buf, &limits) {
+            Err(ParseError::FrameTooLarge(_)) => {}
+            other => panic!("Expected FrameTooLarge, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_array_element_limit() {
+        let limits = ParserLimits {
+            max_array_elements: 2,
+            ..Default::default()
+        };
+        // Within limit
+        let mut buf = BytesMut::from("*2\r\n+a\r\n+b\r\n");
+        assert!(parse_frame_with_limits(&mut buf, &limits).unwrap().is_some());
+
+        // Exceeds limit
+        let mut buf = BytesMut::from("*3\r\n+a\r\n+b\r\n+c\r\n");
+        match parse_frame_with_limits(&mut buf, &limits) {
+            Err(ParseError::FrameTooLarge(_)) => {}
+            other => panic!("Expected FrameTooLarge, got {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_nesting_depth_limit() {
+        let limits = ParserLimits {
+            max_nesting_depth: 2,
+            ..Default::default()
+        };
+        // Depth 1 — within limit
+        let mut buf = BytesMut::from("*1\r\n+ok\r\n");
+        assert!(parse_frame_with_limits(&mut buf, &limits).unwrap().is_some());
+
+        // Depth 3 — exceeds limit
+        let mut buf = BytesMut::from("*1\r\n*1\r\n*1\r\n+deep\r\n");
+        match parse_frame_with_limits(&mut buf, &limits) {
+            Err(ParseError::FrameTooLarge(_)) => {}
+            other => panic!("Expected FrameTooLarge, got {:?}", other),
+        }
+    }
+
+    mod proptests {
+        use super::*;
+        use proptest::prelude::*;
+
+        proptest! {
+            #[test]
+            fn prop_parse_frame_never_panics(data in proptest::collection::vec(any::<u8>(), 0..256)) {
+                let mut buf = BytesMut::from(&data[..]);
+                // Should never panic regardless of input
+                let _ = parse_frame(&mut buf);
+            }
+
+            #[test]
+            fn prop_bulk_string_roundtrip(s in "[a-zA-Z0-9]{0,100}") {
+                let encoded = format!("${}\r\n{}\r\n", s.len(), s);
+                let mut buf = BytesMut::from(encoded.as_str());
+                let frame = parse_frame(&mut buf).unwrap().unwrap();
+                match frame {
+                    Frame::Bulk(Some(b)) => assert_eq!(&b[..], s.as_bytes()),
+                    _ => panic!("Expected Bulk frame"),
+                }
+            }
+
+            #[test]
+            fn prop_integer_roundtrip(n in -1_000_000i64..1_000_000i64) {
+                let encoded = format!(":{}\r\n", n);
+                let mut buf = BytesMut::from(encoded.as_str());
+                let frame = parse_frame(&mut buf).unwrap().unwrap();
+                assert_eq!(frame, Frame::Integer(n));
+            }
+
+            #[test]
+            fn prop_limits_reject_oversized_bulk(size in 11usize..1000) {
+                let limits = ParserLimits {
+                    max_bulk_string_size: 10,
+                    ..Default::default()
+                };
+                // Create a bulk string header claiming `size` bytes
+                let header = format!("${}\r\n", size);
+                let mut data = BytesMut::from(header.as_str());
+                // Pad enough bytes to complete the frame
+                data.extend_from_slice(&vec![b'x'; size]);
+                data.extend_from_slice(b"\r\n");
+                match parse_frame_with_limits(&mut data, &limits) {
+                    Err(ParseError::FrameTooLarge(_)) => {} // expected
+                    _ => panic!("Expected FrameTooLarge for size {}", size),
+                }
+            }
+
+            #[test]
+            fn prop_limits_reject_oversized_array(count in 6usize..100) {
+                let limits = ParserLimits {
+                    max_array_elements: 5,
+                    ..Default::default()
+                };
+                let mut data = format!("*{}\r\n", count);
+                for _ in 0..count {
+                    data.push_str("+x\r\n");
+                }
+                let mut buf = BytesMut::from(data.as_str());
+                match parse_frame_with_limits(&mut buf, &limits) {
+                    Err(ParseError::FrameTooLarge(_)) => {}
+                    _ => panic!("Expected FrameTooLarge for count {}", count),
+                }
+            }
         }
     }
 }

@@ -8,4 +8,4 @@ mod parser;
 
 pub use encoder::encode_frame;
 pub use frame::Frame;
-pub use parser::{parse_frame, ParseError};
+pub use parser::{parse_frame, parse_frame_with_limits, ParseError, ParserLimits};
