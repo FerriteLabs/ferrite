@@ -280,8 +280,7 @@ pub fn handle_slot_publish(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
 }
 
 /// Get slot state as string
-// Reserved for cluster slot management API
-#[allow(dead_code)]
+#[allow(dead_code)] // Planned for v0.2 — reserved for cluster slot management API
 fn slot_state_str(state: SlotState) -> &'static str {
     match state {
         SlotState::Inactive => "inactive",

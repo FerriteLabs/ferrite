@@ -352,7 +352,7 @@ pub struct GeoSearchOptions {
     pub center: GeoSearchCenter,
     pub shape: GeoSearchShape,
     pub count: Option<usize>,
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Planned for v0.2 — reserved for GEOSEARCH ANY option support
     pub any: bool,
     pub asc: bool,
     pub with_coord: bool,

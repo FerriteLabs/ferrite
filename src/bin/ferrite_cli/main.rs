@@ -58,6 +58,25 @@ struct Args {
     /// Commands to execute (non-interactive mode)
     #[arg(trailing_var_arg = true)]
     command: Vec<String>,
+
+    /// Generate shell completions and print to stdout
+    #[arg(long, value_enum)]
+    completions: Option<ShellCompletion>,
+}
+
+/// Shell types for completion generation
+#[derive(Clone, Copy, Debug, ValueEnum)]
+enum ShellCompletion {
+    /// Bash completions
+    Bash,
+    /// Zsh completions
+    Zsh,
+    /// Fish completions
+    Fish,
+    /// PowerShell completions
+    Powershell,
+    /// Elvish completions
+    Elvish,
 }
 
 /// Output format for command results
@@ -74,6 +93,23 @@ enum OutputFormat {
 #[tokio::main]
 async fn main() -> ExitCode {
     let args = Args::parse();
+
+    // Handle completion generation (no connection needed)
+    if let Some(shell) = args.completions {
+        use clap::CommandFactory;
+        use clap_complete::{generate, Shell};
+
+        let shell = match shell {
+            ShellCompletion::Bash => Shell::Bash,
+            ShellCompletion::Zsh => Shell::Zsh,
+            ShellCompletion::Fish => Shell::Fish,
+            ShellCompletion::Powershell => Shell::PowerShell,
+            ShellCompletion::Elvish => Shell::Elvish,
+        };
+        let mut cmd = Args::command();
+        generate(shell, &mut cmd, "ferrite-cli", &mut std::io::stdout());
+        return ExitCode::SUCCESS;
+    }
 
     // Create client and connect
     let mut client = match client::FerriteClient::connect(&args.host, args.port).await {

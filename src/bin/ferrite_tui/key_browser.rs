@@ -65,8 +65,7 @@ impl Default for KeyBrowserState {
 
 impl KeyBrowserState {
     /// Create a new KeyBrowserState with default pattern
-    // Constructor reserved for TUI key browser initialization
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Planned for v0.2 — reserved for TUI key browser initialization
     pub fn new() -> Self {
         Self::default()
     }
@@ -93,8 +92,7 @@ impl KeyBrowserState {
     }
 
     /// Clear the key list and reset cursor
-    // Reserved for TUI key browser refresh operations
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Planned for v0.2 — reserved for TUI key browser refresh operations
     pub fn clear_keys(&mut self) {
         self.keys.clear();
         self.cursor = 0;
@@ -132,8 +130,7 @@ impl KeyBrowserState {
     }
 
     /// Reset pattern to default
-    // Reserved for TUI pattern reset functionality
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Planned for v0.2 — reserved for TUI pattern reset functionality
     pub fn reset_pattern(&mut self) {
         self.pattern = "*".to_string();
     }

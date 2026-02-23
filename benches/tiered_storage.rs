@@ -45,7 +45,7 @@ fn bench_hot_tier(c: &mut Criterion) {
 
     // --- Write ---
     group.bench_function("write", |b| {
-        let region = MutableRegion::new(64 * 1024 * 1024); // 64 MB
+        let region = MutableRegion::new(64 * 1024 * 1024).unwrap(); // 64 MB
         let mut i = 0u64;
         b.iter(|| {
             let (k, v) = kv(i, VALUE_SIZE);
@@ -56,7 +56,7 @@ fn bench_hot_tier(c: &mut Criterion) {
 
     // --- Sequential read ---
     {
-        let region = MutableRegion::new(64 * 1024 * 1024);
+        let region = MutableRegion::new(64 * 1024 * 1024).unwrap();
         let mut offsets = Vec::new();
         for i in 0..10_000u64 {
             let (k, v) = kv(i, VALUE_SIZE);
@@ -231,7 +231,7 @@ fn bench_tier_promotion(c: &mut Criterion) {
         }
     }
 
-    let hot = MutableRegion::new(64 * 1024 * 1024);
+    let hot = MutableRegion::new(64 * 1024 * 1024).unwrap();
 
     group.bench_function("cold_to_hot", |b| {
         let mut idx = 0usize;
@@ -256,7 +256,7 @@ fn bench_tier_promotion(c: &mut Criterion) {
         }
     }
 
-    let hot2 = MutableRegion::new(64 * 1024 * 1024);
+    let hot2 = MutableRegion::new(64 * 1024 * 1024).unwrap();
 
     group.bench_function("warm_to_hot", |b| {
         let mut idx = 0usize;
@@ -284,7 +284,7 @@ fn bench_mixed_workload(c: &mut Criterion) {
     let dir = tempdir().expect("tempdir");
     let cold_path = dir.path().join("mixed_cold.dat");
 
-    let hot = Arc::new(MutableRegion::new(64 * 1024 * 1024));
+    let hot = Arc::new(MutableRegion::new(64 * 1024 * 1024).unwrap());
     let cold = Arc::new(DiskRegion::new(&cold_path, 0).expect("DiskRegion"));
 
     let mut hot_offsets = Vec::new();
@@ -341,7 +341,7 @@ fn bench_memory_efficiency(c: &mut Criterion) {
     ] {
         group.bench_function(BenchmarkId::new("fill_rate", label), |b| {
             b.iter_batched(
-                || MutableRegion::new(region_size),
+                || MutableRegion::new(region_size).unwrap(),
                 |region| {
                     let mut count = 0u64;
                     loop {
@@ -437,7 +437,7 @@ fn bench_all_in_memory_vs_tiered(c: &mut Criterion) {
     // --- Tiered: hot in MutableRegion, warm in ReadOnlyRegion, cold on disk ---
     let dir = tempdir().expect("tempdir");
 
-    let hot = Arc::new(MutableRegion::new(32 * 1024 * 1024));
+    let hot = Arc::new(MutableRegion::new(32 * 1024 * 1024).unwrap());
     let warm_path = dir.path().join("tiered_warm.dat");
     let warm = Arc::new(ReadOnlyRegion::new(&warm_path, 64 * 1024 * 1024).expect("ReadOnlyRegion"));
     let cold_path = dir.path().join("tiered_cold.dat");
@@ -546,7 +546,7 @@ fn bench_value_size_across_tiers(c: &mut Criterion) {
     for size in [64, 256, 1024, 4096] {
         // Hot tier
         {
-            let region = MutableRegion::new(64 * 1024 * 1024);
+            let region = MutableRegion::new(64 * 1024 * 1024).unwrap();
             let mut offsets = Vec::new();
             for i in 0..5_000u64 {
                 let (k, v) = kv(i, size);

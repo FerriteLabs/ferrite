@@ -52,8 +52,7 @@ impl HyperLogLog {
     }
 
     /// Get the raw registers
-    // Reserved for HyperLogLog introspection API
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Planned for v0.2 — reserved for HyperLogLog introspection API
     pub fn registers(&self) -> &[u8] {
         &self.registers
     }

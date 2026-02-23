@@ -79,16 +79,14 @@ pub struct Handler {
     executor: CommandExecutor,
 
     /// Shared store reference for WATCH functionality
-    // Reserved for WATCH command functionality
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Planned for v0.2 — reserved for WATCH command functionality
     store: Arc<Store>,
 
     /// Shared ACL reference for authentication
     acl: SharedAcl,
 
     /// Shared configuration for hot reload
-    // Reserved for hot-reload configuration support
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Planned for v0.2 — reserved for hot-reload configuration support
     config: Option<SharedConfig>,
 
     /// Replication state
@@ -138,8 +136,7 @@ enum Resp3Transform {
 
 impl Handler {
     /// Create a new handler
-    // Constructor used by server connection handling
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Planned for v0.2 — constructor used by server connection handling
     pub fn new(connection: Connection, deps: HandlerDependencies) -> Self {
         let executor = match deps.config.clone() {
             Some(config) => CommandExecutor::with_shared_state(
@@ -185,8 +182,7 @@ impl Handler {
     }
 
     /// Create a new handler with shared configuration
-    // Constructor reserved for shared configuration support
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Planned for v0.2 — reserved for shared configuration support
     pub fn with_config(
         connection: Connection,
         mut deps: HandlerDependencies,

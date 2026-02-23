@@ -1502,6 +1502,7 @@ name = "ferrite-studio"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "argon2",
  "async-trait",
  "bytes",
  "chrono",

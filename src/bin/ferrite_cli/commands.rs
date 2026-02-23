@@ -3,8 +3,7 @@
 use std::collections::HashMap;
 
 /// Information about a Redis command
-// Reserved for CLI command metadata system
-#[allow(dead_code)]
+#[allow(dead_code)] // Planned for v0.2 — reserved for CLI command metadata system
 #[derive(Debug, Clone)]
 pub struct CommandInfo {
     pub name: &'static str,
@@ -1348,8 +1347,7 @@ impl CommandRegistry {
     }
 
     /// Get all command names
-    // Reserved for CLI auto-completion support
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Planned for v0.2 — reserved for CLI auto-completion support
     pub fn get_all_names(&self) -> Vec<&'static str> {
         let mut names: Vec<_> = self.commands.keys().copied().collect();
         names.sort_unstable();

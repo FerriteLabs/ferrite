@@ -152,8 +152,7 @@ impl Repl {
     }
 
     /// Parse a line into arguments, handling quoted strings
-    // Reserved for enhanced REPL input parsing
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Planned for v0.2 — reserved for enhanced REPL input parsing
     fn parse_line<'a>(&self, line: &'a str) -> Vec<&'a str> {
         // Simple split for now - could be enhanced to handle quotes
         line.split_whitespace().collect()

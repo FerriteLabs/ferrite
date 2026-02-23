@@ -475,6 +475,10 @@ Ferrite exposes Prometheus metrics at `/metrics`:
 ```bash
 # View metrics
 curl http://localhost:9090/metrics
+
+# One-command monitoring stack (Prometheus + Grafana)
+# See: https://github.com/ferritelabs/ferrite-ops/tree/main/monitoring
+cd ferrite-ops/monitoring && ./setup.sh
 ```
 
 Key metrics:
@@ -841,7 +845,16 @@ cargo build --release --all-features
 | [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Common issues and solutions |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines |
 | [SECURITY.md](SECURITY.md) | Security policy |
-| [ADRs](docs/adr/) | Architecture Decision Records |
+| [ADRs](docs/adrs/) | Architecture Decision Records |
+| [GOVERNANCE.md](GOVERNANCE.md) | Project governance and decision-making |
+| [COMMUNITY.md](COMMUNITY.md) | How to get involved |
+
+### Tools
+
+| Tool | Description |
+|------|-------------|
+| [Cost Calculator](https://ferritelabs.github.io/ferrite-docs/cost-calculator) | Compare Redis vs Ferrite infrastructure costs |
+| [Monitoring Kit](https://github.com/ferritelabs/ferrite-ops/tree/main/monitoring) | One-command Prometheus + Grafana stack |
 
 ## Contributing
 

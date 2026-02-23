@@ -9,7 +9,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 
 use crate::error::{FerriteError, Result};
-use crate::protocol::{encode_frame, parse_frame, Frame, ParseError};
+use crate::protocol::{encode_frame, parse_frame_with_limits, Frame, ParseError, ParserLimits};
 
 /// Default buffer size (4KB)
 const DEFAULT_CONNECTION_BUFFER_SIZE: usize = 4 * 1024;
@@ -70,11 +70,19 @@ pub struct Connection {
 
     /// Remote peer address
     pub peer_addr: Option<SocketAddr>,
+
+    /// Protocol parser limits for DoS protection
+    parser_limits: ParserLimits,
 }
 
 impl Connection {
-    /// Create a new connection
+    /// Create a new connection with default parser limits
     pub fn new(stream: TcpStream) -> Self {
+        Self::with_parser_limits(stream, ParserLimits::default())
+    }
+
+    /// Create a new connection with custom parser limits
+    pub fn with_parser_limits(stream: TcpStream, parser_limits: ParserLimits) -> Self {
         let peer_addr = stream.peer_addr().ok();
         Self {
             stream,
@@ -84,6 +92,7 @@ impl Connection {
             protocol_version: ProtocolVersion::default(),
             client_name: None,
             peer_addr,
+            parser_limits,
         }
     }
 
@@ -105,7 +114,7 @@ impl Connection {
     pub async fn read_frame(&mut self) -> Result<Option<Frame>> {
         loop {
             // Try to parse a frame from the buffer
-            match parse_frame(&mut self.read_buf) {
+            match parse_frame_with_limits(&mut self.read_buf, &self.parser_limits) {
                 Ok(Some(frame)) => return Ok(Some(frame)),
                 Ok(None) => {
                     // Need more data
@@ -181,7 +190,7 @@ impl Connection {
     /// `Ok(None)` if more data is needed (buffer exhausted),
     /// or `Err` if the data is malformed.
     pub fn try_parse_buffered(&mut self) -> Result<Option<Frame>> {
-        match parse_frame(&mut self.read_buf) {
+        match parse_frame_with_limits(&mut self.read_buf, &self.parser_limits) {
             Ok(Some(frame)) => Ok(Some(frame)),
             Ok(None) | Err(ParseError::Incomplete) => Ok(None),
             Err(e) => Err(FerriteError::Protocol(e.to_string())),

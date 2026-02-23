@@ -41,8 +41,7 @@ pub enum NodeRole {
 }
 
 impl NodeRole {
-    // Reserved for cluster node role parsing
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Planned for v0.2 — reserved for cluster node role parsing
     pub fn from_str(s: &str) -> Self {
         match s.to_lowercase().as_str() {
             "master" => NodeRole::Master,
@@ -219,8 +218,7 @@ impl Default for ClusterState {
 
 impl ClusterState {
     /// Create a new cluster state
-    // Constructor reserved for TUI cluster view initialization
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Planned for v0.2 — reserved for TUI cluster view initialization
     pub fn new() -> Self {
         Self::default()
     }
@@ -259,8 +257,7 @@ impl ClusterState {
     }
 
     /// Get all master nodes
-    // Reserved for cluster topology queries
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Planned for v0.2 — reserved for cluster topology queries
     pub fn get_masters(&self) -> Vec<&ClusterNode> {
         self.nodes
             .iter()

@@ -230,7 +230,10 @@ impl Server {
                             // Register client in the registry
                             let client_id = self.client_registry.register(Some(addr));
 
-                            let connection = Connection::new(stream);
+                            let connection = Connection::with_parser_limits(
+                                stream,
+                                self.config.read().server.parser_limits(),
+                            );
                             let deps = HandlerDependencies {
                                 store: self.store.clone(),
                                 pubsub_manager: self.pubsub_manager.clone(),
