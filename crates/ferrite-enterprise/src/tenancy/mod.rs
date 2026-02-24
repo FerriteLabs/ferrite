@@ -355,8 +355,7 @@ impl TenantContext {
     pub fn record_connection_open(&self) {
         self.quota_enforcer.record_connection(1);
         let usage = self.quota_enforcer.get_usage();
-        self.metrics
-            .update_peak_connections(usage.connection_count);
+        self.metrics.update_peak_connections(usage.connection_count);
     }
 
     /// Record a connection close
@@ -503,7 +502,9 @@ pub enum TenancyError {
     },
 
     /// Cross-tenant access denied
-    #[error("cross-tenant access denied: tenant {requesting} cannot access keys of tenant {target}")]
+    #[error(
+        "cross-tenant access denied: tenant {requesting} cannot access keys of tenant {target}"
+    )]
     CrossTenantAccess {
         /// Requesting tenant
         requesting: String,

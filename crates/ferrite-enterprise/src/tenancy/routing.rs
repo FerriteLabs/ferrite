@@ -147,9 +147,8 @@ impl TenantRouter {
             map.get(credential).cloned()
         };
 
-        let tenant_id = tenant_id.ok_or_else(|| {
-            TenancyError::PermissionDenied("unknown auth credential".to_string())
-        })?;
+        let tenant_id = tenant_id
+            .ok_or_else(|| TenancyError::PermissionDenied("unknown auth credential".to_string()))?;
 
         let ctx = self.resolve_tenant(&tenant_id).await?;
         let identity = TenantIdentity::Auth {
@@ -197,10 +196,7 @@ impl TenantRouter {
     }
 
     /// Resolve a tenant ID to a context, optionally auto-provisioning.
-    async fn resolve_tenant(
-        &self,
-        tenant_id: &str,
-    ) -> Result<Arc<TenantContext>, TenancyError> {
+    async fn resolve_tenant(&self, tenant_id: &str) -> Result<Arc<TenantContext>, TenancyError> {
         if self.auto_provision {
             self.manager.get_or_create(tenant_id).await
         } else {
@@ -241,7 +237,10 @@ mod tests {
     async fn test_route_auth_success() {
         let (_mgr, router) = setup().await;
 
-        let (ctx, identity) = router.route_auth("token-acme", Some("admin")).await.unwrap();
+        let (ctx, identity) = router
+            .route_auth("token-acme", Some("admin"))
+            .await
+            .unwrap();
         assert_eq!(ctx.tenant_id, "acme");
         assert!(matches!(identity, TenantIdentity::Auth { .. }));
     }

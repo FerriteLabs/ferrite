@@ -135,8 +135,7 @@ impl QuotaEnforcer {
         }
 
         // Check warning thresholds
-        let memory_pct =
-            (memory.max(0) as f64 / self.limits.memory_bytes as f64) * 100.0;
+        let memory_pct = (memory.max(0) as f64 / self.limits.memory_bytes as f64) * 100.0;
         let key_pct = (keys.max(0) as f64 / self.limits.max_keys as f64) * 100.0;
 
         if memory_pct >= self.policy.warning_threshold_percent
@@ -151,13 +150,12 @@ impl QuotaEnforcer {
     /// Check read operations for warning-level usage
     fn check_read_warning(&self) -> QuotaAction {
         let memory = self.memory_used.load(Ordering::Relaxed);
-        let memory_pct =
-            (memory.max(0) as f64 / self.limits.memory_bytes as f64) * 100.0;
+        let memory_pct = (memory.max(0) as f64 / self.limits.memory_bytes as f64) * 100.0;
         if memory_pct >= self.policy.warning_threshold_percent {
             match &self.policy.on_warning {
-                QuotaBehavior::Warn => QuotaAction::Warn(format!(
-                    "memory usage at {memory_pct:.1}%"
-                )),
+                QuotaBehavior::Warn => {
+                    QuotaAction::Warn(format!("memory usage at {memory_pct:.1}%"))
+                }
                 _ => QuotaAction::Allow,
             }
         } else {
@@ -166,10 +164,7 @@ impl QuotaEnforcer {
     }
 
     /// Apply the exceeded policy — may reject or downgrade to warn/throttle
-    fn apply_exceeded_policy(
-        &self,
-        error: TenancyError,
-    ) -> Result<QuotaAction, TenancyError> {
+    fn apply_exceeded_policy(&self, error: TenancyError) -> Result<QuotaAction, TenancyError> {
         match &self.policy.on_exceeded {
             QuotaBehavior::Reject => Err(error),
             QuotaBehavior::Warn => {

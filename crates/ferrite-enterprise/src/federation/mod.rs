@@ -34,7 +34,7 @@
 //! let plan = manager.plan_query("SELECT * FROM users:* WHERE $.active = true")?;
 //! ```
 
-#![allow(dead_code, unused_imports, unused_variables)]
+#![allow(dead_code)]
 pub mod executor;
 pub mod planner;
 pub mod scatter_gather;

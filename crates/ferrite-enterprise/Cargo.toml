@@ -3,6 +3,7 @@ name = "ferrite-enterprise"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+publish = false
 authors.workspace = true
 description = "Enterprise features — multi-tenancy, governance, audit, federation"
 license.workspace = true

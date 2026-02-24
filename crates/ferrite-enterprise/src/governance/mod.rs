@@ -29,6 +29,8 @@
 
 pub mod classification;
 pub mod compliance;
+/// Unified compliance framework (SOC2/GDPR/HIPAA) with audit and governance.
+pub mod compliance_framework;
 pub mod lineage;
 pub mod masking;
 pub mod policy;

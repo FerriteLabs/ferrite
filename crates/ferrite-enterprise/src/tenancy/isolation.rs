@@ -109,7 +109,11 @@ impl IsolationEnforcer {
     }
 
     /// Convenience: scope key for reads (no value-size check needed).
-    pub fn prepare_read(&self, ctx: &TenantContext, user_key: &[u8]) -> Result<Vec<u8>, TenancyError> {
+    pub fn prepare_read(
+        &self,
+        ctx: &TenantContext,
+        user_key: &[u8],
+    ) -> Result<Vec<u8>, TenancyError> {
         ctx.validate_key_size(user_key.len())?;
         Ok(self.scope_key(ctx, user_key))
     }
@@ -158,7 +162,10 @@ mod tests {
 
         // tenant-a trying to access tenant-b's key
         let result = enforcer.validate_access(&ctx_a, &key_b, false);
-        assert!(matches!(result, Err(TenancyError::CrossTenantAccess { .. })));
+        assert!(matches!(
+            result,
+            Err(TenancyError::CrossTenantAccess { .. })
+        ));
     }
 
     #[test]

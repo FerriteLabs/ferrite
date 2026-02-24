@@ -5,8 +5,10 @@
 //!
 //! Enterprise features — multi-tenancy, governance, audit, federation
 
-pub mod tenancy;
-pub mod governance;
-pub mod policy;
+pub mod active_active;
 pub mod federation;
+pub mod governance;
+pub mod mesh;
+pub mod policy;
 pub mod proxy;
+pub mod tenancy;

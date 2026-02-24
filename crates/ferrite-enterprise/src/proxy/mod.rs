@@ -45,7 +45,7 @@
 //! proxy.run().await?;
 //! ```
 
-#![allow(dead_code, unused_imports, unused_variables, unreachable_patterns)]
+#![allow(dead_code)]
 pub mod comparator;
 pub mod router;
 pub mod server;

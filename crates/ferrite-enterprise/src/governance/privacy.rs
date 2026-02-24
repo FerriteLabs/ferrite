@@ -121,7 +121,8 @@ impl PiiDetector {
         let patterns = vec![
             PiiPattern {
                 pii_type: PiiType::Email,
-                regex: Regex::new(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}").expect("valid email regex"),
+                regex: Regex::new(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
+                    .expect("valid email regex"),
                 confidence: 0.95,
             },
             PiiPattern {
@@ -136,7 +137,8 @@ impl PiiDetector {
             },
             PiiPattern {
                 pii_type: PiiType::CreditCard,
-                regex: Regex::new(r"\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}").expect("valid credit card regex"),
+                regex: Regex::new(r"\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}")
+                    .expect("valid credit card regex"),
                 confidence: 0.9,
             },
             PiiPattern {

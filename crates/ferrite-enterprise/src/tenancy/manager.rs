@@ -88,7 +88,8 @@ impl TenantManager {
         tracing::info!(tenant_id = %id, "tenant created");
 
         // Emit Prometheus metric
-        metrics::gauge!("ferrite_tenant_count").set(self.tenant_count.load(Ordering::Relaxed) as f64);
+        metrics::gauge!("ferrite_tenant_count")
+            .set(self.tenant_count.load(Ordering::Relaxed) as f64);
 
         Ok(context)
     }
@@ -194,7 +195,8 @@ impl TenantManager {
         self.stats.tenants_deleted.fetch_add(1, Ordering::Relaxed);
 
         tracing::info!(tenant_id = %id, "tenant deleted");
-        metrics::gauge!("ferrite_tenant_count").set(self.tenant_count.load(Ordering::Relaxed) as f64);
+        metrics::gauge!("ferrite_tenant_count")
+            .set(self.tenant_count.load(Ordering::Relaxed) as f64);
 
         Ok(())
     }
@@ -276,8 +278,7 @@ impl TenantManager {
             metrics::gauge!("ferrite_tenant_keys", &labels).set(usage.key_count as f64);
             metrics::gauge!("ferrite_tenant_connections", &labels)
                 .set(usage.connection_count as f64);
-            metrics::counter!("ferrite_tenant_ops_total", &labels)
-                .absolute(ctx.request_count());
+            metrics::counter!("ferrite_tenant_ops_total", &labels).absolute(ctx.request_count());
         }
     }
 }

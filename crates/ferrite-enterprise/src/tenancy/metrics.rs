@@ -272,16 +272,11 @@ impl TenantMetricsCollector {
             let snap = m.snapshot();
             metrics::counter!("ferrite_tenant_commands_total", &labels)
                 .absolute(snap.commands_total);
-            metrics::counter!("ferrite_tenant_reads_total", &labels)
-                .absolute(snap.reads_total);
-            metrics::counter!("ferrite_tenant_writes_total", &labels)
-                .absolute(snap.writes_total);
-            metrics::counter!("ferrite_tenant_bytes_read", &labels)
-                .absolute(snap.bytes_read);
-            metrics::counter!("ferrite_tenant_bytes_written", &labels)
-                .absolute(snap.bytes_written);
-            metrics::counter!("ferrite_tenant_errors_total", &labels)
-                .absolute(snap.errors_total);
+            metrics::counter!("ferrite_tenant_reads_total", &labels).absolute(snap.reads_total);
+            metrics::counter!("ferrite_tenant_writes_total", &labels).absolute(snap.writes_total);
+            metrics::counter!("ferrite_tenant_bytes_read", &labels).absolute(snap.bytes_read);
+            metrics::counter!("ferrite_tenant_bytes_written", &labels).absolute(snap.bytes_written);
+            metrics::counter!("ferrite_tenant_errors_total", &labels).absolute(snap.errors_total);
             metrics::counter!("ferrite_tenant_rate_limit_hits", &labels)
                 .absolute(snap.rate_limit_hits);
             metrics::counter!("ferrite_tenant_quota_violations", &labels)
