@@ -621,7 +621,10 @@ mod tests {
     #[test]
     fn test_snippet_builder_default() {
         let builder = SnippetBuilder::default();
-        let snippet = builder.name("Default").description("Default builder").build();
+        let snippet = builder
+            .name("Default")
+            .description("Default builder")
+            .build();
         assert_eq!(snippet.name, "Default");
     }
 

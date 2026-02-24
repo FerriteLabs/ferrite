@@ -11,15 +11,9 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{
-    backend::CrosstermBackend,
-    widgets::ListState,
-    Terminal,
-};
+use ratatui::{backend::CrosstermBackend, widgets::ListState, Terminal};
 
-use super::metrics::{
-    DataCollector, KeyDetail, KeyInfo, LogLevel,
-};
+use super::metrics::{DataCollector, KeyDetail, KeyInfo, LogLevel};
 use super::ui;
 
 /// History buffer length for sparkline data (number of data points retained).
@@ -321,7 +315,9 @@ impl App {
     }
 
     fn handle_overview_key(&mut self, key: KeyCode) -> AsyncAction {
-        if key == KeyCode::Char('r') { self.paused = false }
+        if key == KeyCode::Char('r') {
+            self.paused = false
+        }
         AsyncAction::None
     }
 

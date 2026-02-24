@@ -186,10 +186,7 @@ pub async fn handle_tx_list(
 ) -> Frame {
     let count = tx_manager.active_count().await;
 
-    let result = vec![
-        Frame::bulk("active_count"),
-        Frame::Integer(count as i64),
-    ];
+    let result = vec![Frame::bulk("active_count"), Frame::Integer(count as i64)];
 
     Frame::array(result)
 }
@@ -480,7 +477,11 @@ pub async fn handle_tx_info(
 /// Parse a transaction ID from string format "txn-123" or just "123"
 fn parse_txn_id(bytes: &Bytes) -> Result<TransactionId, String> {
     let s = String::from_utf8_lossy(bytes);
-    let num_str = if let Some(stripped) = s.strip_prefix("txn-") { stripped } else { &s };
+    let num_str = if let Some(stripped) = s.strip_prefix("txn-") {
+        stripped
+    } else {
+        &s
+    };
 
     num_str
         .parse::<u64>()

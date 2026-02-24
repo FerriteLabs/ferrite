@@ -5,6 +5,7 @@
 //!
 //! Web-based management UI and interactive playground for Ferrite
 
-pub mod studio;
-pub mod playground;
+pub mod devtools;
 pub mod insights;
+pub mod playground;
+pub mod studio;

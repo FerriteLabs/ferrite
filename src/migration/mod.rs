@@ -32,9 +32,12 @@ pub mod analyzer;
 pub mod cluster_migration;
 pub mod cutover;
 pub mod executor;
+pub mod live;
 pub mod live_migration;
 pub mod planner;
 pub mod progress;
+/// Redis RDB file parser for snapshot-based migration.
+pub mod rdb_parser;
 pub mod validator;
 
 pub use analyzer::{CompatibilityAnalyzer, CompatibilityIssue, CompatibilityReport};

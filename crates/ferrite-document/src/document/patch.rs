@@ -10,34 +10,17 @@ use super::DocumentStoreError;
 #[serde(tag = "op", rename_all = "lowercase")]
 pub enum PatchOp {
     /// Add a value at a path
-    Add {
-        path: String,
-        value: Value,
-    },
+    Add { path: String, value: Value },
     /// Remove a value at a path
-    Remove {
-        path: String,
-    },
+    Remove { path: String },
     /// Replace a value at a path
-    Replace {
-        path: String,
-        value: Value,
-    },
+    Replace { path: String, value: Value },
     /// Move a value from one path to another
-    Move {
-        from: String,
-        path: String,
-    },
+    Move { from: String, path: String },
     /// Copy a value from one path to another
-    Copy {
-        from: String,
-        path: String,
-    },
+    Copy { from: String, path: String },
     /// Test that a value at a path matches
-    Test {
-        path: String,
-        value: Value,
-    },
+    Test { path: String, value: Value },
 }
 
 /// Apply a JSON Patch (RFC 6902) to a document
@@ -59,16 +42,12 @@ pub fn apply_patch(doc: &mut Value, ops: &[PatchOp]) -> Result<(), DocumentStore
 
 fn apply_single_op(doc: &mut Value, op: &PatchOp) -> Result<(), DocumentStoreError> {
     match op {
-        PatchOp::Add { path, value } => {
-            pointer_add(doc, path, value.clone())
-        }
+        PatchOp::Add { path, value } => pointer_add(doc, path, value.clone()),
         PatchOp::Remove { path } => {
             pointer_remove(doc, path)?;
             Ok(())
         }
-        PatchOp::Replace { path, value } => {
-            pointer_replace(doc, path, value.clone())
-        }
+        PatchOp::Replace { path, value } => pointer_replace(doc, path, value.clone()),
         PatchOp::Move { from, path } => {
             let val = pointer_remove(doc, from)?;
             pointer_add(doc, path, val)
@@ -293,10 +272,7 @@ fn navigate_to_mut<'a>(
             Value::Array(arr) => {
                 let idx = parse_array_index(seg, arr.len())?;
                 arr.get_mut(idx).ok_or_else(|| {
-                    DocumentStoreError::InvalidUpdate(format!(
-                        "Index out of bounds: {}",
-                        full_path
-                    ))
+                    DocumentStoreError::InvalidUpdate(format!("Index out of bounds: {}", full_path))
                 })?
             }
             _ => {

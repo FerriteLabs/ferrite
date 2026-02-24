@@ -1,6 +1,5 @@
 //! ACL metadata for commands.
 
-
 use crate::auth::Permission;
 use crate::commands::parser::Command;
 
@@ -1524,6 +1523,19 @@ impl Command {
                 permission: Permission::Read,
             },
 
+            Command::VectorHybridSearch { index, .. } => CommandMeta {
+                name: "VECTOR.HYBRID",
+                category: "vector",
+                keys: vec![index.clone()],
+                permission: Permission::Read,
+            },
+            Command::VectorRerank { index, .. } => CommandMeta {
+                name: "VECTOR.RERANK",
+                category: "vector",
+                keys: vec![index.clone()],
+                permission: Permission::Read,
+            },
+
             // CRDT commands
             Command::CrdtGCounter { key, .. } => CommandMeta {
                 name: "CRDT.GCOUNTER",
@@ -1751,6 +1763,20 @@ impl Command {
                 permission: Permission::Read,
             },
 
+            Command::FerriteAdvisor { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("FERRITE.ADVISOR.{}", subcommand).into_boxed_str()),
+                category: "admin",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+
+            Command::FerriteDebug { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("FERRITE.DEBUG.{}", subcommand).into_boxed_str()),
+                category: "admin",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+
             // Key management commands
             Command::Keys { .. } => CommandMeta {
                 name: "KEYS",
@@ -1850,6 +1876,294 @@ impl Command {
                 name: "SORT",
                 category: "keyspace",
                 keys: vec![key.clone()],
+                permission: Permission::Read,
+            },
+
+            // Materialized view commands
+            Command::ViewCreate { name, .. } => CommandMeta {
+                name: "VIEW.CREATE",
+                category: "views",
+                keys: vec![name.clone()],
+                permission: Permission::Write,
+            },
+            Command::ViewDrop { name } => CommandMeta {
+                name: "VIEW.DROP",
+                category: "views",
+                keys: vec![name.clone()],
+                permission: Permission::Write,
+            },
+            Command::ViewQuery { name } => CommandMeta {
+                name: "VIEW.QUERY",
+                category: "views",
+                keys: vec![name.clone()],
+                permission: Permission::Read,
+            },
+            Command::ViewList => CommandMeta {
+                name: "VIEW.LIST",
+                category: "views",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+            Command::ViewRefresh { name } => CommandMeta {
+                name: "VIEW.REFRESH",
+                category: "views",
+                keys: vec![name.clone()],
+                permission: Permission::Write,
+            },
+            Command::ViewInfo { name } => CommandMeta {
+                name: "VIEW.INFO",
+                category: "views",
+                keys: vec![name.clone()],
+                permission: Permission::Read,
+            },
+
+            // Live migration commands
+            Command::MigrateStart { .. } => CommandMeta {
+                name: "MIGRATE.START",
+                category: "admin",
+                keys: vec![],
+                permission: Permission::Write,
+            },
+            Command::MigrateStatus => CommandMeta {
+                name: "MIGRATE.STATUS",
+                category: "admin",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+            Command::MigratePause => CommandMeta {
+                name: "MIGRATE.PAUSE",
+                category: "admin",
+                keys: vec![],
+                permission: Permission::Write,
+            },
+            Command::MigrateResume => CommandMeta {
+                name: "MIGRATE.RESUME",
+                category: "admin",
+                keys: vec![],
+                permission: Permission::Write,
+            },
+            Command::MigrateVerify { .. } => CommandMeta {
+                name: "MIGRATE.VERIFY",
+                category: "admin",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+            Command::MigrateCutover => CommandMeta {
+                name: "MIGRATE.CUTOVER",
+                category: "admin",
+                keys: vec![],
+                permission: Permission::Write,
+            },
+            Command::MigrateRollback => CommandMeta {
+                name: "MIGRATE.ROLLBACK",
+                category: "admin",
+                keys: vec![],
+                permission: Permission::Write,
+            },
+
+            // Kafka-compatible streaming commands
+            Command::StreamCreate { .. } => CommandMeta {
+                name: "STREAM.CREATE",
+                category: "streaming",
+                keys: vec![],
+                permission: Permission::Write,
+            },
+            Command::StreamDelete { .. } => CommandMeta {
+                name: "STREAM.DELETE",
+                category: "streaming",
+                keys: vec![],
+                permission: Permission::Write,
+            },
+            Command::StreamProduce { .. } => CommandMeta {
+                name: "STREAM.PRODUCE",
+                category: "streaming",
+                keys: vec![],
+                permission: Permission::Write,
+            },
+            Command::StreamFetch { .. } => CommandMeta {
+                name: "STREAM.FETCH",
+                category: "streaming",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+            Command::StreamCommit { .. } => CommandMeta {
+                name: "STREAM.COMMIT",
+                category: "streaming",
+                keys: vec![],
+                permission: Permission::Write,
+            },
+            Command::StreamTopics => CommandMeta {
+                name: "STREAM.TOPICS",
+                category: "streaming",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+            Command::StreamDescribe { .. } => CommandMeta {
+                name: "STREAM.DESCRIBE",
+                category: "streaming",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+            Command::StreamGroups { .. } => CommandMeta {
+                name: "STREAM.GROUPS",
+                category: "streaming",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+            Command::StreamOffsets { .. } => CommandMeta {
+                name: "STREAM.OFFSETS",
+                category: "streaming",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+            Command::StreamStats => CommandMeta {
+                name: "STREAM.STATS",
+                category: "streaming",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+
+            // Multi-region active-active commands
+            Command::RegionAdd { .. } => CommandMeta {
+                name: "REGION.ADD",
+                category: "cluster",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+            Command::RegionRemove { .. } => CommandMeta {
+                name: "REGION.REMOVE",
+                category: "cluster",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+            Command::RegionList => CommandMeta {
+                name: "REGION.LIST",
+                category: "cluster",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+            Command::RegionStatus { .. } => CommandMeta {
+                name: "REGION.STATUS",
+                category: "cluster",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+            Command::RegionConflicts { .. } => CommandMeta {
+                name: "REGION.CONFLICTS",
+                category: "cluster",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+            Command::RegionStrategy { .. } => CommandMeta {
+                name: "REGION.STRATEGY",
+                category: "cluster",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+            Command::RegionStats => CommandMeta {
+                name: "REGION.STATS",
+                category: "cluster",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+
+            // Data Mesh / Federation gateway commands
+            Command::FederationAdd { .. } => CommandMeta {
+                name: "FEDERATION.ADD",
+                category: "admin",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+            Command::FederationRemove { .. } => CommandMeta {
+                name: "FEDERATION.REMOVE",
+                category: "admin",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+            Command::FederationList => CommandMeta {
+                name: "FEDERATION.LIST",
+                category: "admin",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+            Command::FederationStatus { .. } => CommandMeta {
+                name: "FEDERATION.STATUS",
+                category: "admin",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+            Command::FederationNamespace { .. } => CommandMeta {
+                name: "FEDERATION.NAMESPACE",
+                category: "admin",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+            Command::FederationNamespaces => CommandMeta {
+                name: "FEDERATION.NAMESPACES",
+                category: "admin",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+            Command::FederationQuery { .. } => CommandMeta {
+                name: "FEDERATION.QUERY",
+                category: "admin",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+            Command::FederationContract { .. } => CommandMeta {
+                name: "FEDERATION.CONTRACT",
+                category: "admin",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+            Command::FederationContracts => CommandMeta {
+                name: "FEDERATION.CONTRACTS",
+                category: "admin",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+            Command::FederationStats => CommandMeta {
+                name: "FEDERATION.STATS",
+                category: "admin",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+
+            // Studio developer-experience commands
+            Command::StudioSchema { .. } => CommandMeta {
+                name: "STUDIO.SCHEMA",
+                category: "studio",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+            Command::StudioTemplates { .. } => CommandMeta {
+                name: "STUDIO.TEMPLATES",
+                category: "studio",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+            Command::StudioSetup { .. } => CommandMeta {
+                name: "STUDIO.SETUP",
+                category: "studio",
+                keys: vec![],
+                permission: Permission::Write,
+            },
+            Command::StudioCompat { .. } => CommandMeta {
+                name: "STUDIO.COMPAT",
+                category: "studio",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+            Command::StudioHelp { .. } => CommandMeta {
+                name: "STUDIO.HELP",
+                category: "studio",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+            Command::StudioSuggest { .. } => CommandMeta {
+                name: "STUDIO.SUGGEST",
+                category: "studio",
+                keys: vec![],
                 permission: Permission::Read,
             },
         }

@@ -1,9 +1,9 @@
 use bytes::Bytes;
 
+use super::{get_bytes, get_int, get_string};
+use crate::commands::parser::Command;
 use crate::error::{FerriteError, Result};
 use crate::protocol::Frame;
-use super::{get_string, get_bytes, get_int};
-use crate::commands::parser::{Command};
 
 pub(crate) fn parse_zadd(args: &[Frame]) -> Result<Command> {
     if args.len() < 3 {
@@ -313,7 +313,11 @@ pub(crate) fn parse_zmscore(args: &[Frame]) -> Result<Command> {
 pub(crate) fn parse_zset_op_options(
     args: &[Frame],
     numkeys: usize,
-) -> Result<(Option<Vec<f64>>, crate::commands::sorted_sets::Aggregate, bool)> {
+) -> Result<(
+    Option<Vec<f64>>,
+    crate::commands::sorted_sets::Aggregate,
+    bool,
+)> {
     use crate::commands::sorted_sets::Aggregate;
 
     let mut weights = None;
@@ -420,7 +424,11 @@ pub(crate) fn parse_zunionstore(args: &[Frame]) -> Result<Command> {
 pub(crate) fn parse_zset_op_options_store(
     args: &[Frame],
     numkeys: usize,
-) -> Result<(Option<Vec<f64>>, crate::commands::sorted_sets::Aggregate, bool)> {
+) -> Result<(
+    Option<Vec<f64>>,
+    crate::commands::sorted_sets::Aggregate,
+    bool,
+)> {
     use crate::commands::sorted_sets::Aggregate;
 
     let mut weights = None;

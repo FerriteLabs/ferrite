@@ -339,14 +339,13 @@ impl LiveMigrationEngine {
         self.transition(MigrationPhase::ConsistencyCheck).await?;
         let report = self.run_consistency_check().await?;
 
-        if !report.is_consistent(self.config.consistency_threshold)
-            && self.config.auto_rollback {
-                self.transition(MigrationPhase::RolledBack).await?;
-                return Err(LiveMigrationError::ConsistencyFailure {
-                    ratio: report.ratio,
-                    threshold: self.config.consistency_threshold,
-                });
-            }
+        if !report.is_consistent(self.config.consistency_threshold) && self.config.auto_rollback {
+            self.transition(MigrationPhase::RolledBack).await?;
+            return Err(LiveMigrationError::ConsistencyFailure {
+                ratio: report.ratio,
+                threshold: self.config.consistency_threshold,
+            });
+        }
 
         // Phase 4: Cutover
         self.transition(MigrationPhase::Cutover).await?;

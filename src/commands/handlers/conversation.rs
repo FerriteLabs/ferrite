@@ -16,8 +16,8 @@ use std::sync::OnceLock;
 use bytes::Bytes;
 
 use super::{err_frame, ok_frame, HandlerContext};
-use ferrite_ai::conversation::{ConversationConfig, ConversationStore, Message, Role};
 use crate::protocol::Frame;
+use ferrite_ai::conversation::{ConversationConfig, ConversationStore, Message, Role};
 
 /// Global conversation store singleton
 static CONVERSATION_STORE: OnceLock<ConversationStore> = OnceLock::new();
@@ -268,10 +268,7 @@ pub fn conv_list(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     };
 
     let conversations = get_store().list_for_user(user_id);
-    let frames: Vec<Frame> = conversations
-        .into_iter()
-        .map(Frame::bulk)
-        .collect();
+    let frames: Vec<Frame> = conversations.into_iter().map(Frame::bulk).collect();
 
     Frame::array(frames)
 }

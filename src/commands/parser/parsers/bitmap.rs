@@ -1,9 +1,9 @@
 use bytes::Bytes;
 
+use super::{get_bytes, get_string};
+use crate::commands::parser::Command;
 use crate::error::{FerriteError, Result};
 use crate::protocol::Frame;
-use super::{get_string, get_bytes};
-use crate::commands::parser::{Command};
 
 /// GETBIT key offset
 pub(crate) fn parse_getbit(args: &[Frame]) -> Result<Command> {
@@ -84,10 +84,7 @@ pub(crate) fn parse_bitop(args: &[Frame]) -> Result<Command> {
     };
 
     let destkey = get_bytes(&args[1])?;
-    let keys: Vec<Bytes> = args[2..]
-        .iter()
-        .map(get_bytes)
-        .collect::<Result<_>>()?;
+    let keys: Vec<Bytes> = args[2..].iter().map(get_bytes).collect::<Result<_>>()?;
 
     Ok(Command::BitOp {
         operation,
@@ -162,15 +159,16 @@ pub(crate) fn parse_bitfield(args: &[Frame]) -> Result<Command> {
                 }
                 let encoding_str = get_string(&args[i + 1])?;
                 let offset_str = get_string(&args[i + 2])?;
-                let encoding =
-                    crate::commands::bitmap::BitFieldEncoding::parse(&encoding_str).ok_or_else(|| {
+                let encoding = crate::commands::bitmap::BitFieldEncoding::parse(&encoding_str)
+                    .ok_or_else(|| {
                         FerriteError::Protocol("ERR invalid bitfield type".to_string())
                     })?;
-                let offset =
-                    crate::commands::bitmap::BitFieldOffset::parse(&offset_str).ok_or_else(|| {
+                let offset = crate::commands::bitmap::BitFieldOffset::parse(&offset_str)
+                    .ok_or_else(|| {
                         FerriteError::Protocol("ERR invalid bitfield offset".to_string())
                     })?;
-                subcommands.push(crate::commands::bitmap::BitFieldSubCommand::Get { encoding, offset });
+                subcommands
+                    .push(crate::commands::bitmap::BitFieldSubCommand::Get { encoding, offset });
                 i += 3;
             }
             "SET" => {
@@ -186,12 +184,12 @@ pub(crate) fn parse_bitfield(args: &[Frame]) -> Result<Command> {
                         "ERR value is not an integer or out of range".to_string(),
                     )
                 })?;
-                let encoding =
-                    crate::commands::bitmap::BitFieldEncoding::parse(&encoding_str).ok_or_else(|| {
+                let encoding = crate::commands::bitmap::BitFieldEncoding::parse(&encoding_str)
+                    .ok_or_else(|| {
                         FerriteError::Protocol("ERR invalid bitfield type".to_string())
                     })?;
-                let offset =
-                    crate::commands::bitmap::BitFieldOffset::parse(&offset_str).ok_or_else(|| {
+                let offset = crate::commands::bitmap::BitFieldOffset::parse(&offset_str)
+                    .ok_or_else(|| {
                         FerriteError::Protocol("ERR invalid bitfield offset".to_string())
                     })?;
                 subcommands.push(crate::commands::bitmap::BitFieldSubCommand::Set {
@@ -214,12 +212,12 @@ pub(crate) fn parse_bitfield(args: &[Frame]) -> Result<Command> {
                         "ERR increment is not an integer or out of range".to_string(),
                     )
                 })?;
-                let encoding =
-                    crate::commands::bitmap::BitFieldEncoding::parse(&encoding_str).ok_or_else(|| {
+                let encoding = crate::commands::bitmap::BitFieldEncoding::parse(&encoding_str)
+                    .ok_or_else(|| {
                         FerriteError::Protocol("ERR invalid bitfield type".to_string())
                     })?;
-                let offset =
-                    crate::commands::bitmap::BitFieldOffset::parse(&offset_str).ok_or_else(|| {
+                let offset = crate::commands::bitmap::BitFieldOffset::parse(&offset_str)
+                    .ok_or_else(|| {
                         FerriteError::Protocol("ERR invalid bitfield offset".to_string())
                     })?;
                 subcommands.push(crate::commands::bitmap::BitFieldSubCommand::IncrBy {
@@ -246,7 +244,9 @@ pub(crate) fn parse_bitfield(args: &[Frame]) -> Result<Command> {
                         ))
                     }
                 };
-                subcommands.push(crate::commands::bitmap::BitFieldSubCommand::Overflow(overflow));
+                subcommands.push(crate::commands::bitmap::BitFieldSubCommand::Overflow(
+                    overflow,
+                ));
                 i += 2;
             }
             _ => {

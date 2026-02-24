@@ -1410,8 +1410,236 @@ pub enum Command {
         /// Raw arguments
         args: Vec<Bytes>,
     },
-}
 
+    // Adaptive query optimizer
+    /// FERRITE.ADVISOR subcommand [args...] - Adaptive query optimization
+    FerriteAdvisor {
+        /// Subcommand (STATUS, ANALYZE, RECOMMEND, APPLY, HISTORY, RULES, CONFIG)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+
+    // Integrated observability diagnostics
+    /// FERRITE.DEBUG subcommand [args...] - Diagnostics and debugging
+    FerriteDebug {
+        /// Subcommand (SLOWLOG, HOTKEYS, BOTTLENECK, SAMPLING, STATS, LATENCY)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+
+    // Hybrid vector search commands
+    /// VECTOR.HYBRID index query_vector query_text [TOP k] [ALPHA f] [STRATEGY rrf|linear]
+    VectorHybridSearch {
+        /// Index name
+        index: Bytes,
+        /// Dense query vector
+        query_vector: Vec<f32>,
+        /// Sparse query text
+        query_text: String,
+        /// Number of results to return
+        top_k: usize,
+        /// Weight for dense vs sparse (0.0–1.0)
+        alpha: f64,
+        /// Fusion strategy: rrf, linear, dense, sparse
+        strategy: String,
+    },
+    /// VECTOR.RERANK index query_text doc_ids [TOP k]
+    VectorRerank {
+        /// Index name
+        index: Bytes,
+        /// Query text for re-ranking
+        query_text: String,
+        /// Document IDs to re-rank
+        doc_ids: Vec<String>,
+        /// Number of results to return
+        top_k: usize,
+    },
+
+    // Materialized view commands
+    /// VIEW.CREATE name query [STRATEGY eager|lazy|periodic] [INTERVAL secs]
+    ViewCreate {
+        /// View name
+        name: Bytes,
+        /// FerriteQL query string
+        query: String,
+        /// Refresh strategy: eager, lazy, periodic
+        strategy: String,
+        /// Interval in seconds (for periodic strategy)
+        interval: Option<u64>,
+    },
+    /// VIEW.DROP name
+    ViewDrop {
+        /// View name
+        name: Bytes,
+    },
+    /// VIEW.QUERY name
+    ViewQuery {
+        /// View name
+        name: Bytes,
+    },
+    /// VIEW.LIST
+    ViewList,
+    /// VIEW.REFRESH name
+    ViewRefresh {
+        /// View name
+        name: Bytes,
+    },
+    /// VIEW.INFO name
+    ViewInfo {
+        /// View name
+        name: Bytes,
+    },
+
+    // Live migration commands
+    /// MIGRATE.START source_uri [BATCH size] [WORKERS n] [VERIFY] [DRY-RUN]
+    MigrateStart {
+        source_uri: String,
+        batch_size: Option<usize>,
+        workers: Option<usize>,
+        verify: bool,
+        dry_run: bool,
+    },
+    /// MIGRATE.STATUS
+    MigrateStatus,
+    /// MIGRATE.PAUSE
+    MigratePause,
+    /// MIGRATE.RESUME
+    MigrateResume,
+    /// MIGRATE.VERIFY [SAMPLE pct]
+    MigrateVerify {
+        sample_pct: Option<f64>,
+    },
+    /// MIGRATE.CUTOVER
+    MigrateCutover,
+    /// MIGRATE.ROLLBACK
+    MigrateRollback,
+
+    // Kafka-compatible streaming commands
+    /// STREAM.CREATE topic [PARTITIONS n] [RETENTION ms] [REPLICATION n]
+    StreamCreate {
+        topic: String,
+        partitions: u32,
+        retention_ms: i64,
+        replication: u16,
+    },
+    /// STREAM.DELETE topic
+    StreamDelete {
+        topic: String,
+    },
+    /// STREAM.PRODUCE topic [KEY key] value [PARTITION n]
+    StreamProduce {
+        topic: String,
+        key: Option<Bytes>,
+        value: Bytes,
+        partition: Option<u32>,
+    },
+    /// STREAM.FETCH topic partition offset [COUNT n]
+    StreamFetch {
+        topic: String,
+        partition: u32,
+        offset: i64,
+        count: usize,
+    },
+    /// STREAM.COMMIT group topic partition offset
+    StreamCommit {
+        group: String,
+        topic: String,
+        partition: u32,
+        offset: i64,
+    },
+    /// STREAM.TOPICS
+    StreamTopics,
+    /// STREAM.DESCRIBE topic
+    StreamDescribe {
+        topic: String,
+    },
+    /// STREAM.GROUPS [topic]
+    StreamGroups {
+        topic: Option<String>,
+    },
+    /// STREAM.OFFSETS topic partition
+    StreamOffsets {
+        topic: String,
+        partition: u32,
+    },
+    /// STREAM.STATS
+    StreamStats,
+
+    // Multi-region active-active commands
+    /// REGION.ADD id name endpoint
+    RegionAdd {
+        id: String,
+        name: String,
+        endpoint: String,
+    },
+    /// REGION.REMOVE id
+    RegionRemove {
+        id: String,
+    },
+    /// REGION.LIST
+    RegionList,
+    /// REGION.STATUS [id]
+    RegionStatus {
+        id: Option<String>,
+    },
+    /// REGION.CONFLICTS [LIMIT n]
+    RegionConflicts {
+        limit: usize,
+    },
+    /// REGION.STRATEGY [strategy]
+    RegionStrategy {
+        strategy: Option<String>,
+    },
+    /// REGION.STATS
+    RegionStats,
+
+    // Data Mesh / Federation gateway commands
+    /// FEDERATION.ADD id TYPE type URI uri [NAME name]
+    FederationAdd {
+        id: String,
+        source_type: String,
+        uri: String,
+        name: Option<String>,
+    },
+    /// FEDERATION.REMOVE id
+    FederationRemove { id: String },
+    /// FEDERATION.LIST
+    FederationList,
+    /// FEDERATION.STATUS [id]
+    FederationStatus { id: Option<String> },
+    /// FEDERATION.NAMESPACE namespace source_id
+    FederationNamespace { namespace: String, source_id: String },
+    /// FEDERATION.NAMESPACES
+    FederationNamespaces,
+    /// FEDERATION.QUERY query_string
+    FederationQuery { query: String },
+    /// FEDERATION.CONTRACT name source_id schema_json
+    FederationContract {
+        name: String,
+        source_id: String,
+        schema_json: String,
+    },
+    /// FEDERATION.CONTRACTS
+    FederationContracts,
+    /// FEDERATION.STATS
+    FederationStats,
+
+    // Studio developer-experience commands
+    /// STUDIO.SCHEMA [DB n]
+    StudioSchema { db: Option<u8> },
+    /// STUDIO.TEMPLATES [name]
+    StudioTemplates { name: Option<String> },
+    /// STUDIO.SETUP template_name
+    StudioSetup { template: String },
+    /// STUDIO.COMPAT [redis_info]
+    StudioCompat { redis_info: Option<String> },
+    /// STUDIO.HELP command
+    StudioHelp { command: String },
+    /// STUDIO.SUGGEST [context]
+    StudioSuggest { context: Option<String> },
+}
 
 impl Command {
     pub fn from_frame(frame: Frame) -> Result<Command> {
@@ -1742,6 +1970,74 @@ impl Command {
                 parsers::advanced::parse_query_command(sub, args)
             }
 
+            // Adaptive query optimizer
+            "FERRITE.ADVISOR" => parsers::advanced::parse_ferrite_advisor(args),
+
+            // Integrated observability diagnostics
+            "FERRITE.DEBUG" => parsers::advanced::parse_ferrite_debug(args),
+
+            // Hybrid vector search
+            "VECTOR.HYBRID" => parsers::advanced::parse_vector_hybrid(args),
+            "VECTOR.RERANK" => parsers::advanced::parse_vector_rerank(args),
+
+            // Materialized view commands
+            "VIEW.CREATE" => parsers::advanced::parse_view_create(args),
+            "VIEW.DROP" => parsers::advanced::parse_view_drop(args),
+            "VIEW.QUERY" => parsers::advanced::parse_view_query(args),
+            "VIEW.LIST" => parsers::advanced::parse_view_list(args),
+            "VIEW.REFRESH" => parsers::advanced::parse_view_refresh(args),
+            "VIEW.INFO" => parsers::advanced::parse_view_info(args),
+
+            // Live migration commands
+            "MIGRATE.START" => parsers::advanced::parse_migrate_start(args),
+            "MIGRATE.STATUS" => Ok(Command::MigrateStatus),
+            "MIGRATE.PAUSE" => Ok(Command::MigratePause),
+            "MIGRATE.RESUME" => Ok(Command::MigrateResume),
+            "MIGRATE.VERIFY" => parsers::advanced::parse_migrate_verify(args),
+            "MIGRATE.CUTOVER" => Ok(Command::MigrateCutover),
+            "MIGRATE.ROLLBACK" => Ok(Command::MigrateRollback),
+
+            // Kafka-compatible streaming commands
+            "STREAM.CREATE" => parsers::advanced::parse_stream_create(args),
+            "STREAM.DELETE" => parsers::advanced::parse_stream_delete(args),
+            "STREAM.PRODUCE" => parsers::advanced::parse_stream_produce(args),
+            "STREAM.FETCH" => parsers::advanced::parse_stream_fetch(args),
+            "STREAM.COMMIT" => parsers::advanced::parse_stream_commit(args),
+            "STREAM.TOPICS" => Ok(Command::StreamTopics),
+            "STREAM.DESCRIBE" => parsers::advanced::parse_stream_describe(args),
+            "STREAM.GROUPS" => parsers::advanced::parse_stream_groups(args),
+            "STREAM.OFFSETS" => parsers::advanced::parse_stream_offsets(args),
+            "STREAM.STATS" => Ok(Command::StreamStats),
+
+            // Multi-region active-active commands
+            "REGION.ADD" => parsers::advanced::parse_region_add(args),
+            "REGION.REMOVE" => parsers::advanced::parse_region_remove(args),
+            "REGION.LIST" => Ok(Command::RegionList),
+            "REGION.STATUS" => parsers::advanced::parse_region_status(args),
+            "REGION.CONFLICTS" => parsers::advanced::parse_region_conflicts(args),
+            "REGION.STRATEGY" => parsers::advanced::parse_region_strategy(args),
+            "REGION.STATS" => Ok(Command::RegionStats),
+
+            // Data Mesh / Federation gateway commands
+            "FEDERATION.ADD" => parsers::advanced::parse_federation_add(args),
+            "FEDERATION.REMOVE" => parsers::advanced::parse_federation_remove(args),
+            "FEDERATION.LIST" => Ok(Command::FederationList),
+            "FEDERATION.STATUS" => parsers::advanced::parse_federation_status(args),
+            "FEDERATION.NAMESPACE" => parsers::advanced::parse_federation_namespace(args),
+            "FEDERATION.NAMESPACES" => Ok(Command::FederationNamespaces),
+            "FEDERATION.QUERY" => parsers::advanced::parse_federation_query(args),
+            "FEDERATION.CONTRACT" => parsers::advanced::parse_federation_contract(args),
+            "FEDERATION.CONTRACTS" => Ok(Command::FederationContracts),
+            "FEDERATION.STATS" => Ok(Command::FederationStats),
+
+            // Studio developer-experience commands
+            "STUDIO.SCHEMA" => parsers::advanced::parse_studio_schema(args),
+            "STUDIO.TEMPLATES" => parsers::advanced::parse_studio_templates(args),
+            "STUDIO.SETUP" => parsers::advanced::parse_studio_setup(args),
+            "STUDIO.COMPAT" => parsers::advanced::parse_studio_compat(args),
+            "STUDIO.HELP" => parsers::advanced::parse_studio_help(args),
+            "STUDIO.SUGGEST" => parsers::advanced::parse_studio_suggest(args),
+
             _ => Err(FerriteError::UnknownCommand(command_name)),
         }
     }
@@ -2070,7 +2366,12 @@ mod tests {
         let frame = make_command(&["SCAN", "0"]);
         let cmd = Command::from_frame(frame).unwrap();
         match cmd {
-            Command::Scan { cursor, pattern, count, type_filter } => {
+            Command::Scan {
+                cursor,
+                pattern,
+                count,
+                type_filter,
+            } => {
                 assert_eq!(cursor, 0);
                 assert!(pattern.is_none());
                 assert!(count.is_none());
@@ -2085,7 +2386,12 @@ mod tests {
         let frame = make_command(&["SCAN", "0", "MATCH", "user:*", "COUNT", "100"]);
         let cmd = Command::from_frame(frame).unwrap();
         match cmd {
-            Command::Scan { cursor, pattern, count, type_filter } => {
+            Command::Scan {
+                cursor,
+                pattern,
+                count,
+                type_filter,
+            } => {
                 assert_eq!(cursor, 0);
                 assert_eq!(pattern, Some("user:*".to_string()));
                 assert_eq!(count, Some(100));
@@ -2100,7 +2406,11 @@ mod tests {
         let frame = make_command(&["SCAN", "0", "TYPE", "string"]);
         let cmd = Command::from_frame(frame).unwrap();
         match cmd {
-            Command::Scan { cursor, type_filter, .. } => {
+            Command::Scan {
+                cursor,
+                type_filter,
+                ..
+            } => {
                 assert_eq!(cursor, 0);
                 assert_eq!(type_filter, Some("string".to_string()));
             }
@@ -2113,7 +2423,10 @@ mod tests {
         let frame = make_command(&["WAIT", "1", "5000"]);
         let cmd = Command::from_frame(frame).unwrap();
         match cmd {
-            Command::Wait { numreplicas, timeout } => {
+            Command::Wait {
+                numreplicas,
+                timeout,
+            } => {
                 assert_eq!(numreplicas, 1);
                 assert_eq!(timeout, 5000);
             }

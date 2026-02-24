@@ -205,9 +205,7 @@ fn validate_type(value: &Value, type_val: &Value, path: &str, errors: &mut Vec<V
 
     let valid = match type_val {
         Value::String(t) => check(t),
-        Value::Array(types) => types
-            .iter()
-            .any(|t| t.as_str().is_some_and(check)),
+        Value::Array(types) => types.iter().any(|t| t.as_str().is_some_and(check)),
         _ => true,
     };
 
@@ -420,11 +418,7 @@ fn validate_object(
             if (obj.len() as u64) < min {
                 errors.push(ValidationError {
                     path: path.to_string(),
-                    message: format!(
-                        "Object has {} properties, minimum is {}",
-                        obj.len(),
-                        min
-                    ),
+                    message: format!("Object has {} properties, minimum is {}", obj.len(), min),
                 });
             }
         }
@@ -435,11 +429,7 @@ fn validate_object(
             if (obj.len() as u64) > max {
                 errors.push(ValidationError {
                     path: path.to_string(),
-                    message: format!(
-                        "Object has {} properties, maximum is {}",
-                        obj.len(),
-                        max
-                    ),
+                    message: format!("Object has {} properties, maximum is {}", obj.len(), max),
                 });
             }
         }
@@ -537,7 +527,10 @@ mod tests {
             "required": ["name", "age"]
         });
         let v = SchemaValidator::new(schema).unwrap();
-        assert!(v.validate(&json!({"name": "Alice", "age": 30})).unwrap().is_empty());
+        assert!(v
+            .validate(&json!({"name": "Alice", "age": 30}))
+            .unwrap()
+            .is_empty());
         assert!(!v.validate(&json!({"name": "Alice"})).unwrap().is_empty());
     }
 
@@ -551,7 +544,10 @@ mod tests {
             }
         });
         let v = SchemaValidator::new(schema).unwrap();
-        assert!(v.validate(&json!({"name": "Alice", "age": 30})).unwrap().is_empty());
+        assert!(v
+            .validate(&json!({"name": "Alice", "age": 30}))
+            .unwrap()
+            .is_empty());
         assert!(!v.validate(&json!({"name": 42})).unwrap().is_empty());
     }
 
@@ -564,7 +560,10 @@ mod tests {
         });
         let v = SchemaValidator::new(schema).unwrap();
         assert!(v.validate(&json!({"name": "Alice"})).unwrap().is_empty());
-        assert!(!v.validate(&json!({"name": "Alice", "extra": 1})).unwrap().is_empty());
+        assert!(!v
+            .validate(&json!({"name": "Alice", "extra": 1}))
+            .unwrap()
+            .is_empty());
     }
 
     #[test]

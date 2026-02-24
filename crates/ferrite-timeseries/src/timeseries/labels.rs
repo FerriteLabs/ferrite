@@ -614,13 +614,12 @@ impl LabelIndex {
     /// Find series matching a single label matcher
     pub fn find(&self, matcher: &LabelMatcher) -> Vec<String> {
         match matcher.match_type {
-            LabelMatcherType::Equal => {
-                self.index
-                    .get(&matcher.name)
-                    .and_then(|values| values.get(&matcher.value))
-                    .cloned()
-                    .unwrap_or_default()
-            }
+            LabelMatcherType::Equal => self
+                .index
+                .get(&matcher.name)
+                .and_then(|values| values.get(&matcher.value))
+                .cloned()
+                .unwrap_or_default(),
             LabelMatcherType::NotEqual => {
                 let mut result = Vec::new();
                 if let Some(values) = self.index.get(&matcher.name) {
@@ -680,10 +679,7 @@ impl LabelIndex {
         for matcher in matchers {
             let matches = self.find(matcher);
             result = Some(match result {
-                Some(prev) => prev
-                    .into_iter()
-                    .filter(|k| matches.contains(k))
-                    .collect(),
+                Some(prev) => prev.into_iter().filter(|k| matches.contains(k)).collect(),
                 None => matches,
             });
         }

@@ -16,11 +16,11 @@ use crate::commands::{
 };
 use crate::config::{Config, SharedConfig, DEFAULT_REPLICATION_BACKLOG_BYTES};
 use crate::error::Result;
-use ferrite_core::telemetry::metrics as otel_metrics;
 use crate::replication::{
     ReplicationPrimary, ReplicationState, ReplicationStream, SharedReplicationState,
 };
 use crate::storage::Store;
+use ferrite_core::telemetry::metrics as otel_metrics;
 
 use super::connection::Connection;
 use super::handler::{Handler, HandlerDependencies};

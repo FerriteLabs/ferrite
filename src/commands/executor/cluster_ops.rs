@@ -124,10 +124,7 @@ total_cluster_links_buffer_limit_exceeded:0";
                 shard_map.insert(Bytes::from_static(b"slots"), Frame::array(slot_ints));
 
                 let mut node_map = std::collections::HashMap::new();
-                node_map.insert(
-                    Bytes::from_static(b"id"),
-                    Frame::bulk(node.node_id.clone()),
-                );
+                node_map.insert(Bytes::from_static(b"id"), Frame::bulk(node.node_id.clone()));
                 node_map.insert(
                     Bytes::from_static(b"port"),
                     Frame::Integer(node.addr.port() as i64),
@@ -187,9 +184,7 @@ total_cluster_links_buffer_limit_exceeded:0";
 
     fn cluster_keyslot(&self, args: &[String]) -> Frame {
         if args.is_empty() {
-            return Frame::error(
-                "ERR wrong number of arguments for 'cluster|keyslot' command",
-            );
+            return Frame::error("ERR wrong number of arguments for 'cluster|keyslot' command");
         }
         let key = args[0].as_bytes();
         let slot = HashSlot::for_key(key);
@@ -252,9 +247,7 @@ total_cluster_links_buffer_limit_exceeded:0";
 
     fn cluster_meet(&self, args: &[String]) -> Frame {
         if args.len() < 2 {
-            return Frame::error(
-                "ERR wrong number of arguments for 'cluster|meet' command",
-            );
+            return Frame::error("ERR wrong number of arguments for 'cluster|meet' command");
         }
 
         let ip: std::net::IpAddr = match args[0].parse() {
@@ -304,9 +297,7 @@ total_cluster_links_buffer_limit_exceeded:0";
 
     fn cluster_forget(&self, args: &[String]) -> Frame {
         if args.is_empty() {
-            return Frame::error(
-                "ERR wrong number of arguments for 'cluster|forget' command",
-            );
+            return Frame::error("ERR wrong number of arguments for 'cluster|forget' command");
         }
 
         let target_id = &args[0];
@@ -336,9 +327,7 @@ total_cluster_links_buffer_limit_exceeded:0";
 
     fn cluster_addslots(&self, args: &[String]) -> Frame {
         if args.is_empty() {
-            return Frame::error(
-                "ERR wrong number of arguments for 'cluster|addslots' command",
-            );
+            return Frame::error("ERR wrong number of arguments for 'cluster|addslots' command");
         }
 
         let mut slots_to_add = Vec::with_capacity(args.len());
@@ -358,10 +347,7 @@ total_cluster_links_buffer_limit_exceeded:0";
             for &slot in &slots_to_add {
                 if let Some(owner) = csm.get_slot_owner(slot) {
                     if owner.node_id != my_id {
-                        return Frame::error(format!(
-                            "ERR Slot {} is already busy",
-                            slot
-                        ));
+                        return Frame::error(format!("ERR Slot {} is already busy", slot));
                     }
                 }
             }
@@ -376,9 +362,7 @@ total_cluster_links_buffer_limit_exceeded:0";
 
     fn cluster_delslots(&self, args: &[String]) -> Frame {
         if args.is_empty() {
-            return Frame::error(
-                "ERR wrong number of arguments for 'cluster|delslots' command",
-            );
+            return Frame::error("ERR wrong number of arguments for 'cluster|delslots' command");
         }
 
         let mut slots_to_del = Vec::with_capacity(args.len());
@@ -401,9 +385,7 @@ total_cluster_links_buffer_limit_exceeded:0";
 
     fn cluster_setslot(&self, args: &[String]) -> Frame {
         if args.len() < 2 {
-            return Frame::error(
-                "ERR wrong number of arguments for 'cluster|setslot' command",
-            );
+            return Frame::error("ERR wrong number of arguments for 'cluster|setslot' command");
         }
         let slot: u16 = match args[0].parse() {
             Ok(s) if s < CLUSTER_SLOTS => s,
@@ -416,11 +398,7 @@ total_cluster_links_buffer_limit_exceeded:0";
                     return Frame::error("ERR Please specify the source node ID");
                 }
                 let source_node_id = &args[2];
-                tracing::info!(
-                    "CLUSTER SETSLOT {} IMPORTING from {}",
-                    slot,
-                    source_node_id
-                );
+                tracing::info!("CLUSTER SETSLOT {} IMPORTING from {}", slot, source_node_id);
                 if let Some(csm) = &self.cluster_state {
                     csm.set_slot_importing(slot, source_node_id);
                 }
@@ -431,11 +409,7 @@ total_cluster_links_buffer_limit_exceeded:0";
                     return Frame::error("ERR Please specify the target node ID");
                 }
                 let target_node_id = &args[2];
-                tracing::info!(
-                    "CLUSTER SETSLOT {} MIGRATING to {}",
-                    slot,
-                    target_node_id
-                );
+                tracing::info!("CLUSTER SETSLOT {} MIGRATING to {}", slot, target_node_id);
                 if let Some(csm) = &self.cluster_state {
                     csm.set_slot_migrating(slot, target_node_id);
                 }
@@ -499,9 +473,7 @@ total_cluster_links_buffer_limit_exceeded:0";
 
     fn cluster_replicate(&self, args: &[String]) -> Frame {
         if args.is_empty() {
-            return Frame::error(
-                "ERR wrong number of arguments for 'cluster|replicate' command",
-            );
+            return Frame::error("ERR wrong number of arguments for 'cluster|replicate' command");
         }
         let _ = &args[0];
         // In a full implementation: configure this node as replica of primary_id
@@ -580,7 +552,7 @@ total_cluster_links_buffer_limit_exceeded:0";
                 // We need to access the DashMap entry mutably. The
                 // ClusterStateManager exposes get_node (clone), so we
                 // update through add_node to overwrite.
-                
+
                 csm.get_node(&my_id)
             } {
                 entry.config_epoch = epoch;
@@ -624,9 +596,7 @@ total_cluster_links_buffer_limit_exceeded:0";
     /// Count keys in the store that hash to the given slot.
     fn count_keys_in_slot(&self, db: u8, slot: u16) -> u64 {
         let keys = self.store.keys(db);
-        keys.iter()
-            .filter(|k| HashSlot::for_key(k) == slot)
-            .count() as u64
+        keys.iter().filter(|k| HashSlot::for_key(k) == slot).count() as u64
     }
 
     /// Return up to `count` keys from the store that hash to the given slot.

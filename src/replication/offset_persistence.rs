@@ -79,7 +79,11 @@ impl ReplicationOffsetPersistence {
         fs::write(&tmp, content.as_bytes()).await?;
         fs::rename(&tmp, &self.path).await?;
 
-        debug!(offset, replid = replid.as_str(), "persisted replication offset");
+        debug!(
+            offset,
+            replid = replid.as_str(),
+            "persisted replication offset"
+        );
         Ok(())
     }
 
@@ -258,8 +262,7 @@ mod tests {
 
     #[test]
     fn test_parse_valid() {
-        let meta =
-            ReplicationOffsetPersistence::parse("replid:abc\noffset:100\n").expect("parse");
+        let meta = ReplicationOffsetPersistence::parse("replid:abc\noffset:100\n").expect("parse");
         assert_eq!(meta.replid, ReplicationId::from_string("abc"));
         assert_eq!(meta.offset, 100);
     }

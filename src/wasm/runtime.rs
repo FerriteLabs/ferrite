@@ -154,8 +154,9 @@ impl WasmRuntime {
             .map_err(|e| WasmError::Internal(format!("failed to create wasmtime engine: {}", e)))?;
 
         let mut linker = Linker::new(&engine);
-        host::register_host_functions(&mut linker)
-            .map_err(|e| WasmError::Internal(format!("failed to register host functions: {}", e)))?;
+        host::register_host_functions(&mut linker).map_err(|e| {
+            WasmError::Internal(format!("failed to register host functions: {}", e))
+        })?;
 
         Ok(Self {
             engine,
@@ -589,7 +590,10 @@ mod tests {
         );
 
         assert!(!result.success);
-        assert!(result.error.as_ref().is_some_and(|e| e.contains("not found")));
+        assert!(result
+            .error
+            .as_ref()
+            .is_some_and(|e| e.contains("not found")));
     }
 
     #[test]
@@ -606,12 +610,10 @@ mod tests {
         );
 
         assert!(!result.success);
-        assert!(
-            result
-                .error
-                .as_ref()
-                .is_some_and(|e| e.contains("not found"))
-        );
+        assert!(result
+            .error
+            .as_ref()
+            .is_some_and(|e| e.contains("not found")));
     }
 
     #[test]

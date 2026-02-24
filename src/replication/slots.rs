@@ -34,8 +34,7 @@ pub type LSN = u64;
 pub type SlotId = String;
 
 /// Replication slot state
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum SlotState {
     /// Slot is created but not active
     #[default]
@@ -48,10 +47,8 @@ pub enum SlotState {
     Dropping,
 }
 
-
 /// Type of replication
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum ReplicationType {
     /// Physical replication (byte-level)
     Physical,
@@ -59,7 +56,6 @@ pub enum ReplicationType {
     #[default]
     Logical,
 }
-
 
 /// Slot configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]

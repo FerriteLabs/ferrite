@@ -218,7 +218,7 @@ impl Projection {
                     for (field, value) in obj {
                         if let Some(pv) = self.fields.get(field) {
                             match pv {
-                                ProjectionValue::Exclude => {},
+                                ProjectionValue::Exclude => {}
                                 _ => {
                                     if let Some(v) = self.get_projected_value(doc, field, pv) {
                                         result.insert(field.clone(), v);

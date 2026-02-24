@@ -78,12 +78,7 @@ fn index(value: &Value, idx: i64) -> Option<&Value> {
     }
 }
 
-fn slice(
-    value: &Value,
-    start: Option<i64>,
-    end: Option<i64>,
-    step: Option<i64>,
-) -> Vec<&Value> {
+fn slice(value: &Value, start: Option<i64>, end: Option<i64>, step: Option<i64>) -> Vec<&Value> {
     let arr = match value {
         Value::Array(arr) => arr,
         _ => return vec![],
@@ -96,7 +91,11 @@ fn slice(
     }
 
     let resolve = |idx: i64| -> usize {
-        let resolved = if idx < 0 { (len + idx).max(0) } else { idx.min(len) };
+        let resolved = if idx < 0 {
+            (len + idx).max(0)
+        } else {
+            idx.min(len)
+        };
         resolved as usize
     };
 

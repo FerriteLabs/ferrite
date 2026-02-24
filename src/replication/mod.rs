@@ -3,8 +3,8 @@
 //! This module implements Redis-style replication with primary/replica topology,
 //! as well as global active-active geo-replication for multi-region deployments.
 
-pub mod geo;
 pub mod failover;
+pub mod geo;
 pub mod health;
 pub mod offset_persistence;
 mod primary;
@@ -13,12 +13,17 @@ mod replica;
 pub mod slots;
 mod stream;
 
+pub use failover::{FailoverCoordinator, FailoverError, FailoverResult};
 pub use geo::{
     Conflict, ConflictResolution, ConflictResolutionResult, GeoReplicationCommand,
     GeoReplicationConfig, GeoReplicationError, GeoReplicationManager, GeoReplicationMessage,
     GeoReplicationMetrics, GeoReplicationMetricsSnapshot, GeoReplicationMode,
     GeoReplicationSnapshot, PeerRegion, ReadPreference, RegionId, RegionInfo, RegionState,
     RegionStatus, ReplicationOp, ReplicationOpType, SequenceNumber, SiteIdentifier,
+};
+pub use health::ReplicationHealthMonitor;
+pub use offset_persistence::{
+    OffsetPersistenceError, PersistedReplicationMeta, ReplicationOffsetPersistence,
 };
 pub use primary::{
     PsyncResponse, ReplicaConnectionState, ReplicaInfo, ReplicationError, ReplicationPrimary,
@@ -29,11 +34,6 @@ pub use psync2::{
     DEFAULT_BACKLOG_SIZE,
 };
 pub use replica::{ReplicaConfig, ReplicaState, ReplicationReplica};
-pub use failover::{FailoverCoordinator, FailoverError, FailoverResult};
-pub use health::ReplicationHealthMonitor;
-pub use offset_persistence::{
-    OffsetPersistenceError, PersistedReplicationMeta, ReplicationOffsetPersistence,
-};
 pub use slots::{
     ChangeEvent, ChangeOperation, GlobalSlotStats, ReplicationType, SlotConfig, SlotId,
     SlotManager, SlotState, SlotStats, LSN,
@@ -51,8 +51,7 @@ use tokio::sync::RwLock;
 pub type ReplicationOffset = u64;
 
 /// Replication state for a server
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ReplicationRole {
     /// This server is a primary (master)
     #[default]
@@ -60,7 +59,6 @@ pub enum ReplicationRole {
     /// This server is a replica (slave)
     Replica,
 }
-
 
 /// Replication ID - unique identifier for a replication stream
 #[derive(Debug, Clone, PartialEq, Eq)]

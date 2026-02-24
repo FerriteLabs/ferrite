@@ -9,24 +9,24 @@ use bytes::Bytes;
 use crate::error::{FerriteError, Result};
 use crate::protocol::Frame;
 
-pub(crate) mod strings;
-pub(crate) mod lists;
+pub(crate) mod advanced;
+pub(crate) mod bitmap;
+pub(crate) mod cluster;
+pub(crate) mod connection;
+pub(crate) mod geo;
 pub(crate) mod hashes;
+pub(crate) mod hyperloglog;
+pub(crate) mod keys;
+pub(crate) mod lists;
+pub(crate) mod pubsub;
+pub(crate) mod scan;
+pub(crate) mod scripting_parsers;
+pub(crate) mod server;
 pub(crate) mod sets;
 pub(crate) mod sorted_sets;
-pub(crate) mod pubsub;
-pub(crate) mod keys;
-pub(crate) mod server;
 pub(crate) mod streams;
-pub(crate) mod geo;
-pub(crate) mod hyperloglog;
-pub(crate) mod scan;
-pub(crate) mod bitmap;
-pub(crate) mod scripting_parsers;
-pub(crate) mod cluster;
+pub(crate) mod strings;
 pub(crate) mod transactions;
-pub(crate) mod connection;
-pub(crate) mod advanced;
 
 /// Extract a string/bytes from a frame
 pub(crate) fn get_string(frame: &Frame) -> Result<String> {
@@ -70,4 +70,3 @@ pub(crate) fn get_float(frame: &Frame) -> Result<f64> {
         _ => Err(FerriteError::NotFloat),
     }
 }
-

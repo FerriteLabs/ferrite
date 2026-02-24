@@ -50,7 +50,7 @@
 //!     .execute()?;
 //! ```
 
-#![allow(dead_code, unused_imports, unused_variables)]
+#![allow(dead_code)]
 pub mod aggregation;
 pub mod compression;
 pub mod continuous;
@@ -66,7 +66,9 @@ pub mod storage;
 pub use aggregation::{Aggregation, AggregationFunction, AggregationResult};
 pub use compression::{CompressedBlock, Compression, CompressionCodec, CompressionLevel};
 pub use continuous::{ContinuousAggregate, ContinuousAggregateConfig};
-pub use downsample::{DownsampleConfig, DownsampleRule, Downsampler, DownsamplingRule, TimeBucket, TriggerMode};
+pub use downsample::{
+    DownsampleConfig, DownsampleRule, Downsampler, DownsamplingRule, TimeBucket, TriggerMode,
+};
 pub use labels::{Label, LabelIndex, LabelMatcher, LabelMatcherType, Labels};
 pub use pipeline::{
     AggregationPipeline, AggregationType, FilterExpr, MathOp, PipelineSeries, PipelineStage,
@@ -266,7 +268,10 @@ impl TimeSeriesEngine {
         }
 
         // Retention policy enforcement on insert: reject expired samples
-        if !self.retention_manager.should_retain(metric, sample.timestamp) {
+        if !self
+            .retention_manager
+            .should_retain(metric, sample.timestamp)
+        {
             return Ok(()); // silently drop expired data
         }
 
@@ -276,9 +281,7 @@ impl TimeSeriesEngine {
             .add_sample_with_labels(&series_id, sample.clone(), &labels)?;
 
         // Update label index
-        self.label_index
-            .write()
-            .add(&series_id.full_id, &labels);
+        self.label_index.write().add(&series_id.full_id, &labels);
 
         // Update metrics
         self.metrics
@@ -517,8 +520,7 @@ impl TimeSeriesEngine {
             std::collections::BTreeMap::new();
 
         for sample in &all_samples {
-            let bucket_ts =
-                (sample.timestamp.as_nanos() / interval_nanos) * interval_nanos;
+            let bucket_ts = (sample.timestamp.as_nanos() / interval_nanos) * interval_nanos;
             if let Some(v) = sample.as_f64() {
                 buckets.entry(bucket_ts).or_default().push(v);
             }
@@ -567,8 +569,7 @@ impl TimeSeriesEngine {
             std::collections::BTreeMap::new();
 
         for sample in &all_samples {
-            let bucket_ts =
-                (sample.timestamp.as_nanos() / interval_nanos) * interval_nanos;
+            let bucket_ts = (sample.timestamp.as_nanos() / interval_nanos) * interval_nanos;
             if let Some(v) = sample.as_f64() {
                 buckets.entry(bucket_ts).or_default().push(v);
             }
@@ -731,10 +732,8 @@ impl BackgroundWorker {
         let shutdown_clone = Arc::clone(&shutdown);
 
         let handle = tokio::spawn(async move {
-            let mut retention_tick =
-                tokio::time::interval(retention_interval);
-            let mut downsample_tick =
-                tokio::time::interval(downsample_interval);
+            let mut retention_tick = tokio::time::interval(retention_interval);
+            let mut downsample_tick = tokio::time::interval(downsample_interval);
             retention_tick.tick().await; // skip first immediate tick
             downsample_tick.tick().await;
 
@@ -989,8 +988,8 @@ mod tests {
                 .unwrap();
         }
 
-        let pipeline = AggregationPipeline::new()
-            .aggregate(Duration::from_secs(60), AggregationType::Avg);
+        let pipeline =
+            AggregationPipeline::new().aggregate(Duration::from_secs(60), AggregationType::Avg);
 
         let result = engine
             .execute_pipeline("cpu.usage", &[], &pipeline)
@@ -1032,9 +1031,7 @@ mod tests {
             ))
             .aggregate(Duration::from_secs(60), AggregationType::Avg);
 
-        let result = engine
-            .execute_pipeline("cpu.*", &[], &pipeline)
-            .unwrap();
+        let result = engine.execute_pipeline("cpu.*", &[], &pipeline).unwrap();
 
         // Should only have us-east series
         for series in &result {
@@ -1136,8 +1133,8 @@ mod tests {
     fn test_empty_series_pipeline() {
         let engine = TimeSeriesEngine::new().unwrap();
 
-        let pipeline = AggregationPipeline::new()
-            .aggregate(Duration::from_secs(60), AggregationType::Avg);
+        let pipeline =
+            AggregationPipeline::new().aggregate(Duration::from_secs(60), AggregationType::Avg);
 
         let result = engine
             .execute_pipeline("nonexistent", &[], &pipeline)
@@ -1152,15 +1149,17 @@ mod tests {
         let now = sample::Timestamp::now();
 
         engine
-            .add("solo", Sample::new(now.sub(Duration::from_secs(1)), 100.0), &["host:s1"])
+            .add(
+                "solo",
+                Sample::new(now.sub(Duration::from_secs(1)), 100.0),
+                &["host:s1"],
+            )
             .unwrap();
 
-        let pipeline = AggregationPipeline::new()
-            .aggregate(Duration::from_secs(60), AggregationType::Avg);
+        let pipeline =
+            AggregationPipeline::new().aggregate(Duration::from_secs(60), AggregationType::Avg);
 
-        let result = engine
-            .execute_pipeline("solo", &[], &pipeline)
-            .unwrap();
+        let result = engine.execute_pipeline("solo", &[], &pipeline).unwrap();
 
         assert_eq!(result.len(), 1);
         assert_eq!(result[0].samples.len(), 1);
@@ -1174,18 +1173,24 @@ mod tests {
 
         // Add samples at timestamps that will fall in different 60-second buckets
         engine
-            .add("boundary", Sample::new(now.sub(Duration::from_secs(120)), 50.0), &["host:s1"])
+            .add(
+                "boundary",
+                Sample::new(now.sub(Duration::from_secs(120)), 50.0),
+                &["host:s1"],
+            )
             .unwrap();
         engine
-            .add("boundary", Sample::new(now.sub(Duration::from_secs(30)), 100.0), &["host:s1"])
+            .add(
+                "boundary",
+                Sample::new(now.sub(Duration::from_secs(30)), 100.0),
+                &["host:s1"],
+            )
             .unwrap();
 
-        let pipeline = AggregationPipeline::new()
-            .aggregate(Duration::from_secs(60), AggregationType::Avg);
+        let pipeline =
+            AggregationPipeline::new().aggregate(Duration::from_secs(60), AggregationType::Avg);
 
-        let result = engine
-            .execute_pipeline("boundary", &[], &pipeline)
-            .unwrap();
+        let result = engine.execute_pipeline("boundary", &[], &pipeline).unwrap();
 
         assert!(!result.is_empty());
         assert_eq!(result[0].samples.len(), 2);
@@ -1202,11 +1207,7 @@ mod tests {
         for i in 0..12 {
             let ts = now.sub(Duration::from_secs(120 - i * 10));
             engine
-                .add(
-                    "cpu.usage",
-                    Sample::new(ts, (i * 10) as f64),
-                    &["host:s1"],
-                )
+                .add("cpu.usage", Sample::new(ts, (i * 10) as f64), &["host:s1"])
                 .unwrap();
         }
 
@@ -1317,18 +1318,10 @@ mod tests {
         for i in 0..3 {
             let ts = now.sub(Duration::from_secs(3 - i));
             engine
-                .add(
-                    "temp",
-                    Sample::new(ts, 100.0),
-                    &["region:us"],
-                )
+                .add("temp", Sample::new(ts, 100.0), &["region:us"])
                 .unwrap();
             engine
-                .add(
-                    "temp",
-                    Sample::new(ts, 200.0),
-                    &["region:eu"],
-                )
+                .add("temp", Sample::new(ts, 200.0), &["region:eu"])
                 .unwrap();
         }
 

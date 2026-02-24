@@ -77,14 +77,8 @@ impl GraphStorage {
         }
 
         self.edges.insert(id, edge);
-        self.out_edges
-            .entry(from)
-            .or_default()
-            .insert(id);
-        self.in_edges
-            .entry(to)
-            .or_default()
-            .insert(id);
+        self.out_edges.entry(from).or_default().insert(id);
+        self.in_edges.entry(to).or_default().insert(id);
 
         Ok(())
     }
@@ -106,10 +100,7 @@ impl GraphStorage {
 
     /// Remove an edge
     pub fn remove_edge(&mut self, id: EdgeId) -> Result<()> {
-        let edge = self
-            .edges
-            .remove(&id)
-            .ok_or(GraphError::EdgeNotFound(id))?;
+        let edge = self.edges.remove(&id).ok_or(GraphError::EdgeNotFound(id))?;
 
         if let Some(out) = self.out_edges.get_mut(&edge.from) {
             out.remove(&id);
@@ -311,11 +302,9 @@ impl AdjacencyList {
                 .push((edge.to, edge.id, edge.weight));
 
             if !directed {
-                list.entry(edge.to).or_default().push((
-                    edge.from,
-                    edge.id,
-                    edge.weight,
-                ));
+                list.entry(edge.to)
+                    .or_default()
+                    .push((edge.from, edge.id, edge.weight));
             }
         }
 

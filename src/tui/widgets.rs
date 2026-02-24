@@ -251,10 +251,7 @@ impl<'a> LogViewer<'a> {
             .collect();
 
         let level_label = self.min_level.as_str();
-        let title = format!(
-            " Logs ({} entries, filter: {}+) ",
-            total, level_label
-        );
+        let title = format!(" Logs ({} entries, filter: {}+) ", total, level_label);
 
         let paragraph = Paragraph::new(lines)
             .block(Block::default().borders(Borders::ALL).title(title))
@@ -298,14 +295,10 @@ impl MetricCard {
 
     /// Render the metric card into the given frame area.
     pub fn render(&self, f: &mut Frame, area: Rect) {
-        let mut lines = vec![
-            Line::from(Span::styled(
-                &self.value,
-                Style::default()
-                    .fg(self.color)
-                    .add_modifier(Modifier::BOLD),
-            )),
-        ];
+        let mut lines = vec![Line::from(Span::styled(
+            &self.value,
+            Style::default().fg(self.color).add_modifier(Modifier::BOLD),
+        ))];
 
         if let Some(ref sub) = self.subtitle {
             lines.push(Line::from(Span::styled(
@@ -394,10 +387,11 @@ pub fn render_bandwidth_panel(
         .split(area);
 
     let in_sparkline = Sparkline::default()
-        .block(Block::default().borders(Borders::ALL).title(format!(
-            " Network In: {}/s ",
-            format_bytes(net_in_per_sec)
-        )))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(format!(" Network In: {}/s ", format_bytes(net_in_per_sec))),
+        )
         .data(net_in_history)
         .style(Style::default().fg(Color::Cyan));
     f.render_widget(in_sparkline, chunks[0]);
@@ -486,10 +480,7 @@ pub fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ratatui::{
-        backend::TestBackend,
-        Terminal,
-    };
+    use ratatui::{backend::TestBackend, Terminal};
 
     #[test]
     fn test_memory_bar_ratio() {

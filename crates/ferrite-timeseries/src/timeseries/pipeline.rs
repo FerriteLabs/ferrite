@@ -5,7 +5,7 @@
 
 use super::aggregation::Aggregation;
 use super::labels::{LabelMatcher, Labels};
-use super::sample::{Sample, Timestamp, Value};
+use super::sample::{Sample, Timestamp};
 use super::*;
 use std::collections::HashMap;
 use std::time::Duration;
@@ -136,12 +136,8 @@ impl FilterExpr {
     /// Check if a sample with labels matches this filter
     pub fn matches(&self, sample: &Sample, labels: &Labels) -> bool {
         match self {
-            FilterExpr::LabelEqual(name, value) => {
-                labels.get(name) == Some(value.as_str())
-            }
-            FilterExpr::LabelNotEqual(name, value) => {
-                labels.get(name).map_or(true, |v| v != value)
-            }
+            FilterExpr::LabelEqual(name, value) => labels.get(name) == Some(value.as_str()),
+            FilterExpr::LabelNotEqual(name, value) => labels.get(name).map_or(true, |v| v != value),
             FilterExpr::LabelRegex(name, pattern) => {
                 if let Some(v) = labels.get(name) {
                     regex::Regex::new(pattern)
@@ -152,12 +148,8 @@ impl FilterExpr {
                 }
             }
             FilterExpr::LabelExists(name) => labels.contains(name),
-            FilterExpr::ValueGt(threshold) => {
-                sample.as_f64().is_some_and(|v| v > *threshold)
-            }
-            FilterExpr::ValueLt(threshold) => {
-                sample.as_f64().is_some_and(|v| v < *threshold)
-            }
+            FilterExpr::ValueGt(threshold) => sample.as_f64().is_some_and(|v| v > *threshold),
+            FilterExpr::ValueLt(threshold) => sample.as_f64().is_some_and(|v| v < *threshold),
             FilterExpr::ValueBetween(low, high) => {
                 sample.as_f64().is_some_and(|v| (*low..=*high).contains(&v))
             }
@@ -278,9 +270,7 @@ pub struct AggregationPipeline {
 impl AggregationPipeline {
     /// Create an empty pipeline
     pub fn new() -> Self {
-        Self {
-            stages: Vec::new(),
-        }
+        Self { stages: Vec::new() }
     }
 
     /// Add a filter stage
@@ -291,10 +281,8 @@ impl AggregationPipeline {
 
     /// Add an aggregation stage
     pub fn aggregate(mut self, duration: Duration, agg_type: AggregationType) -> Self {
-        self.stages.push(PipelineStage::Aggregate {
-            duration,
-            agg_type,
-        });
+        self.stages
+            .push(PipelineStage::Aggregate { duration, agg_type });
         self
     }
 
@@ -390,8 +378,7 @@ impl AggregationPipeline {
             let mut buckets: HashMap<i64, Vec<f64>> = HashMap::new();
 
             for sample in &series.samples {
-                let bucket_ts =
-                    (sample.timestamp.as_nanos() / interval_nanos) * interval_nanos;
+                let bucket_ts = (sample.timestamp.as_nanos() / interval_nanos) * interval_nanos;
                 if let Some(v) = sample.as_f64() {
                     buckets.entry(bucket_ts).or_default().push(v);
                 }
@@ -429,13 +416,11 @@ impl AggregationPipeline {
         for series in input {
             let key = compute_group_key(&series.labels, group_labels);
 
-            let entry = groups
-                .entry(key.clone())
-                .or_insert_with(|| PipelineSeries {
-                    group_key: key,
-                    labels: series.labels.clone(),
-                    samples: Vec::new(),
-                });
+            let entry = groups.entry(key.clone()).or_insert_with(|| PipelineSeries {
+                group_key: key,
+                labels: series.labels.clone(),
+                samples: Vec::new(),
+            });
 
             entry.samples.extend(series.samples);
         }
@@ -451,11 +436,7 @@ impl AggregationPipeline {
     }
 
     /// Execute a math operation stage
-    fn execute_apply(
-        &self,
-        op: MathOp,
-        input: Vec<PipelineSeries>,
-    ) -> Result<Vec<PipelineSeries>> {
+    fn execute_apply(&self, op: MathOp, input: Vec<PipelineSeries>) -> Result<Vec<PipelineSeries>> {
         let mut output = Vec::with_capacity(input.len());
 
         for mut series in input {
@@ -474,11 +455,7 @@ impl AggregationPipeline {
     }
 
     /// Execute a limit stage
-    fn execute_limit(
-        &self,
-        n: usize,
-        input: Vec<PipelineSeries>,
-    ) -> Result<Vec<PipelineSeries>> {
+    fn execute_limit(&self, n: usize, input: Vec<PipelineSeries>) -> Result<Vec<PipelineSeries>> {
         let mut output = Vec::with_capacity(input.len());
 
         for mut series in input {
@@ -606,37 +583,58 @@ mod tests {
 
     #[test]
     fn test_aggregation_type_avg() {
-        assert_eq!(AggregationType::Avg.aggregate(&[10.0, 20.0, 30.0]), Some(20.0));
+        assert_eq!(
+            AggregationType::Avg.aggregate(&[10.0, 20.0, 30.0]),
+            Some(20.0)
+        );
     }
 
     #[test]
     fn test_aggregation_type_min() {
-        assert_eq!(AggregationType::Min.aggregate(&[10.0, 5.0, 20.0]), Some(5.0));
+        assert_eq!(
+            AggregationType::Min.aggregate(&[10.0, 5.0, 20.0]),
+            Some(5.0)
+        );
     }
 
     #[test]
     fn test_aggregation_type_max() {
-        assert_eq!(AggregationType::Max.aggregate(&[10.0, 5.0, 20.0]), Some(20.0));
+        assert_eq!(
+            AggregationType::Max.aggregate(&[10.0, 5.0, 20.0]),
+            Some(20.0)
+        );
     }
 
     #[test]
     fn test_aggregation_type_sum() {
-        assert_eq!(AggregationType::Sum.aggregate(&[10.0, 20.0, 30.0]), Some(60.0));
+        assert_eq!(
+            AggregationType::Sum.aggregate(&[10.0, 20.0, 30.0]),
+            Some(60.0)
+        );
     }
 
     #[test]
     fn test_aggregation_type_count() {
-        assert_eq!(AggregationType::Count.aggregate(&[10.0, 20.0, 30.0]), Some(3.0));
+        assert_eq!(
+            AggregationType::Count.aggregate(&[10.0, 20.0, 30.0]),
+            Some(3.0)
+        );
     }
 
     #[test]
     fn test_aggregation_type_first() {
-        assert_eq!(AggregationType::First.aggregate(&[10.0, 20.0, 30.0]), Some(10.0));
+        assert_eq!(
+            AggregationType::First.aggregate(&[10.0, 20.0, 30.0]),
+            Some(10.0)
+        );
     }
 
     #[test]
     fn test_aggregation_type_last() {
-        assert_eq!(AggregationType::Last.aggregate(&[10.0, 20.0, 30.0]), Some(30.0));
+        assert_eq!(
+            AggregationType::Last.aggregate(&[10.0, 20.0, 30.0]),
+            Some(30.0)
+        );
     }
 
     #[test]
@@ -648,7 +646,10 @@ mod tests {
 
     #[test]
     fn test_aggregation_type_range() {
-        assert_eq!(AggregationType::Range.aggregate(&[10.0, 5.0, 20.0]), Some(15.0));
+        assert_eq!(
+            AggregationType::Range.aggregate(&[10.0, 5.0, 20.0]),
+            Some(15.0)
+        );
     }
 
     #[test]
@@ -668,7 +669,10 @@ mod tests {
     fn test_aggregation_type_parse() {
         assert_eq!(AggregationType::parse("avg"), Some(AggregationType::Avg));
         assert_eq!(AggregationType::parse("min"), Some(AggregationType::Min));
-        assert_eq!(AggregationType::parse("range"), Some(AggregationType::Range));
+        assert_eq!(
+            AggregationType::parse("range"),
+            Some(AggregationType::Range)
+        );
         assert_eq!(AggregationType::parse("unknown"), None);
     }
 
@@ -760,8 +764,7 @@ mod tests {
             Labels::empty(),
         );
 
-        let pipeline = AggregationPipeline::new()
-            .filter(FilterExpr::ValueGt(25.0));
+        let pipeline = AggregationPipeline::new().filter(FilterExpr::ValueGt(25.0));
 
         let result = pipeline.execute(vec![series]).unwrap();
         assert_eq!(result[0].samples.len(), 3); // 50, 30, 80
@@ -782,8 +785,8 @@ mod tests {
             Labels::empty(),
         );
 
-        let pipeline = AggregationPipeline::new()
-            .aggregate(Duration::from_secs(60), AggregationType::Avg);
+        let pipeline =
+            AggregationPipeline::new().aggregate(Duration::from_secs(60), AggregationType::Avg);
 
         let result = pipeline.execute(vec![series]).unwrap();
         assert_eq!(result[0].samples.len(), 2);
@@ -809,16 +812,21 @@ mod tests {
             samples: vec![Sample::from_secs(3, 50.0)],
         };
 
-        let pipeline = AggregationPipeline::new()
-            .group_by(vec!["host".to_string()]);
+        let pipeline = AggregationPipeline::new().group_by(vec!["host".to_string()]);
 
         let result = pipeline.execute(vec![s1, s2, s3]).unwrap();
         assert_eq!(result.len(), 2);
 
-        let server1 = result.iter().find(|s| s.group_key == "host=server1").unwrap();
+        let server1 = result
+            .iter()
+            .find(|s| s.group_key == "host=server1")
+            .unwrap();
         assert_eq!(server1.samples.len(), 3); // merged s1 + s3
 
-        let server2 = result.iter().find(|s| s.group_key == "host=server2").unwrap();
+        let server2 = result
+            .iter()
+            .find(|s| s.group_key == "host=server2")
+            .unwrap();
         assert_eq!(server2.samples.len(), 2);
     }
 
@@ -826,8 +834,7 @@ mod tests {
     fn test_pipeline_apply_math() {
         let series = make_series(&[(1, 10.0), (2, 20.0), (3, 30.0)], Labels::empty());
 
-        let pipeline = AggregationPipeline::new()
-            .apply(MathOp::Mul(2.0));
+        let pipeline = AggregationPipeline::new().apply(MathOp::Mul(2.0));
 
         let result = pipeline.execute(vec![series]).unwrap();
         assert_eq!(result[0].samples[0].as_f64(), Some(20.0));
@@ -878,8 +885,8 @@ mod tests {
 
     #[test]
     fn test_pipeline_empty_input() {
-        let pipeline = AggregationPipeline::new()
-            .aggregate(Duration::from_secs(60), AggregationType::Avg);
+        let pipeline =
+            AggregationPipeline::new().aggregate(Duration::from_secs(60), AggregationType::Avg);
 
         let result = pipeline.execute(vec![]).unwrap();
         assert!(result.is_empty());
@@ -893,8 +900,8 @@ mod tests {
             samples: Vec::new(),
         };
 
-        let pipeline = AggregationPipeline::new()
-            .aggregate(Duration::from_secs(60), AggregationType::Avg);
+        let pipeline =
+            AggregationPipeline::new().aggregate(Duration::from_secs(60), AggregationType::Avg);
 
         let result = pipeline.execute(vec![series]).unwrap();
         // Empty series with no samples after aggregation gets dropped
@@ -916,10 +923,7 @@ mod tests {
 
     #[test]
     fn test_pipeline_all_aggregation_types() {
-        let series = make_series(
-            &[(0, 10.0), (20, 20.0), (40, 30.0)],
-            Labels::empty(),
-        );
+        let series = make_series(&[(0, 10.0), (20, 20.0), (40, 30.0)], Labels::empty());
 
         for agg_type in &[
             AggregationType::Avg,
@@ -932,25 +936,24 @@ mod tests {
             AggregationType::StdDev,
             AggregationType::Range,
         ] {
-            let pipeline = AggregationPipeline::new()
-                .aggregate(Duration::from_secs(60), *agg_type);
+            let pipeline = AggregationPipeline::new().aggregate(Duration::from_secs(60), *agg_type);
 
             let result = pipeline.execute(vec![series.clone()]).unwrap();
             assert_eq!(result[0].samples.len(), 1, "Failed for {:?}", agg_type);
-            assert!(result[0].samples[0].as_f64().is_some(), "Failed for {:?}", agg_type);
+            assert!(
+                result[0].samples[0].as_f64().is_some(),
+                "Failed for {:?}",
+                agg_type
+            );
         }
     }
 
     #[test]
     fn test_aggregation_accuracy() {
-        let series = make_series(
-            &[(0, 10.0), (20, 20.0), (40, 30.0)],
-            Labels::empty(),
-        );
+        let series = make_series(&[(0, 10.0), (20, 20.0), (40, 30.0)], Labels::empty());
 
         let check = |agg: AggregationType, expected: f64| {
-            let pipeline = AggregationPipeline::new()
-                .aggregate(Duration::from_secs(60), agg);
+            let pipeline = AggregationPipeline::new().aggregate(Duration::from_secs(60), agg);
             let result = pipeline.execute(vec![series.clone()]).unwrap();
             let actual = result[0].samples[0].as_f64().unwrap();
             assert!(
@@ -1037,9 +1040,7 @@ mod tests {
             Labels::empty(),
         );
 
-        let pipeline = AggregationPipeline::new()
-            .rate()
-            .moving_average(2);
+        let pipeline = AggregationPipeline::new().rate().moving_average(2);
 
         let result = pipeline.execute(vec![series]).unwrap();
         // Rate: [10, 20, 30, 40]
@@ -1055,10 +1056,18 @@ mod tests {
         // 12 samples across 4 60-second buckets
         let series = make_series(
             &[
-                (0, 10.0), (20, 20.0), (40, 30.0),    // bucket 0: avg=20
-                (60, 40.0), (80, 50.0), (100, 60.0),   // bucket 60: avg=50
-                (120, 70.0), (140, 80.0), (160, 90.0),  // bucket 120: avg=80
-                (180, 100.0), (200, 110.0), (220, 120.0), // bucket 180: avg=110
+                (0, 10.0),
+                (20, 20.0),
+                (40, 30.0), // bucket 0: avg=20
+                (60, 40.0),
+                (80, 50.0),
+                (100, 60.0), // bucket 60: avg=50
+                (120, 70.0),
+                (140, 80.0),
+                (160, 90.0), // bucket 120: avg=80
+                (180, 100.0),
+                (200, 110.0),
+                (220, 120.0), // bucket 180: avg=110
             ],
             Labels::empty(),
         );

@@ -345,8 +345,7 @@ mod tests {
 
     #[test]
     fn test_alerts_high_memory() {
-        let alerts =
-            ServerInfoPanel::check_alerts(950, 1000, 0, 10, 10000);
+        let alerts = ServerInfoPanel::check_alerts(950, 1000, 0, 10, 10000);
         assert!(!alerts.is_empty());
         assert_eq!(alerts[0].level, AlertLevel::Critical);
         assert_eq!(alerts[0].category, "memory");
@@ -354,30 +353,26 @@ mod tests {
 
     #[test]
     fn test_alerts_warning_memory() {
-        let alerts =
-            ServerInfoPanel::check_alerts(800, 1000, 0, 10, 10000);
+        let alerts = ServerInfoPanel::check_alerts(800, 1000, 0, 10, 10000);
         assert!(!alerts.is_empty());
         assert_eq!(alerts[0].level, AlertLevel::Warning);
     }
 
     #[test]
     fn test_alerts_slow_queries() {
-        let alerts =
-            ServerInfoPanel::check_alerts(100, 1000, 15, 10, 10000);
+        let alerts = ServerInfoPanel::check_alerts(100, 1000, 15, 10, 10000);
         assert!(alerts.iter().any(|a| a.category == "performance"));
     }
 
     #[test]
     fn test_alerts_high_clients() {
-        let alerts =
-            ServerInfoPanel::check_alerts(100, 1000, 0, 9000, 10000);
+        let alerts = ServerInfoPanel::check_alerts(100, 1000, 0, 9000, 10000);
         assert!(alerts.iter().any(|a| a.category == "connections"));
     }
 
     #[test]
     fn test_alerts_all_clear() {
-        let alerts =
-            ServerInfoPanel::check_alerts(100, 1000, 0, 10, 10000);
+        let alerts = ServerInfoPanel::check_alerts(100, 1000, 0, 10, 10000);
         assert!(alerts.is_empty());
     }
 

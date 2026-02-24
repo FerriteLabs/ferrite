@@ -642,22 +642,13 @@ async fn cmd_import(
     // Validate file format
     match extension {
         "rdb" => {
-            println!(
-                "  {} Detected Redis RDB dump format",
-                "✓".green()
-            );
+            println!("  {} Detected Redis RDB dump format", "✓".green());
         }
         "aof" => {
-            println!(
-                "  {} Detected Redis AOF format",
-                "✓".green()
-            );
+            println!("  {} Detected Redis AOF format", "✓".green());
         }
         "json" => {
-            println!(
-                "  {} Detected JSON export format",
-                "✓".green()
-            );
+            println!("  {} Detected JSON export format", "✓".green());
         }
         _ => {
             println!(
@@ -690,10 +681,7 @@ async fn cmd_import(
 
         // RDB import: parse and replay
         println!("{}", "Import Progress".bold().underline());
-        println!(
-            "  {} Reading RDB dump file...",
-            "→".cyan()
-        );
+        println!("  {} Reading RDB dump file...", "→".cyan());
 
         // Simulate import phases (actual RDB parser would go here)
         let phases = [
@@ -704,21 +692,12 @@ async fn cmd_import(
         ];
 
         for (phase, _pct) in &phases {
-            println!(
-                "  {} {}",
-                "→".cyan(),
-                phase
-            );
+            println!("  {} {}", "→".cyan(), phase);
         }
 
         println!();
-        println!(
-            "{} RDB import is currently in preview.",
-            "ℹ".blue().bold()
-        );
-        println!(
-            "  For production migrations, use the live migration mode instead:"
-        );
+        println!("{} RDB import is currently in preview.", "ℹ".blue().bold());
+        println!("  For production migrations, use the live migration mode instead:");
         println!(
             "    {}",
             format!(
@@ -728,48 +707,33 @@ async fn cmd_import(
             .cyan()
         );
         println!();
-        println!(
-            "  Or use redis-cli to replay via protocol:"
-        );
+        println!("  Or use redis-cli to replay via protocol:");
         println!(
             "    {}",
             "redis-cli -h source --rdb /tmp/dump.rdb && redis-cli -h target < /tmp/commands.txt"
                 .cyan()
         );
-
     } else if is_aof {
         println!();
         println!("{}", "AOF Replay".bold().underline());
-        println!(
-            "  {} Replaying AOF commands to {}...",
-            "→".cyan(),
-            target
-        );
+        println!("  {} Replaying AOF commands to {}...", "→".cyan(), target);
         println!(
             "  {} AOF replay is currently in preview.",
             "ℹ".blue().bold()
         );
-        println!(
-            "  For production use, pipe the AOF file directly:"
-        );
+        println!("  For production use, pipe the AOF file directly:");
         println!(
             "    {}",
             format!("cat {} | redis-cli -h {} --pipe", file, target).cyan()
         );
-
     } else if is_json {
         println!();
         println!("{}", "JSON Import".bold().underline());
-        println!(
-            "  {} Importing JSON data to {}...",
-            "→".cyan(),
-            target
-        );
+        println!("  {} Importing JSON data to {}...", "→".cyan(), target);
         println!(
             "  {} JSON import is currently in preview.",
             "ℹ".blue().bold()
         );
-
     } else {
         anyhow::bail!(
             "Unrecognized file format. Supported formats: RDB (.rdb), AOF (.aof), JSON (.json)"

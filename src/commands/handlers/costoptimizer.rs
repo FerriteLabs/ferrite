@@ -6,8 +6,8 @@ use std::sync::OnceLock;
 
 use bytes::Bytes;
 
-use ferrite_cloud::costoptimizer::{CostOptimizer, CostOptimizerConfig, OptimizationStrategy};
 use crate::protocol::Frame;
+use ferrite_cloud::costoptimizer::{CostOptimizer, CostOptimizerConfig, OptimizationStrategy};
 
 use super::{err_frame, ok_frame, HandlerContext};
 

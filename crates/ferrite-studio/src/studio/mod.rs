@@ -21,8 +21,16 @@
 
 mod api;
 pub mod auth;
+/// Cluster topology visualization for the web UI.
+pub mod cluster_viz;
 pub mod console;
 pub mod cost_savings;
+/// Unified observability dashboard with real-time widgets.
+pub mod dashboard;
+/// GraphQL & REST API gateway for HTTP/browser access.
+pub mod gateway;
+/// Interactive key browser with search and namespace discovery.
+pub mod key_browser;
 pub mod metrics;
 pub mod query_builder;
 mod server;
@@ -42,9 +50,7 @@ pub use query_builder::{
     ResultMetadata, TemplateExample, ValidationResult, VisualQuery,
 };
 pub use server::Studio;
-pub use server_info::{
-    Alert, AlertLevel, PersistenceInfo, ReplicationInfo, ServerInfoPanel,
-};
+pub use server_info::{Alert, AlertLevel, PersistenceInfo, ReplicationInfo, ServerInfoPanel};
 
 use serde::{Deserialize, Serialize};
 

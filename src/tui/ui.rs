@@ -122,9 +122,7 @@ fn draw_status_bar(f: &mut Frame, app: &App, area: Rect) {
     };
 
     let help = match app.input_mode {
-        InputMode::Normal => {
-            " q:quit  Tab/1-6:tabs  p:pause  /:search  ::command "
-        }
+        InputMode::Normal => " q:quit  Tab/1-6:tabs  p:pause  /:search  ::command ",
         InputMode::Command => " Enter:execute  Esc:cancel ",
         InputMode::Search => " Enter:search  Esc:cancel ",
     };
@@ -133,10 +131,7 @@ fn draw_status_bar(f: &mut Frame, app: &App, area: Rect) {
         mode_indicator,
         Span::raw(" "),
         live_indicator,
-        Span::raw(format!(
-            "  {}:{}",
-            app.collector.host, app.collector.port
-        )),
+        Span::raw(format!("  {}:{}", app.collector.host, app.collector.port)),
         Span::styled(help, Style::default().fg(Color::DarkGray)),
     ]);
 
@@ -150,10 +145,10 @@ fn draw_overview(f: &mut Frame, app: &App, area: Rect) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(7),  // Server info + Memory row
-            Constraint::Length(5),  // Throughput sparkline
-            Constraint::Length(5),  // Latency
-            Constraint::Length(4),  // HybridLog tiers
+            Constraint::Length(7), // Server info + Memory row
+            Constraint::Length(5), // Throughput sparkline
+            Constraint::Length(5), // Latency
+            Constraint::Length(4), // HybridLog tiers
             Constraint::Min(5),    // Clients + Slowlog
         ])
         .split(area);
@@ -253,15 +248,24 @@ fn draw_memory_overview(f: &mut Frame, app: &App, area: Rect) {
     // Memory details
     let text = vec![
         Line::from(vec![
-            Span::styled("Peak:          ", Style::default().add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "Peak:          ",
+                Style::default().add_modifier(Modifier::BOLD),
+            ),
             Span::raw(format_bytes(stats.peak_memory)),
         ]),
         Line::from(vec![
-            Span::styled("RSS:           ", Style::default().add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "RSS:           ",
+                Style::default().add_modifier(Modifier::BOLD),
+            ),
             Span::raw(format_bytes(stats.used_memory_rss)),
         ]),
         Line::from(vec![
-            Span::styled("Fragmentation: ", Style::default().add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "Fragmentation: ",
+                Style::default().add_modifier(Modifier::BOLD),
+            ),
             Span::styled(
                 format!("{:.2}", stats.fragmentation_ratio),
                 if stats.fragmentation_ratio > 1.5 {
@@ -283,7 +287,10 @@ fn draw_memory_overview(f: &mut Frame, app: &App, area: Rect) {
 
 fn draw_throughput(f: &mut Frame, app: &App, area: Rect) {
     let chart = SparklineChart::new(
-        format!("OPS/SEC: {}", format_number(app.collector.stats.ops_per_sec)),
+        format!(
+            "OPS/SEC: {}",
+            format_number(app.collector.stats.ops_per_sec)
+        ),
         &app.ops_history,
         Color::Cyan,
     );
@@ -292,33 +299,31 @@ fn draw_throughput(f: &mut Frame, app: &App, area: Rect) {
 
 fn draw_latency_overview(f: &mut Frame, app: &App, area: Rect) {
     let stats = &app.collector.stats;
-    let text = vec![
-        Line::from(vec![
-            Span::styled("P50:   ", Style::default().add_modifier(Modifier::BOLD)),
-            Span::styled(
-                format!("{:.2}ms", stats.latency_p50),
-                Style::default().fg(latency_color(stats.latency_p50)),
-            ),
-            Span::raw("    "),
-            Span::styled("P95:   ", Style::default().add_modifier(Modifier::BOLD)),
-            Span::styled(
-                format!("{:.2}ms", stats.latency_p95),
-                Style::default().fg(latency_color(stats.latency_p95)),
-            ),
-            Span::raw("    "),
-            Span::styled("P99:   ", Style::default().add_modifier(Modifier::BOLD)),
-            Span::styled(
-                format!("{:.2}ms", stats.latency_p99),
-                Style::default().fg(latency_color(stats.latency_p99)),
-            ),
-            Span::raw("    "),
-            Span::styled("P99.9: ", Style::default().add_modifier(Modifier::BOLD)),
-            Span::styled(
-                format!("{:.2}ms", stats.latency_p999),
-                Style::default().fg(latency_color(stats.latency_p999)),
-            ),
-        ]),
-    ];
+    let text = vec![Line::from(vec![
+        Span::styled("P50:   ", Style::default().add_modifier(Modifier::BOLD)),
+        Span::styled(
+            format!("{:.2}ms", stats.latency_p50),
+            Style::default().fg(latency_color(stats.latency_p50)),
+        ),
+        Span::raw("    "),
+        Span::styled("P95:   ", Style::default().add_modifier(Modifier::BOLD)),
+        Span::styled(
+            format!("{:.2}ms", stats.latency_p95),
+            Style::default().fg(latency_color(stats.latency_p95)),
+        ),
+        Span::raw("    "),
+        Span::styled("P99:   ", Style::default().add_modifier(Modifier::BOLD)),
+        Span::styled(
+            format!("{:.2}ms", stats.latency_p99),
+            Style::default().fg(latency_color(stats.latency_p99)),
+        ),
+        Span::raw("    "),
+        Span::styled("P99.9: ", Style::default().add_modifier(Modifier::BOLD)),
+        Span::styled(
+            format!("{:.2}ms", stats.latency_p999),
+            Style::default().fg(latency_color(stats.latency_p999)),
+        ),
+    ])];
 
     let sparkline_data = &app.latency_history;
     let chunks = Layout::default()
@@ -326,11 +331,8 @@ fn draw_latency_overview(f: &mut Frame, app: &App, area: Rect) {
         .constraints([Constraint::Length(3), Constraint::Min(0)])
         .split(area);
 
-    let paragraph = Paragraph::new(text).block(
-        Block::default()
-            .borders(Borders::ALL)
-            .title(" Latency "),
-    );
+    let paragraph =
+        Paragraph::new(text).block(Block::default().borders(Borders::ALL).title(" Latency "));
     f.render_widget(paragraph, chunks[0]);
 
     let sparkline = Sparkline::default()
@@ -346,46 +348,44 @@ fn draw_latency_overview(f: &mut Frame, app: &App, area: Rect) {
 
 fn draw_hybridlog_tiers(f: &mut Frame, app: &App, area: Rect) {
     let stats = &app.collector.stats;
-    let text = vec![
-        Line::from(vec![
-            Span::styled(
-                " MUTABLE ",
-                Style::default()
-                    .fg(Color::Black)
-                    .bg(Color::Green)
-                    .add_modifier(Modifier::BOLD),
-            ),
-            Span::raw(format!(
-                " {} ({} entries)  ",
-                format_bytes(stats.hybridlog_mutable_bytes),
-                format_number(stats.hybridlog_mutable_entries)
-            )),
-            Span::styled(
-                " READ-ONLY ",
-                Style::default()
-                    .fg(Color::Black)
-                    .bg(Color::Yellow)
-                    .add_modifier(Modifier::BOLD),
-            ),
-            Span::raw(format!(
-                " {} ({} entries)  ",
-                format_bytes(stats.hybridlog_readonly_bytes),
-                format_number(stats.hybridlog_readonly_entries)
-            )),
-            Span::styled(
-                " DISK ",
-                Style::default()
-                    .fg(Color::Black)
-                    .bg(Color::Blue)
-                    .add_modifier(Modifier::BOLD),
-            ),
-            Span::raw(format!(
-                " {} ({} entries)",
-                format_bytes(stats.hybridlog_disk_bytes),
-                format_number(stats.hybridlog_disk_entries)
-            )),
-        ]),
-    ];
+    let text = vec![Line::from(vec![
+        Span::styled(
+            " MUTABLE ",
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::Green)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::raw(format!(
+            " {} ({} entries)  ",
+            format_bytes(stats.hybridlog_mutable_bytes),
+            format_number(stats.hybridlog_mutable_entries)
+        )),
+        Span::styled(
+            " READ-ONLY ",
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::raw(format!(
+            " {} ({} entries)  ",
+            format_bytes(stats.hybridlog_readonly_bytes),
+            format_number(stats.hybridlog_readonly_entries)
+        )),
+        Span::styled(
+            " DISK ",
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::Blue)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::raw(format!(
+            " {} ({} entries)",
+            format_bytes(stats.hybridlog_disk_bytes),
+            format_number(stats.hybridlog_disk_entries)
+        )),
+    ])];
 
     let paragraph = Paragraph::new(text).block(
         Block::default()
@@ -415,11 +415,9 @@ fn draw_clients_overview(f: &mut Frame, app: &App, area: Rect) {
         )));
     }
 
-    let paragraph = Paragraph::new(lines).block(
-        Block::default()
-            .borders(Borders::ALL)
-            .title(format!(" Clients ({}) ", app.collector.stats.connected_clients)),
-    );
+    let paragraph = Paragraph::new(lines).block(Block::default().borders(Borders::ALL).title(
+        format!(" Clients ({}) ", app.collector.stats.connected_clients),
+    ));
     f.render_widget(paragraph, area);
 }
 
@@ -446,14 +444,9 @@ fn draw_slowlog_overview(f: &mut Frame, app: &App, area: Rect) {
         )));
     }
 
-    let paragraph = Paragraph::new(lines).block(
-        Block::default()
-            .borders(Borders::ALL)
-            .title(format!(
-                " Slowlog ({}) ",
-                app.collector.stats.slow_commands_count
-            )),
-    );
+    let paragraph = Paragraph::new(lines).block(Block::default().borders(Borders::ALL).title(
+        format!(" Slowlog ({}) ", app.collector.stats.slow_commands_count),
+    ));
     f.render_widget(paragraph, area);
 }
 
@@ -643,9 +636,7 @@ fn draw_key_delete_confirm(f: &mut Frame, app: &App, area: Rect) {
         Line::from(""),
         Line::from(Span::styled(
             key_name,
-            Style::default()
-                .fg(Color::Red)
-                .add_modifier(Modifier::BOLD),
+            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
         )),
         Line::from(""),
         Line::from(vec![
@@ -669,7 +660,7 @@ fn draw_commands(f: &mut Frame, app: &App, area: Rect) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3),  // Command stats summary
+            Constraint::Length(3), // Command stats summary
             Constraint::Min(0),    // Command history / live feed
         ])
         .split(area);
@@ -686,19 +677,13 @@ fn draw_commands(f: &mut Frame, app: &App, area: Rect) {
             Style::default().fg(Color::Cyan),
         ),
         Span::raw("    "),
-        Span::styled(
-            "Ops/sec: ",
-            Style::default().add_modifier(Modifier::BOLD),
-        ),
+        Span::styled("Ops/sec: ", Style::default().add_modifier(Modifier::BOLD)),
         Span::styled(
             format_number(stats.ops_per_sec),
             Style::default().fg(Color::Green),
         ),
         Span::raw("    "),
-        Span::styled(
-            "Slow: ",
-            Style::default().add_modifier(Modifier::BOLD),
-        ),
+        Span::styled("Slow: ", Style::default().add_modifier(Modifier::BOLD)),
         Span::styled(
             format_number(stats.slow_commands_count),
             if stats.slow_commands_count > 0 {
@@ -736,10 +721,7 @@ fn draw_command_stats_table(f: &mut Frame, app: &App, area: Rect) {
             format!("{:<12}", "CALLS"),
             Style::default().add_modifier(Modifier::BOLD),
         ),
-        Span::styled(
-            "USEC/CALL",
-            Style::default().add_modifier(Modifier::BOLD),
-        ),
+        Span::styled("USEC/CALL", Style::default().add_modifier(Modifier::BOLD)),
     ]))];
 
     for stat in app.collector.command_stats.iter().take(15) {
@@ -777,10 +759,7 @@ fn draw_command_history(f: &mut Frame, app: &App, area: Rect) {
         .take(area.height.saturating_sub(2) as usize)
         .map(|cmd| {
             Line::from(vec![
-                Span::styled(
-                    format!("{} ", cmd.0),
-                    Style::default().fg(Color::DarkGray),
-                ),
+                Span::styled(format!("{} ", cmd.0), Style::default().fg(Color::DarkGray)),
                 Span::styled(&cmd.1, Style::default().fg(Color::Cyan)),
             ])
         })
@@ -803,12 +782,15 @@ fn draw_memory(f: &mut Frame, app: &App, area: Rect) {
             Constraint::Length(3),  // Memory gauge
             Constraint::Length(10), // Memory breakdown
             Constraint::Length(5),  // Allocation timeline sparkline
-            Constraint::Min(5),    // Cache performance
+            Constraint::Min(5),     // Cache performance
         ])
         .split(area);
 
     // Memory gauge
-    let bar = MemoryBar::new(app.collector.stats.used_memory, app.collector.stats.max_memory);
+    let bar = MemoryBar::new(
+        app.collector.stats.used_memory,
+        app.collector.stats.max_memory,
+    );
     bar.render(f, chunks[0]);
 
     // Memory breakdown
@@ -816,7 +798,10 @@ fn draw_memory(f: &mut Frame, app: &App, area: Rect) {
 
     // Allocation timeline
     let chart = SparklineChart::new(
-        format!("Memory Timeline: {}", format_bytes(app.collector.stats.used_memory)),
+        format!(
+            "Memory Timeline: {}",
+            format_bytes(app.collector.stats.used_memory)
+        ),
         &app.memory_history,
         Color::Magenta,
     );
@@ -903,9 +888,8 @@ fn draw_memory_breakdown(f: &mut Frame, app: &App, area: Rect) {
     f.render_widget(details_widget, chunks[0]);
 
     // Right: HybridLog tier breakdown
-    let total_hl = stats.hybridlog_mutable_bytes
-        + stats.hybridlog_readonly_bytes
-        + stats.hybridlog_disk_bytes;
+    let total_hl =
+        stats.hybridlog_mutable_bytes + stats.hybridlog_readonly_bytes + stats.hybridlog_disk_bytes;
 
     let tier_lines = vec![
         Line::from(Span::styled(
@@ -986,11 +970,7 @@ fn draw_cache_performance(f: &mut Frame, app: &App, area: Rect) {
 
     // Hit rate gauge
     let gauge = Gauge::default()
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title(" Hit Rate "),
-        )
+        .block(Block::default().borders(Borders::ALL).title(" Hit Rate "))
         .gauge_style(Style::default().fg(if hit_rate > 90.0 {
             Color::Green
         } else if hit_rate > 70.0 {
@@ -1042,8 +1022,8 @@ fn draw_network(f: &mut Frame, app: &mut App, area: Rect) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(8),  // Bandwidth sparklines
-            Constraint::Length(5),  // Connection stats
+            Constraint::Length(8), // Bandwidth sparklines
+            Constraint::Length(5), // Connection stats
             Constraint::Min(5),    // Client list
         ])
         .split(area);
@@ -1167,15 +1147,12 @@ fn draw_logs(f: &mut Frame, app: &App, area: Rect) {
         Style::default().fg(Color::DarkGray),
     ));
 
-    let filter_bar = Paragraph::new(Line::from(filter_spans)).block(
-        Block::default()
-            .borders(Borders::ALL)
-            .title(" Log Filter "),
-    );
+    let filter_bar = Paragraph::new(Line::from(filter_spans))
+        .block(Block::default().borders(Borders::ALL).title(" Log Filter "));
     f.render_widget(filter_bar, chunks[0]);
 
     // Log entries
-    let viewer = LogViewer::new(&app.collector.logs, app.log_min_level)
-        .with_scroll(app.log_scroll_offset);
+    let viewer =
+        LogViewer::new(&app.collector.logs, app.log_min_level).with_scroll(app.log_scroll_offset);
     viewer.render(f, chunks[1]);
 }

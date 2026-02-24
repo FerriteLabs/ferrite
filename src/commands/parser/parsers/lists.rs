@@ -1,9 +1,9 @@
 use bytes::Bytes;
 
+use super::{get_bytes, get_float, get_int, get_string};
+use crate::commands::parser::{Command, ListDirection};
 use crate::error::{FerriteError, Result};
 use crate::protocol::Frame;
-use super::{get_string, get_bytes, get_int, get_float};
-use crate::commands::parser::{Command, ListDirection};
 
 pub(crate) fn parse_lpush(args: &[Frame]) -> Result<Command> {
     if args.len() < 2 {

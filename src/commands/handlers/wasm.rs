@@ -42,8 +42,7 @@ pub fn get_udf_registry() -> Option<&'static crate::wasm::UdfRegistry> {
     Some(UDF_REGISTRY.get_or_init(|| {
         use std::sync::Arc;
         let runtime = Arc::new(
-            crate::wasm::WasmRuntime::with_defaults()
-                .expect("failed to initialize WASM runtime"),
+            crate::wasm::WasmRuntime::with_defaults().expect("failed to initialize WASM runtime"),
         );
         crate::wasm::UdfRegistry::new(runtime)
     }))
@@ -69,7 +68,10 @@ pub fn execution_result_to_frame(result: &crate::wasm::runtime::ExecutionResult)
     if values.is_empty() {
         Frame::simple("OK")
     } else if values.len() == 1 {
-        values.into_iter().next().unwrap_or_else(|| Frame::simple("OK"))
+        values
+            .into_iter()
+            .next()
+            .unwrap_or_else(|| Frame::simple("OK"))
     } else {
         Frame::array(values)
     }
@@ -216,7 +218,10 @@ pub async fn call(name: &str, keys: &[Bytes], args: &[Bytes]) -> Frame {
                 if values.is_empty() {
                     Frame::simple("OK")
                 } else if values.len() == 1 {
-                    values.into_iter().next().unwrap_or_else(|| Frame::simple("OK"))
+                    values
+                        .into_iter()
+                        .next()
+                        .unwrap_or_else(|| Frame::simple("OK"))
                 } else {
                     Frame::array(values)
                 }
@@ -266,7 +271,7 @@ pub async fn call_ro(name: &str, keys: &[Bytes], args: &[Bytes]) -> Frame {
 /// Handle WASM.LIST command
 pub async fn list(with_stats: bool) -> Frame {
     let registry = get_registry();
-    let mut functions = registry.list();
+    let functions = registry.list();
 
     // Also include functions from UDF registry
     #[cfg(feature = "wasm")]
@@ -432,7 +437,7 @@ pub async fn stats() -> Frame {
 
     let config = WasmConfig::default();
     let registry = get_registry();
-    let mut function_count = registry.list().len();
+    let function_count = registry.list().len();
 
     #[cfg(feature = "wasm")]
     let mut extra_stats = Vec::new();
@@ -455,7 +460,7 @@ pub async fn stats() -> Frame {
         }
     }
 
-    let mut result = vec![
+    let result = vec![
         Frame::bulk("wasm_enabled"),
         Frame::bulk(if config.enabled { "yes" } else { "no" }),
         Frame::bulk("loaded_functions"),
@@ -485,13 +490,43 @@ pub fn wasm_marketplace_search(args: &[Bytes]) -> Frame {
 
     // Built-in registry of available UDFs
     let registry = vec![
-        ("rate-limiter", "Token bucket rate limiting", "1.0.0", "official"),
-        ("bloom-filter", "Probabilistic set membership", "1.0.0", "official"),
-        ("json-transform", "JSONPath transformations", "1.0.0", "official"),
-        ("geo-fence", "Geographic boundary checking", "0.9.0", "community"),
+        (
+            "rate-limiter",
+            "Token bucket rate limiting",
+            "1.0.0",
+            "official",
+        ),
+        (
+            "bloom-filter",
+            "Probabilistic set membership",
+            "1.0.0",
+            "official",
+        ),
+        (
+            "json-transform",
+            "JSONPath transformations",
+            "1.0.0",
+            "official",
+        ),
+        (
+            "geo-fence",
+            "Geographic boundary checking",
+            "0.9.0",
+            "community",
+        ),
         ("dedup", "Stream deduplication", "1.0.0", "official"),
-        ("aggregator", "Sliding window aggregation", "0.8.0", "community"),
-        ("validator", "Schema validation for values", "1.0.0", "official"),
+        (
+            "aggregator",
+            "Sliding window aggregation",
+            "0.8.0",
+            "community",
+        ),
+        (
+            "validator",
+            "Schema validation for values",
+            "1.0.0",
+            "official",
+        ),
         ("encryption", "Field-level encryption", "1.0.0", "official"),
     ];
 

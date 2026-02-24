@@ -305,9 +305,10 @@ impl AggregationPipeline {
             ));
         }
 
-        let (op, val) = obj.iter().next().ok_or_else(|| {
-            DocumentStoreError::InvalidAggregation("Empty stage operator".into())
-        })?;
+        let (op, val) = obj
+            .iter()
+            .next()
+            .ok_or_else(|| DocumentStoreError::InvalidAggregation("Empty stage operator".into()))?;
 
         match op.as_str() {
             "$match" => {

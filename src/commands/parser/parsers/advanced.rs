@@ -1,9 +1,9 @@
 use bytes::Bytes;
 
+use super::{get_bytes, get_float, get_int, get_string};
+use crate::commands::parser::Command;
 use crate::error::{FerriteError, Result};
 use crate::protocol::Frame;
-use super::{get_string, get_bytes, get_int, get_float};
-use crate::commands::parser::{Command};
 
 pub(crate) fn parse_ft_create(args: &[Frame]) -> Result<Command> {
     if args.is_empty() {
@@ -886,4 +886,682 @@ pub(crate) fn parse_query_command(subcommand: &str, args: &[Frame]) -> Result<Co
         subcommand: subcommand.to_uppercase(),
         args: parsed_args,
     })
+}
+
+pub(crate) fn parse_ferrite_advisor(args: &[Frame]) -> Result<Command> {
+    let subcommand = if args.is_empty() {
+        "STATUS".to_string()
+    } else {
+        get_string(&args[0])?.to_uppercase()
+    };
+    let rest_args = args
+        .iter()
+        .skip(1)
+        .filter_map(|f| get_string(f).ok())
+        .collect();
+    Ok(Command::FerriteAdvisor {
+        subcommand,
+        args: rest_args,
+    })
+}
+
+pub(crate) fn parse_vector_hybrid(args: &[Frame]) -> Result<Command> {
+    if args.len() < 3 {
+        return Err(FerriteError::WrongArity("VECTOR.HYBRID".to_string()));
+    }
+
+    let index = get_bytes(&args[0])?;
+
+    // Parse query vector (comma-separated floats)
+    let vec_str = get_string(&args[1])?;
+    let query_vector: Vec<f32> = vec_str
+        .split([',', ' '])
+        .filter(|s| !s.is_empty())
+        .filter_map(|s| s.trim().parse().ok())
+        .collect();
+
+    let query_text = get_string(&args[2])?;
+
+    let mut top_k = 10usize;
+    let mut alpha = 0.5f64;
+    let mut strategy = "rrf".to_string();
+
+    let mut i = 3;
+    while i < args.len() {
+        let arg = get_string(&args[i])?.to_uppercase();
+        match arg.as_str() {
+            "TOP" | "K" => {
+                i += 1;
+                if i < args.len() {
+                    top_k = get_int(&args[i])? as usize;
+                    i += 1;
+                }
+            }
+            "ALPHA" => {
+                i += 1;
+                if i < args.len() {
+                    alpha = get_float(&args[i])?;
+                    i += 1;
+                }
+            }
+            "STRATEGY" => {
+                i += 1;
+                if i < args.len() {
+                    strategy = get_string(&args[i])?.to_lowercase();
+                    i += 1;
+                }
+            }
+            _ => {
+                i += 1;
+            }
+        }
+    }
+
+    Ok(Command::VectorHybridSearch {
+        index,
+        query_vector,
+        query_text,
+        top_k,
+        alpha,
+        strategy,
+    })
+}
+
+pub(crate) fn parse_vector_rerank(args: &[Frame]) -> Result<Command> {
+    if args.len() < 3 {
+        return Err(FerriteError::WrongArity("VECTOR.RERANK".to_string()));
+    }
+
+    let index = get_bytes(&args[0])?;
+    let query_text = get_string(&args[1])?;
+
+    let mut doc_ids = Vec::new();
+    let mut top_k = 10usize;
+
+    let mut i = 2;
+    while i < args.len() {
+        let arg = get_string(&args[i])?;
+        if arg.to_uppercase() == "TOP" {
+            i += 1;
+            if i < args.len() {
+                top_k = get_int(&args[i])? as usize;
+                i += 1;
+            }
+        } else {
+            doc_ids.push(arg);
+            i += 1;
+        }
+    }
+
+    Ok(Command::VectorRerank {
+        index,
+        query_text,
+        doc_ids,
+        top_k,
+    })
+}
+
+// ── Materialized view command parsers ────────────────────────────────────────
+
+pub(crate) fn parse_view_create(args: &[Frame]) -> Result<Command> {
+    if args.len() < 2 {
+        return Err(FerriteError::WrongArity("VIEW.CREATE".to_string()));
+    }
+
+    let name = get_bytes(&args[0])?;
+    let query = get_string(&args[1])?;
+    let mut strategy = "lazy".to_string();
+    let mut interval: Option<u64> = None;
+
+    let mut i = 2;
+    while i < args.len() {
+        let arg = get_string(&args[i])?.to_uppercase();
+        match arg.as_str() {
+            "STRATEGY" => {
+                i += 1;
+                if i < args.len() {
+                    strategy = get_string(&args[i])?.to_lowercase();
+                    i += 1;
+                }
+            }
+            "INTERVAL" => {
+                i += 1;
+                if i < args.len() {
+                    interval = Some(get_int(&args[i])? as u64);
+                    i += 1;
+                }
+            }
+            _ => {
+                i += 1;
+            }
+        }
+    }
+
+    Ok(Command::ViewCreate {
+        name,
+        query,
+        strategy,
+        interval,
+    })
+}
+
+pub(crate) fn parse_view_drop(args: &[Frame]) -> Result<Command> {
+    if args.is_empty() {
+        return Err(FerriteError::WrongArity("VIEW.DROP".to_string()));
+    }
+    let name = get_bytes(&args[0])?;
+    Ok(Command::ViewDrop { name })
+}
+
+pub(crate) fn parse_view_query(args: &[Frame]) -> Result<Command> {
+    if args.is_empty() {
+        return Err(FerriteError::WrongArity("VIEW.QUERY".to_string()));
+    }
+    let name = get_bytes(&args[0])?;
+    Ok(Command::ViewQuery { name })
+}
+
+#[allow(unused_variables)]
+pub(crate) fn parse_view_list(args: &[Frame]) -> Result<Command> {
+    Ok(Command::ViewList)
+}
+
+pub(crate) fn parse_view_refresh(args: &[Frame]) -> Result<Command> {
+    if args.is_empty() {
+        return Err(FerriteError::WrongArity("VIEW.REFRESH".to_string()));
+    }
+    let name = get_bytes(&args[0])?;
+    Ok(Command::ViewRefresh { name })
+}
+
+pub(crate) fn parse_view_info(args: &[Frame]) -> Result<Command> {
+    if args.is_empty() {
+        return Err(FerriteError::WrongArity("VIEW.INFO".to_string()));
+    }
+    let name = get_bytes(&args[0])?;
+    Ok(Command::ViewInfo { name })
+}
+
+/// Parse `MIGRATE.START source_uri [BATCH size] [WORKERS n] [VERIFY] [DRY-RUN]`
+pub(crate) fn parse_migrate_start(args: &[Frame]) -> Result<Command> {
+    if args.is_empty() {
+        return Err(FerriteError::WrongArity("MIGRATE.START".to_string()));
+    }
+
+    let source_uri = get_string(&args[0])?;
+    let mut batch_size: Option<usize> = None;
+    let mut workers: Option<usize> = None;
+    let mut verify = false;
+    let mut dry_run = false;
+
+    let mut i = 1;
+    while i < args.len() {
+        let arg = get_string(&args[i])?.to_uppercase();
+        match arg.as_str() {
+            "BATCH" => {
+                i += 1;
+                if i < args.len() {
+                    batch_size = Some(get_int(&args[i])? as usize);
+                }
+            }
+            "WORKERS" => {
+                i += 1;
+                if i < args.len() {
+                    workers = Some(get_int(&args[i])? as usize);
+                }
+            }
+            "VERIFY" => {
+                verify = true;
+            }
+            "DRY-RUN" => {
+                dry_run = true;
+            }
+            _ => {}
+        }
+        i += 1;
+    }
+
+    Ok(Command::MigrateStart {
+        source_uri,
+        batch_size,
+        workers,
+        verify,
+        dry_run,
+    })
+}
+
+/// Parse `MIGRATE.VERIFY [SAMPLE pct]`
+pub(crate) fn parse_migrate_verify(args: &[Frame]) -> Result<Command> {
+    let mut sample_pct: Option<f64> = None;
+    let mut i = 0;
+    while i < args.len() {
+        let arg = get_string(&args[i])?.to_uppercase();
+        if arg == "SAMPLE" {
+            i += 1;
+            if i < args.len() {
+                sample_pct = Some(get_float(&args[i])?);
+            }
+        }
+        i += 1;
+    }
+    Ok(Command::MigrateVerify { sample_pct })
+}
+
+// ── Kafka-compatible streaming parsers ──────────────────────────────────
+
+/// STREAM.CREATE topic [PARTITIONS n] [RETENTION ms] [REPLICATION n]
+pub(crate) fn parse_stream_create(args: &[Frame]) -> Result<Command> {
+    if args.is_empty() {
+        return Err(FerriteError::WrongArity("STREAM.CREATE".to_string()));
+    }
+    let topic = get_string(&args[0])?;
+    let mut partitions: u32 = 4;
+    let mut retention_ms: i64 = -1;
+    let mut replication: u16 = 1;
+
+    let mut i = 1;
+    while i < args.len() {
+        let arg = get_string(&args[i])?.to_uppercase();
+        match arg.as_str() {
+            "PARTITIONS" => {
+                i += 1;
+                if i < args.len() {
+                    partitions = get_int(&args[i])? as u32;
+                }
+            }
+            "RETENTION" => {
+                i += 1;
+                if i < args.len() {
+                    retention_ms = get_int(&args[i])?;
+                }
+            }
+            "REPLICATION" => {
+                i += 1;
+                if i < args.len() {
+                    replication = get_int(&args[i])? as u16;
+                }
+            }
+            _ => {}
+        }
+        i += 1;
+    }
+    Ok(Command::StreamCreate {
+        topic,
+        partitions,
+        retention_ms,
+        replication,
+    })
+}
+
+/// STREAM.DELETE topic
+pub(crate) fn parse_stream_delete(args: &[Frame]) -> Result<Command> {
+    if args.is_empty() {
+        return Err(FerriteError::WrongArity("STREAM.DELETE".to_string()));
+    }
+    let topic = get_string(&args[0])?;
+    Ok(Command::StreamDelete { topic })
+}
+
+/// STREAM.PRODUCE topic [KEY key] value [PARTITION n]
+pub(crate) fn parse_stream_produce(args: &[Frame]) -> Result<Command> {
+    if args.len() < 2 {
+        return Err(FerriteError::WrongArity("STREAM.PRODUCE".to_string()));
+    }
+    let topic = get_string(&args[0])?;
+    let mut key: Option<Bytes> = None;
+    let mut partition: Option<u32> = None;
+    let mut value: Option<Bytes> = None;
+
+    let mut i = 1;
+    while i < args.len() {
+        let arg_str = get_string(&args[i])?.to_uppercase();
+        match arg_str.as_str() {
+            "KEY" => {
+                i += 1;
+                if i < args.len() {
+                    key = Some(get_bytes(&args[i])?);
+                }
+            }
+            "PARTITION" => {
+                i += 1;
+                if i < args.len() {
+                    partition = Some(get_int(&args[i])? as u32);
+                }
+            }
+            _ => {
+                // Treat as value if not yet set
+                if value.is_none() {
+                    value = Some(get_bytes(&args[i])?);
+                }
+            }
+        }
+        i += 1;
+    }
+
+    let value = value.ok_or_else(|| FerriteError::WrongArity("STREAM.PRODUCE".to_string()))?;
+    Ok(Command::StreamProduce {
+        topic,
+        key,
+        value,
+        partition,
+    })
+}
+
+/// STREAM.FETCH topic partition offset [COUNT n]
+pub(crate) fn parse_stream_fetch(args: &[Frame]) -> Result<Command> {
+    if args.len() < 3 {
+        return Err(FerriteError::WrongArity("STREAM.FETCH".to_string()));
+    }
+    let topic = get_string(&args[0])?;
+    let partition = get_int(&args[1])? as u32;
+    let offset = get_int(&args[2])?;
+    let mut count: usize = 100;
+
+    let mut i = 3;
+    while i < args.len() {
+        let arg = get_string(&args[i])?.to_uppercase();
+        if arg == "COUNT" {
+            i += 1;
+            if i < args.len() {
+                count = get_int(&args[i])? as usize;
+            }
+        }
+        i += 1;
+    }
+    Ok(Command::StreamFetch {
+        topic,
+        partition,
+        offset,
+        count,
+    })
+}
+
+/// STREAM.COMMIT group topic partition offset
+pub(crate) fn parse_stream_commit(args: &[Frame]) -> Result<Command> {
+    if args.len() < 4 {
+        return Err(FerriteError::WrongArity("STREAM.COMMIT".to_string()));
+    }
+    let group = get_string(&args[0])?;
+    let topic = get_string(&args[1])?;
+    let partition = get_int(&args[2])? as u32;
+    let offset = get_int(&args[3])?;
+    Ok(Command::StreamCommit {
+        group,
+        topic,
+        partition,
+        offset,
+    })
+}
+
+/// STREAM.DESCRIBE topic
+pub(crate) fn parse_stream_describe(args: &[Frame]) -> Result<Command> {
+    if args.is_empty() {
+        return Err(FerriteError::WrongArity("STREAM.DESCRIBE".to_string()));
+    }
+    let topic = get_string(&args[0])?;
+    Ok(Command::StreamDescribe { topic })
+}
+
+/// STREAM.GROUPS [topic]
+pub(crate) fn parse_stream_groups(args: &[Frame]) -> Result<Command> {
+    let topic = if args.is_empty() {
+        None
+    } else {
+        Some(get_string(&args[0])?)
+    };
+    Ok(Command::StreamGroups { topic })
+}
+
+/// STREAM.OFFSETS topic partition
+pub(crate) fn parse_stream_offsets(args: &[Frame]) -> Result<Command> {
+    if args.len() < 2 {
+        return Err(FerriteError::WrongArity("STREAM.OFFSETS".to_string()));
+    }
+    let topic = get_string(&args[0])?;
+    let partition = get_int(&args[1])? as u32;
+    Ok(Command::StreamOffsets { topic, partition })
+}
+
+/// REGION.ADD id name endpoint
+pub(crate) fn parse_region_add(args: &[Frame]) -> Result<Command> {
+    if args.len() < 3 {
+        return Err(FerriteError::WrongArity("REGION.ADD".to_string()));
+    }
+    let id = get_string(&args[0])?;
+    let name = get_string(&args[1])?;
+    let endpoint = get_string(&args[2])?;
+    Ok(Command::RegionAdd { id, name, endpoint })
+}
+
+/// REGION.REMOVE id
+pub(crate) fn parse_region_remove(args: &[Frame]) -> Result<Command> {
+    if args.is_empty() {
+        return Err(FerriteError::WrongArity("REGION.REMOVE".to_string()));
+    }
+    let id = get_string(&args[0])?;
+    Ok(Command::RegionRemove { id })
+}
+
+/// REGION.STATUS [id]
+pub(crate) fn parse_region_status(args: &[Frame]) -> Result<Command> {
+    let id = if args.is_empty() {
+        None
+    } else {
+        Some(get_string(&args[0])?)
+    };
+    Ok(Command::RegionStatus { id })
+}
+
+/// REGION.CONFLICTS [LIMIT n]
+pub(crate) fn parse_region_conflicts(args: &[Frame]) -> Result<Command> {
+    let mut limit: usize = 10;
+    let mut i = 0;
+    while i < args.len() {
+        let arg = get_string(&args[i])?.to_uppercase();
+        if arg == "LIMIT" {
+            i += 1;
+            if i < args.len() {
+                limit = get_int(&args[i])? as usize;
+            }
+        }
+        i += 1;
+    }
+    Ok(Command::RegionConflicts { limit })
+}
+
+/// REGION.STRATEGY [strategy]
+pub(crate) fn parse_region_strategy(args: &[Frame]) -> Result<Command> {
+    let strategy = if args.is_empty() {
+        None
+    } else {
+        Some(get_string(&args[0])?)
+    };
+    Ok(Command::RegionStrategy { strategy })
+}
+
+/// FERRITE.DEBUG subcommand [args...]
+pub(crate) fn parse_ferrite_debug(args: &[Frame]) -> Result<Command> {
+    let subcommand = if args.is_empty() {
+        "STATS".to_string()
+    } else {
+        get_string(&args[0])?.to_uppercase()
+    };
+    let rest_args = args
+        .iter()
+        .skip(1)
+        .filter_map(|f| get_string(f).ok())
+        .collect();
+    Ok(Command::FerriteDebug {
+        subcommand,
+        args: rest_args,
+    })
+}
+
+// ── Data Mesh / Federation gateway parsers ────────────────────────────
+
+/// FEDERATION.ADD id TYPE type URI uri [NAME name]
+pub(crate) fn parse_federation_add(args: &[Frame]) -> Result<Command> {
+    if args.is_empty() {
+        return Err(FerriteError::WrongArity("FEDERATION.ADD".to_string()));
+    }
+    let id = get_string(&args[0])?;
+    let mut source_type = String::new();
+    let mut uri = String::new();
+    let mut name: Option<String> = None;
+
+    let mut i = 1;
+    while i < args.len() {
+        let arg = get_string(&args[i])?.to_uppercase();
+        match arg.as_str() {
+            "TYPE" => {
+                i += 1;
+                if i < args.len() {
+                    source_type = get_string(&args[i])?;
+                }
+            }
+            "URI" => {
+                i += 1;
+                if i < args.len() {
+                    uri = get_string(&args[i])?;
+                }
+            }
+            "NAME" => {
+                i += 1;
+                if i < args.len() {
+                    name = Some(get_string(&args[i])?);
+                }
+            }
+            _ => {}
+        }
+        i += 1;
+    }
+
+    if source_type.is_empty() || uri.is_empty() {
+        return Err(FerriteError::WrongArity("FEDERATION.ADD".to_string()));
+    }
+
+    Ok(Command::FederationAdd {
+        id,
+        source_type,
+        uri,
+        name,
+    })
+}
+
+/// FEDERATION.REMOVE id
+pub(crate) fn parse_federation_remove(args: &[Frame]) -> Result<Command> {
+    if args.is_empty() {
+        return Err(FerriteError::WrongArity("FEDERATION.REMOVE".to_string()));
+    }
+    let id = get_string(&args[0])?;
+    Ok(Command::FederationRemove { id })
+}
+
+/// FEDERATION.STATUS [id]
+pub(crate) fn parse_federation_status(args: &[Frame]) -> Result<Command> {
+    let id = if args.is_empty() {
+        None
+    } else {
+        Some(get_string(&args[0])?)
+    };
+    Ok(Command::FederationStatus { id })
+}
+
+/// FEDERATION.NAMESPACE namespace source_id
+pub(crate) fn parse_federation_namespace(args: &[Frame]) -> Result<Command> {
+    if args.len() < 2 {
+        return Err(FerriteError::WrongArity(
+            "FEDERATION.NAMESPACE".to_string(),
+        ));
+    }
+    let namespace = get_string(&args[0])?;
+    let source_id = get_string(&args[1])?;
+    Ok(Command::FederationNamespace {
+        namespace,
+        source_id,
+    })
+}
+
+/// FEDERATION.QUERY query_string
+pub(crate) fn parse_federation_query(args: &[Frame]) -> Result<Command> {
+    if args.is_empty() {
+        return Err(FerriteError::WrongArity("FEDERATION.QUERY".to_string()));
+    }
+    let query = get_string(&args[0])?;
+    Ok(Command::FederationQuery { query })
+}
+
+/// FEDERATION.CONTRACT name source_id schema_json
+pub(crate) fn parse_federation_contract(args: &[Frame]) -> Result<Command> {
+    if args.len() < 3 {
+        return Err(FerriteError::WrongArity(
+            "FEDERATION.CONTRACT".to_string(),
+        ));
+    }
+    let name = get_string(&args[0])?;
+    let source_id = get_string(&args[1])?;
+    let schema_json = get_string(&args[2])?;
+    Ok(Command::FederationContract {
+        name,
+        source_id,
+        schema_json,
+    })
+}
+
+// ── Studio developer-experience command parsers ─────────────────────────────
+
+/// Parse `STUDIO.SCHEMA [DB n]`
+pub(crate) fn parse_studio_schema(args: &[Frame]) -> Result<Command> {
+    let mut db = None;
+    let mut i = 0;
+    while i < args.len() {
+        let arg = get_string(&args[i])?.to_uppercase();
+        if arg == "DB" {
+            i += 1;
+            if i < args.len() {
+                let n: u8 = get_string(&args[i])?
+                    .parse()
+                    .map_err(|_| FerriteError::Protocol("invalid DB index".to_string()))?;
+                db = Some(n);
+            }
+        }
+        i += 1;
+    }
+    Ok(Command::StudioSchema { db })
+}
+
+/// Parse `STUDIO.TEMPLATES [name]`
+pub(crate) fn parse_studio_templates(args: &[Frame]) -> Result<Command> {
+    let name = args.first().map(get_string).transpose()?;
+    Ok(Command::StudioTemplates { name })
+}
+
+/// Parse `STUDIO.SETUP template_name`
+pub(crate) fn parse_studio_setup(args: &[Frame]) -> Result<Command> {
+    if args.is_empty() {
+        return Err(FerriteError::WrongArity("STUDIO.SETUP".to_string()));
+    }
+    let template = get_string(&args[0])?;
+    Ok(Command::StudioSetup { template })
+}
+
+/// Parse `STUDIO.COMPAT [redis_info]`
+pub(crate) fn parse_studio_compat(args: &[Frame]) -> Result<Command> {
+    let redis_info = args.first().map(get_string).transpose()?;
+    Ok(Command::StudioCompat { redis_info })
+}
+
+/// Parse `STUDIO.HELP command`
+pub(crate) fn parse_studio_help(args: &[Frame]) -> Result<Command> {
+    if args.is_empty() {
+        return Err(FerriteError::WrongArity("STUDIO.HELP".to_string()));
+    }
+    let command = get_string(&args[0])?;
+    Ok(Command::StudioHelp { command })
+}
+
+/// Parse `STUDIO.SUGGEST [context]`
+pub(crate) fn parse_studio_suggest(args: &[Frame]) -> Result<Command> {
+    let context = args.first().map(get_string).transpose()?;
+    Ok(Command::StudioSuggest { context })
 }

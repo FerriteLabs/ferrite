@@ -150,10 +150,7 @@ fn sha1_hex(data: &[u8]) -> String {
         h4 = h4.wrapping_add(e);
     }
 
-    format!(
-        "{:08x}{:08x}{:08x}{:08x}{:08x}",
-        h0, h1, h2, h3, h4
-    )
+    format!("{:08x}{:08x}{:08x}{:08x}{:08x}", h0, h1, h2, h3, h4)
 }
 
 /// Lua script executor
@@ -265,9 +262,8 @@ impl ScriptExecutor {
         redis_table.set("log", log_fn)?;
 
         // redis.sha1hex(data) -- Return the SHA1 hex digest of a string
-        let sha1hex_fn = lua.create_function(|_lua_ctx, data: String| {
-            Ok(sha1_hex(data.as_bytes()))
-        })?;
+        let sha1hex_fn =
+            lua.create_function(|_lua_ctx, data: String| Ok(sha1_hex(data.as_bytes())))?;
         redis_table.set("sha1hex", sha1hex_fn)?;
 
         // Redis log level constants
@@ -626,9 +622,7 @@ fn execute_redis_command(store: &Store, db: u8, cmd: &str, args: &[Bytes]) -> Fr
                 Some(_) => Frame::error(
                     "WRONGTYPE Operation against a key holding the wrong kind of value",
                 ),
-                None => {
-                    Frame::array(args[1..].iter().map(|_| Frame::null()).collect())
-                }
+                None => Frame::array(args[1..].iter().map(|_| Frame::null()).collect()),
             }
         }
         "LPUSH" => {
@@ -823,9 +817,7 @@ fn execute_redis_command(store: &Store, db: u8, cmd: &str, args: &[Bytes]) -> Fr
                 return Frame::error("ERR wrong number of arguments for 'sismember' command");
             }
             match store.get(db, &args[0]) {
-                Some(Value::Set(set)) => {
-                    Frame::Integer(if set.contains(&args[1]) { 1 } else { 0 })
-                }
+                Some(Value::Set(set)) => Frame::Integer(if set.contains(&args[1]) { 1 } else { 0 }),
                 Some(_) => Frame::error(
                     "WRONGTYPE Operation against a key holding the wrong kind of value",
                 ),
@@ -1272,7 +1264,11 @@ mod tests {
     #[test]
     fn test_eval_argv_access() {
         let (_cache, executor) = make_executor();
-        let args = vec![Bytes::from("arg1"), Bytes::from("arg2"), Bytes::from("arg3")];
+        let args = vec![
+            Bytes::from("arg1"),
+            Bytes::from("arg2"),
+            Bytes::from("arg3"),
+        ];
 
         let result = executor.eval(0, "return ARGV[1]", &[], &args);
         assert_eq!(result, Frame::bulk(Bytes::from("arg1")));
@@ -1577,7 +1573,11 @@ mod tests {
         match &result {
             Frame::Bulk(Some(b)) => {
                 let s = String::from_utf8_lossy(b);
-                assert!(s.contains("WRONGTYPE"), "Expected WRONGTYPE error, got: {}", s);
+                assert!(
+                    s.contains("WRONGTYPE"),
+                    "Expected WRONGTYPE error, got: {}",
+                    s
+                );
             }
             _ => panic!("Expected bulk string, got {:?}", result),
         }
@@ -1598,7 +1598,11 @@ mod tests {
         match &result {
             Frame::Error(e) => {
                 let s = String::from_utf8_lossy(e);
-                assert!(s.contains("WRONGTYPE"), "Expected WRONGTYPE in error, got: {}", s);
+                assert!(
+                    s.contains("WRONGTYPE"),
+                    "Expected WRONGTYPE in error, got: {}",
+                    s
+                );
             }
             _ => panic!("Expected error, got {:?}", result),
         }
@@ -1709,7 +1713,11 @@ mod tests {
         match &result {
             Frame::Error(e) => {
                 let s = String::from_utf8_lossy(e);
-                assert!(s.contains("NOSCRIPT"), "Expected NOSCRIPT error, got: {}", s);
+                assert!(
+                    s.contains("NOSCRIPT"),
+                    "Expected NOSCRIPT error, got: {}",
+                    s
+                );
             }
             _ => panic!("Expected error, got {:?}", result),
         }
@@ -1893,7 +1901,11 @@ mod tests {
         match &result {
             Frame::Error(e) => {
                 let s = String::from_utf8_lossy(e);
-                assert!(s.contains("Error running script"), "Expected script error, got: {}", s);
+                assert!(
+                    s.contains("Error running script"),
+                    "Expected script error, got: {}",
+                    s
+                );
             }
             _ => panic!("Expected error for syntax error, got {:?}", result),
         }
@@ -1907,7 +1919,11 @@ mod tests {
         match &result {
             Frame::Error(e) => {
                 let s = String::from_utf8_lossy(e);
-                assert!(s.contains("custom runtime error"), "Expected custom error, got: {}", s);
+                assert!(
+                    s.contains("custom runtime error"),
+                    "Expected custom error, got: {}",
+                    s
+                );
             }
             _ => panic!("Expected error for runtime error, got {:?}", result),
         }
@@ -1921,7 +1937,11 @@ mod tests {
         match &result {
             Frame::Error(e) => {
                 let s = String::from_utf8_lossy(e);
-                assert!(s.contains("unknown command"), "Expected unknown command error, got: {}", s);
+                assert!(
+                    s.contains("unknown command"),
+                    "Expected unknown command error, got: {}",
+                    s
+                );
             }
             _ => panic!("Expected error, got {:?}", result),
         }

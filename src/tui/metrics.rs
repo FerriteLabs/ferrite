@@ -566,8 +566,7 @@ impl DataCollector {
                         if key.starts_with("db") {
                             for part in value.split(',') {
                                 if let Some(keys_str) = part.strip_prefix("keys=") {
-                                    self.stats.db_keys +=
-                                        keys_str.parse::<u64>().unwrap_or(0);
+                                    self.stats.db_keys += keys_str.parse::<u64>().unwrap_or(0);
                                 }
                             }
                         }
@@ -660,8 +659,7 @@ fn parse_cluster_nodes(data: &str) -> Vec<ClusterNodeInfo> {
             if part.contains('-') {
                 let range: Vec<&str> = part.split('-').collect();
                 if range.len() == 2 {
-                    if let (Ok(start), Ok(end)) =
-                        (range[0].parse::<u16>(), range[1].parse::<u16>())
+                    if let (Ok(start), Ok(end)) = (range[0].parse::<u16>(), range[1].parse::<u16>())
                     {
                         slot_ranges.push((start, end));
                     }
@@ -873,7 +871,10 @@ hybridlog_disk_bytes:1288490188\r\n\
         assert_eq!(nodes[0].addr, "127.0.0.1:6379");
         assert_eq!(nodes[0].slot_ranges, vec![(5461, 10922)]);
         assert_eq!(nodes[1].role, "replica");
-        assert_eq!(nodes[1].master_id, Some("07c37dfeb235213a872192d90877d0cd55635b91".to_string()));
+        assert_eq!(
+            nodes[1].master_id,
+            Some("07c37dfeb235213a872192d90877d0cd55635b91".to_string())
+        );
     }
 
     #[test]

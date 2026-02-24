@@ -35,10 +35,7 @@ impl ApiSchema {
 
     /// Add a command
     pub fn add_command(&mut self, category: CommandCategory, command: CommandSchema) {
-        self.commands
-            .entry(category)
-            .or_default()
-            .push(command);
+        self.commands.entry(category).or_default().push(command);
     }
 
     /// Add a type

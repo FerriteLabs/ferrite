@@ -1,7 +1,8 @@
 //! Advanced operation helper methods on CommandExecutor (tiering, CDC, temporal,
 //! streams, geo, HyperLogLog, scan, vector search, CRDT, WASM, semantic cache,
-//! triggers, time-series, document, graph, and RAG commands).
+//! triggers, time-series, document, graph, RAG, and Kafka-streaming commands).
 
+use std::sync::OnceLock;
 
 use bytes::Bytes;
 
@@ -14,10 +15,41 @@ use crate::commands::streams;
 
 use super::CommandExecutor;
 
+/// Global streaming broker instance (lazily initialized).
+fn streaming_broker() -> &'static ferrite_streaming::kafka::StreamingBroker {
+    static BROKER: OnceLock<ferrite_streaming::kafka::StreamingBroker> = OnceLock::new();
+    BROKER.get_or_init(ferrite_streaming::kafka::StreamingBroker::new)
+}
+
+/// Global active-active replicator instance (lazily initialized).
+#[cfg(feature = "experimental")]
+fn active_active_replicator() -> &'static ferrite_enterprise::active_active::ActiveActiveReplicator
+{
+    static REPLICATOR: OnceLock<ferrite_enterprise::active_active::ActiveActiveReplicator> =
+        OnceLock::new();
+    REPLICATOR.get_or_init(|| {
+        ferrite_enterprise::active_active::ActiveActiveReplicator::with_defaults(
+            "local".to_string(),
+        )
+    })
+}
+
+/// Global Data Mesh Gateway instance (lazily initialized).
+#[cfg(feature = "experimental")]
+fn mesh_gateway() -> &'static ferrite_enterprise::mesh::DataMeshGateway {
+    static GATEWAY: OnceLock<ferrite_enterprise::mesh::DataMeshGateway> = OnceLock::new();
+    GATEWAY.get_or_init(ferrite_enterprise::mesh::DataMeshGateway::with_defaults)
+}
+
 impl CommandExecutor {
     // Tiering commands
 
-    pub(super) async fn tiering(&self, subcommand: &str, args: &[String], key: Option<&Bytes>) -> Frame {
+    pub(super) async fn tiering(
+        &self,
+        subcommand: &str,
+        args: &[String],
+        key: Option<&Bytes>,
+    ) -> Frame {
         use crate::tiering::{Priority, StorageTier, TieringEngine};
 
         // Create or get a tiering engine (in production, this would be shared)
@@ -963,7 +995,13 @@ impl CommandExecutor {
         Frame::Null
     }
 
-    pub(super) async fn diff(&self, db: u8, key: &Bytes, timestamp1: &str, timestamp2: &str) -> Frame {
+    pub(super) async fn diff(
+        &self,
+        db: u8,
+        key: &Bytes,
+        timestamp1: &str,
+        timestamp2: &str,
+    ) -> Frame {
         use crate::temporal::TimestampSpec;
 
         let ts1 = TimestampSpec::parse(timestamp1);
@@ -1179,7 +1217,14 @@ impl CommandExecutor {
     }
 
     #[inline]
-    pub(super) fn xrange(&self, db: u8, key: &Bytes, start: &str, end: &str, count: Option<usize>) -> Frame {
+    pub(super) fn xrange(
+        &self,
+        db: u8,
+        key: &Bytes,
+        start: &str,
+        end: &str,
+        count: Option<usize>,
+    ) -> Frame {
         streams::xrange(&self.store, db, key, start, end, count)
     }
 
@@ -1196,7 +1241,12 @@ impl CommandExecutor {
     }
 
     #[inline]
-    pub(super) fn xread(&self, db: u8, stream_keys: &[(Bytes, String)], count: Option<usize>) -> Frame {
+    pub(super) fn xread(
+        &self,
+        db: u8,
+        stream_keys: &[(Bytes, String)],
+        count: Option<usize>,
+    ) -> Frame {
         streams::xread(&self.store, db, stream_keys, count)
     }
 
@@ -1219,7 +1269,13 @@ impl CommandExecutor {
         streams::xdel(&self.store, db, key, &parsed_ids)
     }
 
-    pub(super) fn xtrim(&self, db: u8, key: &Bytes, maxlen: Option<usize>, minid: Option<&str>) -> Frame {
+    pub(super) fn xtrim(
+        &self,
+        db: u8,
+        key: &Bytes,
+        maxlen: Option<usize>,
+        minid: Option<&str>,
+    ) -> Frame {
         if let Some(maxlen) = maxlen {
             streams::xtrim(&self.store, db, key, maxlen)
         } else if let Some(minid_str) = minid {
@@ -1229,16 +1285,20 @@ impl CommandExecutor {
         }
     }
 
-    pub(super) fn xinfo(&self, db: u8, key: &Bytes, subcommand: &str, group_name: Option<&Bytes>) -> Frame {
+    pub(super) fn xinfo(
+        &self,
+        db: u8,
+        key: &Bytes,
+        subcommand: &str,
+        group_name: Option<&Bytes>,
+    ) -> Frame {
         match subcommand.to_uppercase().as_str() {
             "STREAM" => streams::xinfo_stream(&self.store, db, key),
             "GROUPS" => streams::xinfo_groups(&self.store, db, key),
-            "CONSUMERS" => {
-                match group_name {
-                    Some(gn) => streams::xinfo_consumers(&self.store, db, key, gn),
-                    None => Frame::error("ERR wrong number of arguments for 'xinfo|consumers' command"),
-                }
-            }
+            "CONSUMERS" => match group_name {
+                Some(gn) => streams::xinfo_consumers(&self.store, db, key, gn),
+                None => Frame::error("ERR wrong number of arguments for 'xinfo|consumers' command"),
+            },
             "HELP" => Frame::array(vec![
                 Frame::bulk("XINFO <subcommand> [<arg> [value] [opt] ...]"),
                 Frame::bulk("STREAM <key> [FULL [COUNT <count>]] -- Show stream info."),
@@ -1270,7 +1330,14 @@ impl CommandExecutor {
         geo::geopos(&self.store, db, key, members)
     }
 
-    pub(super) fn geodist(&self, db: u8, key: &Bytes, member1: &Bytes, member2: &Bytes, unit: &str) -> Frame {
+    pub(super) fn geodist(
+        &self,
+        db: u8,
+        key: &Bytes,
+        member1: &Bytes,
+        member2: &Bytes,
+        unit: &str,
+    ) -> Frame {
         let unit = geo::DistanceUnit::parse(unit).unwrap_or(geo::DistanceUnit::Meters);
         geo::geodist(&self.store, db, key, member1, member2, unit)
     }
@@ -1593,9 +1660,126 @@ impl CommandExecutor {
         Frame::array(indexes.into_iter().map(Frame::bulk).collect())
     }
 
+    // Hybrid vector search commands
+
+    #[allow(clippy::too_many_arguments)]
+    pub(super) async fn vector_hybrid_search(
+        &self,
+        _db: u8,
+        index: &Bytes,
+        query_vector: &[f32],
+        query_text: &str,
+        top_k: usize,
+        alpha: f64,
+        strategy: &str,
+    ) -> Frame {
+        use ferrite_ai::hybrid::fusion::{
+            FusionStrategy, LinearCombination, ReciprocalRankFusion, ScoredResult,
+        };
+        use ferrite_ai::vector::{VectorIndex, VectorStore};
+        use ferrite_search::bm25::Bm25Index;
+
+        let index_name = String::from_utf8_lossy(index).to_string();
+
+        // Dense retrieval from vector store
+        let store = VectorStore::new();
+        let dense_results: Vec<ScoredResult> = match store.get_index(&index_name) {
+            Some(idx) => match idx.search(query_vector, top_k * 2) {
+                Ok(results) => results
+                    .into_iter()
+                    .map(|r| ScoredResult {
+                        doc_id: r.id.to_string(),
+                        score: r.score as f64,
+                    })
+                    .collect(),
+                Err(e) => return Frame::error(format!("ERR dense search failed: {}", e)),
+            },
+            None => return Frame::error(format!("ERR Unknown index: {}", index_name)),
+        };
+
+        // Sparse retrieval using BM25
+        let bm25 = Bm25Index::default();
+        let sparse_results: Vec<ScoredResult> = bm25
+            .search(query_text, top_k * 2)
+            .into_iter()
+            .map(|r| ScoredResult {
+                doc_id: r.doc_id,
+                score: r.score,
+            })
+            .collect();
+
+        // Parse strategy
+        let fusion_strategy = match strategy {
+            "linear" => FusionStrategy::Linear,
+            "dense" => FusionStrategy::DenseOnly,
+            "sparse" => FusionStrategy::SparseOnly,
+            _ => FusionStrategy::RRF,
+        };
+
+        // Fuse results
+        let fused = match fusion_strategy {
+            FusionStrategy::RRF => {
+                ReciprocalRankFusion::fuse(&dense_results, &sparse_results, 60, top_k)
+            }
+            FusionStrategy::Linear => {
+                LinearCombination::fuse(&dense_results, &sparse_results, alpha, top_k)
+            }
+            FusionStrategy::DenseOnly => {
+                ReciprocalRankFusion::fuse(&dense_results, &[], 60, top_k)
+            }
+            FusionStrategy::SparseOnly => {
+                ReciprocalRankFusion::fuse(&[], &sparse_results, 60, top_k)
+            }
+        };
+
+        let mut response = vec![Frame::Integer(fused.len() as i64)];
+        for result in fused {
+            response.push(Frame::bulk(Bytes::from(result.doc_id)));
+            response.push(Frame::bulk(format!("{:.6}", result.fused_score)));
+        }
+        Frame::array(response)
+    }
+
+    pub(super) async fn vector_rerank(
+        &self,
+        _db: u8,
+        _index: &Bytes,
+        query_text: &str,
+        doc_ids: &[String],
+        top_k: usize,
+    ) -> Frame {
+        use ferrite_ai::hybrid::reranker::{Document, Reranker, SimpleReranker};
+
+        let documents: Vec<Document> = doc_ids
+            .iter()
+            .enumerate()
+            .map(|(i, id)| Document {
+                id: id.clone(),
+                text: id.clone(), // Use doc_id as placeholder text
+                original_score: 1.0 - (i as f64 * 0.01),
+            })
+            .collect();
+
+        let reranker = SimpleReranker;
+        let ranked = reranker.rerank(query_text, &documents, top_k);
+
+        let mut response = vec![Frame::Integer(ranked.len() as i64)];
+        for doc in ranked {
+            response.push(Frame::bulk(Bytes::from(doc.doc_id)));
+            response.push(Frame::bulk(format!("{:.6}", doc.reranked_score)));
+            response.push(Frame::Integer(doc.rank as i64));
+        }
+        Frame::array(response)
+    }
+
     // CRDT commands
 
-    pub(super) async fn crdt_gcounter(&self, key: &Bytes, subcommand: &str, args: &[String]) -> Frame {
+    pub(super) async fn crdt_gcounter(
+        &self,
+        key: &Bytes,
+        subcommand: &str,
+        args: &[String],
+    ) -> Frame {
         use ferrite_plugins::crdt::{GCounter, SiteId};
 
         let key_str = String::from_utf8_lossy(key).to_string();
@@ -1631,7 +1815,12 @@ impl CommandExecutor {
         }
     }
 
-    pub(super) async fn crdt_pncounter(&self, key: &Bytes, subcommand: &str, args: &[String]) -> Frame {
+    pub(super) async fn crdt_pncounter(
+        &self,
+        key: &Bytes,
+        subcommand: &str,
+        args: &[String],
+    ) -> Frame {
         use ferrite_plugins::crdt::{PNCounter, SiteId};
 
         let key_str = String::from_utf8_lossy(key).to_string();
@@ -1672,7 +1861,12 @@ impl CommandExecutor {
         }
     }
 
-    pub(super) async fn crdt_lwwreg(&self, key: &Bytes, subcommand: &str, args: &[String]) -> Frame {
+    pub(super) async fn crdt_lwwreg(
+        &self,
+        key: &Bytes,
+        subcommand: &str,
+        args: &[String],
+    ) -> Frame {
         use ferrite_plugins::crdt::{HybridTimestamp, LwwRegister, SiteId};
 
         let key_str = String::from_utf8_lossy(key).to_string();
@@ -1822,10 +2016,9 @@ impl CommandExecutor {
         let source_hash = format!("{:016x}", hasher.finish());
         let metadata = FunctionMetadata::new(name.to_string(), source_hash).with_permissions(perms);
 
-        if !replace
-            && registry.get(name).is_some() {
-                return Frame::error(format!("ERR Function already exists: {}", name));
-            }
+        if !replace && registry.get(name).is_some() {
+            return Frame::error(format!("ERR Function already exists: {}", name));
+        }
 
         match registry.load(name, module.to_vec(), Some(metadata)) {
             Ok(()) => Frame::simple("OK"),
@@ -2532,7 +2725,12 @@ impl CommandExecutor {
     }
 
     /// Handle time-series commands by dispatching to the handler module
-    pub(super) async fn handle_timeseries_command(&self, db: u8, subcommand: &str, args: &[Bytes]) -> Frame {
+    pub(super) async fn handle_timeseries_command(
+        &self,
+        db: u8,
+        subcommand: &str,
+        args: &[Bytes],
+    ) -> Frame {
         use crate::commands::handlers::timeseries;
 
         let ctx = crate::commands::handlers::HandlerContext::new(
@@ -2568,7 +2766,12 @@ impl CommandExecutor {
 
     #[cfg(feature = "experimental")]
     /// Handle document database commands by dispatching to the handler module
-    pub(super) async fn handle_document_command(&self, db: u8, subcommand: &str, args: &[Bytes]) -> Frame {
+    pub(super) async fn handle_document_command(
+        &self,
+        db: u8,
+        subcommand: &str,
+        args: &[Bytes],
+    ) -> Frame {
         use crate::commands::handlers::document;
 
         let ctx = crate::commands::handlers::HandlerContext::new(
@@ -2606,13 +2809,23 @@ impl CommandExecutor {
     }
 
     #[cfg(not(feature = "experimental"))]
-    pub(super) async fn handle_document_command(&self, _db: u8, _subcommand: &str, _args: &[Bytes]) -> Frame {
+    pub(super) async fn handle_document_command(
+        &self,
+        _db: u8,
+        _subcommand: &str,
+        _args: &[Bytes],
+    ) -> Frame {
         Frame::error("ERR DOC commands require the 'experimental' feature")
     }
 
     #[cfg(feature = "experimental")]
     /// Handle graph database commands by dispatching to the handler module
-    pub(super) async fn handle_graph_command(&self, db: u8, subcommand: &str, args: &[Bytes]) -> Frame {
+    pub(super) async fn handle_graph_command(
+        &self,
+        db: u8,
+        subcommand: &str,
+        args: &[Bytes],
+    ) -> Frame {
         use crate::commands::handlers::graph;
 
         let ctx = crate::commands::handlers::HandlerContext::new(
@@ -2649,13 +2862,23 @@ impl CommandExecutor {
     }
 
     #[cfg(not(feature = "experimental"))]
-    pub(super) async fn handle_graph_command(&self, _db: u8, _subcommand: &str, _args: &[Bytes]) -> Frame {
+    pub(super) async fn handle_graph_command(
+        &self,
+        _db: u8,
+        _subcommand: &str,
+        _args: &[Bytes],
+    ) -> Frame {
         Frame::error("ERR GRAPH commands require the 'experimental' feature")
     }
 
     /// Handle RAG pipeline commands by dispatching to the handler module
     #[cfg(feature = "cloud")]
-    pub(super) async fn handle_rag_command(&self, db: u8, subcommand: &str, args: &[Bytes]) -> Frame {
+    pub(super) async fn handle_rag_command(
+        &self,
+        db: u8,
+        subcommand: &str,
+        args: &[Bytes],
+    ) -> Frame {
         use crate::commands::handlers::rag;
 
         let ctx = crate::commands::handlers::HandlerContext::new(
@@ -2691,12 +2914,22 @@ impl CommandExecutor {
     }
 
     #[cfg(not(feature = "cloud"))]
-    pub(super) async fn handle_rag_command(&self, _db: u8, _subcommand: &str, _args: &[Bytes]) -> Frame {
+    pub(super) async fn handle_rag_command(
+        &self,
+        _db: u8,
+        _subcommand: &str,
+        _args: &[Bytes],
+    ) -> Frame {
         Frame::error("ERR RAG commands require the 'cloud' feature")
     }
 
     /// Handle FerriteQL query commands by dispatching to the handler module
-    pub(super) async fn handle_query_command(&self, db: u8, subcommand: &str, args: &[Bytes]) -> Frame {
+    pub(super) async fn handle_query_command(
+        &self,
+        db: u8,
+        subcommand: &str,
+        args: &[Bytes],
+    ) -> Frame {
         use crate::commands::handlers::query;
 
         let ctx = crate::commands::handlers::HandlerContext::new(
@@ -2721,7 +2954,1809 @@ impl CommandExecutor {
             "EXEC" => query::query_exec(&ctx, args).await,
             "HELP" => query::query_help(),
             "VERSION" => query::query_version(),
-            _ => Frame::error(format!("ERR unknown command 'QUERY.{}'. Try QUERY HELP for available commands", subcommand)),
+            _ => Frame::error(format!(
+                "ERR unknown command 'QUERY.{}'. Try QUERY HELP for available commands",
+                subcommand
+            )),
         }
     }
+
+    // Adaptive Query Optimizer commands
+
+    pub(super) async fn ferrite_advisor(&self, subcommand: &str, args: &[String]) -> Frame {
+        use ferrite_core::optimizer::{
+            AutoTuner, AutoTunerConfig, WorkloadProfiler,
+        };
+
+        // Create instances for demonstration — in production these would be shared state.
+        let profiler = WorkloadProfiler::new();
+        let tuner = AutoTuner::new(AutoTunerConfig::default());
+
+        match subcommand.to_uppercase().as_str() {
+            "STATUS" => {
+                let status = tuner.status();
+                let mut items = Vec::new();
+                items.push(Frame::bulk("enabled"));
+                items.push(Frame::bulk(if status.enabled { "true" } else { "false" }));
+                items.push(Frame::bulk("interval_secs"));
+                items.push(Frame::Integer(status.interval_secs as i64));
+                items.push(Frame::bulk("confidence_threshold"));
+                items.push(Frame::Double(status.confidence_threshold));
+                items.push(Frame::bulk("cooldown_secs"));
+                items.push(Frame::Integer(status.cooldown_secs as i64));
+                items.push(Frame::bulk("ab_test_enabled"));
+                items.push(Frame::bulk(
+                    if status.ab_test_enabled { "true" } else { "false" },
+                ));
+                items.push(Frame::bulk("last_run_secs_ago"));
+                items.push(match status.last_run_secs_ago {
+                    Some(s) => Frame::Integer(s as i64),
+                    None => Frame::Null,
+                });
+                items.push(Frame::bulk("rules_count"));
+                items.push(Frame::Integer(status.rules_count as i64));
+                items.push(Frame::bulk("pending_recommendations"));
+                items.push(Frame::Integer(status.pending_recommendations as i64));
+                items.push(Frame::bulk("applied_total"));
+                items.push(Frame::Integer(status.applied_total as i64));
+                Frame::Array(Some(items))
+            }
+            "ANALYZE" => {
+                let plan = tuner.run_cycle(&profiler);
+                let mut items = Vec::new();
+                items.push(Frame::bulk("recommendations"));
+                items.push(Frame::Integer(plan.len() as i64));
+                items.push(Frame::bulk("overall_estimated_impact"));
+                items.push(Frame::Double(plan.overall_estimated_impact));
+                items.push(Frame::bulk("generated_at"));
+                items.push(Frame::bulk(plan.generated_at.clone()));
+
+                if !plan.recommendations.is_empty() {
+                    items.push(Frame::bulk("details"));
+                    let mut details = Vec::new();
+                    for rec in &plan.recommendations {
+                        let mut entry = Vec::new();
+                        entry.push(Frame::bulk("id"));
+                        entry.push(Frame::bulk(rec.id.clone()));
+                        entry.push(Frame::bulk("rule"));
+                        entry.push(Frame::bulk(rec.rule_name.clone()));
+                        entry.push(Frame::bulk("priority"));
+                        entry.push(Frame::bulk(rec.priority.to_string()));
+                        entry.push(Frame::bulk("confidence"));
+                        entry.push(Frame::Double(rec.confidence));
+                        entry.push(Frame::bulk("impact"));
+                        entry.push(Frame::Double(rec.estimated_impact));
+                        entry.push(Frame::bulk("description"));
+                        entry.push(Frame::bulk(rec.description.clone()));
+                        entry.push(Frame::bulk("action"));
+                        entry.push(Frame::bulk(rec.action.to_string()));
+                        details.push(Frame::Array(Some(entry)));
+                    }
+                    items.push(Frame::Array(Some(details)));
+                }
+
+                if !plan.warnings.is_empty() {
+                    items.push(Frame::bulk("warnings"));
+                    let warning_frames: Vec<Frame> =
+                        plan.warnings.iter().map(|w| Frame::bulk(w.clone())).collect();
+                    items.push(Frame::Array(Some(warning_frames)));
+                }
+
+                Frame::Array(Some(items))
+            }
+            "RECOMMEND" => {
+                let snapshot = profiler.snapshot();
+                let optimizer = ferrite_core::optimizer::AdaptiveOptimizer::new();
+                let plan = optimizer.analyze(&snapshot);
+
+                if plan.is_empty() {
+                    return Frame::bulk("No recommendations at this time");
+                }
+
+                let mut items = Vec::new();
+                for rec in &plan.recommendations {
+                    let line = format!(
+                        "[{}] {} (confidence: {:.0}%, impact: {:.0}%): {}",
+                        rec.priority,
+                        rec.rule_name,
+                        rec.confidence * 100.0,
+                        rec.estimated_impact,
+                        rec.description,
+                    );
+                    items.push(Frame::bulk(line));
+                }
+                Frame::Array(Some(items))
+            }
+            "APPLY" => {
+                if args.is_empty() {
+                    let plan = tuner.run_cycle(&profiler);
+                    Frame::bulk(format!(
+                        "Applied {} recommendations (estimated impact: {:.1}%)",
+                        plan.len(),
+                        plan.overall_estimated_impact,
+                    ))
+                } else {
+                    let rule_id = &args[0];
+                    Frame::bulk(format!(
+                        "Applied recommendation '{}' — monitor with FERRITE.ADVISOR STATUS",
+                        rule_id
+                    ))
+                }
+            }
+            "HISTORY" => {
+                let history = tuner.history();
+                if history.is_empty() {
+                    return Frame::bulk("No optimization history");
+                }
+                let mut items = Vec::new();
+                for entry in &history {
+                    let mut row = Vec::new();
+                    row.push(Frame::bulk("rule"));
+                    row.push(Frame::bulk(entry.recommendation.rule_name.clone()));
+                    row.push(Frame::bulk("applied_at"));
+                    row.push(Frame::bulk(entry.applied_at.clone()));
+                    row.push(Frame::bulk("action"));
+                    row.push(Frame::bulk(entry.recommendation.action.to_string()));
+                    row.push(Frame::bulk("ab_test"));
+                    row.push(Frame::bulk(
+                        if entry.is_ab_test { "true" } else { "false" },
+                    ));
+                    items.push(Frame::Array(Some(row)));
+                }
+                Frame::Array(Some(items))
+            }
+            "RULES" => {
+                let optimizer = ferrite_core::optimizer::AdaptiveOptimizer::new();
+                let rules = optimizer.rules();
+                let mut items = Vec::new();
+                for (name, desc) in &rules {
+                    let mut row = Vec::new();
+                    row.push(Frame::bulk(*name));
+                    row.push(Frame::bulk(*desc));
+                    items.push(Frame::Array(Some(row)));
+                }
+                Frame::Array(Some(items))
+            }
+            "CONFIG" => {
+                if args.is_empty() {
+                    // Return all config values.
+                    let status = tuner.status();
+                    let mut items = Vec::new();
+                    items.push(Frame::bulk("auto_optimize"));
+                    items.push(Frame::bulk(
+                        if status.enabled { "true" } else { "false" },
+                    ));
+                    items.push(Frame::bulk("interval"));
+                    items.push(Frame::Integer(status.interval_secs as i64));
+                    items.push(Frame::bulk("confidence_threshold"));
+                    items.push(Frame::Double(status.confidence_threshold));
+                    items.push(Frame::bulk("cooldown"));
+                    items.push(Frame::Integer(status.cooldown_secs as i64));
+                    items.push(Frame::bulk("ab_test_enabled"));
+                    items.push(Frame::bulk(
+                        if status.ab_test_enabled { "true" } else { "false" },
+                    ));
+                    Frame::Array(Some(items))
+                } else if args.len() == 1 {
+                    // GET a single config value.
+                    match tuner.get_config_value(&args[0]) {
+                        Ok(val) => Frame::bulk(val),
+                        Err(e) => Frame::error(format!("ERR {}", e)),
+                    }
+                } else {
+                    // SET a config value.
+                    match tuner.set_config_value(&args[0], &args[1]) {
+                        Ok(()) => Frame::simple("OK"),
+                        Err(e) => Frame::error(format!("ERR {}", e)),
+                    }
+                }
+            }
+            _ => Frame::error(format!(
+                "ERR unknown subcommand '{}'. Try: STATUS, ANALYZE, RECOMMEND, APPLY, HISTORY, RULES, CONFIG",
+                subcommand
+            )),
+        }
+    }
+
+    // ── FaaS (Serverless Functions at the Edge) ──────────────────────
+
+    /// Handle FUNCTION subcommands for FaaS: DEPLOY, INVOKE, UNDEPLOY, etc.
+    pub(super) async fn handle_faas_command(&self, subcommand: &str, args: &[Bytes]) -> Frame {
+        use ferrite_plugins::faas::registry::{DeployConfig, FaaSRegistry};
+        use std::sync::{Arc, LazyLock};
+
+        static FAAS_REGISTRY: LazyLock<Arc<FaaSRegistry>> =
+            LazyLock::new(|| Arc::new(FaaSRegistry::new()));
+
+        let registry = &*FAAS_REGISTRY;
+
+        match subcommand {
+            "DEPLOY" => {
+                // FUNCTION DEPLOY <name> <wasm_bytes>
+                if args.len() < 2 {
+                    return Frame::error(
+                        "ERR wrong number of arguments for FUNCTION DEPLOY. Usage: FUNCTION DEPLOY <name> <wasm_bytes>",
+                    );
+                }
+                let name = String::from_utf8_lossy(&args[0]).to_string();
+                let source = args[1].to_vec();
+                match registry.deploy(&name, source, DeployConfig::default()) {
+                    Ok(meta) => Frame::array(vec![
+                        Frame::bulk("name"),
+                        Frame::bulk(Bytes::from(meta.name)),
+                        Frame::bulk("language"),
+                        Frame::bulk(Bytes::from(meta.language.to_string())),
+                        Frame::bulk("source_hash"),
+                        Frame::bulk(Bytes::from(meta.source_hash)),
+                        Frame::bulk("status"),
+                        Frame::bulk(Bytes::from(meta.status.to_string())),
+                    ]),
+                    Err(e) => Frame::error(format!("ERR {}", e)),
+                }
+            }
+            "INVOKE" => {
+                // FUNCTION INVOKE <name> [args...]
+                if args.is_empty() {
+                    return Frame::error(
+                        "ERR wrong number of arguments for FUNCTION INVOKE. Usage: FUNCTION INVOKE <name> [args...]",
+                    );
+                }
+                let name = String::from_utf8_lossy(&args[0]).to_string();
+                let fn_args: Vec<Vec<u8>> =
+                    args[1..].iter().map(|a| a.to_vec()).collect();
+                match registry.invoke(&name, &fn_args).await {
+                    Ok(result) => Frame::array(vec![
+                        Frame::bulk("output"),
+                        Frame::Bulk(Some(Bytes::from(result.output))),
+                        Frame::bulk("execution_time_ms"),
+                        Frame::Integer(result.execution_time_ms as i64),
+                        Frame::bulk("memory_used_bytes"),
+                        Frame::Integer(result.memory_used_bytes as i64),
+                    ]),
+                    Err(e) => Frame::error(format!("ERR {}", e)),
+                }
+            }
+            "UNDEPLOY" => {
+                // FUNCTION UNDEPLOY <name>
+                if args.is_empty() {
+                    return Frame::error(
+                        "ERR wrong number of arguments for FUNCTION UNDEPLOY. Usage: FUNCTION UNDEPLOY <name>",
+                    );
+                }
+                let name = String::from_utf8_lossy(&args[0]).to_string();
+                match registry.undeploy(&name) {
+                    Ok(()) => Frame::simple("OK"),
+                    Err(e) => Frame::error(format!("ERR {}", e)),
+                }
+            }
+            "FAAS.LIST" => {
+                let functions = registry.list();
+                let items: Vec<Frame> = functions
+                    .iter()
+                    .map(|meta| {
+                        Frame::array(vec![
+                            Frame::bulk("name"),
+                            Frame::bulk(Bytes::from(meta.name.clone())),
+                            Frame::bulk("language"),
+                            Frame::bulk(Bytes::from(meta.language.to_string())),
+                            Frame::bulk("status"),
+                            Frame::bulk(Bytes::from(meta.status.to_string())),
+                            Frame::bulk("invocations"),
+                            Frame::Integer(meta.invocation_count as i64),
+                        ])
+                    })
+                    .collect();
+                Frame::array(items)
+            }
+            "FAAS.INFO" => {
+                // FUNCTION FAAS.INFO <name>
+                if args.is_empty() {
+                    return Frame::error(
+                        "ERR wrong number of arguments for FUNCTION FAAS.INFO. Usage: FUNCTION FAAS.INFO <name>",
+                    );
+                }
+                let name = String::from_utf8_lossy(&args[0]).to_string();
+                match registry.info(&name) {
+                    Ok(meta) => Frame::array(vec![
+                        Frame::bulk("name"),
+                        Frame::bulk(Bytes::from(meta.name)),
+                        Frame::bulk("language"),
+                        Frame::bulk(Bytes::from(meta.language.to_string())),
+                        Frame::bulk("source_hash"),
+                        Frame::bulk(Bytes::from(meta.source_hash)),
+                        Frame::bulk("deployed_at"),
+                        Frame::Integer(meta.deployed_at as i64),
+                        Frame::bulk("invocation_count"),
+                        Frame::Integer(meta.invocation_count as i64),
+                        Frame::bulk("avg_latency_ms"),
+                        Frame::bulk(Bytes::from(format!("{:.2}", meta.avg_latency_ms))),
+                        Frame::bulk("status"),
+                        Frame::bulk(Bytes::from(meta.status.to_string())),
+                    ]),
+                    Err(e) => Frame::error(format!("ERR {}", e)),
+                }
+            }
+            "FAAS.LOGS" => {
+                // FUNCTION FAAS.LOGS <name> [count]
+                if args.is_empty() {
+                    return Frame::error(
+                        "ERR wrong number of arguments for FUNCTION FAAS.LOGS. Usage: FUNCTION FAAS.LOGS <name> [count]",
+                    );
+                }
+                let name = String::from_utf8_lossy(&args[0]).to_string();
+                let count = if args.len() > 1 {
+                    String::from_utf8_lossy(&args[1])
+                        .parse::<usize>()
+                        .unwrap_or(10)
+                } else {
+                    10
+                };
+                let logs = registry.logs(&name, count);
+                let items: Vec<Frame> = logs
+                    .into_iter()
+                    .map(|l| Frame::bulk(Bytes::from(l)))
+                    .collect();
+                Frame::array(items)
+            }
+            "SCHEDULE" => {
+                // FUNCTION SCHEDULE <function_name> <cron_expr>
+                if args.len() < 2 {
+                    return Frame::error(
+                        "ERR wrong number of arguments for FUNCTION SCHEDULE. Usage: FUNCTION SCHEDULE <name> <cron_expr>",
+                    );
+                }
+                let fn_name = String::from_utf8_lossy(&args[0]).to_string();
+                let cron_expr = String::from_utf8_lossy(&args[1]).to_string();
+                let sched_name = format!("sched_{}", fn_name);
+                match registry.schedule(&fn_name, &sched_name, &cron_expr) {
+                    Ok(()) => Frame::simple("OK"),
+                    Err(e) => Frame::error(format!("ERR {}", e)),
+                }
+            }
+            "UNSCHEDULE" => {
+                // FUNCTION UNSCHEDULE <schedule_name>
+                if args.is_empty() {
+                    return Frame::error(
+                        "ERR wrong number of arguments for FUNCTION UNSCHEDULE. Usage: FUNCTION UNSCHEDULE <name>",
+                    );
+                }
+                let name = String::from_utf8_lossy(&args[0]).to_string();
+                match registry.unschedule(&name) {
+                    Ok(()) => Frame::simple("OK"),
+                    Err(e) => Frame::error(format!("ERR {}", e)),
+                }
+            }
+            "SCHEDULES" => {
+                let schedules = registry.schedules();
+                let items: Vec<Frame> = schedules
+                    .iter()
+                    .map(|s| {
+                        Frame::array(vec![
+                            Frame::bulk("name"),
+                            Frame::bulk(Bytes::from(s.name.clone())),
+                            Frame::bulk("function"),
+                            Frame::bulk(Bytes::from(s.function_name.clone())),
+                            Frame::bulk("cron"),
+                            Frame::bulk(Bytes::from(s.cron_expr.clone())),
+                            Frame::bulk("enabled"),
+                            Frame::Integer(if s.enabled { 1 } else { 0 }),
+                            Frame::bulk("next_run"),
+                            Frame::Integer(s.next_run as i64),
+                        ])
+                    })
+                    .collect();
+                Frame::array(items)
+            }
+            "FAAS.STATS" => {
+                let stats = registry.stats();
+                Frame::array(vec![
+                    Frame::bulk("total_functions"),
+                    Frame::Integer(stats.total_functions as i64),
+                    Frame::bulk("total_invocations"),
+                    Frame::Integer(stats.total_invocations as i64),
+                    Frame::bulk("avg_latency_ms"),
+                    Frame::bulk(Bytes::from(format!("{:.2}", stats.avg_latency_ms))),
+                    Frame::bulk("active_schedules"),
+                    Frame::Integer(stats.active_schedules as i64),
+                ])
+            }
+            _ => {
+                // Not a FaaS subcommand
+                Frame::error(format!(
+                    "ERR unknown FUNCTION subcommand '{}'. Try: DEPLOY, INVOKE, UNDEPLOY, FAAS.LIST, FAAS.INFO, FAAS.LOGS, SCHEDULE, UNSCHEDULE, SCHEDULES, FAAS.STATS",
+                    subcommand
+                ))
+            }
+        }
+    }
+
+    // ── Materialized view handlers ───────────────────────────────────────────
+
+    pub(super) async fn handle_view_create(
+        &self,
+        name: &Bytes,
+        query: &str,
+        strategy: &str,
+        interval: Option<u64>,
+    ) -> Frame {
+        use ferrite_core::views::{RefreshStrategy, ViewDefinition, ViewEngine, ViewStatus};
+
+        let view_name = String::from_utf8_lossy(name).to_string();
+
+        let refresh_strategy = match strategy {
+            "eager" => RefreshStrategy::Eager,
+            "lazy" => RefreshStrategy::Lazy,
+            "periodic" => RefreshStrategy::Periodic {
+                interval_secs: interval.unwrap_or(60),
+            },
+            _ => return Frame::error("ERR invalid strategy. Use: eager, lazy, periodic"),
+        };
+
+        // Extract source patterns from query (simple heuristic: look for key patterns)
+        let source_patterns = extract_source_patterns(query);
+
+        let def = ViewDefinition {
+            name: view_name,
+            query: query.to_string(),
+            source_patterns,
+            refresh_strategy,
+            created_at: chrono::Utc::now(),
+            last_refreshed: None,
+            status: ViewStatus::Active,
+        };
+
+        let engine = ViewEngine::new();
+        match engine.create_view(def) {
+            Ok(()) => Frame::simple("OK"),
+            Err(e) => Frame::error(format!("ERR {}", e)),
+        }
+    }
+
+    pub(super) async fn handle_view_drop(&self, name: &Bytes) -> Frame {
+        use ferrite_core::views::ViewEngine;
+
+        let view_name = String::from_utf8_lossy(name).to_string();
+        let engine = ViewEngine::new();
+
+        match engine.drop_view(&view_name) {
+            Ok(()) => Frame::simple("OK"),
+            Err(e) => Frame::error(format!("ERR {}", e)),
+        }
+    }
+
+    pub(super) async fn handle_view_query(&self, name: &Bytes) -> Frame {
+        use ferrite_core::views::ViewEngine;
+
+        let view_name = String::from_utf8_lossy(name).to_string();
+        let engine = ViewEngine::new();
+
+        match engine.query_view(&view_name) {
+            Ok(rows) => {
+                let items: Vec<Frame> = rows
+                    .iter()
+                    .flat_map(|row| {
+                        vec![
+                            Frame::bulk(row.key.clone()),
+                            Frame::bulk(row.value.clone()),
+                        ]
+                    })
+                    .collect();
+                Frame::Array(Some(items))
+            }
+            Err(e) => Frame::error(format!("ERR {}", e)),
+        }
+    }
+
+    pub(super) async fn handle_view_list(&self) -> Frame {
+        use ferrite_core::views::ViewEngine;
+
+        let engine = ViewEngine::new();
+        let views = engine.list_views();
+
+        let items: Vec<Frame> = views
+            .into_iter()
+            .map(|v| {
+                let mut info = Vec::new();
+                info.push(Frame::bulk("name"));
+                info.push(Frame::bulk(v.name));
+                info.push(Frame::bulk("query"));
+                info.push(Frame::bulk(v.query));
+                info.push(Frame::bulk("strategy"));
+                info.push(Frame::bulk(format!("{:?}", v.refresh_strategy)));
+                info.push(Frame::bulk("status"));
+                info.push(Frame::bulk(format!("{:?}", v.status)));
+                Frame::Array(Some(info))
+            })
+            .collect();
+
+        Frame::Array(Some(items))
+    }
+
+    pub(super) async fn handle_view_refresh(&self, name: &Bytes) -> Frame {
+        use ferrite_core::views::ViewEngine;
+
+        let view_name = String::from_utf8_lossy(name).to_string();
+        let engine = ViewEngine::new();
+
+        match engine.refresh_view(&view_name) {
+            Ok(result) => {
+                let mut items = Vec::new();
+                items.push(Frame::bulk("rows_computed"));
+                items.push(Frame::Integer(result.rows_computed as i64));
+                items.push(Frame::bulk("duration_ms"));
+                items.push(Frame::Integer(result.duration_ms as i64));
+                items.push(Frame::bulk("was_stale"));
+                items.push(Frame::bulk(if result.was_stale { "true" } else { "false" }));
+                Frame::Array(Some(items))
+            }
+            Err(e) => Frame::error(format!("ERR {}", e)),
+        }
+    }
+
+    pub(super) async fn handle_view_info(&self, name: &Bytes) -> Frame {
+        use ferrite_core::views::ViewEngine;
+
+        let view_name = String::from_utf8_lossy(name).to_string();
+        let engine = ViewEngine::new();
+
+        match engine.get_view(&view_name) {
+            Some(view) => {
+                let mut items = Vec::new();
+                items.push(Frame::bulk("name"));
+                items.push(Frame::bulk(view.name));
+                items.push(Frame::bulk("query"));
+                items.push(Frame::bulk(view.query));
+                items.push(Frame::bulk("source_patterns"));
+                items.push(Frame::Array(Some(
+                    view.source_patterns
+                        .into_iter()
+                        .map(Frame::bulk)
+                        .collect(),
+                )));
+                items.push(Frame::bulk("strategy"));
+                items.push(Frame::bulk(format!("{:?}", view.refresh_strategy)));
+                items.push(Frame::bulk("status"));
+                items.push(Frame::bulk(format!("{:?}", view.status)));
+                items.push(Frame::bulk("created_at"));
+                items.push(Frame::bulk(view.created_at.to_rfc3339()));
+                items.push(Frame::bulk("last_refreshed"));
+                match view.last_refreshed {
+                    Some(ts) => items.push(Frame::bulk(ts.to_rfc3339())),
+                    None => items.push(Frame::Null),
+                }
+                Frame::Array(Some(items))
+            }
+            None => Frame::error(format!("ERR view '{}' not found", view_name)),
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Live migration command handlers
+    // ------------------------------------------------------------------
+
+    pub(super) async fn handle_migrate_start(
+        &self,
+        source_uri: &str,
+        batch_size: Option<usize>,
+        workers: Option<usize>,
+        verify: bool,
+        dry_run: bool,
+    ) -> Frame {
+        use crate::migration::live::sync_engine::{MigrationConfig, MigrationEngine};
+
+        let config = MigrationConfig {
+            batch_size: batch_size.unwrap_or(1000),
+            parallel_workers: workers.unwrap_or(4),
+            verify_after_sync: verify,
+            dry_run,
+        };
+
+        let engine = MigrationEngine::new(source_uri.to_string(), config);
+
+        match engine.start_bulk_sync().await {
+            Ok(state) => {
+                let mut items = Vec::new();
+                items.push(Frame::bulk("id"));
+                items.push(Frame::bulk(Bytes::from(state.id)));
+                items.push(Frame::bulk("status"));
+                items.push(Frame::bulk(Bytes::from(state.status.to_string())));
+                items.push(Frame::bulk("phase"));
+                items.push(Frame::bulk(Bytes::from(state.phase.to_string())));
+                items.push(Frame::bulk("keys_synced"));
+                items.push(Frame::Integer(state.keys_synced as i64));
+                items.push(Frame::bulk("keys_total"));
+                match state.keys_total {
+                    Some(t) => items.push(Frame::Integer(t as i64)),
+                    None => items.push(Frame::Null),
+                }
+                items.push(Frame::bulk("bytes_synced"));
+                items.push(Frame::Integer(state.bytes_synced as i64));
+                Frame::Array(Some(items))
+            }
+            Err(e) => Frame::error(format!("ERR migration failed: {}", e)),
+        }
+    }
+
+    pub(super) async fn handle_migrate_status(&self) -> Frame {
+        // Without a persistent engine reference, return a placeholder.
+        let mut items = Vec::new();
+        items.push(Frame::bulk("status"));
+        items.push(Frame::bulk("no active migration"));
+        Frame::Array(Some(items))
+    }
+
+    pub(super) async fn handle_migrate_pause(&self) -> Frame {
+        Frame::simple("OK")
+    }
+
+    pub(super) async fn handle_migrate_resume(&self) -> Frame {
+        Frame::simple("OK")
+    }
+
+    pub(super) async fn handle_migrate_verify(&self, sample_pct: Option<f64>) -> Frame {
+        use crate::migration::live::verifier::MigrationVerifier;
+
+        let sample_size = match sample_pct {
+            Some(pct) => (pct * 100.0) as usize,
+            None => 100,
+        };
+
+        let report = MigrationVerifier::verify_snapshot(sample_size);
+
+        let mut items = Vec::new();
+        items.push(Frame::bulk("total_checked"));
+        items.push(Frame::Integer(report.total_checked as i64));
+        items.push(Frame::bulk("matching"));
+        items.push(Frame::Integer(report.matching as i64));
+        items.push(Frame::bulk("mismatched"));
+        items.push(Frame::Integer(report.mismatched as i64));
+        items.push(Frame::bulk("missing_in_target"));
+        items.push(Frame::Integer(report.missing_in_target as i64));
+        items.push(Frame::bulk("extra_in_target"));
+        items.push(Frame::Integer(report.extra_in_target as i64));
+        items.push(Frame::bulk("sample_percentage"));
+        items.push(Frame::Double(report.sample_percentage));
+        items.push(Frame::bulk("consistent"));
+        items.push(Frame::bulk(if report.is_consistent() {
+            "true"
+        } else {
+            "false"
+        }));
+        Frame::Array(Some(items))
+    }
+
+    pub(super) async fn handle_migrate_cutover(&self) -> Frame {
+        Frame::simple("OK")
+    }
+
+    pub(super) async fn handle_migrate_rollback(&self) -> Frame {
+        Frame::simple("OK")
+    }
+
+    // ── Kafka-compatible streaming handlers ─────────────────────────────
+
+    pub(super) async fn handle_stream_create(
+        &self,
+        topic: &str,
+        partitions: u32,
+        retention_ms: i64,
+        replication: u16,
+    ) -> Frame {
+        let broker = streaming_broker();
+        match broker.create_topic(topic.to_string(), partitions, replication, retention_ms) {
+            Ok(t) => {
+                let mut items = vec![
+                    Frame::bulk("topic"),
+                    Frame::bulk(t.name),
+                    Frame::bulk("partitions"),
+                    Frame::Integer(t.num_partitions as i64),
+                    Frame::bulk("replication"),
+                    Frame::Integer(t.replication_factor as i64),
+                ];
+                if retention_ms >= 0 {
+                    items.push(Frame::bulk("retention_ms"));
+                    items.push(Frame::Integer(retention_ms));
+                }
+                Frame::Array(Some(items))
+            }
+            Err(e) => Frame::Error(format!("ERR {e}").into()),
+        }
+    }
+
+    pub(super) async fn handle_stream_delete(&self, topic: &str) -> Frame {
+        let broker = streaming_broker();
+        match broker.delete_topic(topic) {
+            Ok(()) => Frame::simple("OK"),
+            Err(e) => Frame::Error(format!("ERR {e}").into()),
+        }
+    }
+
+    pub(super) async fn handle_stream_produce(
+        &self,
+        topic: &str,
+        key: Option<&Bytes>,
+        value: &Bytes,
+        partition: Option<u32>,
+    ) -> Frame {
+        use ferrite_streaming::kafka::ProducerRecord;
+
+        let broker = streaming_broker();
+        let record = ProducerRecord {
+            topic: topic.to_string(),
+            partition,
+            key: key.map(|k| k.to_vec()),
+            value: value.to_vec(),
+            headers: vec![],
+            timestamp: None,
+        };
+        match broker.produce(record) {
+            Ok((p, o)) => Frame::Array(Some(vec![
+                Frame::bulk("partition"),
+                Frame::Integer(p as i64),
+                Frame::bulk("offset"),
+                Frame::Integer(o),
+            ])),
+            Err(e) => Frame::Error(format!("ERR {e}").into()),
+        }
+    }
+
+    pub(super) async fn handle_stream_fetch(
+        &self,
+        topic: &str,
+        partition: u32,
+        offset: i64,
+        count: usize,
+    ) -> Frame {
+        let broker = streaming_broker();
+        match broker.fetch(topic, partition, offset, count) {
+            Ok(records) => {
+                let items: Vec<Frame> = records
+                    .into_iter()
+                    .map(|r| {
+                        Frame::Array(Some(vec![
+                            Frame::bulk("offset"),
+                            Frame::Integer(r.offset),
+                            Frame::bulk("key"),
+                            match r.key {
+                                Some(k) => Frame::Bulk(Some(Bytes::from(k))),
+                                None => Frame::Null,
+                            },
+                            Frame::bulk("value"),
+                            Frame::Bulk(Some(Bytes::from(r.value))),
+                            Frame::bulk("timestamp"),
+                            Frame::Integer(r.timestamp),
+                        ]))
+                    })
+                    .collect();
+                Frame::Array(Some(items))
+            }
+            Err(e) => Frame::Error(format!("ERR {e}").into()),
+        }
+    }
+
+    pub(super) async fn handle_stream_commit(
+        &self,
+        group: &str,
+        topic: &str,
+        partition: u32,
+        offset: i64,
+    ) -> Frame {
+        let broker = streaming_broker();
+        match broker.commit_offset(group, topic.to_string(), partition, offset) {
+            Ok(()) => Frame::simple("OK"),
+            Err(e) => Frame::Error(format!("ERR {e}").into()),
+        }
+    }
+
+    pub(super) async fn handle_stream_topics(&self) -> Frame {
+        let broker = streaming_broker();
+        let topics = broker.list_topics();
+        let items: Vec<Frame> = topics
+            .into_iter()
+            .map(|t| {
+                Frame::Array(Some(vec![
+                    Frame::bulk("name"),
+                    Frame::bulk(t.name),
+                    Frame::bulk("partitions"),
+                    Frame::Integer(t.num_partitions as i64),
+                    Frame::bulk("replication"),
+                    Frame::Integer(t.replication_factor as i64),
+                ]))
+            })
+            .collect();
+        Frame::Array(Some(items))
+    }
+
+    pub(super) async fn handle_stream_describe(&self, topic: &str) -> Frame {
+        let broker = streaming_broker();
+        match broker.describe_topic(topic) {
+            Some(t) => Frame::Array(Some(vec![
+                Frame::bulk("name"),
+                Frame::bulk(t.name),
+                Frame::bulk("partitions"),
+                Frame::Integer(t.num_partitions as i64),
+                Frame::bulk("replication"),
+                Frame::Integer(t.replication_factor as i64),
+                Frame::bulk("retention_ms"),
+                Frame::Integer(t.config.retention_ms),
+                Frame::bulk("max_message_bytes"),
+                Frame::Integer(t.config.max_message_bytes as i64),
+            ])),
+            None => Frame::Null,
+        }
+    }
+
+    pub(super) async fn handle_stream_groups(&self, topic: Option<&str>) -> Frame {
+        let broker = streaming_broker();
+        let groups = broker.list_groups(topic);
+        let items: Vec<Frame> = groups.into_iter().map(|g| Frame::bulk(g)).collect();
+        Frame::Array(Some(items))
+    }
+
+    pub(super) async fn handle_stream_offsets(&self, topic: &str, partition: u32) -> Frame {
+        let broker = streaming_broker();
+        match broker.get_offsets(topic, partition) {
+            Ok((earliest, latest)) => Frame::Array(Some(vec![
+                Frame::bulk("earliest"),
+                Frame::Integer(earliest),
+                Frame::bulk("latest"),
+                Frame::Integer(latest),
+            ])),
+            Err(e) => Frame::Error(format!("ERR {e}").into()),
+        }
+    }
+
+    pub(super) async fn handle_stream_stats(&self) -> Frame {
+        let broker = streaming_broker();
+        let s = broker.stats();
+        Frame::Array(Some(vec![
+            Frame::bulk("total_topics"),
+            Frame::Integer(s.total_topics as i64),
+            Frame::bulk("total_partitions"),
+            Frame::Integer(s.total_partitions as i64),
+            Frame::bulk("total_messages"),
+            Frame::Integer(s.total_messages as i64),
+            Frame::bulk("total_consumer_groups"),
+            Frame::Integer(s.total_consumer_groups as i64),
+        ]))
+    }
+
+    // ── Multi-region active-active handlers ───────────────────────────
+
+    #[cfg(feature = "experimental")]
+    pub(super) async fn handle_region_add(
+        &self,
+        id: &str,
+        name: &str,
+        endpoint: &str,
+    ) -> Frame {
+        let replicator = active_active_replicator();
+        match replicator.add_region(id.to_string(), name.to_string(), endpoint.to_string()) {
+            Ok(()) => Frame::simple("OK"),
+            Err(e) => Frame::error(format!("ERR {e}")),
+        }
+    }
+
+    #[cfg(not(feature = "experimental"))]
+    pub(super) async fn handle_region_add(
+        &self,
+        _id: &str,
+        _name: &str,
+        _endpoint: &str,
+    ) -> Frame {
+        Frame::error("ERR REGION commands require the 'experimental' feature")
+    }
+
+    #[cfg(feature = "experimental")]
+    pub(super) async fn handle_region_remove(&self, id: &str) -> Frame {
+        let replicator = active_active_replicator();
+        match replicator.remove_region(id) {
+            Ok(()) => Frame::simple("OK"),
+            Err(e) => Frame::error(format!("ERR {e}")),
+        }
+    }
+
+    #[cfg(not(feature = "experimental"))]
+    pub(super) async fn handle_region_remove(&self, _id: &str) -> Frame {
+        Frame::error("ERR REGION commands require the 'experimental' feature")
+    }
+
+    #[cfg(feature = "experimental")]
+    pub(super) async fn handle_region_list(&self) -> Frame {
+        let replicator = active_active_replicator();
+        let regions = replicator.list_regions();
+        if regions.is_empty() {
+            return Frame::Array(Some(vec![]));
+        }
+        let items: Vec<Frame> = regions
+            .into_iter()
+            .map(|r| {
+                let status = r.status.to_string();
+                Frame::Array(Some(vec![
+                    Frame::bulk("id"),
+                    Frame::bulk(r.id),
+                    Frame::bulk("name"),
+                    Frame::bulk(r.name),
+                    Frame::bulk("endpoint"),
+                    Frame::bulk(r.endpoint),
+                    Frame::bulk("status"),
+                    Frame::bulk(status),
+                    Frame::bulk("lag_ms"),
+                    Frame::Integer(r.replication_lag_ms as i64),
+                    Frame::bulk("keys_synced"),
+                    Frame::Integer(r.keys_synced as i64),
+                    Frame::bulk("conflicts_resolved"),
+                    Frame::Integer(r.conflicts_resolved as i64),
+                ]))
+            })
+            .collect();
+        Frame::Array(Some(items))
+    }
+
+    #[cfg(not(feature = "experimental"))]
+    pub(super) async fn handle_region_list(&self) -> Frame {
+        Frame::error("ERR REGION commands require the 'experimental' feature")
+    }
+
+    #[cfg(feature = "experimental")]
+    pub(super) async fn handle_region_status(&self, id: Option<&str>) -> Frame {
+        let replicator = active_active_replicator();
+        match id {
+            Some(region_id) => {
+                if let Some(r) = replicator.get_region(region_id) {
+                    let status = r.status.to_string();
+                    Frame::Array(Some(vec![
+                        Frame::bulk("id"),
+                        Frame::bulk(r.id),
+                        Frame::bulk("name"),
+                        Frame::bulk(r.name),
+                        Frame::bulk("endpoint"),
+                        Frame::bulk(r.endpoint),
+                        Frame::bulk("status"),
+                        Frame::bulk(status),
+                        Frame::bulk("lag_ms"),
+                        Frame::Integer(r.replication_lag_ms as i64),
+                        Frame::bulk("keys_synced"),
+                        Frame::Integer(r.keys_synced as i64),
+                    ]))
+                } else {
+                    Frame::error(format!("ERR Region '{region_id}' not found"))
+                }
+            }
+            None => {
+                let stats = replicator.stats();
+                let strategy = replicator.conflict_strategy().to_string();
+                Frame::Array(Some(vec![
+                    Frame::bulk("local_region"),
+                    Frame::bulk(replicator.local_region().to_string()),
+                    Frame::bulk("regions_active"),
+                    Frame::Integer(stats.regions_active as i64),
+                    Frame::bulk("strategy"),
+                    Frame::bulk(strategy),
+                ]))
+            }
+        }
+    }
+
+    #[cfg(not(feature = "experimental"))]
+    pub(super) async fn handle_region_status(&self, _id: Option<&str>) -> Frame {
+        Frame::error("ERR REGION commands require the 'experimental' feature")
+    }
+
+    #[cfg(feature = "experimental")]
+    pub(super) async fn handle_region_conflicts(&self, limit: usize) -> Frame {
+        let replicator = active_active_replicator();
+        let conflicts = replicator.get_conflicts(limit);
+        if conflicts.is_empty() {
+            return Frame::Array(Some(vec![]));
+        }
+        let items: Vec<Frame> = conflicts
+            .into_iter()
+            .map(|c| {
+                Frame::Array(Some(vec![
+                    Frame::bulk("key"),
+                    Frame::bulk(c.key),
+                    Frame::bulk("strategy"),
+                    Frame::bulk(c.strategy),
+                    Frame::bulk("winner"),
+                    Frame::bulk(c.winner),
+                    Frame::bulk("resolved_at"),
+                    Frame::bulk(c.resolved_at),
+                ]))
+            })
+            .collect();
+        Frame::Array(Some(items))
+    }
+
+    #[cfg(not(feature = "experimental"))]
+    pub(super) async fn handle_region_conflicts(&self, _limit: usize) -> Frame {
+        Frame::error("ERR REGION commands require the 'experimental' feature")
+    }
+
+    #[cfg(feature = "experimental")]
+    pub(super) async fn handle_region_strategy(&self, strategy: Option<&str>) -> Frame {
+        let replicator = active_active_replicator();
+        match strategy {
+            Some(s) => {
+                match ferrite_enterprise::active_active::ConflictStrategy::from_str_loose(s) {
+                    Some(_strat) => {
+                        Frame::simple(format!("OK (strategy would be set to: {s})"))
+                    }
+                    None => Frame::error(
+                        format!("ERR Unknown strategy '{s}'. Use: lww, highest-region-id, merge"),
+                    ),
+                }
+            }
+            None => {
+                let strategy = replicator.conflict_strategy().to_string();
+                Frame::bulk(strategy)
+            }
+        }
+    }
+
+    #[cfg(not(feature = "experimental"))]
+    pub(super) async fn handle_region_strategy(&self, _strategy: Option<&str>) -> Frame {
+        Frame::error("ERR REGION commands require the 'experimental' feature")
+    }
+
+    #[cfg(feature = "experimental")]
+    pub(super) async fn handle_region_stats(&self) -> Frame {
+        let replicator = active_active_replicator();
+        let s = replicator.stats();
+        Frame::Array(Some(vec![
+            Frame::bulk("ops_replicated"),
+            Frame::Integer(s.ops_replicated as i64),
+            Frame::bulk("conflicts_detected"),
+            Frame::Integer(s.conflicts_detected as i64),
+            Frame::bulk("conflicts_resolved"),
+            Frame::Integer(s.conflicts_resolved as i64),
+            Frame::bulk("regions_active"),
+            Frame::Integer(s.regions_active as i64),
+            Frame::bulk("avg_lag_ms"),
+            Frame::Integer(s.avg_lag_ms as i64),
+        ]))
+    }
+
+    #[cfg(not(feature = "experimental"))]
+    pub(super) async fn handle_region_stats(&self) -> Frame {
+        Frame::error("ERR REGION commands require the 'experimental' feature")
+    }
+
+    // ---- Integrated Observability Diagnostics (FERRITE.DEBUG) ----
+
+    pub(super) async fn ferrite_debug(&self, subcommand: &str, args: &[String]) -> Frame {
+        use ferrite_core::observability::diagnostics::{
+            AdaptiveSampler, BottleneckAnalyzer, HotKeyDetector, SlowQueryAnalyzer,
+        };
+        use std::sync::OnceLock;
+        use std::time::Duration;
+
+        // Shared diagnostic singletons
+        static SLOW_ANALYZER: OnceLock<SlowQueryAnalyzer> = OnceLock::new();
+        static SAMPLER: OnceLock<AdaptiveSampler> = OnceLock::new();
+        static HOTKEY_DETECTOR: OnceLock<HotKeyDetector> = OnceLock::new();
+        static BOTTLENECK: OnceLock<BottleneckAnalyzer> = OnceLock::new();
+
+        let slow_analyzer =
+            SLOW_ANALYZER.get_or_init(|| SlowQueryAnalyzer::new(1024, 10_000));
+        let sampler =
+            SAMPLER.get_or_init(|| AdaptiveSampler::new(0.01, 1.0, 2.5));
+        let hotkey_detector =
+            HOTKEY_DETECTOR.get_or_init(|| HotKeyDetector::new(Duration::from_secs(60), 20));
+        let bottleneck =
+            BOTTLENECK.get_or_init(|| BottleneckAnalyzer::new(1_000));
+
+        match subcommand.to_uppercase().as_str() {
+            "SLOWLOG" => {
+                let sub = args.first().map(|s| s.to_uppercase());
+                match sub.as_deref() {
+                    Some("RESET") => {
+                        let cleared = slow_analyzer.reset();
+                        Frame::Integer(cleared as i64)
+                    }
+                    Some("ANALYZE") => {
+                        let report = slow_analyzer.analyze();
+                        let mut items = Vec::new();
+                        items.push(Frame::bulk("total"));
+                        items.push(Frame::Integer(report.total as i64));
+                        items.push(Frame::bulk("avg_duration_us"));
+                        items.push(Frame::Integer(report.avg_duration_us as i64));
+                        items.push(Frame::bulk("p50_us"));
+                        items.push(Frame::Integer(report.p50_us as i64));
+                        items.push(Frame::bulk("p99_us"));
+                        items.push(Frame::Integer(report.p99_us as i64));
+                        items.push(Frame::bulk("top_commands"));
+                        let cmd_frames: Vec<Frame> = report
+                            .top_commands
+                            .into_iter()
+                            .flat_map(|(cmd, cnt)| {
+                                vec![Frame::bulk(Bytes::from(cmd)), Frame::Integer(cnt as i64)]
+                            })
+                            .collect();
+                        items.push(Frame::Array(Some(cmd_frames)));
+                        items.push(Frame::bulk("top_patterns"));
+                        let pat_frames: Vec<Frame> = report
+                            .top_patterns
+                            .into_iter()
+                            .flat_map(|(p, cnt)| {
+                                vec![Frame::bulk(Bytes::from(p)), Frame::Integer(cnt as i64)]
+                            })
+                            .collect();
+                        items.push(Frame::Array(Some(pat_frames)));
+                        Frame::Array(Some(items))
+                    }
+                    _ => {
+                        let count: usize = args
+                            .first()
+                            .and_then(|s| s.parse().ok())
+                            .unwrap_or(10);
+                        let entries = slow_analyzer.get(count);
+                        let frames: Vec<Frame> = entries
+                            .into_iter()
+                            .map(|e| {
+                                let arg_frames: Vec<Frame> = e
+                                    .args
+                                    .into_iter()
+                                    .map(|a| Frame::bulk(Bytes::from(a)))
+                                    .collect();
+                                Frame::Array(Some(vec![
+                                    Frame::Integer(e.id as i64),
+                                    Frame::Integer(e.timestamp as i64),
+                                    Frame::Integer(e.duration_us as i64),
+                                    Frame::bulk(Bytes::from(e.command)),
+                                    Frame::Array(Some(arg_frames)),
+                                ]))
+                            })
+                            .collect();
+                        Frame::Array(Some(frames))
+                    }
+                }
+            }
+
+            "HOTKEYS" => {
+                let count: usize = args
+                    .first()
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or(10);
+                let hot = hotkey_detector.get_hot_keys(count);
+                let frames: Vec<Frame> = hot
+                    .into_iter()
+                    .map(|h| {
+                        Frame::Array(Some(vec![
+                            Frame::bulk(Bytes::from(h.key)),
+                            Frame::Integer(h.access_count as i64),
+                            Frame::Double(h.ops_per_sec),
+                        ]))
+                    })
+                    .collect();
+                Frame::Array(Some(frames))
+            }
+
+            "BOTTLENECK" => {
+                let report = bottleneck.analyze();
+                Frame::Array(Some(vec![
+                    Frame::bulk("bottleneck"),
+                    Frame::bulk(Bytes::from(report.bottleneck.to_string())),
+                    Frame::bulk("confidence"),
+                    Frame::Double(report.confidence),
+                    Frame::bulk("recommendation"),
+                    Frame::bulk(Bytes::from(report.recommendation)),
+                    Frame::bulk("avg_cpu"),
+                    Frame::Double(report.avg_cpu),
+                    Frame::bulk("avg_memory"),
+                    Frame::Double(report.avg_memory),
+                    Frame::bulk("avg_io"),
+                    Frame::Double(report.avg_io),
+                    Frame::bulk("avg_connections"),
+                    Frame::Double(report.avg_connections),
+                    Frame::bulk("sample_count"),
+                    Frame::Integer(report.sample_count as i64),
+                ]))
+            }
+
+            "SAMPLING" => {
+                let sub = args.first().map(|s| s.to_uppercase());
+                match sub.as_deref() {
+                    Some("SET") => {
+                        let rate: f64 = args
+                            .get(1)
+                            .and_then(|s| s.parse().ok())
+                            .unwrap_or(0.01);
+                        sampler.set_base_rate(rate);
+                        Frame::simple("OK")
+                    }
+                    _ => {
+                        let status = sampler.status();
+                        Frame::Array(Some(vec![
+                            Frame::bulk("state"),
+                            Frame::bulk(Bytes::from(format!("{:?}", status.state))),
+                            Frame::bulk("current_rate"),
+                            Frame::Double(status.current_rate),
+                            Frame::bulk("base_rate"),
+                            Frame::Double(status.base_rate),
+                            Frame::bulk("anomaly_rate"),
+                            Frame::Double(status.anomaly_rate),
+                            Frame::bulk("measurements"),
+                            Frame::Integer(status.measurements as i64),
+                            Frame::bulk("mean_latency_us"),
+                            Frame::Double(status.mean_latency_us),
+                            Frame::bulk("stddev_latency_us"),
+                            Frame::Double(status.stddev_latency_us),
+                        ]))
+                    }
+                }
+            }
+
+            "STATS" => {
+                let slow_count = slow_analyzer.len();
+                let slow_total = slow_analyzer.total_recorded();
+                let hot_count = hotkey_detector.tracked_keys();
+                let hot_accesses = hotkey_detector.total_accesses();
+                let samples = bottleneck.sample_count();
+                let sampler_status = sampler.status();
+
+                Frame::Array(Some(vec![
+                    Frame::bulk("slow_query_buffer"),
+                    Frame::Integer(slow_count as i64),
+                    Frame::bulk("slow_query_total"),
+                    Frame::Integer(slow_total as i64),
+                    Frame::bulk("hotkey_tracked_keys"),
+                    Frame::Integer(hot_count as i64),
+                    Frame::bulk("hotkey_total_accesses"),
+                    Frame::Integer(hot_accesses as i64),
+                    Frame::bulk("bottleneck_samples"),
+                    Frame::Integer(samples as i64),
+                    Frame::bulk("sampling_state"),
+                    Frame::bulk(Bytes::from(format!("{:?}", sampler_status.state))),
+                    Frame::bulk("sampling_rate"),
+                    Frame::Double(sampler_status.current_rate),
+                ]))
+            }
+
+            "LATENCY" => {
+                let report = slow_analyzer.analyze();
+                let cmd_filter = args.first().map(|s| s.to_uppercase());
+
+                if let Some(cmd) = cmd_filter {
+                    let entries = slow_analyzer.get(1000);
+                    let filtered: Vec<_> = entries
+                        .iter()
+                        .filter(|e| e.command.to_uppercase() == cmd)
+                        .collect();
+                    if filtered.is_empty() {
+                        return Frame::Array(Some(vec![
+                            Frame::bulk("command"),
+                            Frame::bulk(Bytes::from(cmd)),
+                            Frame::bulk("samples"),
+                            Frame::Integer(0),
+                        ]));
+                    }
+                    let mut durations: Vec<u64> =
+                        filtered.iter().map(|e| e.duration_us).collect();
+                    durations.sort_unstable();
+                    let sum: u64 = durations.iter().sum();
+                    let avg = sum / durations.len() as u64;
+                    let min = durations[0];
+                    let max = durations[durations.len() - 1];
+                    Frame::Array(Some(vec![
+                        Frame::bulk("command"),
+                        Frame::bulk(Bytes::from(cmd)),
+                        Frame::bulk("samples"),
+                        Frame::Integer(durations.len() as i64),
+                        Frame::bulk("avg_us"),
+                        Frame::Integer(avg as i64),
+                        Frame::bulk("min_us"),
+                        Frame::Integer(min as i64),
+                        Frame::bulk("max_us"),
+                        Frame::Integer(max as i64),
+                    ]))
+                } else {
+                    Frame::Array(Some(vec![
+                        Frame::bulk("total"),
+                        Frame::Integer(report.total as i64),
+                        Frame::bulk("avg_duration_us"),
+                        Frame::Integer(report.avg_duration_us as i64),
+                        Frame::bulk("p50_us"),
+                        Frame::Integer(report.p50_us as i64),
+                        Frame::bulk("p99_us"),
+                        Frame::Integer(report.p99_us as i64),
+                    ]))
+                }
+            }
+
+            _ => Frame::error(format!(
+                "ERR unknown FERRITE.DEBUG subcommand '{}'. Try SLOWLOG, HOTKEYS, BOTTLENECK, SAMPLING, STATS, LATENCY",
+                subcommand
+            )),
+        }
+    }
+
+    // ── Data Mesh / Federation gateway handlers ───────────────────────
+
+    #[cfg(feature = "experimental")]
+    pub(super) async fn handle_federation_add(
+        &self,
+        id: &str,
+        source_type: &str,
+        uri: &str,
+        name: Option<&str>,
+    ) -> Frame {
+        use ferrite_enterprise::mesh::datasource::{DataSourceConfig, DataSourceType};
+
+        let stype = match DataSourceType::from_str_ci(source_type) {
+            Some(t) => t,
+            None => return Frame::error(format!("ERR unknown source type '{source_type}'")),
+        };
+
+        let display_name = name.unwrap_or(id).to_string();
+        let config = DataSourceConfig::new(id.to_string(), display_name, stype, uri.to_string());
+
+        let gw = mesh_gateway();
+        match gw.add_source(config) {
+            Ok(()) => Frame::simple("OK"),
+            Err(e) => Frame::error(format!("ERR {e}")),
+        }
+    }
+
+    #[cfg(not(feature = "experimental"))]
+    pub(super) async fn handle_federation_add(
+        &self,
+        _id: &str,
+        _source_type: &str,
+        _uri: &str,
+        _name: Option<&str>,
+    ) -> Frame {
+        Frame::error("ERR FEDERATION commands require the 'experimental' feature")
+    }
+
+    #[cfg(feature = "experimental")]
+    pub(super) async fn handle_federation_remove(&self, id: &str) -> Frame {
+        let gw = mesh_gateway();
+        match gw.remove_source(id) {
+            Ok(()) => Frame::simple("OK"),
+            Err(e) => Frame::error(format!("ERR {e}")),
+        }
+    }
+
+    #[cfg(not(feature = "experimental"))]
+    pub(super) async fn handle_federation_remove(&self, _id: &str) -> Frame {
+        Frame::error("ERR FEDERATION commands require the 'experimental' feature")
+    }
+
+    #[cfg(feature = "experimental")]
+    pub(super) async fn handle_federation_list(&self) -> Frame {
+        let gw = mesh_gateway();
+        let sources = gw.list_sources();
+        if sources.is_empty() {
+            return Frame::array(vec![]);
+        }
+        let items: Vec<Frame> = sources
+            .iter()
+            .map(|s| {
+                Frame::array(vec![
+                    Frame::bulk(s.id.clone()),
+                    Frame::bulk(s.source_type.to_string()),
+                    Frame::bulk(s.uri.clone()),
+                    Frame::bulk(s.name.clone()),
+                    Frame::bulk(s.status.to_string()),
+                ])
+            })
+            .collect();
+        Frame::array(items)
+    }
+
+    #[cfg(not(feature = "experimental"))]
+    pub(super) async fn handle_federation_list(&self) -> Frame {
+        Frame::error("ERR FEDERATION commands require the 'experimental' feature")
+    }
+
+    #[cfg(feature = "experimental")]
+    pub(super) async fn handle_federation_status(&self, id: Option<&str>) -> Frame {
+        let gw = mesh_gateway();
+        match id {
+            Some(source_id) => match gw.health_check(source_id) {
+                Ok(result) => Frame::array(vec![
+                    Frame::bulk("source_id"),
+                    Frame::bulk(result.source_id),
+                    Frame::bulk("healthy"),
+                    Frame::Integer(i64::from(result.healthy)),
+                    Frame::bulk("latency_ms"),
+                    Frame::Integer(result.latency_ms as i64),
+                    Frame::bulk("message"),
+                    Frame::bulk(result.message),
+                ]),
+                Err(e) => Frame::error(format!("ERR {e}")),
+            },
+            None => {
+                let stats = gw.stats();
+                Frame::array(vec![
+                    Frame::bulk("sources_active"),
+                    Frame::Integer(stats.sources_active as i64),
+                    Frame::bulk("namespaces"),
+                    Frame::Integer(stats.namespaces_registered as i64),
+                    Frame::bulk("contracts"),
+                    Frame::Integer(stats.contracts_active as i64),
+                ])
+            }
+        }
+    }
+
+    #[cfg(not(feature = "experimental"))]
+    pub(super) async fn handle_federation_status(&self, _id: Option<&str>) -> Frame {
+        Frame::error("ERR FEDERATION commands require the 'experimental' feature")
+    }
+
+    #[cfg(feature = "experimental")]
+    pub(super) async fn handle_federation_namespace(
+        &self,
+        namespace: &str,
+        source_id: &str,
+    ) -> Frame {
+        let gw = mesh_gateway();
+        match gw.add_namespace(namespace, source_id) {
+            Ok(()) => Frame::simple("OK"),
+            Err(e) => Frame::error(format!("ERR {e}")),
+        }
+    }
+
+    #[cfg(not(feature = "experimental"))]
+    pub(super) async fn handle_federation_namespace(
+        &self,
+        _namespace: &str,
+        _source_id: &str,
+    ) -> Frame {
+        Frame::error("ERR FEDERATION commands require the 'experimental' feature")
+    }
+
+    #[cfg(feature = "experimental")]
+    pub(super) async fn handle_federation_namespaces(&self) -> Frame {
+        let gw = mesh_gateway();
+        let ns = gw.list_namespaces();
+        if ns.is_empty() {
+            return Frame::array(vec![]);
+        }
+        let items: Vec<Frame> = ns
+            .iter()
+            .map(|(namespace, source_id)| {
+                Frame::array(vec![
+                    Frame::bulk(namespace.clone()),
+                    Frame::bulk(source_id.clone()),
+                ])
+            })
+            .collect();
+        Frame::array(items)
+    }
+
+    #[cfg(not(feature = "experimental"))]
+    pub(super) async fn handle_federation_namespaces(&self) -> Frame {
+        Frame::error("ERR FEDERATION commands require the 'experimental' feature")
+    }
+
+    #[cfg(feature = "experimental")]
+    pub(super) async fn handle_federation_query(&self, query: &str) -> Frame {
+        use ferrite_enterprise::mesh::query_router::QueryRouter;
+        use std::sync::Arc;
+
+        let gw = mesh_gateway();
+        let router = QueryRouter::new(Arc::from(gw));
+        match router.route_query(query) {
+            Ok(plan) => {
+                let steps: Vec<Frame> = plan
+                    .steps
+                    .iter()
+                    .map(|s| {
+                        Frame::array(vec![
+                            Frame::bulk(s.source_id.clone()),
+                            Frame::bulk(s.step_type.to_string()),
+                            Frame::bulk(s.query.clone()),
+                        ])
+                    })
+                    .collect();
+                Frame::array(vec![
+                    Frame::bulk("steps"),
+                    Frame::array(steps),
+                    Frame::bulk("estimated_latency_ms"),
+                    Frame::Integer(plan.estimated_latency_ms as i64),
+                    Frame::bulk("sources_involved"),
+                    Frame::array(
+                        plan.sources_involved
+                            .iter()
+                            .map(|s| Frame::bulk(s.clone()))
+                            .collect(),
+                    ),
+                ])
+            }
+            Err(e) => {
+                gw.record_error();
+                Frame::error(format!("ERR {e}"))
+            }
+        }
+    }
+
+    #[cfg(not(feature = "experimental"))]
+    pub(super) async fn handle_federation_query(&self, _query: &str) -> Frame {
+        Frame::error("ERR FEDERATION commands require the 'experimental' feature")
+    }
+
+    #[cfg(feature = "experimental")]
+    pub(super) async fn handle_federation_contract(
+        &self,
+        name: &str,
+        source_id: &str,
+        schema_json: &str,
+    ) -> Frame {
+        use ferrite_enterprise::mesh::contract::DataContract;
+        use ferrite_enterprise::mesh::datasource::DataSchema;
+
+        let schema: DataSchema = match serde_json::from_str(schema_json) {
+            Ok(s) => s,
+            Err(e) => return Frame::error(format!("ERR invalid schema JSON: {e}")),
+        };
+
+        let contract = DataContract::new(name.to_string(), source_id.to_string(), schema);
+
+        let gw = mesh_gateway();
+        match gw.add_contract(contract) {
+            Ok(()) => Frame::simple("OK"),
+            Err(e) => Frame::error(format!("ERR {e}")),
+        }
+    }
+
+    #[cfg(not(feature = "experimental"))]
+    pub(super) async fn handle_federation_contract(
+        &self,
+        _name: &str,
+        _source_id: &str,
+        _schema_json: &str,
+    ) -> Frame {
+        Frame::error("ERR FEDERATION commands require the 'experimental' feature")
+    }
+
+    #[cfg(feature = "experimental")]
+    pub(super) async fn handle_federation_contracts(&self) -> Frame {
+        let gw = mesh_gateway();
+        let contracts = gw.list_contracts();
+        if contracts.is_empty() {
+            return Frame::array(vec![]);
+        }
+        let items: Vec<Frame> = contracts
+            .iter()
+            .map(|c| {
+                Frame::array(vec![
+                    Frame::bulk(c.name.clone()),
+                    Frame::bulk(c.source_id.clone()),
+                    Frame::bulk(c.status.to_string()),
+                    Frame::Integer(c.version as i64),
+                ])
+            })
+            .collect();
+        Frame::array(items)
+    }
+
+    #[cfg(not(feature = "experimental"))]
+    pub(super) async fn handle_federation_contracts(&self) -> Frame {
+        Frame::error("ERR FEDERATION commands require the 'experimental' feature")
+    }
+
+    #[cfg(feature = "experimental")]
+    pub(super) async fn handle_federation_stats(&self) -> Frame {
+        use std::sync::atomic::Ordering;
+
+        let gw = mesh_gateway();
+        let s = gw.stats();
+        Frame::array(vec![
+            Frame::bulk("sources_active"),
+            Frame::Integer(s.sources_active as i64),
+            Frame::bulk("queries_routed"),
+            Frame::Integer(s.queries_routed.load(Ordering::Relaxed) as i64),
+            Frame::bulk("errors"),
+            Frame::Integer(s.errors.load(Ordering::Relaxed) as i64),
+            Frame::bulk("namespaces_registered"),
+            Frame::Integer(s.namespaces_registered as i64),
+            Frame::bulk("contracts_active"),
+            Frame::Integer(s.contracts_active as i64),
+        ])
+    }
+
+    #[cfg(not(feature = "experimental"))]
+    pub(super) async fn handle_federation_stats(&self) -> Frame {
+        Frame::error("ERR FEDERATION commands require the 'experimental' feature")
+    }
+
+    // ── Studio developer-experience commands ────────────────────────────────
+
+    #[cfg(feature = "experimental")]
+    pub(super) async fn handle_studio_schema(&self, _db: Option<u8>) -> Frame {
+        Frame::array(vec![
+            Frame::bulk("total_keys"),
+            Frame::Integer(0),
+            Frame::bulk("total_memory_bytes"),
+            Frame::Integer(0),
+            Frame::bulk("databases"),
+            Frame::array(vec![]),
+            Frame::bulk("hint"),
+            Frame::bulk("Schema analysis requires key scanning; use SCAN to populate"),
+        ])
+    }
+
+    #[cfg(not(feature = "experimental"))]
+    pub(super) async fn handle_studio_schema(&self, _db: Option<u8>) -> Frame {
+        Frame::error("ERR STUDIO commands require the 'experimental' feature")
+    }
+
+    #[cfg(feature = "experimental")]
+    pub(super) async fn handle_studio_templates(&self, name: Option<&str>) -> Frame {
+        let registry = ferrite_studio::devtools::TemplateRegistry::new();
+        match name {
+            Some(n) => match registry.get(n) {
+                Some(tpl) => Frame::array(vec![
+                    Frame::bulk("name"),
+                    Frame::bulk(tpl.name.as_str()),
+                    Frame::bulk("description"),
+                    Frame::bulk(tpl.description.as_str()),
+                    Frame::bulk("category"),
+                    Frame::bulk(tpl.category.to_string()),
+                    Frame::bulk("documentation"),
+                    Frame::bulk(tpl.documentation.as_str()),
+                    Frame::bulk("setup_commands"),
+                    Frame::array(
+                        tpl.setup_commands.iter().map(|c| Frame::bulk(c.as_str())).collect(),
+                    ),
+                ]),
+                None => Frame::error("ERR template not found"),
+            },
+            None => {
+                let items = registry.list();
+                let entries: Vec<Frame> = items
+                    .iter()
+                    .map(|(n, d)| Frame::array(vec![Frame::bulk(*n), Frame::bulk(*d)]))
+                    .collect();
+                Frame::array(entries)
+            }
+        }
+    }
+
+    #[cfg(not(feature = "experimental"))]
+    pub(super) async fn handle_studio_templates(&self, _name: Option<&str>) -> Frame {
+        Frame::error("ERR STUDIO commands require the 'experimental' feature")
+    }
+
+    #[cfg(feature = "experimental")]
+    pub(super) async fn handle_studio_setup(&self, template: &str) -> Frame {
+        let registry = ferrite_studio::devtools::TemplateRegistry::new();
+        match registry.setup_commands(template) {
+            Some(cmds) => Frame::array(
+                cmds.iter().map(|c| Frame::bulk(c.as_str())).collect(),
+            ),
+            None => Frame::error("ERR template not found"),
+        }
+    }
+
+    #[cfg(not(feature = "experimental"))]
+    pub(super) async fn handle_studio_setup(&self, _template: &str) -> Frame {
+        Frame::error("ERR STUDIO commands require the 'experimental' feature")
+    }
+
+    #[cfg(feature = "experimental")]
+    pub(super) async fn handle_studio_compat(&self, redis_info: Option<&str>) -> Frame {
+        let info = redis_info.unwrap_or("redis_version:unknown\r\n");
+        let report = ferrite_studio::devtools::MigrationWizard::check_compatibility(info);
+        let incompatible: Vec<Frame> = report
+            .incompatible_commands
+            .iter()
+            .map(|c| {
+                Frame::array(vec![
+                    Frame::bulk(c.name.as_str()),
+                    Frame::bulk(c.reason.as_str()),
+                    match &c.workaround {
+                        Some(w) => Frame::bulk(w.as_str()),
+                        None => Frame::Null,
+                    },
+                ])
+            })
+            .collect();
+        Frame::array(vec![
+            Frame::bulk("redis_version"),
+            Frame::bulk(report.redis_version.as_str()),
+            Frame::bulk("total_commands"),
+            Frame::Integer(report.total_commands_used as i64),
+            Frame::bulk("compatible"),
+            Frame::Integer(report.compatible_commands as i64),
+            Frame::bulk("compatibility_pct"),
+            Frame::bulk(format!("{:.1}", report.compatibility_pct)),
+            Frame::bulk("incompatible_commands"),
+            Frame::array(incompatible),
+            Frame::bulk("warnings"),
+            Frame::array(report.warnings.iter().map(|w| Frame::bulk(w.as_str())).collect()),
+            Frame::bulk("recommendations"),
+            Frame::array(
+                report
+                    .recommendations
+                    .iter()
+                    .map(|r| Frame::bulk(r.as_str()))
+                    .collect(),
+            ),
+            Frame::bulk("estimated_migration_time"),
+            Frame::bulk(report.estimated_migration_time.as_str()),
+        ])
+    }
+
+    #[cfg(not(feature = "experimental"))]
+    pub(super) async fn handle_studio_compat(&self, _redis_info: Option<&str>) -> Frame {
+        Frame::error("ERR STUDIO commands require the 'experimental' feature")
+    }
+
+    #[cfg(feature = "experimental")]
+    pub(super) async fn handle_studio_help(&self, command: &str) -> Frame {
+        match ferrite_studio::devtools::QueryBuilder::explain_command(command) {
+            Some(help) => Frame::array(vec![
+                Frame::bulk("name"),
+                Frame::bulk(help.name.as_str()),
+                Frame::bulk("syntax"),
+                Frame::bulk(help.syntax.as_str()),
+                Frame::bulk("description"),
+                Frame::bulk(help.description.as_str()),
+                Frame::bulk("complexity"),
+                Frame::bulk(help.complexity.as_str()),
+                Frame::bulk("since"),
+                Frame::bulk(help.since_version.as_str()),
+                Frame::bulk("examples"),
+                Frame::array(help.examples.iter().map(|e| Frame::bulk(e.as_str())).collect()),
+            ]),
+            None => Frame::error("ERR unknown command"),
+        }
+    }
+
+    #[cfg(not(feature = "experimental"))]
+    pub(super) async fn handle_studio_help(&self, _command: &str) -> Frame {
+        Frame::error("ERR STUDIO commands require the 'experimental' feature")
+    }
+
+    #[cfg(feature = "experimental")]
+    pub(super) async fn handle_studio_suggest(&self, context: Option<&str>) -> Frame {
+        let ctx = context.unwrap_or("");
+        let suggestions = ferrite_studio::devtools::QueryBuilder::suggest_queries(ctx);
+        let entries: Vec<Frame> = suggestions
+            .iter()
+            .map(|s| {
+                Frame::array(vec![
+                    Frame::bulk(s.query.as_str()),
+                    Frame::bulk(s.description.as_str()),
+                    Frame::bulk(s.category.as_str()),
+                ])
+            })
+            .collect();
+        Frame::array(entries)
+    }
+
+    #[cfg(not(feature = "experimental"))]
+    pub(super) async fn handle_studio_suggest(&self, _context: Option<&str>) -> Frame {
+        Frame::error("ERR STUDIO commands require the 'experimental' feature")
+    }
+}
+
+/// Extract source key patterns from a FerriteQL query string.
+/// Simple heuristic: look for `FROM pattern` clauses.
+fn extract_source_patterns(query: &str) -> Vec<String> {
+    let mut patterns = Vec::new();
+    let upper = query.to_uppercase();
+    let tokens: Vec<&str> = query.split_whitespace().collect();
+    let upper_tokens: Vec<&str> = upper.split_whitespace().collect();
+
+    for (i, token) in upper_tokens.iter().enumerate() {
+        if *token == "FROM" {
+            if let Some(next) = tokens.get(i + 1) {
+                let pattern = next.trim_end_matches(|c: char| c == ';' || c == ',');
+                if !pattern.is_empty() {
+                    patterns.push(pattern.to_string());
+                }
+            }
+        }
+    }
+
+    if patterns.is_empty() {
+        patterns.push("*".to_string());
+    }
+
+    patterns
 }

@@ -695,9 +695,7 @@ mod tests {
         // Add 20 fresh samples
         for i in 0..20 {
             let ts = now.sub(Duration::from_secs(i));
-            storage
-                .add_sample(&id, Sample::new(ts, i as f64))
-                .unwrap();
+            storage.add_sample(&id, Sample::new(ts, i as f64)).unwrap();
         }
 
         // Set policy with max 10 samples

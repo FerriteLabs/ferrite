@@ -2,7 +2,6 @@
 //!
 //! Language-specific code templates for SDK generation.
 
-use super::languages::TypeMapper;
 use super::schema::{ApiSchema, CommandSchema};
 use super::Language;
 

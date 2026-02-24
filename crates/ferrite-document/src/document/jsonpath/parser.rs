@@ -361,9 +361,9 @@ impl<'a> Parser<'a> {
             while self.peek().is_some_and(|c| c.is_ascii_digit()) {
                 self.advance(1);
             }
-            let val: f64 = self.input[start..self.pos].parse().map_err(|_| {
-                DocumentStoreError::InvalidQuery("JSONPath: invalid number".into())
-            })?;
+            let val: f64 = self.input[start..self.pos]
+                .parse()
+                .map_err(|_| DocumentStoreError::InvalidQuery("JSONPath: invalid number".into()))?;
             Ok(LiteralValue::Float(val))
         } else {
             let val: i64 = self.input[start..self.pos].parse().map_err(|_| {
@@ -390,7 +390,10 @@ mod tests {
         let path = parse("$.store.book").unwrap();
         assert_eq!(
             path.segments,
-            vec![Segment::Child("store".into()), Segment::Child("book".into())]
+            vec![
+                Segment::Child("store".into()),
+                Segment::Child("book".into())
+            ]
         );
     }
 
@@ -468,7 +471,10 @@ mod tests {
         let path = parse("$['store']['book']").unwrap();
         assert_eq!(
             path.segments,
-            vec![Segment::Child("store".into()), Segment::Child("book".into())]
+            vec![
+                Segment::Child("store".into()),
+                Segment::Child("book".into())
+            ]
         );
     }
 }

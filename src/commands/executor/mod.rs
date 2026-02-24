@@ -24,13 +24,12 @@
 //! 4. Implement the handler in the appropriate sibling module.
 //! 5. Add unit and integration tests.
 
-
-mod meta;
-mod string_ops;
-mod key_ops;
-mod server_ops;
-mod cluster_ops;
 mod advanced_ops;
+mod cluster_ops;
+mod key_ops;
+mod meta;
+mod server_ops;
+mod string_ops;
 #[cfg(test)]
 mod tests;
 
@@ -43,8 +42,7 @@ use crate::cluster::ClusterStateManager;
 use crate::config::SharedConfig;
 use crate::protocol::Frame;
 use crate::runtime::{
-    ClientRegistry, SharedClientRegistry, SharedSlowLog, SharedSubscriptionManager,
-    SlowLog,
+    ClientRegistry, SharedClientRegistry, SharedSlowLog, SharedSubscriptionManager, SlowLog,
 };
 use crate::storage::Store;
 
@@ -1515,7 +1513,16 @@ impl CommandExecutor {
             Command::EvalShaRo { sha1, keys, args } => {
                 self.script_executor.evalsha(db, &sha1, &keys, &args)
             }
-            Command::Function { subcommand, args } => self.function(&subcommand, &args),
+            Command::Function { subcommand, args } => {
+                // Route FaaS-specific subcommands to the async handler
+                match subcommand.as_str() {
+                    "DEPLOY" | "INVOKE" | "UNDEPLOY" | "FAAS.LIST" | "FAAS.INFO"
+                    | "FAAS.LOGS" | "SCHEDULE" | "UNSCHEDULE" | "SCHEDULES" | "FAAS.STATS" => {
+                        self.handle_faas_command(&subcommand, &args).await
+                    }
+                    _ => self.function(&subcommand, &args),
+                }
+            }
             Command::FCall {
                 function,
                 keys,
@@ -1538,7 +1545,15 @@ impl CommandExecutor {
                 maxlen,
                 minid,
                 nomkstream,
-            } => self.xadd(db, &key, id.as_deref(), fields, maxlen, minid.as_deref(), nomkstream),
+            } => self.xadd(
+                db,
+                &key,
+                id.as_deref(),
+                fields,
+                maxlen,
+                minid.as_deref(),
+                nomkstream,
+            ),
             Command::XLen { key } => self.xlen(db, &key),
             Command::XRange {
                 key,
@@ -2068,6 +2083,159 @@ impl CommandExecutor {
             // FerriteQL query commands
             Command::Query { subcommand, args } => {
                 self.handle_query_command(db, &subcommand, &args).await
+            }
+
+            // Adaptive query optimizer
+            Command::FerriteAdvisor { subcommand, args } => {
+                self.ferrite_advisor(&subcommand, &args).await
+            }
+
+            // Integrated observability diagnostics
+            Command::FerriteDebug { subcommand, args } => {
+                self.ferrite_debug(&subcommand, &args).await
+            }
+
+            // Hybrid vector search
+            Command::VectorHybridSearch {
+                index,
+                query_vector,
+                query_text,
+                top_k,
+                alpha,
+                strategy,
+            } => {
+                self.vector_hybrid_search(db, &index, &query_vector, &query_text, top_k, alpha, &strategy)
+                    .await
+            }
+            Command::VectorRerank {
+                index,
+                query_text,
+                doc_ids,
+                top_k,
+            } => {
+                self.vector_rerank(db, &index, &query_text, &doc_ids, top_k)
+                    .await
+            }
+
+            // Materialized view commands
+            Command::ViewCreate {
+                name,
+                query,
+                strategy,
+                interval,
+            } => self.handle_view_create(&name, &query, &strategy, interval).await,
+            Command::ViewDrop { name } => self.handle_view_drop(&name).await,
+            Command::ViewQuery { name } => self.handle_view_query(&name).await,
+            Command::ViewList => self.handle_view_list().await,
+            Command::ViewRefresh { name } => self.handle_view_refresh(&name).await,
+            Command::ViewInfo { name } => self.handle_view_info(&name).await,
+
+            // Live migration commands
+            Command::MigrateStart {
+                source_uri,
+                batch_size,
+                workers,
+                verify,
+                dry_run,
+            } => {
+                self.handle_migrate_start(&source_uri, batch_size, workers, verify, dry_run)
+                    .await
+            }
+            Command::MigrateStatus => self.handle_migrate_status().await,
+            Command::MigratePause => self.handle_migrate_pause().await,
+            Command::MigrateResume => self.handle_migrate_resume().await,
+            Command::MigrateVerify { sample_pct } => {
+                self.handle_migrate_verify(sample_pct).await
+            }
+            Command::MigrateCutover => self.handle_migrate_cutover().await,
+            Command::MigrateRollback => self.handle_migrate_rollback().await,
+
+            // Kafka-compatible streaming commands
+            Command::StreamCreate {
+                topic,
+                partitions,
+                retention_ms,
+                replication,
+            } => {
+                self.handle_stream_create(&topic, partitions, retention_ms, replication)
+                    .await
+            }
+            Command::StreamDelete { topic } => self.handle_stream_delete(&topic).await,
+            Command::StreamProduce {
+                topic,
+                key,
+                value,
+                partition,
+            } => {
+                self.handle_stream_produce(&topic, key.as_ref(), &value, partition)
+                    .await
+            }
+            Command::StreamFetch {
+                topic,
+                partition,
+                offset,
+                count,
+            } => self.handle_stream_fetch(&topic, partition, offset, count).await,
+            Command::StreamCommit {
+                group,
+                topic,
+                partition,
+                offset,
+            } => {
+                self.handle_stream_commit(&group, &topic, partition, offset)
+                    .await
+            }
+            Command::StreamTopics => self.handle_stream_topics().await,
+            Command::StreamDescribe { topic } => self.handle_stream_describe(&topic).await,
+            Command::StreamGroups { topic } => {
+                self.handle_stream_groups(topic.as_deref()).await
+            }
+            Command::StreamOffsets { topic, partition } => {
+                self.handle_stream_offsets(&topic, partition).await
+            }
+            Command::StreamStats => self.handle_stream_stats().await,
+
+            // Multi-region active-active commands
+            Command::RegionAdd { id, name, endpoint } => {
+                self.handle_region_add(&id, &name, &endpoint).await
+            }
+            Command::RegionRemove { id } => self.handle_region_remove(&id).await,
+            Command::RegionList => self.handle_region_list().await,
+            Command::RegionStatus { id } => self.handle_region_status(id.as_deref()).await,
+            Command::RegionConflicts { limit } => self.handle_region_conflicts(limit).await,
+            Command::RegionStrategy { strategy } => {
+                self.handle_region_strategy(strategy.as_deref()).await
+            }
+            Command::RegionStats => self.handle_region_stats().await,
+
+            // Data Mesh / Federation gateway commands
+            Command::FederationAdd { id, source_type, uri, name } => {
+                self.handle_federation_add(&id, &source_type, &uri, name.as_deref()).await
+            }
+            Command::FederationRemove { id } => self.handle_federation_remove(&id).await,
+            Command::FederationList => self.handle_federation_list().await,
+            Command::FederationStatus { id } => self.handle_federation_status(id.as_deref()).await,
+            Command::FederationNamespace { namespace, source_id } => {
+                self.handle_federation_namespace(&namespace, &source_id).await
+            }
+            Command::FederationNamespaces => self.handle_federation_namespaces().await,
+            Command::FederationQuery { query } => self.handle_federation_query(&query).await,
+            Command::FederationContract { name, source_id, schema_json } => {
+                self.handle_federation_contract(&name, &source_id, &schema_json).await
+            }
+            Command::FederationContracts => self.handle_federation_contracts().await,
+            Command::FederationStats => self.handle_federation_stats().await,
+
+            // Studio developer-experience commands
+            Command::StudioSchema { db } => self.handle_studio_schema(db).await,
+            Command::StudioTemplates { name } => self.handle_studio_templates(name.as_deref()).await,
+            Command::StudioSetup { template } => self.handle_studio_setup(&template).await,
+            Command::StudioCompat { redis_info } => {
+                self.handle_studio_compat(redis_info.as_deref()).await
+            }
+            Command::StudioHelp { command } => self.handle_studio_help(&command).await,
+            Command::StudioSuggest { context } => {
+                self.handle_studio_suggest(context.as_deref()).await
             }
         }
     }

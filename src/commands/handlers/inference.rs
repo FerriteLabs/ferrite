@@ -17,11 +17,11 @@ use std::sync::OnceLock;
 use bytes::Bytes;
 
 use super::{err_frame, ok_frame, HandlerContext};
+use crate::protocol::Frame;
 use ferrite_ai::inference::{
     InferenceConfig, InferenceEngine, InferenceInput, InferenceOutput, InferenceTrigger,
     ModelConfig, ModelFormat, TriggerConfig, TriggerOperation,
 };
-use crate::protocol::Frame;
 
 /// Global inference engine singleton
 static INFERENCE_ENGINE: OnceLock<InferenceEngine> = OnceLock::new();

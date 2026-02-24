@@ -1,8 +1,7 @@
-
+use super::{get_bytes, get_int, get_string};
+use crate::commands::parser::Command;
 use crate::error::{FerriteError, Result};
 use crate::protocol::Frame;
-use super::{get_string, get_bytes, get_int};
-use crate::commands::parser::{Command};
 
 pub(crate) fn parse_scan(args: &[Frame]) -> Result<Command> {
     if args.is_empty() {

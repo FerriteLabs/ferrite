@@ -30,42 +30,42 @@
 // ── Re-exports from ferrite-core ─────────────────────────────────────────────
 // Core modules are re-exported at the top level for backwards compatibility.
 
-pub use ferrite_core::config;
-pub use ferrite_core::error;
-pub use ferrite_core::startup_errors;
-pub use ferrite_core::storage;
-pub use ferrite_core::persistence;
-pub use ferrite_core::protocol;
-pub use ferrite_core::io;
-pub use ferrite_core::metrics;
-pub use ferrite_core::runtime;
+pub use ferrite_core::audit;
 pub use ferrite_core::auth;
 pub use ferrite_core::cluster;
-pub use ferrite_core::network;
-pub use ferrite_core::embedded as core_embedded;
-pub use ferrite_core::tiering;
-pub use ferrite_core::observability;
 pub use ferrite_core::compatibility;
-pub use ferrite_core::transaction;
-pub use ferrite_core::temporal;
-pub use ferrite_core::triggers;
-pub use ferrite_core::audit;
+pub use ferrite_core::config;
+pub use ferrite_core::embedded as core_embedded;
+pub use ferrite_core::error;
 pub use ferrite_core::grpc;
+pub use ferrite_core::io;
+pub use ferrite_core::metrics;
+pub use ferrite_core::network;
+pub use ferrite_core::observability;
+pub use ferrite_core::persistence;
+pub use ferrite_core::protocol;
 pub use ferrite_core::query;
+pub use ferrite_core::runtime;
+pub use ferrite_core::startup_errors;
+pub use ferrite_core::storage;
 pub use ferrite_core::telemetry;
+pub use ferrite_core::temporal;
+pub use ferrite_core::tiering;
+pub use ferrite_core::transaction;
+pub use ferrite_core::triggers;
 
 #[cfg(feature = "crypto")]
 pub use ferrite_core::crypto;
 
 // ── Re-exports from extension crates ─────────────────────────────────────────
 
-pub use ferrite_search as search;
 pub use ferrite_ai as ai;
-pub use ferrite_graph as graph;
-pub use ferrite_timeseries as timeseries;
 pub use ferrite_document as document;
-pub use ferrite_streaming as streaming;
+pub use ferrite_graph as graph;
 pub use ferrite_plugins as plugins;
+pub use ferrite_search as search;
+pub use ferrite_streaming as streaming;
+pub use ferrite_timeseries as timeseries;
 
 #[cfg(feature = "cloud")]
 pub use ferrite_cloud as cloud;
@@ -88,10 +88,10 @@ pub use ferrite_core::{FerriteError, Result};
 
 pub mod commands;
 pub mod embedded;
-pub mod server;
+pub mod migration;
 pub mod replication;
 pub mod sdk;
-pub mod migration;
+pub mod server;
 pub mod wasm;
 
 #[cfg(feature = "tui")]

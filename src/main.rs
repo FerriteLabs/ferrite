@@ -13,7 +13,7 @@ use ferrite::config::Config;
 use ferrite::server::Server;
 use ferrite::startup_errors::{format_startup_error, StartupError};
 use ferrite::telemetry::{self, TelemetryConfig};
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 mod doctor;
 
@@ -558,7 +558,6 @@ fn cmd_completions(shell: clap_complete::Shell) -> ExitCode {
     ExitCode::SUCCESS
 }
 
-
 fn cmd_doctor(cli: &Cli) -> ExitCode {
     // Determine config path and port from CLI args
     let config_path = cli.config.as_ref().map(|p| p.to_string_lossy().to_string());
@@ -752,14 +751,21 @@ fn print_banner(config: &Config, source: &ConfigSource) {
     info!("  Databases: {}", config.storage.databases);
     if config.metrics.enabled {
         info!(
-            "  Metrics: http://{}:{}/metrics",
-            config.server.bind, config.metrics.port
+            "  Metrics: {}://{}:{}{}",
+            if config.tls.enabled { "https" } else { "http" },
+            config.server.bind,
+            config.metrics.port,
+            "/metrics"
         );
     }
     if config.persistence.aof_enabled {
         info!("  AOF: enabled (sync: {:?})", config.persistence.aof_sync);
     }
     info!("  Data directory: {}", config.storage.data_dir.display());
+
+    if !config.tls.enabled {
+        warn!("TLS is disabled — connections are unencrypted. Enable TLS for production use.");
+    }
 }
 
 #[tokio::main]

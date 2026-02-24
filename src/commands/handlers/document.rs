@@ -25,8 +25,10 @@
 use bytes::Bytes;
 use std::sync::OnceLock;
 
-use ferrite_document::document::{CollectionOptions, DocumentStore, DocumentStoreConfig, IndexOptions};
 use crate::protocol::Frame;
+use ferrite_document::document::{
+    CollectionOptions, DocumentStore, DocumentStoreConfig, IndexOptions,
+};
 
 use super::{err_frame, ok_frame, HandlerContext};
 

@@ -1,6 +1,5 @@
 //! Server, connection, and administrative command helper methods on CommandExecutor.
 
-
 use bytes::Bytes;
 
 use crate::auth::Permission;
@@ -12,8 +11,7 @@ use crate::storage::Value;
 use crate::commands::keys;
 use crate::commands::parser::Command;
 
-use super::{command_info_by_name, CommandExecutor,
-            COMMAND_INFO, COMMAND_NAMES};
+use super::{command_info_by_name, CommandExecutor, COMMAND_INFO, COMMAND_NAMES};
 
 /// Format bytes into a human-readable string
 fn format_bytes(bytes: usize) -> String {
@@ -35,107 +33,472 @@ fn command_doc_entry(name: &str) -> (&'static str, &'static str, &'static str, &
         "SET" => ("Set the string value of a key", "string", "O(1)", "1.0.0"),
         "DEL" => ("Delete one or more keys", "generic", "O(N)", "1.0.0"),
         "EXISTS" => ("Determine if a key exists", "generic", "O(N)", "1.0.0"),
-        "INCR" => ("Increment the integer value of a key by one", "string", "O(1)", "1.0.0"),
-        "DECR" => ("Decrement the integer value of a key by one", "string", "O(1)", "1.0.0"),
-        "INCRBY" => ("Increment the integer value of a key by the given amount", "string", "O(1)", "1.0.0"),
-        "DECRBY" => ("Decrement the integer value of a key by the given number", "string", "O(1)", "1.0.0"),
-        "MGET" => ("Get the values of all the given keys", "string", "O(N)", "1.0.0"),
-        "MSET" => ("Set multiple keys to multiple values", "string", "O(N)", "1.0.1"),
+        "INCR" => (
+            "Increment the integer value of a key by one",
+            "string",
+            "O(1)",
+            "1.0.0",
+        ),
+        "DECR" => (
+            "Decrement the integer value of a key by one",
+            "string",
+            "O(1)",
+            "1.0.0",
+        ),
+        "INCRBY" => (
+            "Increment the integer value of a key by the given amount",
+            "string",
+            "O(1)",
+            "1.0.0",
+        ),
+        "DECRBY" => (
+            "Decrement the integer value of a key by the given number",
+            "string",
+            "O(1)",
+            "1.0.0",
+        ),
+        "MGET" => (
+            "Get the values of all the given keys",
+            "string",
+            "O(N)",
+            "1.0.0",
+        ),
+        "MSET" => (
+            "Set multiple keys to multiple values",
+            "string",
+            "O(N)",
+            "1.0.1",
+        ),
         "APPEND" => ("Append a value to a key", "string", "O(1)", "2.0.0"),
-        "STRLEN" => ("Get the length of the value stored in a key", "string", "O(1)", "2.2.0"),
-        "GETRANGE" => ("Get a substring of the string stored at a key", "string", "O(N)", "2.4.0"),
-        "SETRANGE" => ("Overwrite part of a string at key starting at the specified offset", "string", "O(1)", "2.2.0"),
-        "SETNX" => ("Set the value of a key, only if the key does not exist", "string", "O(1)", "1.0.0"),
-        "SETEX" => ("Set the value and expiration of a key", "string", "O(1)", "2.0.0"),
-        "PSETEX" => ("Set the value and expiration in milliseconds of a key", "string", "O(1)", "2.6.0"),
-        "GETSET" => ("Set the string value of a key and return its old value", "string", "O(1)", "1.0.0"),
-        "GETDEL" => ("Get the value of a key and delete the key", "string", "O(1)", "6.2.0"),
-        "GETEX" => ("Get the value of a key and optionally set its expiration", "string", "O(1)", "6.2.0"),
-        "MSETNX" => ("Set multiple keys to multiple values, only if none of the keys exist", "string", "O(N)", "1.0.1"),
-        "INCRBYFLOAT" => ("Increment the float value of a key by the given amount", "string", "O(1)", "2.6.0"),
-        "LPUSH" => ("Prepend one or multiple elements to a list", "list", "O(N)", "1.0.0"),
-        "RPUSH" => ("Append one or multiple elements to a list", "list", "O(N)", "1.0.0"),
-        "LPOP" => ("Remove and get the first elements in a list", "list", "O(N)", "1.0.0"),
-        "RPOP" => ("Remove and get the last elements in a list", "list", "O(N)", "1.0.0"),
-        "LRANGE" => ("Get a range of elements from a list", "list", "O(S+N)", "1.0.0"),
+        "STRLEN" => (
+            "Get the length of the value stored in a key",
+            "string",
+            "O(1)",
+            "2.2.0",
+        ),
+        "GETRANGE" => (
+            "Get a substring of the string stored at a key",
+            "string",
+            "O(N)",
+            "2.4.0",
+        ),
+        "SETRANGE" => (
+            "Overwrite part of a string at key starting at the specified offset",
+            "string",
+            "O(1)",
+            "2.2.0",
+        ),
+        "SETNX" => (
+            "Set the value of a key, only if the key does not exist",
+            "string",
+            "O(1)",
+            "1.0.0",
+        ),
+        "SETEX" => (
+            "Set the value and expiration of a key",
+            "string",
+            "O(1)",
+            "2.0.0",
+        ),
+        "PSETEX" => (
+            "Set the value and expiration in milliseconds of a key",
+            "string",
+            "O(1)",
+            "2.6.0",
+        ),
+        "GETSET" => (
+            "Set the string value of a key and return its old value",
+            "string",
+            "O(1)",
+            "1.0.0",
+        ),
+        "GETDEL" => (
+            "Get the value of a key and delete the key",
+            "string",
+            "O(1)",
+            "6.2.0",
+        ),
+        "GETEX" => (
+            "Get the value of a key and optionally set its expiration",
+            "string",
+            "O(1)",
+            "6.2.0",
+        ),
+        "MSETNX" => (
+            "Set multiple keys to multiple values, only if none of the keys exist",
+            "string",
+            "O(N)",
+            "1.0.1",
+        ),
+        "INCRBYFLOAT" => (
+            "Increment the float value of a key by the given amount",
+            "string",
+            "O(1)",
+            "2.6.0",
+        ),
+        "LPUSH" => (
+            "Prepend one or multiple elements to a list",
+            "list",
+            "O(N)",
+            "1.0.0",
+        ),
+        "RPUSH" => (
+            "Append one or multiple elements to a list",
+            "list",
+            "O(N)",
+            "1.0.0",
+        ),
+        "LPOP" => (
+            "Remove and get the first elements in a list",
+            "list",
+            "O(N)",
+            "1.0.0",
+        ),
+        "RPOP" => (
+            "Remove and get the last elements in a list",
+            "list",
+            "O(N)",
+            "1.0.0",
+        ),
+        "LRANGE" => (
+            "Get a range of elements from a list",
+            "list",
+            "O(S+N)",
+            "1.0.0",
+        ),
         "LLEN" => ("Get the length of a list", "list", "O(1)", "1.0.0"),
-        "LINDEX" => ("Get an element from a list by its index", "list", "O(N)", "1.0.0"),
-        "LSET" => ("Set the value of an element in a list by its index", "list", "O(N)", "1.0.0"),
+        "LINDEX" => (
+            "Get an element from a list by its index",
+            "list",
+            "O(N)",
+            "1.0.0",
+        ),
+        "LSET" => (
+            "Set the value of an element in a list by its index",
+            "list",
+            "O(N)",
+            "1.0.0",
+        ),
         "LREM" => ("Remove elements from a list", "list", "O(N+S)", "1.0.0"),
-        "HSET" => ("Set the string value of a hash field", "hash", "O(N)", "2.0.0"),
+        "HSET" => (
+            "Set the string value of a hash field",
+            "hash",
+            "O(N)",
+            "2.0.0",
+        ),
         "HGET" => ("Get the value of a hash field", "hash", "O(1)", "2.0.0"),
         "HDEL" => ("Delete one or more hash fields", "hash", "O(N)", "2.0.0"),
         "HEXISTS" => ("Determine if a hash field exists", "hash", "O(1)", "2.0.0"),
-        "HGETALL" => ("Get all the fields and values in a hash", "hash", "O(N)", "2.0.0"),
+        "HGETALL" => (
+            "Get all the fields and values in a hash",
+            "hash",
+            "O(N)",
+            "2.0.0",
+        ),
         "HKEYS" => ("Get all the fields in a hash", "hash", "O(N)", "2.0.0"),
         "HVALS" => ("Get all the values in a hash", "hash", "O(N)", "2.0.0"),
-        "HLEN" => ("Get the number of fields in a hash", "hash", "O(1)", "2.0.0"),
+        "HLEN" => (
+            "Get the number of fields in a hash",
+            "hash",
+            "O(1)",
+            "2.0.0",
+        ),
         "SADD" => ("Add one or more members to a set", "set", "O(N)", "1.0.0"),
-        "SREM" => ("Remove one or more members from a set", "set", "O(N)", "1.0.0"),
+        "SREM" => (
+            "Remove one or more members from a set",
+            "set",
+            "O(N)",
+            "1.0.0",
+        ),
         "SMEMBERS" => ("Get all the members in a set", "set", "O(N)", "1.0.0"),
-        "SISMEMBER" => ("Determine if a given value is a member of a set", "set", "O(1)", "1.0.0"),
+        "SISMEMBER" => (
+            "Determine if a given value is a member of a set",
+            "set",
+            "O(1)",
+            "1.0.0",
+        ),
         "SCARD" => ("Get the number of members in a set", "set", "O(1)", "1.0.0"),
         "SUNION" => ("Add multiple sets", "set", "O(N)", "1.0.0"),
         "SINTER" => ("Intersect multiple sets", "set", "O(N*M)", "1.0.0"),
         "SDIFF" => ("Subtract multiple sets", "set", "O(N)", "1.0.0"),
-        "SPOP" => ("Remove and return one or multiple random members from a set", "set", "O(N)", "1.0.0"),
-        "SRANDMEMBER" => ("Get one or multiple random members from a set", "set", "O(N)", "1.0.0"),
-        "ZADD" => ("Add one or more members to a sorted set", "sorted_set", "O(log(N))", "1.2.0"),
-        "ZREM" => ("Remove one or more members from a sorted set", "sorted_set", "O(M*log(N))", "1.2.0"),
-        "ZSCORE" => ("Get the score associated with the given member in a sorted set", "sorted_set", "O(1)", "1.2.0"),
-        "ZCARD" => ("Get the number of members in a sorted set", "sorted_set", "O(1)", "1.2.0"),
-        "ZRANGE" => ("Return a range of members in a sorted set", "sorted_set", "O(log(N)+M)", "1.2.0"),
-        "ZRANK" => ("Determine the index of a member in a sorted set", "sorted_set", "O(log(N))", "2.0.0"),
+        "SPOP" => (
+            "Remove and return one or multiple random members from a set",
+            "set",
+            "O(N)",
+            "1.0.0",
+        ),
+        "SRANDMEMBER" => (
+            "Get one or multiple random members from a set",
+            "set",
+            "O(N)",
+            "1.0.0",
+        ),
+        "ZADD" => (
+            "Add one or more members to a sorted set",
+            "sorted_set",
+            "O(log(N))",
+            "1.2.0",
+        ),
+        "ZREM" => (
+            "Remove one or more members from a sorted set",
+            "sorted_set",
+            "O(M*log(N))",
+            "1.2.0",
+        ),
+        "ZSCORE" => (
+            "Get the score associated with the given member in a sorted set",
+            "sorted_set",
+            "O(1)",
+            "1.2.0",
+        ),
+        "ZCARD" => (
+            "Get the number of members in a sorted set",
+            "sorted_set",
+            "O(1)",
+            "1.2.0",
+        ),
+        "ZRANGE" => (
+            "Return a range of members in a sorted set",
+            "sorted_set",
+            "O(log(N)+M)",
+            "1.2.0",
+        ),
+        "ZRANK" => (
+            "Determine the index of a member in a sorted set",
+            "sorted_set",
+            "O(log(N))",
+            "2.0.0",
+        ),
         "PING" => ("Ping the server", "connection", "O(1)", "1.0.0"),
         "ECHO" => ("Echo the given string", "connection", "O(1)", "1.0.0"),
-        "SELECT" => ("Change the selected database for the current connection", "connection", "O(1)", "1.0.0"),
-        "INFO" => ("Get information and statistics about the server", "server", "O(1)", "1.0.0"),
-        "DBSIZE" => ("Return the number of keys in the selected database", "server", "O(1)", "1.0.0"),
-        "FLUSHDB" => ("Remove all keys from the current database", "server", "O(N)", "1.0.0"),
-        "FLUSHALL" => ("Remove all keys from all databases", "server", "O(N)", "1.0.0"),
+        "SELECT" => (
+            "Change the selected database for the current connection",
+            "connection",
+            "O(1)",
+            "1.0.0",
+        ),
+        "INFO" => (
+            "Get information and statistics about the server",
+            "server",
+            "O(1)",
+            "1.0.0",
+        ),
+        "DBSIZE" => (
+            "Return the number of keys in the selected database",
+            "server",
+            "O(1)",
+            "1.0.0",
+        ),
+        "FLUSHDB" => (
+            "Remove all keys from the current database",
+            "server",
+            "O(N)",
+            "1.0.0",
+        ),
+        "FLUSHALL" => (
+            "Remove all keys from all databases",
+            "server",
+            "O(N)",
+            "1.0.0",
+        ),
         "TIME" => ("Return the current server time", "server", "O(1)", "2.6.0"),
-        "KEYS" => ("Find all keys matching the given pattern", "generic", "O(N)", "1.0.0"),
-        "SCAN" => ("Incrementally iterate the keys space", "generic", "O(1) per call", "2.8.0"),
-        "EXPIRE" => ("Set a key's time to live in seconds", "generic", "O(1)", "1.0.0"),
-        "TTL" => ("Get the time to live for a key in seconds", "generic", "O(1)", "1.0.0"),
-        "PTTL" => ("Get the time to live for a key in milliseconds", "generic", "O(1)", "2.6.0"),
-        "PERSIST" => ("Remove the expiration from a key", "generic", "O(1)", "2.2.0"),
-        "TYPE" => ("Determine the type stored at key", "generic", "O(1)", "1.0.0"),
+        "KEYS" => (
+            "Find all keys matching the given pattern",
+            "generic",
+            "O(N)",
+            "1.0.0",
+        ),
+        "SCAN" => (
+            "Incrementally iterate the keys space",
+            "generic",
+            "O(1) per call",
+            "2.8.0",
+        ),
+        "EXPIRE" => (
+            "Set a key's time to live in seconds",
+            "generic",
+            "O(1)",
+            "1.0.0",
+        ),
+        "TTL" => (
+            "Get the time to live for a key in seconds",
+            "generic",
+            "O(1)",
+            "1.0.0",
+        ),
+        "PTTL" => (
+            "Get the time to live for a key in milliseconds",
+            "generic",
+            "O(1)",
+            "2.6.0",
+        ),
+        "PERSIST" => (
+            "Remove the expiration from a key",
+            "generic",
+            "O(1)",
+            "2.2.0",
+        ),
+        "TYPE" => (
+            "Determine the type stored at key",
+            "generic",
+            "O(1)",
+            "1.0.0",
+        ),
         "RENAME" => ("Rename a key", "generic", "O(1)", "1.0.0"),
-        "RANDOMKEY" => ("Return a random key from the keyspace", "generic", "O(1)", "1.0.0"),
-        "OBJECT" => ("Inspect the internals of Redis objects", "generic", "O(1)", "2.2.3"),
-        "SORT" => ("Sort the elements in a list, set or sorted set", "generic", "O(N+M*log(M))", "1.0.0"),
-        "DUMP" => ("Return a serialized version of the value stored at the specified key", "generic", "O(1)", "2.6.0"),
-        "RESTORE" => ("Create a key using the provided serialized value", "generic", "O(1)", "2.6.0"),
-        "WAIT" => ("Wait for the synchronous replication of all the write commands", "generic", "O(1)", "3.0.0"),
-        "MULTI" => ("Mark the start of a transaction block", "transactions", "O(1)", "1.2.0"),
-        "EXEC" => ("Execute all commands issued after MULTI", "transactions", "O(N)", "1.2.0"),
-        "DISCARD" => ("Discard all commands issued after MULTI", "transactions", "O(N)", "2.0.0"),
-        "WATCH" => ("Watch the given keys to determine execution of the MULTI/EXEC block", "transactions", "O(1)", "2.2.0"),
+        "RANDOMKEY" => (
+            "Return a random key from the keyspace",
+            "generic",
+            "O(1)",
+            "1.0.0",
+        ),
+        "OBJECT" => (
+            "Inspect the internals of Redis objects",
+            "generic",
+            "O(1)",
+            "2.2.3",
+        ),
+        "SORT" => (
+            "Sort the elements in a list, set or sorted set",
+            "generic",
+            "O(N+M*log(M))",
+            "1.0.0",
+        ),
+        "DUMP" => (
+            "Return a serialized version of the value stored at the specified key",
+            "generic",
+            "O(1)",
+            "2.6.0",
+        ),
+        "RESTORE" => (
+            "Create a key using the provided serialized value",
+            "generic",
+            "O(1)",
+            "2.6.0",
+        ),
+        "WAIT" => (
+            "Wait for the synchronous replication of all the write commands",
+            "generic",
+            "O(1)",
+            "3.0.0",
+        ),
+        "MULTI" => (
+            "Mark the start of a transaction block",
+            "transactions",
+            "O(1)",
+            "1.2.0",
+        ),
+        "EXEC" => (
+            "Execute all commands issued after MULTI",
+            "transactions",
+            "O(N)",
+            "1.2.0",
+        ),
+        "DISCARD" => (
+            "Discard all commands issued after MULTI",
+            "transactions",
+            "O(N)",
+            "2.0.0",
+        ),
+        "WATCH" => (
+            "Watch the given keys to determine execution of the MULTI/EXEC block",
+            "transactions",
+            "O(1)",
+            "2.2.0",
+        ),
         "PUBLISH" => ("Post a message to a channel", "pubsub", "O(N+M)", "2.0.0"),
-        "SUBSCRIBE" => ("Listen for messages published to the given channels", "pubsub", "O(N)", "2.0.0"),
-        "UNSUBSCRIBE" => ("Stop listening for messages posted to the given channels", "pubsub", "O(N)", "2.0.0"),
-        "COMMAND" => ("Get array of Redis command details", "server", "O(N)", "2.8.13"),
-        "DEBUG" => ("A container for debugging commands", "server", "O(1)", "1.0.0"),
-        "MEMORY" => ("A container for memory introspection commands", "server", "O(1)", "4.0.0"),
-        "CONFIG" => ("A container for server configuration commands", "server", "O(1)", "2.0.0"),
-        "CLIENT" => ("A container for client connection commands", "connection", "O(1)", "2.4.0"),
+        "SUBSCRIBE" => (
+            "Listen for messages published to the given channels",
+            "pubsub",
+            "O(N)",
+            "2.0.0",
+        ),
+        "UNSUBSCRIBE" => (
+            "Stop listening for messages posted to the given channels",
+            "pubsub",
+            "O(N)",
+            "2.0.0",
+        ),
+        "COMMAND" => (
+            "Get array of Redis command details",
+            "server",
+            "O(N)",
+            "2.8.13",
+        ),
+        "DEBUG" => (
+            "A container for debugging commands",
+            "server",
+            "O(1)",
+            "1.0.0",
+        ),
+        "MEMORY" => (
+            "A container for memory introspection commands",
+            "server",
+            "O(1)",
+            "4.0.0",
+        ),
+        "CONFIG" => (
+            "A container for server configuration commands",
+            "server",
+            "O(1)",
+            "2.0.0",
+        ),
+        "CLIENT" => (
+            "A container for client connection commands",
+            "connection",
+            "O(1)",
+            "2.4.0",
+        ),
         "AUTH" => ("Authenticate to the server", "connection", "O(N)", "1.0.0"),
         "QUIT" => ("Close the connection", "connection", "O(1)", "1.0.0"),
         "HELLO" => ("Handshake with Redis", "connection", "O(1)", "6.0.0"),
-        "COPY" => ("Copy the value stored at the source key to the destination key", "generic", "O(N)", "6.2.0"),
-        "UNLINK" => ("Delete a key asynchronously in another thread", "generic", "O(1)", "4.0.0"),
-        "TOUCH" => ("Alters the last access time of a key(s)", "generic", "O(N)", "3.2.1"),
+        "COPY" => (
+            "Copy the value stored at the source key to the destination key",
+            "generic",
+            "O(N)",
+            "6.2.0",
+        ),
+        "UNLINK" => (
+            "Delete a key asynchronously in another thread",
+            "generic",
+            "O(1)",
+            "4.0.0",
+        ),
+        "TOUCH" => (
+            "Alters the last access time of a key(s)",
+            "generic",
+            "O(N)",
+            "3.2.1",
+        ),
         "XADD" => ("Appends a new entry to a stream", "stream", "O(1)", "5.0.0"),
-        "XLEN" => ("Return the number of entries in a stream", "stream", "O(1)", "5.0.0"),
-        "XRANGE" => ("Return a range of elements in a stream", "stream", "O(N)", "5.0.0"),
-        "XREAD" => ("Return never seen elements in multiple streams", "stream", "O(N)", "5.0.0"),
+        "XLEN" => (
+            "Return the number of entries in a stream",
+            "stream",
+            "O(1)",
+            "5.0.0",
+        ),
+        "XRANGE" => (
+            "Return a range of elements in a stream",
+            "stream",
+            "O(N)",
+            "5.0.0",
+        ),
+        "XREAD" => (
+            "Return never seen elements in multiple streams",
+            "stream",
+            "O(N)",
+            "5.0.0",
+        ),
         _ => ("Redis command", "generic", "O(1)", "1.0.0"),
     }
 }
 
 impl CommandExecutor {
-    pub(super) fn handle_object_command(&self, subcommand: &str, key: Option<&Bytes>, db: u8) -> Frame {
+    pub(super) fn handle_object_command(
+        &self,
+        subcommand: &str,
+        key: Option<&Bytes>,
+        db: u8,
+    ) -> Frame {
         match subcommand.to_uppercase().as_str() {
             "ENCODING" => {
                 if let Some(k) = key {
@@ -630,7 +993,10 @@ impl CommandExecutor {
                 }
                 let seconds_str = String::from_utf8_lossy(&args[0]);
                 if let Ok(seconds) = seconds_str.parse::<f64>() {
-                    std::thread::sleep(std::time::Duration::from_secs_f64(seconds));
+                    // Use spawn_blocking to avoid stalling the tokio runtime
+                    let _ = tokio::task::block_in_place(|| {
+                        std::thread::sleep(std::time::Duration::from_secs_f64(seconds));
+                    });
                     Frame::simple("OK")
                 } else {
                     Frame::error("ERR invalid sleep time")
@@ -1076,11 +1442,17 @@ impl CommandExecutor {
                 Frame::bulk("MODULE LIST"),
                 Frame::bulk("    Return a list of loaded modules (always empty in Ferrite)."),
                 Frame::bulk("MODULE LOAD <path> [arg ...]"),
-                Frame::bulk("    Not supported. Ferrite uses native Rust crates for extensibility."),
+                Frame::bulk(
+                    "    Not supported. Ferrite uses native Rust crates for extensibility.",
+                ),
                 Frame::bulk("MODULE UNLOAD <name>"),
-                Frame::bulk("    Not supported. Ferrite uses native Rust crates for extensibility."),
+                Frame::bulk(
+                    "    Not supported. Ferrite uses native Rust crates for extensibility.",
+                ),
                 Frame::bulk("MODULE LOADEX <path> [CONFIG name value ...] [ARGS arg ...]"),
-                Frame::bulk("    Not supported. Ferrite uses native Rust crates for extensibility."),
+                Frame::bulk(
+                    "    Not supported. Ferrite uses native Rust crates for extensibility.",
+                ),
             ]),
             _ => Frame::error(format!("ERR Unknown MODULE subcommand '{}'", subcommand)),
         }
@@ -1181,7 +1553,10 @@ impl CommandExecutor {
                 Frame::bulk("PLUGIN INFO <name>"),
                 Frame::bulk("    Get information about a plugin."),
             ]),
-            _ => Frame::error(format!("ERR Unknown PLUGIN subcommand '{}'. Try PLUGIN HELP.", subcommand)),
+            _ => Frame::error(format!(
+                "ERR Unknown PLUGIN subcommand '{}'. Try PLUGIN HELP.",
+                subcommand
+            )),
         }
     }
 
@@ -1585,7 +1960,14 @@ impl CommandExecutor {
 
     /// SHUTDOWN [NOSAVE | SAVE] [NOW] [FORCE] [ABORT]
     /// Shutdown the server
-    pub(super) fn shutdown(&self, nosave: bool, save: bool, now: bool, force: bool, abort: bool) -> Frame {
+    pub(super) fn shutdown(
+        &self,
+        nosave: bool,
+        save: bool,
+        now: bool,
+        force: bool,
+        abort: bool,
+    ) -> Frame {
         // SHUTDOWN options:
         // - NOSAVE: Don't save before shutdown
         // - SAVE: Force save before shutdown
@@ -1904,7 +2286,9 @@ impl CommandExecutor {
                         } else {
                             Frame::error(format!(
                                 "ERR {}",
-                                result.error.unwrap_or_else(|| "execution failed".to_string())
+                                result
+                                    .error
+                                    .unwrap_or_else(|| "execution failed".to_string())
                             ))
                         }
                     }

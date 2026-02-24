@@ -22,7 +22,13 @@ impl CommandExecutor {
     }
 
     #[inline]
-    pub(super) fn set(&self, db: u8, key: Bytes, value: Bytes, options: crate::commands::parser::SetOptions) -> Frame {
+    pub(super) fn set(
+        &self,
+        db: u8,
+        key: Bytes,
+        value: Bytes,
+        options: crate::commands::parser::SetOptions,
+    ) -> Frame {
         // Handle NX/XX conditions
         let exists = self.store.get(db, &key).is_some();
 

@@ -619,7 +619,11 @@ impl TimeSeriesStorage {
                 continue;
             }
             let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-            if !filename.starts_with("tsdb_") || !path.extension().is_some_and(|e| e.eq_ignore_ascii_case("dat")) {
+            if !filename.starts_with("tsdb_")
+                || !path
+                    .extension()
+                    .is_some_and(|e| e.eq_ignore_ascii_case("dat"))
+            {
                 continue;
             }
 
@@ -809,8 +813,6 @@ pub enum StorageTier {
     /// Archive tier - very old data, highly compressed
     Archive,
 }
-
-
 
 /// Storage block containing samples
 #[derive(Debug, Clone)]

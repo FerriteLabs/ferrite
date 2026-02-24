@@ -250,20 +250,14 @@ impl DocumentIndex {
                     .entry(k.clone())
                     .or_default()
                     .insert(doc.id.clone());
-                self.hash
-                    .entry(k)
-                    .or_default()
-                    .insert(doc.id.clone());
+                self.hash.entry(k).or_default().insert(doc.id.clone());
             }
         } else {
             self.btree
                 .entry(key.clone())
                 .or_default()
                 .insert(doc.id.clone());
-            self.hash
-                .entry(key)
-                .or_default()
-                .insert(doc.id.clone());
+            self.hash.entry(key).or_default().insert(doc.id.clone());
         }
 
         // Build text index for string fields

@@ -27,8 +27,8 @@ use parking_lot::RwLock;
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-use ferrite_graph::graph::{Direction, EdgeId, Graph, PropertyValue, VertexId};
 use crate::protocol::Frame;
+use ferrite_graph::graph::{Direction, EdgeId, Graph, PropertyValue, VertexId};
 
 use super::{err_frame, ok_frame, HandlerContext};
 

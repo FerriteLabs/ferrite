@@ -6,10 +6,10 @@ use std::sync::OnceLock;
 
 use bytes::Bytes;
 
+use crate::protocol::Frame;
 use ferrite_enterprise::policy::{
     Policy, PolicyAction, PolicyConfig, PolicyManager, PolicyRule, PolicyType, RuleCondition,
 };
-use crate::protocol::Frame;
 
 use super::{err_frame, ok_frame, HandlerContext};
 

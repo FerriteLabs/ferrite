@@ -799,11 +799,7 @@ pub fn zintercard(store: &Arc<Store>, db: u8, keys: &[Bytes], limit: Option<usiz
     }
 
     // Find smallest set to iterate over
-    let Some((smallest_idx, _)) = sets
-        .iter()
-        .enumerate()
-        .min_by_key(|(_, s)| s.len())
-    else {
+    let Some((smallest_idx, _)) = sets.iter().enumerate().min_by_key(|(_, s)| s.len()) else {
         return Frame::Integer(0);
     };
 
@@ -996,7 +992,10 @@ impl LexBound {
             Some(LexBound::Unbounded)
         } else if let Some(rest) = s.strip_prefix('[') {
             Some(LexBound::Inclusive(Bytes::from(rest.to_string())))
-        } else { s.strip_prefix('(').map(|rest| LexBound::Exclusive(Bytes::from(rest.to_string()))) }
+        } else {
+            s.strip_prefix('(')
+                .map(|rest| LexBound::Exclusive(Bytes::from(rest.to_string())))
+        }
     }
 
     fn includes(&self, member: &[u8], is_min: bool) -> bool {

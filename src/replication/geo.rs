@@ -20,7 +20,9 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::{broadcast, mpsc, oneshot};
 use tracing::info;
 
-use ferrite_plugins::crdt::{CrdtOperation, CrdtState, HybridClock, HybridTimestamp, SiteId, VectorClock};
+use ferrite_plugins::crdt::{
+    CrdtOperation, CrdtState, HybridClock, HybridTimestamp, SiteId, VectorClock,
+};
 
 /// Geographic region identifier
 pub type RegionId = String;

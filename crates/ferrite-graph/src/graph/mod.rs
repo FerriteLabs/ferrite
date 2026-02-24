@@ -676,8 +676,7 @@ impl Graph {
                 self.metrics
                     .queries
                     .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                cypher::execute_read_only(q, &self.storage.read())
-                    .map_err(GraphError::InvalidQuery)
+                cypher::execute_read_only(q, &self.storage.read()).map_err(GraphError::InvalidQuery)
             }
             _ => Err(GraphError::InvalidQuery(
                 "cypher_query only supports read queries; use cypher_execute for mutations"

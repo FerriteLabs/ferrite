@@ -62,10 +62,7 @@ impl ReplicationHealthMonitor {
             let lag_secs = replica.lag_seconds();
 
             ferrite_core::metrics::record_replication_lag_bytes(&label, lag_bytes as f64);
-            ferrite_core::metrics::record_replication_lag_seconds(
-                &label,
-                lag_secs as f64,
-            );
+            ferrite_core::metrics::record_replication_lag_seconds(&label, lag_secs as f64);
 
             if lag_bytes > 10 * 1024 * 1024 {
                 warn!(
@@ -97,8 +94,7 @@ mod tests {
         let stream = Arc::new(ReplicationStream::new(10000));
         let primary = Arc::new(ReplicationPrimary::new(store, state.clone(), stream));
 
-        let monitor =
-            ReplicationHealthMonitor::new(primary, state, Duration::from_millis(100));
+        let monitor = ReplicationHealthMonitor::new(primary, state, Duration::from_millis(100));
         // Should not panic with no replicas
         monitor.sample().await;
     }
@@ -108,11 +104,7 @@ mod tests {
         let store = Arc::new(Store::new(16));
         let state = Arc::new(ReplicationState::new());
         let stream = Arc::new(ReplicationStream::new(10000));
-        let primary = Arc::new(ReplicationPrimary::new(
-            store,
-            state.clone(),
-            stream,
-        ));
+        let primary = Arc::new(ReplicationPrimary::new(store, state.clone(), stream));
 
         let addr = "127.0.0.1:6380".parse().expect("valid addr");
         primary.register_replica(addr, 6380).await;

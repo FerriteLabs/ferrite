@@ -1,9 +1,8 @@
-
-use bytes::Bytes;
+use super::{get_bytes, get_int, get_string};
+use crate::commands::parser::Command;
 use crate::error::{FerriteError, Result};
 use crate::protocol::Frame;
-use super::{get_string, get_bytes, get_int};
-use crate::commands::parser::{Command};
+use bytes::Bytes;
 
 pub(crate) fn parse_xadd(args: &[Frame]) -> Result<Command> {
     if args.len() < 4 {
@@ -106,12 +105,11 @@ pub(crate) fn parse_xrange(args: &[Frame]) -> Result<Command> {
     let start = get_string(&args[1])?;
     let end = get_string(&args[2])?;
 
-    let count = if args.len() >= 5
-        && get_string(&args[3])?.to_uppercase() == "COUNT" {
-            Some(get_int(&args[4])? as usize)
-        } else {
-            None
-        };
+    let count = if args.len() >= 5 && get_string(&args[3])?.to_uppercase() == "COUNT" {
+        Some(get_int(&args[4])? as usize)
+    } else {
+        None
+    };
 
     Ok(Command::XRange {
         key,
@@ -130,12 +128,11 @@ pub(crate) fn parse_xrevrange(args: &[Frame]) -> Result<Command> {
     let end = get_string(&args[1])?;
     let start = get_string(&args[2])?;
 
-    let count = if args.len() >= 5
-        && get_string(&args[3])?.to_uppercase() == "COUNT" {
-            Some(get_int(&args[4])? as usize)
-        } else {
-            None
-        };
+    let count = if args.len() >= 5 && get_string(&args[3])?.to_uppercase() == "COUNT" {
+        Some(get_int(&args[4])? as usize)
+    } else {
+        None
+    };
 
     Ok(Command::XRevRange {
         key,

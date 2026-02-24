@@ -268,11 +268,7 @@ impl Ferrite {
     }
 
     /// Get the value of a hash field.
-    pub fn hget(
-        &self,
-        key: impl AsRef<[u8]>,
-        field: impl AsRef<[u8]>,
-    ) -> Result<Option<Bytes>> {
+    pub fn hget(&self, key: impl AsRef<[u8]>, field: impl AsRef<[u8]>) -> Result<Option<Bytes>> {
         self.check_open()?;
         let k = self.kb(&key);
         let f = self.kb(&field);
@@ -365,12 +361,7 @@ impl Ferrite {
     }
 
     /// Return a range of elements from a list.
-    pub fn lrange(
-        &self,
-        key: impl AsRef<[u8]>,
-        start: i64,
-        stop: i64,
-    ) -> Result<Vec<Bytes>> {
+    pub fn lrange(&self, key: impl AsRef<[u8]>, start: i64, stop: i64) -> Result<Vec<Bytes>> {
         self.check_open()?;
         let k = self.kb(&key);
 
@@ -381,7 +372,11 @@ impl Ferrite {
         };
 
         let len = list.len() as i64;
-        let s = if start < 0 { (len + start).max(0) as usize } else { start as usize };
+        let s = if start < 0 {
+            (len + start).max(0) as usize
+        } else {
+            start as usize
+        };
         let e = if stop < 0 {
             (len + stop + 1).max(0) as usize
         } else {
@@ -488,7 +483,11 @@ impl Ferrite {
         let uptime = self.created_at.elapsed();
         let keys = self.store.key_count(0);
         let dbs = self.config.databases;
-        let persistence = if self.config.persistence { "enabled" } else { "disabled" };
+        let persistence = if self.config.persistence {
+            "enabled"
+        } else {
+            "disabled"
+        };
         let max_mem_mb = self.config.max_memory / (1024 * 1024);
         let eviction = self.config.eviction_policy.as_str();
 
@@ -563,12 +562,10 @@ impl Drop for Ferrite {
 // ---------------------------------------------------------------------------
 
 /// Builder for configuring and creating a [`Ferrite`] instance.
-#[derive(Debug)]
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct FerriteBuilder {
     config: EmbeddedConfig,
 }
-
 
 impl FerriteBuilder {
     /// Set the maximum memory budget. Accepts human-readable strings like
@@ -720,10 +717,7 @@ mod tests {
             .build()
             .unwrap();
         assert!(f.config.persistence);
-        assert_eq!(
-            f.config.data_dir,
-            Some(PathBuf::from("/tmp/ferrite-test"))
-        );
+        assert_eq!(f.config.data_dir, Some(PathBuf::from("/tmp/ferrite-test")));
     }
 
     #[test]
@@ -851,10 +845,16 @@ mod tests {
     #[test]
     fn test_rpush_lrange() {
         let f = db();
-        f.rpush("list", &[Bytes::from("a"), Bytes::from("b"), Bytes::from("c")])
-            .unwrap();
+        f.rpush(
+            "list",
+            &[Bytes::from("a"), Bytes::from("b"), Bytes::from("c")],
+        )
+        .unwrap();
         let range = f.lrange("list", 0, -1).unwrap();
-        assert_eq!(range, vec![Bytes::from("a"), Bytes::from("b"), Bytes::from("c")]);
+        assert_eq!(
+            range,
+            vec![Bytes::from("a"), Bytes::from("b"), Bytes::from("c")]
+        );
         let sub = f.lrange("list", 1, 1).unwrap();
         assert_eq!(sub, vec![Bytes::from("b")]);
     }

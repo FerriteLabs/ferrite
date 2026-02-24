@@ -72,10 +72,7 @@ pub struct FailoverCoordinator {
 
 impl FailoverCoordinator {
     /// Create a new failover coordinator.
-    pub fn new(
-        primary: Arc<ReplicationPrimary>,
-        state: SharedReplicationState,
-    ) -> Self {
+    pub fn new(primary: Arc<ReplicationPrimary>, state: SharedReplicationState) -> Self {
         Self {
             primary,
             state,
@@ -220,10 +217,7 @@ impl FailoverCoordinator {
                 return Err(FailoverError::Timeout(timeout));
             }
 
-            let count = self
-                .primary
-                .count_replicas_at_offset(primary_offset)
-                .await;
+            let count = self.primary.count_replicas_at_offset(primary_offset).await;
             if count > 0 {
                 // At least one replica (our target) is at or past the offset
                 return Ok(primary_offset);
@@ -241,7 +235,11 @@ mod tests {
     use crate::replication::{ReplicationState, ReplicationStream};
     use crate::storage::Store;
 
-    fn make_coordinator() -> (FailoverCoordinator, Arc<ReplicationPrimary>, Arc<ReplicationState>) {
+    fn make_coordinator() -> (
+        FailoverCoordinator,
+        Arc<ReplicationPrimary>,
+        Arc<ReplicationState>,
+    ) {
         let store = Arc::new(Store::new(16));
         let state = Arc::new(ReplicationState::new());
         let stream = Arc::new(ReplicationStream::new(10000));
@@ -253,9 +251,7 @@ mod tests {
     #[tokio::test]
     async fn test_failover_no_replicas() {
         let (coord, _, _) = make_coordinator();
-        let result = coord
-            .initiate(None, Some(Duration::from_millis(100)))
-            .await;
+        let result = coord.initiate(None, Some(Duration::from_millis(100))).await;
         assert!(matches!(result, Err(FailoverError::NoReplicaAvailable)));
     }
 
@@ -272,9 +268,7 @@ mod tests {
         let (coord, _, _) = make_coordinator();
         assert!(!coord.writes_blocked());
         // After a failed failover, writes should be unblocked
-        let _ = coord
-            .initiate(None, Some(Duration::from_millis(50)))
-            .await;
+        let _ = coord.initiate(None, Some(Duration::from_millis(50))).await;
         assert!(!coord.writes_blocked());
     }
 
@@ -284,10 +278,7 @@ mod tests {
         let addr: SocketAddr = "127.0.0.1:6381".parse().expect("valid addr");
         primary.register_replica(addr, 6381).await;
         primary
-            .set_replica_state(
-                &addr,
-                crate::replication::ReplicaConnectionState::Online,
-            )
+            .set_replica_state(&addr, crate::replication::ReplicaConnectionState::Online)
             .await;
         // Advance offset but don't update replica – failover will time out
         state.increment_offset(1000);
@@ -296,12 +287,16 @@ mod tests {
         let coord2 = coord.clone();
 
         let h1 = tokio::spawn(async move {
-            coord.initiate(Some(addr), Some(Duration::from_millis(200))).await
+            coord
+                .initiate(Some(addr), Some(Duration::from_millis(200)))
+                .await
         });
         // Small delay to let h1 grab the lock
         tokio::time::sleep(Duration::from_millis(10)).await;
         let h2 = tokio::spawn(async move {
-            coord2.initiate(Some(addr), Some(Duration::from_millis(200))).await
+            coord2
+                .initiate(Some(addr), Some(Duration::from_millis(200)))
+                .await
         });
 
         let (r1, r2) = tokio::join!(h1, h2);
@@ -320,10 +315,7 @@ mod tests {
         let addr: SocketAddr = "127.0.0.1:6381".parse().expect("valid addr");
         primary.register_replica(addr, 6381).await;
         primary
-            .set_replica_state(
-                &addr,
-                crate::replication::ReplicaConnectionState::Online,
-            )
+            .set_replica_state(&addr, crate::replication::ReplicaConnectionState::Online)
             .await;
 
         state.increment_offset(500);
@@ -345,10 +337,7 @@ mod tests {
         let addr: SocketAddr = "127.0.0.1:6381".parse().expect("valid addr");
         primary.register_replica(addr, 6381).await;
         primary
-            .set_replica_state(
-                &addr,
-                crate::replication::ReplicaConnectionState::Online,
-            )
+            .set_replica_state(&addr, crate::replication::ReplicaConnectionState::Online)
             .await;
 
         state.increment_offset(5000);

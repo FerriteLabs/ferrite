@@ -25,8 +25,6 @@ pub enum CompressionCodec {
     Custom(String),
 }
 
-
-
 impl std::fmt::Display for CompressionCodec {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -130,8 +128,6 @@ pub enum CompressionLevel {
     /// Best compression ratio, slowest
     Best,
 }
-
-
 
 impl std::fmt::Display for CompressionLevel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -265,10 +261,7 @@ impl Compression for GorillaCompressor {
                 {
                     writer.write_bit(false);
                     let meaningful_bits = 64 - prev_leading - prev_trailing;
-                    writer.write_bits(
-                        xor >> prev_trailing,
-                        meaningful_bits as usize,
-                    );
+                    writer.write_bits(xor >> prev_trailing, meaningful_bits as usize);
                 } else if leading >= 5 && trailing >= 5 {
                     writer.write_bit(false);
                     writer.write_bits(leading as u64, 6);
@@ -482,8 +475,16 @@ impl Compression for NoCompression {
         let mut offset = 0;
 
         while offset + 16 <= block.data.len() {
-            let ts = i64::from_le_bytes(block.data[offset..offset + 8].try_into().unwrap_or_default());
-            let value = f64::from_le_bytes(block.data[offset + 8..offset + 16].try_into().unwrap_or_default());
+            let ts = i64::from_le_bytes(
+                block.data[offset..offset + 8]
+                    .try_into()
+                    .unwrap_or_default(),
+            );
+            let value = f64::from_le_bytes(
+                block.data[offset + 8..offset + 16]
+                    .try_into()
+                    .unwrap_or_default(),
+            );
             samples.push(Sample::new(Timestamp::from_nanos(ts), value));
             offset += 16;
         }
@@ -678,9 +679,7 @@ mod tests {
     fn test_gorilla_roundtrip_constant_values() {
         let compressor = GorillaCompressor::new();
 
-        let samples: Vec<Sample> = (0..50)
-            .map(|i| Sample::from_secs(i, 42.0))
-            .collect();
+        let samples: Vec<Sample> = (0..50).map(|i| Sample::from_secs(i, 42.0)).collect();
 
         let compressed = compressor.compress(&samples).unwrap();
         assert!(compressed.compression_ratio() > 2.0); // Constant values compress well

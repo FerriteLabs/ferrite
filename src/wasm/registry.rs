@@ -185,9 +185,7 @@ impl UdfRegistry {
             last_error: None,
         };
 
-        self.functions
-            .write()
-            .insert(name.to_string(), func);
+        self.functions.write().insert(name.to_string(), func);
 
         // Update stats
         self.update_stats();
@@ -255,17 +253,20 @@ impl UdfRegistry {
         let simple_args: Vec<WasmValue> = wasm_args
             .iter()
             .map(|v| match v {
-                WasmValue::I64(i) if i32::try_from(*i).is_ok() => {
-                    WasmValue::I32(*i as i32)
-                }
+                WasmValue::I64(i) if i32::try_from(*i).is_ok() => WasmValue::I32(*i as i32),
                 other => other.clone(),
             })
             .collect();
 
         // Execute
-        let result =
-            self.runtime
-                .execute(&module_hash, &entry_point, &simple_args, db, &permissions, &limits);
+        let result = self.runtime.execute(
+            &module_hash,
+            &entry_point,
+            &simple_args,
+            db,
+            &permissions,
+            &limits,
+        );
 
         // Update call stats
         {
@@ -338,9 +339,7 @@ impl UdfRegistry {
         let simple_args: Vec<WasmValue> = wasm_args
             .iter()
             .map(|v| match v {
-                WasmValue::I64(i) if i32::try_from(*i).is_ok() => {
-                    WasmValue::I32(*i as i32)
-                }
+                WasmValue::I64(i) if i32::try_from(*i).is_ok() => WasmValue::I32(*i as i32),
                 other => other.clone(),
             })
             .collect();
@@ -448,11 +447,9 @@ mod tests {
             // Type section
             0x01, 0x0C, 0x02, 0x60, 0x02, 0x7F, 0x7F, 0x01, 0x7F, 0x60, 0x00, 0x01, 0x7F,
             // Function section
-            0x03, 0x03, 0x02, 0x00, 0x01,
-            // Export section
+            0x03, 0x03, 0x02, 0x00, 0x01, // Export section
             0x07, 0x11, 0x02, 0x03, 0x61, 0x64, 0x64, 0x00, 0x00, 0x04, 0x6D, 0x61, 0x69, 0x6E,
-            0x00, 0x01,
-            // Code section
+            0x00, 0x01, // Code section
             0x0A, 0x0F, 0x02, 0x07, 0x00, 0x20, 0x00, 0x20, 0x01, 0x6A, 0x0B, 0x04, 0x00, 0x41,
             0x00, 0x0B,
         ]
@@ -530,9 +527,7 @@ mod tests {
         // The module exports "add" and "main"; the registry picks "main" as default.
         // We need to call "add" explicitly. Let's test that the registry picks
         // "main" if available.
-        let result = registry
-            .call("adder", &[], &[], 0)
-            .expect("call failed");
+        let result = registry.call("adder", &[], &[], 0).expect("call failed");
 
         // "main" returns 0
         assert!(result.success, "execution failed: {:?}", result.error);

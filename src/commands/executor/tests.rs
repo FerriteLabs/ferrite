@@ -1,15 +1,15 @@
 #![allow(clippy::unwrap_used)]
 use super::*;
-use std::sync::Arc;
-use std::time::{Duration, Instant};
-use bytes::Bytes;
 use crate::auth::Acl;
 use crate::commands::blocking;
-use crate::commands::BlockingListManager;
 use crate::commands::parser::Command;
+use crate::commands::BlockingListManager;
 use crate::protocol::Frame;
 use crate::runtime::SubscriptionManager;
 use crate::storage::Store;
+use bytes::Bytes;
+use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 fn create_executor() -> CommandExecutor {
     let store = Arc::new(Store::new(16));
@@ -397,7 +397,10 @@ async fn test_acl_genpass() {
             // Default length is 64
             assert_eq!(data.len(), 64);
         }
-        other => panic!("Expected bulk string response for ACL GENPASS, got {:?}", other),
+        other => panic!(
+            "Expected bulk string response for ACL GENPASS, got {:?}",
+            other
+        ),
     }
 
     // ACL GENPASS with length
@@ -414,7 +417,10 @@ async fn test_acl_genpass() {
         Frame::Bulk(Some(data)) => {
             assert_eq!(data.len(), 32);
         }
-        other => panic!("Expected bulk string response for ACL GENPASS, got {:?}", other),
+        other => panic!(
+            "Expected bulk string response for ACL GENPASS, got {:?}",
+            other
+        ),
     }
 }
 
@@ -681,7 +687,10 @@ async fn test_cluster_countkeysinslot() {
         Frame::Integer(count) => {
             assert!(count >= 0);
         }
-        other => panic!("Expected integer for CLUSTER COUNTKEYSINSLOT, got {:?}", other),
+        other => panic!(
+            "Expected integer for CLUSTER COUNTKEYSINSLOT, got {:?}",
+            other
+        ),
     }
 }
 
@@ -753,7 +762,10 @@ async fn test_cluster_unknown_subcommand() {
         .await;
     match response {
         Frame::Error(_) => {}
-        other => panic!("Expected error for unknown CLUSTER subcommand, got {:?}", other),
+        other => panic!(
+            "Expected error for unknown CLUSTER subcommand, got {:?}",
+            other
+        ),
     }
 }
 
@@ -4024,7 +4036,9 @@ async fn test_flushdb() {
     let executor = create_executor();
 
     // FLUSHDB returns OK (current implementation is a stub)
-    let response = executor.execute(Command::FlushDb { r#async: false }, 0).await;
+    let response = executor
+        .execute(Command::FlushDb { r#async: false }, 0)
+        .await;
     assert!(matches!(response, Frame::Simple(s) if s == "OK"));
 }
 
@@ -4033,7 +4047,9 @@ async fn test_flushall() {
     let executor = create_executor();
 
     // FLUSHALL returns OK (current implementation is a stub)
-    let response = executor.execute(Command::FlushAll { r#async: false }, 0).await;
+    let response = executor
+        .execute(Command::FlushAll { r#async: false }, 0)
+        .await;
     assert!(matches!(response, Frame::Simple(s) if s == "OK"));
 }
 
@@ -4280,7 +4296,10 @@ async fn test_hello_invalid_protocol_version() {
             let err_str = String::from_utf8_lossy(&msg);
             assert!(err_str.contains("NOPROTO") || err_str.contains("unsupported"));
         }
-        other => panic!("Expected error for invalid protocol version, got {:?}", other),
+        other => panic!(
+            "Expected error for invalid protocol version, got {:?}",
+            other
+        ),
     }
 }
 
@@ -5442,7 +5461,10 @@ async fn test_config_unknown_subcommand() {
                 "Expected unknown subcommand error"
             );
         }
-        other => panic!("Expected error for unknown CONFIG subcommand, got {:?}", other),
+        other => panic!(
+            "Expected error for unknown CONFIG subcommand, got {:?}",
+            other
+        ),
     }
 }
 
@@ -5488,7 +5510,10 @@ async fn test_rename_nonexistent_key_fails() {
             let err_str = String::from_utf8_lossy(&e);
             assert!(err_str.contains("no such key"));
         }
-        other => panic!("Expected error for renaming non-existent key, got {:?}", other),
+        other => panic!(
+            "Expected error for renaming non-existent key, got {:?}",
+            other
+        ),
     }
 }
 
@@ -5647,7 +5672,12 @@ async fn test_cluster_myid_with_state_manager() {
     match response {
         Frame::Bulk(Some(data)) => {
             // ClusterStateManager generates a random 40-char hex ID
-            assert_eq!(data.len(), 40, "Node ID should be 40 characters, got {}", data.len());
+            assert_eq!(
+                data.len(),
+                40,
+                "Node ID should be 40 characters, got {}",
+                data.len()
+            );
         }
         other => panic!("Expected bulk string for CLUSTER MYID, got {:?}", other),
     }
@@ -5826,7 +5856,10 @@ async fn test_cluster_forget_standalone() {
         .await;
     match response {
         Frame::Error(_) => {}
-        other => panic!("Expected error for FORGET in standalone mode, got {:?}", other),
+        other => panic!(
+            "Expected error for FORGET in standalone mode, got {:?}",
+            other
+        ),
     }
 }
 
@@ -5977,7 +6010,12 @@ async fn test_cluster_countkeysinslot_with_real_keys() {
         .await;
     match response {
         Frame::Integer(count) => {
-            assert!(count >= 1, "Expected at least 1 key in slot {}, got {}", slot, count);
+            assert!(
+                count >= 1,
+                "Expected at least 1 key in slot {}, got {}",
+                slot,
+                count
+            );
         }
         other => panic!("Expected integer for COUNTKEYSINSLOT, got {:?}", other),
     }
@@ -6019,7 +6057,10 @@ async fn test_cluster_getkeysinslot_with_real_keys() {
                 Frame::Bulk(Some(k)) => {
                     assert_eq!(k.as_ref(), key.as_ref(), "Returned key mismatch");
                 }
-                other => panic!("Expected bulk string in GETKEYSINSLOT result, got {:?}", other),
+                other => panic!(
+                    "Expected bulk string in GETKEYSINSLOT result, got {:?}",
+                    other
+                ),
             }
         }
         other => panic!("Expected array for GETKEYSINSLOT, got {:?}", other),
@@ -6093,11 +6134,7 @@ async fn test_cluster_keyslot_known_values() {
     let executor = create_executor();
 
     // Known CRC16 test vectors
-    let test_cases = vec![
-        ("foo", 12182),
-        ("bar", 5061),
-        ("hello", 866),
-    ];
+    let test_cases = vec![("foo", 12182), ("bar", 5061), ("hello", 866)];
 
     for (key, expected_slot) in test_cases {
         let response = executor
@@ -6408,7 +6445,10 @@ async fn test_cluster_failover_invalid_option() {
         .await;
     match response {
         Frame::Error(_) => {}
-        other => panic!("Expected error for invalid FAILOVER option, got {:?}", other),
+        other => panic!(
+            "Expected error for invalid FAILOVER option, got {:?}",
+            other
+        ),
     }
 }
 
@@ -6540,7 +6580,10 @@ async fn test_cluster_setslot_missing_args() {
         .await;
     match response {
         Frame::Error(_) => {}
-        other => panic!("Expected error for IMPORTING without node ID, got {:?}", other),
+        other => panic!(
+            "Expected error for IMPORTING without node ID, got {:?}",
+            other
+        ),
     }
 
     // MIGRATING without node ID
@@ -6555,7 +6598,10 @@ async fn test_cluster_setslot_missing_args() {
         .await;
     match response {
         Frame::Error(_) => {}
-        other => panic!("Expected error for MIGRATING without node ID, got {:?}", other),
+        other => panic!(
+            "Expected error for MIGRATING without node ID, got {:?}",
+            other
+        ),
     }
 
     // NODE without node ID
@@ -6758,9 +6804,7 @@ async fn test_cluster_help_contents() {
             let help_text: Vec<String> = arr
                 .iter()
                 .filter_map(|f| match f {
-                    Frame::Bulk(Some(data)) => {
-                        Some(String::from_utf8_lossy(data).to_string())
-                    }
+                    Frame::Bulk(Some(data)) => Some(String::from_utf8_lossy(data).to_string()),
                     _ => None,
                 })
                 .collect();
@@ -6778,7 +6822,10 @@ async fn test_cluster_help_contents() {
             assert!(has("DELSLOTS"), "HELP should mention DELSLOTS");
             assert!(has("SETSLOT"), "HELP should mention SETSLOT");
             assert!(has("FAILOVER"), "HELP should mention FAILOVER");
-            assert!(has("SET-CONFIG-EPOCH"), "HELP should mention SET-CONFIG-EPOCH");
+            assert!(
+                has("SET-CONFIG-EPOCH"),
+                "HELP should mention SET-CONFIG-EPOCH"
+            );
         }
         other => panic!("Expected array for CLUSTER HELP, got {:?}", other),
     }
@@ -6796,12 +6843,26 @@ async fn test_randomkey_empty() {
 #[tokio::test]
 async fn test_randomkey_with_keys() {
     let executor = create_executor();
-    executor.execute(
-        Command::Set { key: Bytes::from("a"), value: Bytes::from("1"), options: Default::default() }, 0
-    ).await;
-    executor.execute(
-        Command::Set { key: Bytes::from("b"), value: Bytes::from("2"), options: Default::default() }, 0
-    ).await;
+    executor
+        .execute(
+            Command::Set {
+                key: Bytes::from("a"),
+                value: Bytes::from("1"),
+                options: Default::default(),
+            },
+            0,
+        )
+        .await;
+    executor
+        .execute(
+            Command::Set {
+                key: Bytes::from("b"),
+                value: Bytes::from("2"),
+                options: Default::default(),
+            },
+            0,
+        )
+        .await;
 
     let response = executor.execute(Command::RandomKey, 0).await;
     match response {
@@ -6815,53 +6876,101 @@ async fn test_randomkey_with_keys() {
 #[tokio::test]
 async fn test_object_refcount() {
     let executor = create_executor();
-    executor.execute(
-        Command::Set { key: Bytes::from("k"), value: Bytes::from("v"), options: Default::default() }, 0
-    ).await;
+    executor
+        .execute(
+            Command::Set {
+                key: Bytes::from("k"),
+                value: Bytes::from("v"),
+                options: Default::default(),
+            },
+            0,
+        )
+        .await;
 
-    let response = executor.execute(
-        Command::Object { subcommand: "REFCOUNT".to_string(), key: Some(Bytes::from("k")) }, 0
-    ).await;
+    let response = executor
+        .execute(
+            Command::Object {
+                subcommand: "REFCOUNT".to_string(),
+                key: Some(Bytes::from("k")),
+            },
+            0,
+        )
+        .await;
     assert!(matches!(response, Frame::Integer(1)));
 }
 
 #[tokio::test]
 async fn test_object_refcount_missing_key() {
     let executor = create_executor();
-    let response = executor.execute(
-        Command::Object { subcommand: "REFCOUNT".to_string(), key: Some(Bytes::from("missing")) }, 0
-    ).await;
+    let response = executor
+        .execute(
+            Command::Object {
+                subcommand: "REFCOUNT".to_string(),
+                key: Some(Bytes::from("missing")),
+            },
+            0,
+        )
+        .await;
     assert!(matches!(response, Frame::Null));
 }
 
 #[tokio::test]
 async fn test_object_idletime() {
     let executor = create_executor();
-    executor.execute(
-        Command::Set { key: Bytes::from("k"), value: Bytes::from("v"), options: Default::default() }, 0
-    ).await;
+    executor
+        .execute(
+            Command::Set {
+                key: Bytes::from("k"),
+                value: Bytes::from("v"),
+                options: Default::default(),
+            },
+            0,
+        )
+        .await;
 
-    let response = executor.execute(
-        Command::Object { subcommand: "IDLETIME".to_string(), key: Some(Bytes::from("k")) }, 0
-    ).await;
+    let response = executor
+        .execute(
+            Command::Object {
+                subcommand: "IDLETIME".to_string(),
+                key: Some(Bytes::from("k")),
+            },
+            0,
+        )
+        .await;
     // Idle time should be 0 or a small number right after creation
     match response {
         Frame::Integer(n) => assert!(n >= 0),
         Frame::Null => {} // acceptable if store doesn't track idletime
-        other => panic!("Expected integer or null from OBJECT IDLETIME, got {:?}", other),
+        other => panic!(
+            "Expected integer or null from OBJECT IDLETIME, got {:?}",
+            other
+        ),
     }
 }
 
 #[tokio::test]
 async fn test_object_freq() {
     let executor = create_executor();
-    executor.execute(
-        Command::Set { key: Bytes::from("k"), value: Bytes::from("v"), options: Default::default() }, 0
-    ).await;
+    executor
+        .execute(
+            Command::Set {
+                key: Bytes::from("k"),
+                value: Bytes::from("v"),
+                options: Default::default(),
+            },
+            0,
+        )
+        .await;
 
-    let response = executor.execute(
-        Command::Object { subcommand: "FREQ".to_string(), key: Some(Bytes::from("k")) }, 0
-    ).await;
+    let response = executor
+        .execute(
+            Command::Object {
+                subcommand: "FREQ".to_string(),
+                key: Some(Bytes::from("k")),
+            },
+            0,
+        )
+        .await;
     match response {
         Frame::Integer(n) => assert!(n >= 0),
         Frame::Null => {} // acceptable if store doesn't track freq
@@ -6872,9 +6981,15 @@ async fn test_object_freq() {
 #[tokio::test]
 async fn test_object_help() {
     let executor = create_executor();
-    let response = executor.execute(
-        Command::Object { subcommand: "HELP".to_string(), key: None }, 0
-    ).await;
+    let response = executor
+        .execute(
+            Command::Object {
+                subcommand: "HELP".to_string(),
+                key: None,
+            },
+            0,
+        )
+        .await;
     match response {
         Frame::Array(Some(arr)) => {
             assert!(!arr.is_empty(), "OBJECT HELP should return help text");
@@ -6886,13 +7001,26 @@ async fn test_object_help() {
 #[tokio::test]
 async fn test_object_encoding_int() {
     let executor = create_executor();
-    executor.execute(
-        Command::Set { key: Bytes::from("intkey"), value: Bytes::from("12345"), options: Default::default() }, 0
-    ).await;
+    executor
+        .execute(
+            Command::Set {
+                key: Bytes::from("intkey"),
+                value: Bytes::from("12345"),
+                options: Default::default(),
+            },
+            0,
+        )
+        .await;
 
-    let response = executor.execute(
-        Command::Object { subcommand: "ENCODING".to_string(), key: Some(Bytes::from("intkey")) }, 0
-    ).await;
+    let response = executor
+        .execute(
+            Command::Object {
+                subcommand: "ENCODING".to_string(),
+                key: Some(Bytes::from("intkey")),
+            },
+            0,
+        )
+        .await;
     match response {
         Frame::Bulk(Some(enc)) => assert_eq!(enc, Bytes::from("int")),
         other => panic!("Expected 'int' encoding, got {:?}", other),
@@ -6902,13 +7030,26 @@ async fn test_object_encoding_int() {
 #[tokio::test]
 async fn test_object_encoding_embstr() {
     let executor = create_executor();
-    executor.execute(
-        Command::Set { key: Bytes::from("strkey"), value: Bytes::from("hello"), options: Default::default() }, 0
-    ).await;
+    executor
+        .execute(
+            Command::Set {
+                key: Bytes::from("strkey"),
+                value: Bytes::from("hello"),
+                options: Default::default(),
+            },
+            0,
+        )
+        .await;
 
-    let response = executor.execute(
-        Command::Object { subcommand: "ENCODING".to_string(), key: Some(Bytes::from("strkey")) }, 0
-    ).await;
+    let response = executor
+        .execute(
+            Command::Object {
+                subcommand: "ENCODING".to_string(),
+                key: Some(Bytes::from("strkey")),
+            },
+            0,
+        )
+        .await;
     match response {
         Frame::Bulk(Some(enc)) => assert_eq!(enc, Bytes::from("embstr")),
         other => panic!("Expected 'embstr' encoding, got {:?}", other),
@@ -6918,24 +7059,39 @@ async fn test_object_encoding_embstr() {
 #[tokio::test]
 async fn test_object_encoding_missing() {
     let executor = create_executor();
-    let response = executor.execute(
-        Command::Object { subcommand: "ENCODING".to_string(), key: Some(Bytes::from("nope")) }, 0
-    ).await;
+    let response = executor
+        .execute(
+            Command::Object {
+                subcommand: "ENCODING".to_string(),
+                key: Some(Bytes::from("nope")),
+            },
+            0,
+        )
+        .await;
     assert!(matches!(response, Frame::Null));
 }
 
 #[tokio::test]
 async fn test_object_unknown_subcommand() {
     let executor = create_executor();
-    let response = executor.execute(
-        Command::Object { subcommand: "NOPE".to_string(), key: Some(Bytes::from("k")) }, 0
-    ).await;
+    let response = executor
+        .execute(
+            Command::Object {
+                subcommand: "NOPE".to_string(),
+                key: Some(Bytes::from("k")),
+            },
+            0,
+        )
+        .await;
     match response {
         Frame::Error(msg) => {
             let s = String::from_utf8_lossy(&msg);
             assert!(s.contains("Unknown subcommand"));
         }
-        other => panic!("Expected error for unknown OBJECT subcommand, got {:?}", other),
+        other => panic!(
+            "Expected error for unknown OBJECT subcommand, got {:?}",
+            other
+        ),
     }
 }
 
@@ -6943,30 +7099,43 @@ async fn test_object_unknown_subcommand() {
 async fn test_scan_with_pattern() {
     let executor = create_executor();
     for i in 0..5 {
-        executor.execute(
+        executor
+            .execute(
+                Command::Set {
+                    key: Bytes::from(format!("user:{}", i)),
+                    value: Bytes::from("v"),
+                    options: Default::default(),
+                },
+                0,
+            )
+            .await;
+    }
+    executor
+        .execute(
             Command::Set {
-                key: Bytes::from(format!("user:{}", i)),
+                key: Bytes::from("other"),
                 value: Bytes::from("v"),
                 options: Default::default(),
-            }, 0
-        ).await;
-    }
-    executor.execute(
-        Command::Set { key: Bytes::from("other"), value: Bytes::from("v"), options: Default::default() }, 0
-    ).await;
+            },
+            0,
+        )
+        .await;
 
     // Full iteration collecting all matched keys
     let mut all_keys = Vec::new();
     let mut cursor = 0u64;
     loop {
-        let response = executor.execute(
-            Command::Scan {
-                cursor,
-                pattern: Some("user:*".to_string()),
-                count: Some(100),
-                type_filter: None,
-            }, 0
-        ).await;
+        let response = executor
+            .execute(
+                Command::Scan {
+                    cursor,
+                    pattern: Some("user:*".to_string()),
+                    count: Some(100),
+                    type_filter: None,
+                },
+                0,
+            )
+            .await;
         match response {
             Frame::Array(Some(arr)) => {
                 if let Frame::Bulk(Some(c)) = &arr[0] {
@@ -6982,7 +7151,9 @@ async fn test_scan_with_pattern() {
             }
             other => panic!("Expected array from SCAN, got {:?}", other),
         }
-        if cursor == 0 { break; }
+        if cursor == 0 {
+            break;
+        }
     }
     assert_eq!(all_keys.len(), 5, "SCAN MATCH user:* should find 5 keys");
 }
@@ -6990,17 +7161,40 @@ async fn test_scan_with_pattern() {
 #[tokio::test]
 async fn test_scan_with_type_filter() {
     let executor = create_executor();
-    executor.execute(
-        Command::Set { key: Bytes::from("str1"), value: Bytes::from("v"), options: Default::default() }, 0
-    ).await;
-    executor.execute(Command::LPush { key: Bytes::from("list1"), values: vec![Bytes::from("a")] }, 0).await;
+    executor
+        .execute(
+            Command::Set {
+                key: Bytes::from("str1"),
+                value: Bytes::from("v"),
+                options: Default::default(),
+            },
+            0,
+        )
+        .await;
+    executor
+        .execute(
+            Command::LPush {
+                key: Bytes::from("list1"),
+                values: vec![Bytes::from("a")],
+            },
+            0,
+        )
+        .await;
 
     let mut all_keys = Vec::new();
     let mut cursor = 0u64;
     loop {
-        let response = executor.execute(
-            Command::Scan { cursor, pattern: None, count: Some(100), type_filter: Some("string".to_string()) }, 0
-        ).await;
+        let response = executor
+            .execute(
+                Command::Scan {
+                    cursor,
+                    pattern: None,
+                    count: Some(100),
+                    type_filter: Some("string".to_string()),
+                },
+                0,
+            )
+            .await;
         match response {
             Frame::Array(Some(arr)) => {
                 if let Frame::Bulk(Some(c)) = &arr[0] {
@@ -7016,7 +7210,9 @@ async fn test_scan_with_type_filter() {
             }
             other => panic!("Expected array from SCAN, got {:?}", other),
         }
-        if cursor == 0 { break; }
+        if cursor == 0 {
+            break;
+        }
     }
     assert_eq!(all_keys.len(), 1, "SCAN TYPE string should find 1 key");
     assert_eq!(all_keys[0], "str1");
@@ -7025,17 +7221,33 @@ async fn test_scan_with_type_filter() {
 #[tokio::test]
 async fn test_flushdb_clears_data() {
     let executor = create_executor();
-    executor.execute(
-        Command::Set { key: Bytes::from("a"), value: Bytes::from("1"), options: Default::default() }, 0
-    ).await;
-    executor.execute(
-        Command::Set { key: Bytes::from("b"), value: Bytes::from("2"), options: Default::default() }, 0
-    ).await;
+    executor
+        .execute(
+            Command::Set {
+                key: Bytes::from("a"),
+                value: Bytes::from("1"),
+                options: Default::default(),
+            },
+            0,
+        )
+        .await;
+    executor
+        .execute(
+            Command::Set {
+                key: Bytes::from("b"),
+                value: Bytes::from("2"),
+                options: Default::default(),
+            },
+            0,
+        )
+        .await;
 
     let response = executor.execute(Command::DbSize, 0).await;
     assert!(matches!(response, Frame::Integer(2)));
 
-    let response = executor.execute(Command::FlushDb { r#async: false }, 0).await;
+    let response = executor
+        .execute(Command::FlushDb { r#async: false }, 0)
+        .await;
     assert!(matches!(response, Frame::Simple(s) if s == "OK"));
 
     let response = executor.execute(Command::DbSize, 0).await;
@@ -7045,14 +7257,30 @@ async fn test_flushdb_clears_data() {
 #[tokio::test]
 async fn test_flushall_clears_all_dbs() {
     let executor = create_executor();
-    executor.execute(
-        Command::Set { key: Bytes::from("a"), value: Bytes::from("1"), options: Default::default() }, 0
-    ).await;
-    executor.execute(
-        Command::Set { key: Bytes::from("b"), value: Bytes::from("2"), options: Default::default() }, 1
-    ).await;
+    executor
+        .execute(
+            Command::Set {
+                key: Bytes::from("a"),
+                value: Bytes::from("1"),
+                options: Default::default(),
+            },
+            0,
+        )
+        .await;
+    executor
+        .execute(
+            Command::Set {
+                key: Bytes::from("b"),
+                value: Bytes::from("2"),
+                options: Default::default(),
+            },
+            1,
+        )
+        .await;
 
-    let response = executor.execute(Command::FlushAll { r#async: false }, 0).await;
+    let response = executor
+        .execute(Command::FlushAll { r#async: false }, 0)
+        .await;
     assert!(matches!(response, Frame::Simple(s) if s == "OK"));
 
     let response = executor.execute(Command::DbSize, 0).await;
@@ -7064,40 +7292,74 @@ async fn test_flushall_clears_all_dbs() {
 #[tokio::test]
 async fn test_flushdb_async_option() {
     let executor = create_executor();
-    executor.execute(
-        Command::Set { key: Bytes::from("x"), value: Bytes::from("y"), options: Default::default() }, 0
-    ).await;
+    executor
+        .execute(
+            Command::Set {
+                key: Bytes::from("x"),
+                value: Bytes::from("y"),
+                options: Default::default(),
+            },
+            0,
+        )
+        .await;
 
-    let response = executor.execute(Command::FlushDb { r#async: true }, 0).await;
+    let response = executor
+        .execute(Command::FlushDb { r#async: true }, 0)
+        .await;
     assert!(matches!(response, Frame::Simple(s) if s == "OK"));
 }
 
 #[tokio::test]
 async fn test_wait_standalone() {
     let executor = create_executor();
-    let response = executor.execute(
-        Command::Wait { numreplicas: 1, timeout: 100 }, 0
-    ).await;
-    assert!(matches!(response, Frame::Integer(0)), "WAIT should return 0 in standalone mode");
+    let response = executor
+        .execute(
+            Command::Wait {
+                numreplicas: 1,
+                timeout: 100,
+            },
+            0,
+        )
+        .await;
+    assert!(
+        matches!(response, Frame::Integer(0)),
+        "WAIT should return 0 in standalone mode"
+    );
 }
 
 #[tokio::test]
 async fn test_wait_zero_replicas() {
     let executor = create_executor();
-    let response = executor.execute(
-        Command::Wait { numreplicas: 0, timeout: 0 }, 0
-    ).await;
+    let response = executor
+        .execute(
+            Command::Wait {
+                numreplicas: 0,
+                timeout: 0,
+            },
+            0,
+        )
+        .await;
     assert!(matches!(response, Frame::Integer(0)));
 }
 
 #[tokio::test]
 async fn test_command_count() {
     let executor = create_executor();
-    let response = executor.execute(
-        Command::CommandCmd { subcommand: Some("COUNT".to_string()), args: vec![] }, 0
-    ).await;
+    let response = executor
+        .execute(
+            Command::CommandCmd {
+                subcommand: Some("COUNT".to_string()),
+                args: vec![],
+            },
+            0,
+        )
+        .await;
     match response {
-        Frame::Integer(n) => assert!(n > 50, "COMMAND COUNT should report many commands, got {}", n),
+        Frame::Integer(n) => assert!(
+            n > 50,
+            "COMMAND COUNT should report many commands, got {}",
+            n
+        ),
         other => panic!("Expected integer from COMMAND COUNT, got {:?}", other),
     }
 }
@@ -7105,9 +7367,15 @@ async fn test_command_count() {
 #[tokio::test]
 async fn test_command_info_known() {
     let executor = create_executor();
-    let response = executor.execute(
-        Command::CommandCmd { subcommand: Some("INFO".to_string()), args: vec![Bytes::from("get")] }, 0
-    ).await;
+    let response = executor
+        .execute(
+            Command::CommandCmd {
+                subcommand: Some("INFO".to_string()),
+                args: vec![Bytes::from("get")],
+            },
+            0,
+        )
+        .await;
     match response {
         Frame::Array(Some(arr)) => assert!(!arr.is_empty(), "COMMAND INFO get should return info"),
         other => panic!("Expected array from COMMAND INFO, got {:?}", other),
@@ -7117,11 +7385,19 @@ async fn test_command_info_known() {
 #[tokio::test]
 async fn test_command_list() {
     let executor = create_executor();
-    let response = executor.execute(
-        Command::CommandCmd { subcommand: Some("LIST".to_string()), args: vec![] }, 0
-    ).await;
+    let response = executor
+        .execute(
+            Command::CommandCmd {
+                subcommand: Some("LIST".to_string()),
+                args: vec![],
+            },
+            0,
+        )
+        .await;
     match response {
-        Frame::Array(Some(arr)) => assert!(arr.len() > 50, "COMMAND LIST should list many commands"),
+        Frame::Array(Some(arr)) => {
+            assert!(arr.len() > 50, "COMMAND LIST should list many commands")
+        }
         other => panic!("Expected array from COMMAND LIST, got {:?}", other),
     }
 }
@@ -7129,9 +7405,15 @@ async fn test_command_list() {
 #[tokio::test]
 async fn test_command_docs_specific() {
     let executor = create_executor();
-    let response = executor.execute(
-        Command::CommandCmd { subcommand: Some("DOCS".to_string()), args: vec![Bytes::from("get")] }, 0
-    ).await;
+    let response = executor
+        .execute(
+            Command::CommandCmd {
+                subcommand: Some("DOCS".to_string()),
+                args: vec![Bytes::from("get")],
+            },
+            0,
+        )
+        .await;
     match response {
         Frame::Array(Some(arr)) => {
             // Should have at least command name + doc map
@@ -7144,12 +7426,21 @@ async fn test_command_docs_specific() {
 #[tokio::test]
 async fn test_command_docs_all() {
     let executor = create_executor();
-    let response = executor.execute(
-        Command::CommandCmd { subcommand: Some("DOCS".to_string()), args: vec![] }, 0
-    ).await;
+    let response = executor
+        .execute(
+            Command::CommandCmd {
+                subcommand: Some("DOCS".to_string()),
+                args: vec![],
+            },
+            0,
+        )
+        .await;
     match response {
         Frame::Array(Some(arr)) => {
-            assert!(!arr.is_empty(), "COMMAND DOCS should return docs for all commands");
+            assert!(
+                !arr.is_empty(),
+                "COMMAND DOCS should return docs for all commands"
+            );
         }
         other => panic!("Expected array from COMMAND DOCS (all), got {:?}", other),
     }
@@ -7158,12 +7449,15 @@ async fn test_command_docs_all() {
 #[tokio::test]
 async fn test_command_getkeys() {
     let executor = create_executor();
-    let response = executor.execute(
-        Command::CommandCmd {
-            subcommand: Some("GETKEYS".to_string()),
-            args: vec![Bytes::from("GET"), Bytes::from("mykey")],
-        }, 0
-    ).await;
+    let response = executor
+        .execute(
+            Command::CommandCmd {
+                subcommand: Some("GETKEYS".to_string()),
+                args: vec![Bytes::from("GET"), Bytes::from("mykey")],
+            },
+            0,
+        )
+        .await;
     match response {
         Frame::Array(Some(arr)) => {
             assert_eq!(arr.len(), 1, "COMMAND GETKEYS for GET should return 1 key");
@@ -7175,9 +7469,15 @@ async fn test_command_getkeys() {
 #[tokio::test]
 async fn test_command_help() {
     let executor = create_executor();
-    let response = executor.execute(
-        Command::CommandCmd { subcommand: Some("HELP".to_string()), args: vec![] }, 0
-    ).await;
+    let response = executor
+        .execute(
+            Command::CommandCmd {
+                subcommand: Some("HELP".to_string()),
+                args: vec![],
+            },
+            0,
+        )
+        .await;
     match response {
         Frame::Array(Some(arr)) => {
             assert!(!arr.is_empty(), "COMMAND HELP should return help text");
@@ -7189,12 +7489,21 @@ async fn test_command_help() {
 #[tokio::test]
 async fn test_command_no_subcommand() {
     let executor = create_executor();
-    let response = executor.execute(
-        Command::CommandCmd { subcommand: None, args: vec![] }, 0
-    ).await;
+    let response = executor
+        .execute(
+            Command::CommandCmd {
+                subcommand: None,
+                args: vec![],
+            },
+            0,
+        )
+        .await;
     match response {
         Frame::Array(Some(arr)) => {
-            assert!(!arr.is_empty(), "COMMAND with no subcommand should return all command info");
+            assert!(
+                !arr.is_empty(),
+                "COMMAND with no subcommand should return all command info"
+            );
         }
         other => panic!("Expected array from COMMAND, got {:?}", other),
     }
@@ -7203,9 +7512,15 @@ async fn test_command_no_subcommand() {
 #[tokio::test]
 async fn test_debug_segfault_returns_error() {
     let executor = create_executor();
-    let response = executor.execute(
-        Command::Debug { subcommand: "SEGFAULT".to_string(), args: vec![] }, 0
-    ).await;
+    let response = executor
+        .execute(
+            Command::Debug {
+                subcommand: "SEGFAULT".to_string(),
+                args: vec![],
+            },
+            0,
+        )
+        .await;
     match response {
         Frame::Error(msg) => {
             let s = String::from_utf8_lossy(&msg);
@@ -7218,13 +7533,22 @@ async fn test_debug_segfault_returns_error() {
 #[tokio::test]
 async fn test_debug_object() {
     let executor = create_executor();
-    let response = executor.execute(
-        Command::Debug { subcommand: "OBJECT".to_string(), args: vec![Bytes::from("mykey")] }, 0
-    ).await;
+    let response = executor
+        .execute(
+            Command::Debug {
+                subcommand: "OBJECT".to_string(),
+                args: vec![Bytes::from("mykey")],
+            },
+            0,
+        )
+        .await;
     match response {
         Frame::Bulk(Some(data)) => {
             let s = String::from_utf8_lossy(&data);
-            assert!(s.contains("encoding"), "DEBUG OBJECT should include encoding info");
+            assert!(
+                s.contains("encoding"),
+                "DEBUG OBJECT should include encoding info"
+            );
         }
         other => panic!("Expected bulk string from DEBUG OBJECT, got {:?}", other),
     }
@@ -7234,15 +7558,36 @@ async fn test_debug_object() {
 async fn test_dbsize_multiple_databases() {
     let executor = create_executor();
 
-    executor.execute(
-        Command::Set { key: Bytes::from("a"), value: Bytes::from("1"), options: Default::default() }, 0
-    ).await;
-    executor.execute(
-        Command::Set { key: Bytes::from("b"), value: Bytes::from("2"), options: Default::default() }, 1
-    ).await;
-    executor.execute(
-        Command::Set { key: Bytes::from("c"), value: Bytes::from("3"), options: Default::default() }, 1
-    ).await;
+    executor
+        .execute(
+            Command::Set {
+                key: Bytes::from("a"),
+                value: Bytes::from("1"),
+                options: Default::default(),
+            },
+            0,
+        )
+        .await;
+    executor
+        .execute(
+            Command::Set {
+                key: Bytes::from("b"),
+                value: Bytes::from("2"),
+                options: Default::default(),
+            },
+            1,
+        )
+        .await;
+    executor
+        .execute(
+            Command::Set {
+                key: Bytes::from("c"),
+                value: Bytes::from("3"),
+                options: Default::default(),
+            },
+            1,
+        )
+        .await;
 
     let r0 = executor.execute(Command::DbSize, 0).await;
     assert!(matches!(r0, Frame::Integer(1)));

@@ -84,11 +84,10 @@ fn compare_values(left: &Value, op: &ComparisonOp, right: &Value) -> bool {
 /// Check if two values are equal (with numeric coercion)
 fn values_equal(a: &Value, b: &Value) -> bool {
     match (a, b) {
-        (Value::Number(n1), Value::Number(n2)) => {
-            n1.as_f64()
-                .zip(n2.as_f64())
-                .is_some_and(|(a, b)| (a - b).abs() < f64::EPSILON)
-        }
+        (Value::Number(n1), Value::Number(n2)) => n1
+            .as_f64()
+            .zip(n2.as_f64())
+            .is_some_and(|(a, b)| (a - b).abs() < f64::EPSILON),
         _ => a == b,
     }
 }

@@ -256,9 +256,7 @@ impl AuthManager {
         }
 
         let sessions = self.sessions.read();
-        let session = sessions
-            .get(session_id)
-            .ok_or(AuthError::InvalidSession)?;
+        let session = sessions.get(session_id).ok_or(AuthError::InvalidSession)?;
 
         if session.is_expired() {
             drop(sessions);

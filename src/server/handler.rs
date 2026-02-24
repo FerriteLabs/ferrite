@@ -40,7 +40,6 @@ struct TransactionState {
     watch_dirty: bool,
 }
 
-
 impl TransactionState {
     /// Reset the transaction state (after EXEC or DISCARD)
     fn reset(&mut self) {
@@ -387,10 +386,8 @@ impl Handler {
 
         // Create OTel span for this command and execute within it
         let first_key = keys_for_otel.first().map(|k| k.as_bytes());
-        let otel_span = ferrite_core::telemetry::traces::command_span(
-            &cmd_name_for_tracking,
-            first_key,
-        );
+        let otel_span =
+            ferrite_core::telemetry::traces::command_span(&cmd_name_for_tracking, first_key);
         let result = self
             .executor
             .execute_with_acl(command, self.connection.database, &self.current_user)
@@ -414,9 +411,10 @@ impl Handler {
         // If we're a primary and this was a write command that succeeded, propagate it
         if let Some(repl_cmd) = repl_command {
             if !matches!(result, Frame::Error(_))
-                && self.replication_state.role().await == ReplicationRole::Primary {
-                    self.replication_primary.propagate(repl_cmd).await;
-                }
+                && self.replication_state.role().await == ReplicationRole::Primary
+            {
+                self.replication_primary.propagate(repl_cmd).await;
+            }
         }
 
         // Apply RESP3 transformation if needed
@@ -534,7 +532,6 @@ fn extract_audit_info(command: &Command) -> (String, Vec<String>) {
         .collect();
     (meta.name.to_string(), keys)
 }
-
 
 impl Handler {
     fn lex_bound_bytes(bound: &crate::commands::sorted_sets::LexBound, is_min: bool) -> Bytes {
@@ -822,18 +819,22 @@ impl Handler {
                 key: key.clone(),
                 ids: ids.iter().map(|id| Bytes::from(id.clone())).collect(),
             }),
-            Command::XTrim { key, maxlen, minid, .. } => {
+            Command::XTrim {
+                key, maxlen, minid, ..
+            } => {
                 if let Some(maxlen) = maxlen {
                     Some(ReplicationCommand::XTrim {
                         key: key.clone(),
                         strategy: Bytes::from_static(b"MAXLEN"),
                         threshold: Bytes::from(maxlen.to_string()),
                     })
-                } else { minid.as_ref().map(|minid| ReplicationCommand::XTrim {
+                } else {
+                    minid.as_ref().map(|minid| ReplicationCommand::XTrim {
                         key: key.clone(),
                         strategy: Bytes::from_static(b"MINID"),
                         threshold: Bytes::from(minid.clone()),
-                    }) }
+                    })
+                }
             }
             Command::PfAdd { key, elements } => Some(ReplicationCommand::PfAdd {
                 key: key.clone(),

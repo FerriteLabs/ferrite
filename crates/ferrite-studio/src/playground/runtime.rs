@@ -1339,7 +1339,10 @@ mod tests {
     #[tokio::test]
     async fn test_runtime_del() {
         let mut runtime = PlaygroundRuntime::new(test_config());
-        runtime.execute(&cmd("SET", &["key1", "val1"])).await.unwrap();
+        runtime
+            .execute(&cmd("SET", &["key1", "val1"]))
+            .await
+            .unwrap();
         let result = runtime.execute(&cmd("DEL", &["key1"])).await.unwrap();
         assert_eq!(result.int_value, Some(1));
         let result = runtime.execute(&cmd("GET", &["key1"])).await.unwrap();
@@ -1349,19 +1352,28 @@ mod tests {
     #[tokio::test]
     async fn test_runtime_incr_decr() {
         let mut runtime = PlaygroundRuntime::new(test_config());
-        runtime.execute(&cmd("SET", &["counter", "10"])).await.unwrap();
+        runtime
+            .execute(&cmd("SET", &["counter", "10"]))
+            .await
+            .unwrap();
         let result = runtime.execute(&cmd("INCR", &["counter"])).await.unwrap();
         assert_eq!(result.int_value, Some(11));
         let result = runtime.execute(&cmd("DECR", &["counter"])).await.unwrap();
         assert_eq!(result.int_value, Some(10));
-        let result = runtime.execute(&cmd("INCRBY", &["counter", "5"])).await.unwrap();
+        let result = runtime
+            .execute(&cmd("INCRBY", &["counter", "5"]))
+            .await
+            .unwrap();
         assert_eq!(result.int_value, Some(15));
     }
 
     #[tokio::test]
     async fn test_runtime_list_operations() {
         let mut runtime = PlaygroundRuntime::new(test_config());
-        runtime.execute(&cmd("RPUSH", &["mylist", "a", "b", "c"])).await.unwrap();
+        runtime
+            .execute(&cmd("RPUSH", &["mylist", "a", "b", "c"]))
+            .await
+            .unwrap();
         let result = runtime.execute(&cmd("LLEN", &["mylist"])).await.unwrap();
         assert_eq!(result.int_value, Some(3));
         let result = runtime.execute(&cmd("LPOP", &["mylist"])).await.unwrap();
@@ -1373,14 +1385,29 @@ mod tests {
     #[tokio::test]
     async fn test_runtime_hash_operations() {
         let mut runtime = PlaygroundRuntime::new(test_config());
-        runtime.execute(&cmd("HSET", &["myhash", "field1", "val1", "field2", "val2"])).await.unwrap();
-        let result = runtime.execute(&cmd("HGET", &["myhash", "field1"])).await.unwrap();
+        runtime
+            .execute(&cmd(
+                "HSET",
+                &["myhash", "field1", "val1", "field2", "val2"],
+            ))
+            .await
+            .unwrap();
+        let result = runtime
+            .execute(&cmd("HGET", &["myhash", "field1"]))
+            .await
+            .unwrap();
         assert_eq!(result.value, Some("val1".to_string()));
         let result = runtime.execute(&cmd("HLEN", &["myhash"])).await.unwrap();
         assert_eq!(result.int_value, Some(2));
-        let result = runtime.execute(&cmd("HEXISTS", &["myhash", "field1"])).await.unwrap();
+        let result = runtime
+            .execute(&cmd("HEXISTS", &["myhash", "field1"]))
+            .await
+            .unwrap();
         assert_eq!(result.int_value, Some(1));
-        runtime.execute(&cmd("HDEL", &["myhash", "field1"])).await.unwrap();
+        runtime
+            .execute(&cmd("HDEL", &["myhash", "field1"]))
+            .await
+            .unwrap();
         let result = runtime.execute(&cmd("HLEN", &["myhash"])).await.unwrap();
         assert_eq!(result.int_value, Some(1));
     }
@@ -1388,14 +1415,26 @@ mod tests {
     #[tokio::test]
     async fn test_runtime_set_operations() {
         let mut runtime = PlaygroundRuntime::new(test_config());
-        runtime.execute(&cmd("SADD", &["myset", "a", "b", "c", "a"])).await.unwrap();
+        runtime
+            .execute(&cmd("SADD", &["myset", "a", "b", "c", "a"]))
+            .await
+            .unwrap();
         let result = runtime.execute(&cmd("SCARD", &["myset"])).await.unwrap();
         assert_eq!(result.int_value, Some(3));
-        let result = runtime.execute(&cmd("SISMEMBER", &["myset", "a"])).await.unwrap();
+        let result = runtime
+            .execute(&cmd("SISMEMBER", &["myset", "a"]))
+            .await
+            .unwrap();
         assert_eq!(result.int_value, Some(1));
-        let result = runtime.execute(&cmd("SISMEMBER", &["myset", "z"])).await.unwrap();
+        let result = runtime
+            .execute(&cmd("SISMEMBER", &["myset", "z"]))
+            .await
+            .unwrap();
         assert_eq!(result.int_value, Some(0));
-        runtime.execute(&cmd("SREM", &["myset", "a"])).await.unwrap();
+        runtime
+            .execute(&cmd("SREM", &["myset", "a"]))
+            .await
+            .unwrap();
         let result = runtime.execute(&cmd("SCARD", &["myset"])).await.unwrap();
         assert_eq!(result.int_value, Some(2));
     }
@@ -1403,12 +1442,21 @@ mod tests {
     #[tokio::test]
     async fn test_runtime_sorted_set() {
         let mut runtime = PlaygroundRuntime::new(test_config());
-        runtime.execute(&cmd("ZADD", &["zs", "100", "alice", "200", "bob"])).await.unwrap();
+        runtime
+            .execute(&cmd("ZADD", &["zs", "100", "alice", "200", "bob"]))
+            .await
+            .unwrap();
         let result = runtime.execute(&cmd("ZCARD", &["zs"])).await.unwrap();
         assert_eq!(result.int_value, Some(2));
-        let result = runtime.execute(&cmd("ZSCORE", &["zs", "bob"])).await.unwrap();
+        let result = runtime
+            .execute(&cmd("ZSCORE", &["zs", "bob"]))
+            .await
+            .unwrap();
         assert_eq!(result.value, Some("200".to_string()));
-        let result = runtime.execute(&cmd("ZRANK", &["zs", "alice"])).await.unwrap();
+        let result = runtime
+            .execute(&cmd("ZRANK", &["zs", "alice"]))
+            .await
+            .unwrap();
         assert_eq!(result.int_value, Some(0));
     }
 
@@ -1469,8 +1517,14 @@ mod tests {
     #[tokio::test]
     async fn test_runtime_wrongtype() {
         let mut runtime = PlaygroundRuntime::new(test_config());
-        runtime.execute(&cmd("SET", &["mykey", "string_value"])).await.unwrap();
-        let result = runtime.execute(&cmd("LPUSH", &["mykey", "item"])).await.unwrap();
+        runtime
+            .execute(&cmd("SET", &["mykey", "string_value"]))
+            .await
+            .unwrap();
+        let result = runtime
+            .execute(&cmd("LPUSH", &["mykey", "item"]))
+            .await
+            .unwrap();
         assert!(result.is_error);
     }
 
@@ -1500,8 +1554,14 @@ mod tests {
     #[tokio::test]
     async fn test_runtime_mset_mget() {
         let mut runtime = PlaygroundRuntime::new(test_config());
-        runtime.execute(&cmd("MSET", &["k1", "v1", "k2", "v2"])).await.unwrap();
-        let result = runtime.execute(&cmd("MGET", &["k1", "k2", "k3"])).await.unwrap();
+        runtime
+            .execute(&cmd("MSET", &["k1", "v1", "k2", "v2"]))
+            .await
+            .unwrap();
+        let result = runtime
+            .execute(&cmd("MGET", &["k1", "k2", "k3"]))
+            .await
+            .unwrap();
         let arr = result.array.unwrap();
         assert_eq!(arr.len(), 3);
         assert_eq!(arr[0].value, Some("v1".to_string()));
@@ -1523,8 +1583,14 @@ mod tests {
     #[tokio::test]
     async fn test_runtime_append_strlen() {
         let mut runtime = PlaygroundRuntime::new(test_config());
-        runtime.execute(&cmd("SET", &["k1", "hello"])).await.unwrap();
-        let result = runtime.execute(&cmd("APPEND", &["k1", " world"])).await.unwrap();
+        runtime
+            .execute(&cmd("SET", &["k1", "hello"]))
+            .await
+            .unwrap();
+        let result = runtime
+            .execute(&cmd("APPEND", &["k1", " world"]))
+            .await
+            .unwrap();
         assert_eq!(result.int_value, Some(11));
         let result = runtime.execute(&cmd("STRLEN", &["k1"])).await.unwrap();
         assert_eq!(result.int_value, Some(11));
@@ -1533,13 +1599,22 @@ mod tests {
     #[tokio::test]
     async fn test_runtime_type() {
         let mut runtime = PlaygroundRuntime::new(test_config());
-        runtime.execute(&cmd("SET", &["str_key", "val"])).await.unwrap();
-        runtime.execute(&cmd("RPUSH", &["list_key", "item"])).await.unwrap();
+        runtime
+            .execute(&cmd("SET", &["str_key", "val"]))
+            .await
+            .unwrap();
+        runtime
+            .execute(&cmd("RPUSH", &["list_key", "item"]))
+            .await
+            .unwrap();
         let result = runtime.execute(&cmd("TYPE", &["str_key"])).await.unwrap();
         assert_eq!(result.value, Some("string".to_string()));
         let result = runtime.execute(&cmd("TYPE", &["list_key"])).await.unwrap();
         assert_eq!(result.value, Some("list".to_string()));
-        let result = runtime.execute(&cmd("TYPE", &["nonexistent"])).await.unwrap();
+        let result = runtime
+            .execute(&cmd("TYPE", &["nonexistent"]))
+            .await
+            .unwrap();
         assert_eq!(result.value, Some("none".to_string()));
     }
 
@@ -1547,7 +1622,10 @@ mod tests {
     async fn test_runtime_rename() {
         let mut runtime = PlaygroundRuntime::new(test_config());
         runtime.execute(&cmd("SET", &["old", "val"])).await.unwrap();
-        runtime.execute(&cmd("RENAME", &["old", "new"])).await.unwrap();
+        runtime
+            .execute(&cmd("RENAME", &["old", "new"]))
+            .await
+            .unwrap();
         let result = runtime.execute(&cmd("GET", &["new"])).await.unwrap();
         assert_eq!(result.value, Some("val".to_string()));
         let result = runtime.execute(&cmd("GET", &["old"])).await.unwrap();
@@ -1560,7 +1638,10 @@ mod tests {
         runtime.execute(&cmd("SET", &["k1", "v1"])).await.unwrap();
         let result = runtime.execute(&cmd("TTL", &["k1"])).await.unwrap();
         assert_eq!(result.int_value, Some(-1)); // No TTL
-        let result = runtime.execute(&cmd("TTL", &["nonexistent"])).await.unwrap();
+        let result = runtime
+            .execute(&cmd("TTL", &["nonexistent"]))
+            .await
+            .unwrap();
         assert_eq!(result.int_value, Some(-2)); // Key doesn't exist
     }
 
@@ -1623,7 +1704,13 @@ mod tests {
 
         // First SET succeeds but triggers post-write memory check
         let result = runtime
-            .execute(&cmd("SET", &["k1", "this_is_a_long_value_that_should_exceed_fifty_bytes_limit"]))
+            .execute(&cmd(
+                "SET",
+                &[
+                    "k1",
+                    "this_is_a_long_value_that_should_exceed_fifty_bytes_limit",
+                ],
+            ))
             .await;
         // Should fail because the data exceeds 50 bytes
         assert!(result.is_err());
@@ -1646,7 +1733,10 @@ mod tests {
         // Fill up memory with multiple keys
         for i in 0..10 {
             let _ = runtime
-                .execute(&cmd("SET", &[&format!("key{}", i), "a_moderate_value_here"]))
+                .execute(&cmd(
+                    "SET",
+                    &[&format!("key{}", i), "a_moderate_value_here"],
+                ))
                 .await;
         }
 
@@ -1675,7 +1765,10 @@ mod tests {
     async fn test_runtime_getset() {
         let mut runtime = PlaygroundRuntime::new(test_config());
         runtime.execute(&cmd("SET", &["k1", "old"])).await.unwrap();
-        let result = runtime.execute(&cmd("GETSET", &["k1", "new"])).await.unwrap();
+        let result = runtime
+            .execute(&cmd("GETSET", &["k1", "new"]))
+            .await
+            .unwrap();
         assert_eq!(result.value, Some("old".to_string()));
         let result = runtime.execute(&cmd("GET", &["k1"])).await.unwrap();
         assert_eq!(result.value, Some("new".to_string()));
@@ -1737,10 +1830,7 @@ mod tests {
             .execute(&cmd("HSET", &["h", "f1", "v1", "f2", "v2"]))
             .await
             .unwrap();
-        let result = runtime
-            .execute(&cmd("HGETALL", &["h"]))
-            .await
-            .unwrap();
+        let result = runtime.execute(&cmd("HGETALL", &["h"])).await.unwrap();
         let arr = result.array.unwrap();
         assert_eq!(arr.len(), 4); // f1, v1, f2, v2
     }
@@ -1787,9 +1877,18 @@ mod tests {
     #[tokio::test]
     async fn test_runtime_keys_pattern() {
         let mut runtime = PlaygroundRuntime::new(test_config());
-        runtime.execute(&cmd("SET", &["user:1", "a"])).await.unwrap();
-        runtime.execute(&cmd("SET", &["user:2", "b"])).await.unwrap();
-        runtime.execute(&cmd("SET", &["order:1", "c"])).await.unwrap();
+        runtime
+            .execute(&cmd("SET", &["user:1", "a"]))
+            .await
+            .unwrap();
+        runtime
+            .execute(&cmd("SET", &["user:2", "b"]))
+            .await
+            .unwrap();
+        runtime
+            .execute(&cmd("SET", &["order:1", "c"]))
+            .await
+            .unwrap();
         let result = runtime.execute(&cmd("KEYS", &["user:*"])).await.unwrap();
         assert_eq!(result.array.unwrap().len(), 2);
     }
@@ -1798,7 +1897,10 @@ mod tests {
     async fn test_runtime_expire_and_ttl() {
         let mut runtime = PlaygroundRuntime::new(test_config());
         runtime.execute(&cmd("SET", &["k1", "v1"])).await.unwrap();
-        let result = runtime.execute(&cmd("EXPIRE", &["k1", "3600"])).await.unwrap();
+        let result = runtime
+            .execute(&cmd("EXPIRE", &["k1", "3600"]))
+            .await
+            .unwrap();
         // EXPIRE returns 1 if key exists
         assert_eq!(result.int_value, Some(1));
         // TTL not fully implemented in playground - returns -1 for existing keys
@@ -1823,10 +1925,7 @@ mod tests {
     #[tokio::test]
     async fn test_runtime_ping_with_message() {
         let mut runtime = PlaygroundRuntime::new(test_config());
-        let result = runtime
-            .execute(&cmd("PING", &["hello"]))
-            .await
-            .unwrap();
+        let result = runtime.execute(&cmd("PING", &["hello"])).await.unwrap();
         assert_eq!(result.value, Some("hello".to_string()));
     }
 }

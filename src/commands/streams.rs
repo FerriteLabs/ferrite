@@ -216,9 +216,7 @@ pub fn xtrim(store: &Arc<Store>, db: u8, key: &Bytes, maxlen: usize) -> Frame {
 pub fn xtrim_by_minid(store: &Arc<Store>, db: u8, key: &Bytes, minid_str: &str) -> Frame {
     let minid = match StreamEntryId::parse(minid_str) {
         Some(id) => id,
-        None => {
-            return Frame::error("ERR Invalid stream ID specified as stream command argument")
-        }
+        None => return Frame::error("ERR Invalid stream ID specified as stream command argument"),
     };
 
     match store.get(db, key) {

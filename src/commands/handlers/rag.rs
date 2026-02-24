@@ -286,7 +286,11 @@ pub fn rag_ingestbatch(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
         .filter_map(|d| {
             if let Some(text) = d.get("text").and_then(|t| t.as_str()) {
                 Some(Document::from_text(text))
-            } else { d.get("content").and_then(|c| c.as_str()).map(Document::from_text) }
+            } else {
+                d.get("content")
+                    .and_then(|c| c.as_str())
+                    .map(Document::from_text)
+            }
         })
         .collect();
 

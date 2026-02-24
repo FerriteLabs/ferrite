@@ -109,7 +109,14 @@ impl CommandExecutor {
     }
 
     /// RESTORE command - restore a key from serialized data
-    pub(super) fn restore(&self, db: u8, key: &Bytes, ttl: u64, data: &Bytes, replace: bool) -> Frame {
+    pub(super) fn restore(
+        &self,
+        db: u8,
+        key: &Bytes,
+        ttl: u64,
+        data: &Bytes,
+        replace: bool,
+    ) -> Frame {
         // Check if key exists and replace flag
         if self.store.get(db, key).is_some() && !replace {
             return Frame::error("BUSYKEY Target key name already exists.");

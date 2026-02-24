@@ -256,7 +256,7 @@ impl SdkGenerator {
             Language::TypeScript => r#"```typescript
 import { FerriteClient } from 'ferrite-client';
 
-const client = new FerriteClient({ host: 'localhost', port: 6379 });
+const client = new FerriteClient({ host: process.env.FERRITE_HOST || 'localhost', port: Number(process.env.FERRITE_PORT) || 6379 });
 await client.connect();
 
 // Set a value

@@ -87,21 +87,15 @@ impl Ord for IndexKeyValue {
             (IndexKeyValue::Null, IndexKeyValue::Null) => Ordering::Equal,
             (IndexKeyValue::Bool(a), IndexKeyValue::Bool(b)) => a.cmp(b),
             (IndexKeyValue::Int(a), IndexKeyValue::Int(b)) => a.cmp(b),
-            (IndexKeyValue::Float(a), IndexKeyValue::Float(b)) => {
-                f64::from_bits(*a)
-                    .partial_cmp(&f64::from_bits(*b))
-                    .unwrap_or(Ordering::Equal)
-            }
-            (IndexKeyValue::Int(a), IndexKeyValue::Float(b)) => {
-                (*a as f64)
-                    .partial_cmp(&f64::from_bits(*b))
-                    .unwrap_or(Ordering::Equal)
-            }
-            (IndexKeyValue::Float(a), IndexKeyValue::Int(b)) => {
-                f64::from_bits(*a)
-                    .partial_cmp(&(*b as f64))
-                    .unwrap_or(Ordering::Equal)
-            }
+            (IndexKeyValue::Float(a), IndexKeyValue::Float(b)) => f64::from_bits(*a)
+                .partial_cmp(&f64::from_bits(*b))
+                .unwrap_or(Ordering::Equal),
+            (IndexKeyValue::Int(a), IndexKeyValue::Float(b)) => (*a as f64)
+                .partial_cmp(&f64::from_bits(*b))
+                .unwrap_or(Ordering::Equal),
+            (IndexKeyValue::Float(a), IndexKeyValue::Int(b)) => f64::from_bits(*a)
+                .partial_cmp(&(*b as f64))
+                .unwrap_or(Ordering::Equal),
             (IndexKeyValue::String(a), IndexKeyValue::String(b)) => a.cmp(b),
             _ => Ordering::Equal,
         }
@@ -189,10 +183,7 @@ impl FieldIndex {
             }
         }
 
-        self.entries
-            .entry(key)
-            .or_default()
-            .insert(doc_id.clone());
+        self.entries.entry(key).or_default().insert(doc_id.clone());
         Ok(())
     }
 
@@ -252,7 +243,8 @@ impl FieldIndex {
                 } else {
                     std::ops::Bound::Excluded(l)
                 };
-                self.entries.range::<IndexKeyValue, _>((lb, std::ops::Bound::Unbounded))
+                self.entries
+                    .range::<IndexKeyValue, _>((lb, std::ops::Bound::Unbounded))
             }
             (None, Some(u)) => {
                 let ub = if inclusive_max {
@@ -260,11 +252,10 @@ impl FieldIndex {
                 } else {
                     std::ops::Bound::Excluded(u)
                 };
-                self.entries.range::<IndexKeyValue, _>((std::ops::Bound::Unbounded, ub))
+                self.entries
+                    .range::<IndexKeyValue, _>((std::ops::Bound::Unbounded, ub))
             }
-            (None, None) => {
-                self.entries.range::<IndexKeyValue, _>(..)
-            }
+            (None, None) => self.entries.range::<IndexKeyValue, _>(..),
         };
 
         for (_, ids) in range {
@@ -468,11 +459,7 @@ impl TextIndex {
         let mut result: Option<HashSet<DocumentId>> = None;
 
         for term in &terms {
-            let matching = self
-                .terms
-                .get(term)
-                .cloned()
-                .unwrap_or_default();
+            let matching = self.terms.get(term).cloned().unwrap_or_default();
 
             result = Some(match result {
                 Some(existing) => existing.intersection(&matching).cloned().collect(),
@@ -567,11 +554,8 @@ mod tests {
 
     #[test]
     fn test_compound_index() {
-        let mut idx = CompoundFieldIndex::new(
-            "name_age".into(),
-            vec!["name".into(), "age".into()],
-            false,
-        );
+        let mut idx =
+            CompoundFieldIndex::new("name_age".into(), vec!["name".into(), "age".into()], false);
         let data = json!({"name": "Alice", "age": 30});
         idx.insert(&doc_id("1"), &data).unwrap();
 

@@ -1,9 +1,9 @@
 use bytes::Bytes;
 
+use super::{get_bytes, get_int, get_string};
+use crate::commands::parser::{Command, SortOptions};
 use crate::error::{FerriteError, Result};
 use crate::protocol::Frame;
-use super::{get_string, get_bytes, get_int};
-use crate::commands::parser::{Command, SortOptions};
 
 pub(crate) fn parse_expire(args: &[Frame]) -> Result<Command> {
     if args.len() != 2 {

@@ -3,6 +3,7 @@ name = "ferrite-studio"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+publish = false
 authors.workspace = true
 description = "Web-based management UI and interactive playground for Ferrite"
 license.workspace = true

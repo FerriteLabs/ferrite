@@ -28,7 +28,10 @@ pub fn debug(subcommand: &str, args: Vec<Bytes>) -> Frame {
             }
             let seconds_str = String::from_utf8_lossy(&args[0]);
             if let Ok(seconds) = seconds_str.parse::<f64>() {
-                std::thread::sleep(std::time::Duration::from_secs_f64(seconds));
+                // Use block_in_place to avoid stalling the tokio runtime
+                tokio::task::block_in_place(|| {
+                    std::thread::sleep(std::time::Duration::from_secs_f64(seconds));
+                });
                 Frame::simple("OK")
             } else {
                 Frame::error("ERR invalid sleep time")

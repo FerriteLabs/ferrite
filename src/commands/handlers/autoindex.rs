@@ -21,11 +21,11 @@ use parking_lot::RwLock;
 use std::sync::OnceLock;
 use std::time::Duration;
 
+use crate::protocol::Frame;
 use ferrite_search::autoindex::{
     AccessType, AutoIndexConfig, AutoIndexEngine, IndexRecommendation, IndexType,
     RecommendationConfidence,
 };
-use crate::protocol::Frame;
 
 // Global auto-index engine instance (lazy initialized)
 static AUTO_INDEX_ENGINE: OnceLock<RwLock<Option<AutoIndexEngine>>> = OnceLock::new();

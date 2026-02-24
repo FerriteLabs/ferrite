@@ -212,10 +212,12 @@ use parking_lot::RwLock;
 use std::sync::OnceLock;
 
 // Global function cache instance (lazy initialized)
-static FUNCTION_CACHE: OnceLock<RwLock<Option<ferrite_ai::semantic::FunctionCache>>> = OnceLock::new();
+static FUNCTION_CACHE: OnceLock<RwLock<Option<ferrite_ai::semantic::FunctionCache>>> =
+    OnceLock::new();
 
 fn get_or_init_function_cache() -> &'static RwLock<Option<ferrite_ai::semantic::FunctionCache>> {
-    FUNCTION_CACHE.get_or_init(|| RwLock::new(ferrite_ai::semantic::FunctionCache::with_defaults().ok()))
+    FUNCTION_CACHE
+        .get_or_init(|| RwLock::new(ferrite_ai::semantic::FunctionCache::with_defaults().ok()))
 }
 
 /// Handle FCACHE.SET command

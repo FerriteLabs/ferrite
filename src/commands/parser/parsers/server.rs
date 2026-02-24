@@ -1,9 +1,9 @@
 use bytes::Bytes;
 
+use super::{get_bytes, get_int, get_string};
+use crate::commands::parser::Command;
 use crate::error::{FerriteError, Result};
 use crate::protocol::Frame;
-use super::{get_string, get_bytes, get_int};
-use crate::commands::parser::{Command};
 
 pub(crate) fn parse_ping(args: &[Frame]) -> Result<Command> {
     if args.is_empty() {
@@ -218,9 +218,12 @@ pub(crate) fn parse_flushdb(args: &[Frame]) -> Result<Command> {
         match opt.as_str() {
             "ASYNC" => is_async = true,
             "SYNC" => is_async = false,
-            _ => return Err(FerriteError::Protocol(
-                format!("ERR FLUSHDB called with unknown option '{}'", opt),
-            )),
+            _ => {
+                return Err(FerriteError::Protocol(format!(
+                    "ERR FLUSHDB called with unknown option '{}'",
+                    opt
+                )))
+            }
         }
     }
     Ok(Command::FlushDb { r#async: is_async })
@@ -233,9 +236,12 @@ pub(crate) fn parse_flushall(args: &[Frame]) -> Result<Command> {
         match opt.as_str() {
             "ASYNC" => is_async = true,
             "SYNC" => is_async = false,
-            _ => return Err(FerriteError::Protocol(
-                format!("ERR FLUSHALL called with unknown option '{}'", opt),
-            )),
+            _ => {
+                return Err(FerriteError::Protocol(format!(
+                    "ERR FLUSHALL called with unknown option '{}'",
+                    opt
+                )))
+            }
         }
     }
     Ok(Command::FlushAll { r#async: is_async })

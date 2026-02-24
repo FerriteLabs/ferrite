@@ -26,11 +26,9 @@ use ferrite_search::schema::{
 use super::{err_frame, ok_frame};
 
 // Global schema registry (lazy initialized)
-static SCHEMA_REGISTRY: LazyLock<SchemaRegistry> =
-    LazyLock::new(SchemaRegistry::with_defaults);
+static SCHEMA_REGISTRY: LazyLock<SchemaRegistry> = LazyLock::new(SchemaRegistry::with_defaults);
 
-static SCHEMA_MIGRATOR: LazyLock<SchemaMigrator> =
-    LazyLock::new(SchemaMigrator::with_defaults);
+static SCHEMA_MIGRATOR: LazyLock<SchemaMigrator> = LazyLock::new(SchemaMigrator::with_defaults);
 
 /// Handle SCHEMA.CREATE command
 ///

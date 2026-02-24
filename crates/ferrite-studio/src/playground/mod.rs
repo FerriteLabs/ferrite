@@ -21,6 +21,7 @@
 mod runtime;
 mod snippets;
 mod tutorials;
+pub mod web_server;
 
 pub use runtime::{DataValue, ExecutionResult, PlaygroundRuntime, ResultType, RuntimeConfig};
 pub use snippets::{Snippet, SnippetBuilder, SnippetId, SnippetManager, SnippetSummary};
@@ -802,25 +803,13 @@ mod tests {
         // String
         playground.execute("SET str_key hello").await.unwrap();
         // List
-        playground
-            .execute("RPUSH list_key a b c")
-            .await
-            .unwrap();
+        playground.execute("RPUSH list_key a b c").await.unwrap();
         // Hash
-        playground
-            .execute("HSET hash_key f1 v1")
-            .await
-            .unwrap();
+        playground.execute("HSET hash_key f1 v1").await.unwrap();
         // Set
-        playground
-            .execute("SADD set_key m1 m2")
-            .await
-            .unwrap();
+        playground.execute("SADD set_key m1 m2").await.unwrap();
         // Sorted set
-        playground
-            .execute("ZADD zset_key 1 m1")
-            .await
-            .unwrap();
+        playground.execute("ZADD zset_key 1 m1").await.unwrap();
 
         // Export state should contain all keys
         let state = playground.export_state().await.unwrap();

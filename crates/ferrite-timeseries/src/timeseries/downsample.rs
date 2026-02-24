@@ -385,8 +385,7 @@ impl Downsampler {
                 }
 
                 // Write to destination key
-                let dest_id =
-                    super::series::TimeSeriesId::from_metric(&rule.dest_key);
+                let dest_id = super::series::TimeSeriesId::from_metric(&rule.dest_key);
                 for sample in &downsampled {
                     storage.add_sample(&dest_id, sample.clone())?;
                 }
@@ -574,8 +573,6 @@ pub enum TriggerMode {
     /// Run both on schedule and on ingest
     Both,
 }
-
-
 
 /// Preset downsampling configurations
 pub mod presets {
@@ -779,7 +776,10 @@ mod tests {
     #[test]
     fn test_time_bucket_as_duration() {
         assert_eq!(TimeBucket::OneSecond.as_duration(), Duration::from_secs(1));
-        assert_eq!(TimeBucket::FiveMinutes.as_duration(), Duration::from_secs(300));
+        assert_eq!(
+            TimeBucket::FiveMinutes.as_duration(),
+            Duration::from_secs(300)
+        );
         assert_eq!(TimeBucket::OneHour.as_duration(), Duration::from_secs(3600));
         assert_eq!(TimeBucket::OneDay.as_duration(), Duration::from_secs(86400));
     }
@@ -1015,8 +1015,8 @@ mod tests {
 
     #[test]
     fn test_downsampler_with_downsampling_rules() {
-        use super::super::storage::{StorageConfig, TimeSeriesStorage};
         use super::super::series::TimeSeriesId;
+        use super::super::storage::{StorageConfig, TimeSeriesStorage};
 
         let storage = TimeSeriesStorage::new(StorageConfig::default()).unwrap();
 

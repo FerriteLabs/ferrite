@@ -470,10 +470,7 @@ impl PropertySchema {
 
         let default = obj.get("default").cloned();
 
-        let enum_values = obj
-            .get("enum")
-            .and_then(|v| v.as_array())
-            .cloned();
+        let enum_values = obj.get("enum").and_then(|v| v.as_array()).cloned();
 
         let const_value = obj.get("const").cloned();
 

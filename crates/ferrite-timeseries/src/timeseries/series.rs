@@ -165,8 +165,6 @@ pub enum DataType {
     Summary,
 }
 
-
-
 impl std::fmt::Display for DataType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -820,8 +818,8 @@ mod tests {
         let series = TimeSeries::new(id, Labels::empty());
 
         series.add_sample(Sample::from_secs(0, 0.0));
-        series.add_sample(Sample::from_secs(10, 100.0));  // 10 per sec
-        series.add_sample(Sample::from_secs(20, 150.0));  // 5 per sec
+        series.add_sample(Sample::from_secs(10, 100.0)); // 10 per sec
+        series.add_sample(Sample::from_secs(20, 150.0)); // 5 per sec
 
         let rates = series.rate();
         assert_eq!(rates.len(), 2);

@@ -20,13 +20,15 @@
 //! generator.generate(Language::Python, "./sdk/python")?;
 //! ```
 
-#![allow(dead_code, unused_imports, unused_variables)]
+#![allow(dead_code)]
 pub mod ffi;
 pub mod generator;
 pub mod languages;
 pub mod protocol_ext;
 pub mod schema;
 pub mod templates;
+/// Type-safe multi-language SDK generator with compile-time query validation.
+pub mod typesafe;
 pub mod user_schema;
 
 pub use generator::{GeneratorConfig, SdkGenerator};

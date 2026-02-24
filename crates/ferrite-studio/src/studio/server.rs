@@ -649,10 +649,7 @@ impl StudioService {
     }
 
     /// Handle POST /api/auth/login
-    async fn handle_login(
-        auth: Arc<AuthManager>,
-        req: Request<Incoming>,
-    ) -> Response<Full<Bytes>> {
+    async fn handle_login(auth: Arc<AuthManager>, req: Request<Incoming>) -> Response<Full<Bytes>> {
         let body = match Self::read_body(req).await {
             Ok(b) => b,
             Err(e) => {
@@ -1670,10 +1667,8 @@ mod tests {
 
     #[test]
     fn test_json_response_helper() {
-        let response = StudioService::json_response(
-            StatusCode::OK,
-            &ApiResponse::ok("test".to_string()),
-        );
+        let response =
+            StudioService::json_response(StatusCode::OK, &ApiResponse::ok("test".to_string()));
         assert_eq!(response.status(), StatusCode::OK);
     }
 
@@ -1699,14 +1694,18 @@ mod tests {
     fn test_cors_response() {
         let response = StudioService::cors_response(true);
         assert_eq!(response.status(), StatusCode::NO_CONTENT);
-        assert!(response.headers().contains_key("Access-Control-Allow-Origin"));
+        assert!(response
+            .headers()
+            .contains_key("Access-Control-Allow-Origin"));
     }
 
     #[test]
     fn test_cors_response_disabled() {
         let response = StudioService::cors_response(false);
         assert_eq!(response.status(), StatusCode::NO_CONTENT);
-        assert!(!response.headers().contains_key("Access-Control-Allow-Origin"));
+        assert!(!response
+            .headers()
+            .contains_key("Access-Control-Allow-Origin"));
     }
 
     #[test]
@@ -1748,10 +1747,9 @@ mod tests {
     async fn send_http_request(port: u16, request: &str) -> String {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
-        let mut stream =
-            tokio::net::TcpStream::connect(format!("127.0.0.1:{}", port))
-                .await
-                .unwrap();
+        let mut stream = tokio::net::TcpStream::connect(format!("127.0.0.1:{}", port))
+            .await
+            .unwrap();
         stream.write_all(request.as_bytes()).await.unwrap();
 
         let mut buf = Vec::new();
@@ -1760,9 +1758,7 @@ mod tests {
     }
 
     async fn start_test_server() -> u16 {
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-            .await
-            .unwrap();
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
         let port = listener.local_addr().unwrap().port();
 
         let api = Arc::new(StudioApi::new());
@@ -1784,12 +1780,8 @@ mod tests {
                 let metrics_collector = metrics_collector.clone();
                 let config = config.clone();
                 tokio::spawn(async move {
-                    let service = StudioService::new(
-                        api, auth, console, metrics_collector, config,
-                    );
-                    let _ = http1::Builder::new()
-                        .serve_connection(io, service)
-                        .await;
+                    let service = StudioService::new(api, auth, console, metrics_collector, config);
+                    let _ = http1::Builder::new().serve_connection(io, service).await;
                 });
             }
         });

@@ -188,17 +188,11 @@ impl PropertyIndex {
     pub fn add(&mut self, id: VertexId, value: PropertyValue) {
         // Exact index
         let key = PropertyValueKey::from(&value);
-        self.exact_index
-            .entry(key)
-            .or_default()
-            .insert(id);
+        self.exact_index.entry(key).or_default().insert(id);
 
         // Range index (for numeric values)
         if let Some(ordered) = OrderedValue::from_property(&value) {
-            self.range_index
-                .entry(ordered)
-                .or_default()
-                .insert(id);
+            self.range_index.entry(ordered).or_default().insert(id);
         }
 
         // Text index (for string values)
@@ -407,8 +401,7 @@ impl CompositeIndex {
 
     /// Find by prefix
     pub fn find_prefix(&self, values: Vec<PropertyValue>) -> Vec<VertexId> {
-        let prefix: Vec<PropertyValueKey> =
-            values.iter().map(PropertyValueKey::from).collect();
+        let prefix: Vec<PropertyValueKey> = values.iter().map(PropertyValueKey::from).collect();
         let prefix_len = prefix.len();
 
         let mut result = HashSet::new();

@@ -268,7 +268,11 @@ pub fn temporal_help() -> Frame {
         "Time formats: Unix timestamps, ISO 8601, or relative (e.g., -1h, -24h, -7d)",
     ];
 
-    Frame::array(help.into_iter().map(|s| Frame::bulk(s.to_string())).collect())
+    Frame::array(
+        help.into_iter()
+            .map(|s| Frame::bulk(s.to_string()))
+            .collect(),
+    )
 }
 
 /// Parse a time specification into a timestamp.
