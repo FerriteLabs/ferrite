@@ -40,7 +40,7 @@
 //! server.start("0.0.0.0:9000").await?;
 //! ```
 
-#![allow(dead_code, unused_imports, unused_variables)]
+#![allow(dead_code)]
 mod auth;
 mod bucket;
 mod object;

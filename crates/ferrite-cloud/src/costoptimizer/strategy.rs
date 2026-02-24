@@ -16,7 +16,6 @@ pub enum OptimizationStrategy {
     Custom(CostConstraint),
 }
 
-
 /// Cost constraints for custom strategy
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct CostConstraint {

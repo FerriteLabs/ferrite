@@ -26,8 +26,7 @@ impl Default for SyncConfig {
 }
 
 /// Sync status
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct SyncStatus {
     /// Total items synced
     pub items_synced: u64,
@@ -40,7 +39,6 @@ pub struct SyncStatus {
     /// Bytes transferred
     pub bytes_transferred: u64,
 }
-
 
 /// A sync item in the queue
 #[derive(Debug, Clone)]

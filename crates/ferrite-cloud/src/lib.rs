@@ -6,8 +6,8 @@
 //! Cloud storage integration (S3/GCS/Azure) for Ferrite
 
 pub mod cloud;
-pub mod s3;
-pub mod multicloud;
-pub mod serverless;
-pub mod edge;
 pub mod costoptimizer;
+pub mod edge;
+pub mod multicloud;
+pub mod s3;
+pub mod serverless;

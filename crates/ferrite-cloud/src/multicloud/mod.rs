@@ -128,7 +128,6 @@ pub enum ConflictStrategy {
     Custom,
 }
 
-
 /// Multi-cloud manager
 pub struct MultiCloudManager {
     config: MultiCloudConfig,

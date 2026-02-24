@@ -466,7 +466,7 @@ mod tests {
     #[test]
     fn test_expired_key() {
         let gw = make_gateway();
-        let mut info = ApiKeyInfo {
+        let info = ApiKeyInfo {
             key: "expired-key".to_string(),
             tenant_id: "t1".to_string(),
             permissions: vec![Permission::Admin],

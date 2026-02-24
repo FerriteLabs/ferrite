@@ -56,7 +56,6 @@ impl PartialOrd for HlcTimestamp {
     }
 }
 
-
 /// Returns the current wall clock time in milliseconds since epoch
 fn wall_clock_ms() -> u64 {
     SystemTime::now()

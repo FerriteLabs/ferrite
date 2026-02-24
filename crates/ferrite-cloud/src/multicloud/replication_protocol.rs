@@ -86,7 +86,6 @@ pub enum ConflictStrategy {
     Custom,
 }
 
-
 /// Resolves conflicts between concurrent writes
 pub struct ConflictResolver {
     strategy: ConflictStrategy,

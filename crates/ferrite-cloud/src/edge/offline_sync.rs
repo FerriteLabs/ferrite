@@ -252,8 +252,7 @@ impl OfflineSyncEngine {
     pub fn persist_queue(&self) -> std::io::Result<()> {
         if let Some(ref path) = self.config.queue_path {
             let queue = self.queue.lock();
-            let json = serde_json::to_string(&*queue)
-                .map_err(std::io::Error::other)?;
+            let json = serde_json::to_string(&*queue).map_err(std::io::Error::other)?;
             if let Some(parent) = path.parent() {
                 std::fs::create_dir_all(parent)?;
             }

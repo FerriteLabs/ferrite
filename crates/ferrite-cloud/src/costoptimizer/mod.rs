@@ -248,9 +248,11 @@ impl CostOptimizer {
         }
 
         let selected = match strategy {
-            OptimizationStrategy::MinCost => candidates
-                .into_iter()
-                .min_by(|a, b| a.1.total().partial_cmp(&b.1.total()).unwrap_or(std::cmp::Ordering::Equal)),
+            OptimizationStrategy::MinCost => candidates.into_iter().min_by(|a, b| {
+                a.1.total()
+                    .partial_cmp(&b.1.total())
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            }),
             OptimizationStrategy::MinLatency => candidates.into_iter().min_by(|a, b| {
                 a.0.estimated_latency_ms
                     .partial_cmp(&b.0.estimated_latency_ms)
@@ -261,7 +263,9 @@ impl CostOptimizer {
                 candidates.into_iter().min_by(|a, b| {
                     let score_a = a.1.total() * 1000.0 + a.0.estimated_latency_ms;
                     let score_b = b.1.total() * 1000.0 + b.0.estimated_latency_ms;
-                    score_a.partial_cmp(&score_b).unwrap_or(std::cmp::Ordering::Equal)
+                    score_a
+                        .partial_cmp(&score_b)
+                        .unwrap_or(std::cmp::Ordering::Equal)
                 })
             }
             OptimizationStrategy::Custom(constraint) => candidates
@@ -272,7 +276,11 @@ impl CostOptimizer {
                         .map(|c| cost.total() <= c)
                         .unwrap_or(true)
                 })
-                .min_by(|a, b| a.1.total().partial_cmp(&b.1.total()).unwrap_or(std::cmp::Ordering::Equal)),
+                .min_by(|a, b| {
+                    a.1.total()
+                        .partial_cmp(&b.1.total())
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                }),
         };
 
         selected.ok_or(CostOptimizerError::NoPlanFound)

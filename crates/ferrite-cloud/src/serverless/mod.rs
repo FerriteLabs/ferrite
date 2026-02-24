@@ -31,6 +31,8 @@
 //! runtime.deploy(deployment).await?;
 //! ```
 
+/// Serverless connection pooling proxy and event bridge.
+pub mod connection_pool;
 pub mod deployment;
 pub mod edge;
 pub mod runtime;

@@ -79,7 +79,6 @@ struct TargetHealth {
     total_failures: u64,
 }
 
-
 /// Health monitor for tracking region health
 pub struct HealthMonitor {
     config: HealthConfig,
