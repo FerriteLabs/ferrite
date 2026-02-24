@@ -941,7 +941,10 @@ mod tests {
         registry.load("fn2", valid_wasm_bytes(), None).unwrap();
 
         let result = registry.load("fn3", valid_wasm_bytes(), None);
-        assert!(matches!(result, Err(WasmError::InstanceLimitExceeded { .. })));
+        assert!(matches!(
+            result,
+            Err(WasmError::InstanceLimitExceeded { .. })
+        ));
 
         // Unload one should allow a new one
         registry.unload("fn1").unwrap();

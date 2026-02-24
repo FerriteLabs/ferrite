@@ -4,7 +4,6 @@
 //! modules can register custom data types that participate in persistence,
 //! replication, and memory management.
 
-
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::Arc;

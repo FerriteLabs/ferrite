@@ -535,11 +535,7 @@ impl<S: Scorer> ExplainableScorer<S> {
         let idf = self.inner.idf(doc_freq, total_docs);
 
         let mut explanation = ScoreExplanation::new(self.inner.name(), score);
-        explanation.add_component(
-            "tf",
-            term_freq as f32,
-            "term frequency in document",
-        );
+        explanation.add_component("tf", term_freq as f32, "term frequency in document");
         explanation.add_component("df", doc_freq as f32, "documents containing term");
         explanation.add_component("idf", idf, "inverse document frequency");
         explanation.add_component("dl", doc_length as f32, "document length");

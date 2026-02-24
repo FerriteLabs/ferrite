@@ -9,7 +9,6 @@
 //! - **Custom Data Type** – Define a new Redis-like data structure
 //! - **External Connector** – Import/export data from external sources
 
-
 use serde::{Deserialize, Serialize};
 
 // ---------------------------------------------------------------------------

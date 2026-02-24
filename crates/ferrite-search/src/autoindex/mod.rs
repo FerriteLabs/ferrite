@@ -65,7 +65,7 @@
 //! engine.apply_recommendations(&recommendations).await?;
 //! ```
 
-#![allow(dead_code, unused_imports, unused_variables)]
+#![allow(dead_code)]
 pub mod collector;
 pub mod cost;
 pub mod predictor;

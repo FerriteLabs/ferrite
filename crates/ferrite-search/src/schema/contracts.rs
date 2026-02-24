@@ -508,7 +508,10 @@ fn detect_changes(old: &DataContract, new: &DataContract) -> Vec<SchemaChange> {
                 change_type: ChangeType::FieldRemoved,
                 field_name: name.to_string(),
                 description: format!("Field '{}' was removed", name),
-                breaking: matches!(new.compatibility, CompatibilityMode::Backward | CompatibilityMode::Full),
+                breaking: matches!(
+                    new.compatibility,
+                    CompatibilityMode::Backward | CompatibilityMode::Full
+                ),
             });
         }
     }

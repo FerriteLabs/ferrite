@@ -96,9 +96,7 @@ impl ClusterController {
             }
             Err(e) => {
                 let mut contexts = self.retry_contexts.write();
-                let ctx = contexts
-                    .entry(key.clone())
-                    .or_default();
+                let ctx = contexts.entry(key.clone()).or_default();
                 let retry_result = ctx.on_error(e.to_string());
                 tracing::warn!(
                     cluster = %key,
@@ -321,8 +319,7 @@ impl ClusterReconciler {
                         .cronjob_exists(namespace, &cronjob_name)
                         .await?
                     {
-                        let cronjob_spec =
-                            self.build_backup_cronjob_spec(cluster, schedule);
+                        let cronjob_spec = self.build_backup_cronjob_spec(cluster, schedule);
                         actions.push(ReconcileAction::CreateCronJob(cronjob_spec));
                     }
                 }
@@ -404,7 +401,8 @@ impl ClusterReconciler {
                 }
             } else if ready_count < cluster.spec.replicas && ready_count > 0 {
                 if cluster.spec.sentinel.enabled {
-                    let quorum = super::scaling::ScalingManager::minimum_quorum(cluster.spec.replicas);
+                    let quorum =
+                        super::scaling::ScalingManager::minimum_quorum(cluster.spec.replicas);
                     if ready_count < quorum {
                         mgr.set_degraded_quorum_at_risk(ready_count, quorum);
                     } else {
@@ -699,11 +697,7 @@ impl ClusterReconciler {
         }
     }
 
-    fn build_backup_cronjob_spec(
-        &self,
-        cluster: &FerriteCluster,
-        schedule: &str,
-    ) -> CronJobSpec {
+    fn build_backup_cronjob_spec(&self, cluster: &FerriteCluster, schedule: &str) -> CronJobSpec {
         let namespace = cluster
             .metadata
             .namespace

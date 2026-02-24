@@ -3,7 +3,6 @@
 //! Provides compatibility types that mirror the Redis Module API, allowing
 //! existing Redis module concepts to work within Ferrite's architecture.
 
-
 use std::collections::HashMap;
 use std::sync::Arc;
 

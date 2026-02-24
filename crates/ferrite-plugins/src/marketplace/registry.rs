@@ -232,11 +232,7 @@ impl MarketplaceRegistry {
     ///
     /// Supports simple constraints: `>=X.Y.Z`, `=X.Y.Z`, `^X.Y.Z`, or `*`.
     /// Returns the highest compatible version.
-    pub fn resolve_version(
-        &self,
-        name: &str,
-        requirement: &str,
-    ) -> Option<&WasmModuleMetadata> {
+    pub fn resolve_version(&self, name: &str, requirement: &str) -> Option<&WasmModuleMetadata> {
         let versions = self.modules.get(name)?;
         versions
             .iter()
@@ -453,8 +449,7 @@ mod tests {
     #[test]
     fn test_marketplace_duplicate_version() {
         let mut reg = MarketplaceRegistry::new();
-        reg.publish(make_wasm_module("mod-a", "1.0.0"))
-            .expect("ok");
+        reg.publish(make_wasm_module("mod-a", "1.0.0")).expect("ok");
         let result = reg.publish(make_wasm_module("mod-a", "1.0.0"));
         assert!(matches!(result, Err(RegistryError::VersionExists { .. })));
     }
@@ -462,8 +457,7 @@ mod tests {
     #[test]
     fn test_marketplace_remove() {
         let mut reg = MarketplaceRegistry::new();
-        reg.publish(make_wasm_module("mod-a", "1.0.0"))
-            .expect("ok");
+        reg.publish(make_wasm_module("mod-a", "1.0.0")).expect("ok");
         reg.remove("mod-a").expect("remove failed");
         assert!(reg.latest("mod-a").is_none());
     }
@@ -489,25 +483,16 @@ mod tests {
         reg.publish(make_wasm_module("validator", "1.0.0"))
             .expect("ok");
 
-        assert_eq!(
-            reg.filter_by_category(&ModuleCategory::Analytics).len(),
-            1
-        );
-        assert_eq!(
-            reg.filter_by_category(&ModuleCategory::Validation).len(),
-            1
-        );
+        assert_eq!(reg.filter_by_category(&ModuleCategory::Analytics).len(), 1);
+        assert_eq!(reg.filter_by_category(&ModuleCategory::Validation).len(), 1);
     }
 
     #[test]
     fn test_marketplace_resolve_version() {
         let mut reg = MarketplaceRegistry::new();
-        reg.publish(make_wasm_module("mod-a", "1.0.0"))
-            .expect("ok");
-        reg.publish(make_wasm_module("mod-a", "1.2.0"))
-            .expect("ok");
-        reg.publish(make_wasm_module("mod-a", "2.0.0"))
-            .expect("ok");
+        reg.publish(make_wasm_module("mod-a", "1.0.0")).expect("ok");
+        reg.publish(make_wasm_module("mod-a", "1.2.0")).expect("ok");
+        reg.publish(make_wasm_module("mod-a", "2.0.0")).expect("ok");
 
         let resolved = reg
             .resolve_version("mod-a", "^1.0.0")

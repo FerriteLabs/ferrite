@@ -3,7 +3,6 @@
 //! Translates module command callbacks into entries that can be registered
 //! in Ferrite's command table and dispatched through the async command model.
 
-
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::Arc;
@@ -100,11 +99,7 @@ impl ModuleCommand {
     }
 
     /// Execute the command callback.
-    pub fn execute(
-        &self,
-        ctx: &mut RedisModuleCtx,
-        args: &[RedisModuleString],
-    ) -> Status {
+    pub fn execute(&self, ctx: &mut RedisModuleCtx, args: &[RedisModuleString]) -> Status {
         (self.callback)(ctx, args)
     }
 
@@ -315,8 +310,7 @@ mod tests {
 
     #[test]
     fn test_command_with_keys() {
-        let cmd = ModuleCommand::new("TEST", |_, _| Status::Ok, vec![])
-            .with_keys(1, -1, 2);
+        let cmd = ModuleCommand::new("TEST", |_, _| Status::Ok, vec![]).with_keys(1, -1, 2);
         assert_eq!(cmd.first_key, 1);
         assert_eq!(cmd.last_key, -1);
         assert_eq!(cmd.key_step, 2);
@@ -351,9 +345,6 @@ mod tests {
             call_reply_to_string(&RedisModuleCallReply::Integer(42)),
             "42"
         );
-        assert_eq!(
-            call_reply_to_string(&RedisModuleCallReply::Nil),
-            "(nil)"
-        );
+        assert_eq!(call_reply_to_string(&RedisModuleCallReply::Nil), "(nil)");
     }
 }

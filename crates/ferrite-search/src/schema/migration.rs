@@ -311,9 +311,9 @@ fn apply_transform(
                 let b = matches!(s.to_lowercase().as_str(), "true" | "1" | "yes" | "on");
                 Ok(serde_json::Value::Bool(b))
             }
-            serde_json::Value::Number(n) => Ok(serde_json::Value::Bool(
-                n.as_i64().is_some_and(|i| i != 0),
-            )),
+            serde_json::Value::Number(n) => {
+                Ok(serde_json::Value::Bool(n.as_i64().is_some_and(|i| i != 0)))
+            }
             _ => Err(MigrationError::TransformFailed(format!(
                 "Cannot convert {:?} to boolean",
                 value

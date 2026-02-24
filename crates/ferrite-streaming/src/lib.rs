@@ -5,6 +5,7 @@
 //!
 //! Event streaming, CDC, and data pipelines for Ferrite
 
-pub mod streaming;
 pub mod cdc;
+pub mod kafka;
 pub mod pipeline;
+pub mod streaming;

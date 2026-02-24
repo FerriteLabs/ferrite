@@ -73,10 +73,7 @@ impl FailoverManager {
     }
 
     /// Create a new failover manager with a custom failure threshold.
-    pub fn with_failure_threshold(
-        resource_manager: Arc<ResourceManager>,
-        threshold: u32,
-    ) -> Self {
+    pub fn with_failure_threshold(resource_manager: Arc<ResourceManager>, threshold: u32) -> Self {
         Self {
             resource_manager,
             failure_threshold: threshold,
@@ -152,16 +149,10 @@ impl FailoverManager {
             .list_pods(namespace, &cluster.metadata.name)
             .await?;
 
-        let old_primary = pods
-            .iter()
-            .find(|p| p.is_primary)
-            .map(|p| p.name.clone());
+        let old_primary = pods.iter().find(|p| p.is_primary).map(|p| p.name.clone());
 
         // Gather healthy replica candidates
-        let candidates: Vec<&PodInfo> = pods
-            .iter()
-            .filter(|p| !p.is_primary && p.ready)
-            .collect();
+        let candidates: Vec<&PodInfo> = pods.iter().filter(|p| !p.is_primary && p.ready).collect();
 
         let new_primary = self.elect_primary(&candidates)?;
 
@@ -207,10 +198,7 @@ impl FailoverManager {
     ///
     /// Strategy: pick the replica with the lowest ordinal (closest to
     /// the original primary, typically with the most recent data).
-    pub fn elect_primary(
-        &self,
-        candidates: &[&PodInfo],
-    ) -> Result<String, OperatorError> {
+    pub fn elect_primary(&self, candidates: &[&PodInfo]) -> Result<String, OperatorError> {
         if candidates.is_empty() {
             return Err(OperatorError::Reconciliation(
                 "No healthy replicas available for failover".to_string(),

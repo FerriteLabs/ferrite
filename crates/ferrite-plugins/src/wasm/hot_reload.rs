@@ -188,9 +188,7 @@ impl WasmHotReloader {
         };
 
         let mut history = self.rollback_history.write();
-        let versions = history
-            .entry(name.to_string())
-            .or_default();
+        let versions = history.entry(name.to_string()).or_default();
 
         versions.push_back(snapshot);
 
@@ -199,7 +197,11 @@ impl WasmHotReloader {
             versions.pop_front();
         }
 
-        debug!(function = name, versions = versions.len(), "saved rollback snapshot");
+        debug!(
+            function = name,
+            versions = versions.len(),
+            "saved rollback snapshot"
+        );
     }
 
     /// Get the latest rollback snapshot for a function
@@ -357,9 +359,7 @@ impl WasmHotReloader {
     }
 
     fn set_state(&self, name: &str, state: ReloadState) {
-        self.reload_states
-            .write()
-            .insert(name.to_string(), state);
+        self.reload_states.write().insert(name.to_string(), state);
     }
 }
 
@@ -551,12 +551,8 @@ mod tests {
     #[test]
     fn test_reload_state_tracking() {
         let inflight = Arc::new(InflightTracker::new());
-        let reloader = WasmHotReloader::new(
-            PathBuf::from("/tmp"),
-            3,
-            Duration::from_secs(5),
-            inflight,
-        );
+        let reloader =
+            WasmHotReloader::new(PathBuf::from("/tmp"), 3, Duration::from_secs(5), inflight);
 
         assert_eq!(reloader.state("fn"), ReloadState::Idle);
     }

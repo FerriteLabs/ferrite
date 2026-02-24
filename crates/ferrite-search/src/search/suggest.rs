@@ -255,11 +255,7 @@ impl Suggester {
     /// Highlight the matching prefix
     fn highlight_match(&self, term: &str, prefix: &str) -> String {
         if let Some(rest) = term.strip_prefix(prefix) {
-            format!(
-                "<em>{}</em>{}",
-                prefix,
-                rest
-            )
+            format!("<em>{}</em>{}", prefix, rest)
         } else {
             term.to_string()
         }

@@ -492,7 +492,7 @@ impl EventHookRegistry {
 
         for hook in hooks {
             match hook.execute(&context).await {
-                Ok(HookResult::Continue) => {},
+                Ok(HookResult::Continue) => {}
                 Ok(HookResult::Abort(reason)) => return Ok(HookResult::Abort(reason)),
                 Ok(HookResult::Modified(data)) => return Ok(HookResult::Modified(data)),
                 Err(e) => {

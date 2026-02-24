@@ -5,9 +5,12 @@
 //!
 //! Plugin system, WASM runtime, and CRDTs for Ferrite
 
+pub mod adaptive;
+pub mod crdt;
+pub mod faas;
+pub mod marketplace;
 pub mod plugin;
 pub mod redis_module;
+/// Plugin SDK for building type-safe Ferrite extensions.
+pub mod sdk;
 pub mod wasm;
-pub mod marketplace;
-pub mod crdt;
-pub mod adaptive;

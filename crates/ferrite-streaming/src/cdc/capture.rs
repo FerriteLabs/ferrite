@@ -226,13 +226,7 @@ impl CdcCaptureManager {
         self.make_event(Operation::Append, db, key, Some(value), old_value, "APPEND")
     }
 
-    pub fn capture_incr(
-        &self,
-        db: u8,
-        key: Bytes,
-        delta: i64,
-        new_value: Bytes,
-    ) -> ChangeEvent {
+    pub fn capture_incr(&self, db: u8, key: Bytes, delta: i64, new_value: Bytes) -> ChangeEvent {
         self.make_event(
             Operation::Incr { delta },
             db,
@@ -315,14 +309,7 @@ impl CdcCaptureManager {
         field: Bytes,
         old_value: Option<Bytes>,
     ) -> ChangeEvent {
-        self.make_event(
-            Operation::HDel { field },
-            db,
-            key,
-            None,
-            old_value,
-            "HDEL",
-        )
+        self.make_event(Operation::HDel { field }, db, key, None, old_value, "HDEL")
     }
 
     pub fn capture_hincrby(
@@ -425,13 +412,7 @@ impl CdcCaptureManager {
 
     // -- Stream operations --------------------------------------------------
 
-    pub fn capture_xadd(
-        &self,
-        db: u8,
-        key: Bytes,
-        entry_id: Bytes,
-        value: Bytes,
-    ) -> ChangeEvent {
+    pub fn capture_xadd(&self, db: u8, key: Bytes, entry_id: Bytes, value: Bytes) -> ChangeEvent {
         self.make_event(
             Operation::XAdd { id: entry_id },
             db,
@@ -445,7 +426,14 @@ impl CdcCaptureManager {
     // -- Flush operations ---------------------------------------------------
 
     pub fn capture_flushdb(&self, db: u8) -> ChangeEvent {
-        self.make_event(Operation::FlushDb, db, Bytes::from_static(b"*"), None, None, "FLUSHDB")
+        self.make_event(
+            Operation::FlushDb,
+            db,
+            Bytes::from_static(b"*"),
+            None,
+            None,
+            "FLUSHDB",
+        )
     }
 
     pub fn capture_flushall(&self) -> ChangeEvent {

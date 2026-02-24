@@ -14,12 +14,9 @@
 //! let wasm = client.download("validate-email", "1.0.0").await?;
 //! ```
 
-
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
-use super::registry::WasmModuleMetadata;
-use super::{MarketplaceError, PluginMetadata, PluginType, SecurityStatus};
+use super::{MarketplaceError, PluginMetadata};
 
 // ---------------------------------------------------------------------------
 // Category
@@ -155,11 +152,7 @@ impl MarketplaceClient {
     /// In the real implementation this performs an HTTP GET against
     /// `{registry_url}/plugins/{name}/{version}/download`.
     /// Returns the raw bytes of the `.ferrpkg` archive.
-    pub async fn download(
-        &self,
-        name: &str,
-        version: &str,
-    ) -> Result<Vec<u8>, MarketplaceError> {
+    pub async fn download(&self, name: &str, version: &str) -> Result<Vec<u8>, MarketplaceError> {
         if self.offline.load(std::sync::atomic::Ordering::Relaxed) {
             return Err(MarketplaceError::RegistryError(
                 "client is in offline mode".to_string(),
@@ -183,10 +176,7 @@ impl MarketplaceClient {
     }
 
     /// Get the most popular plugins by download count.
-    pub async fn get_popular(
-        &self,
-        limit: usize,
-    ) -> Result<Vec<PluginMetadata>, MarketplaceError> {
+    pub async fn get_popular(&self, limit: usize) -> Result<Vec<PluginMetadata>, MarketplaceError> {
         let mut catalog: Vec<PluginMetadata> = self.catalog_cache.read().clone();
         catalog.sort_by(|a, b| b.downloads.cmp(&a.downloads));
         catalog.truncate(limit);
@@ -230,6 +220,7 @@ impl MarketplaceClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::marketplace::{PluginType, SecurityStatus};
 
     fn sample_catalog() -> Vec<PluginMetadata> {
         vec![

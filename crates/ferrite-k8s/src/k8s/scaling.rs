@@ -119,9 +119,7 @@ impl ScalingManager {
 
         let validation = self.validate_scale(cluster, desired_replicas);
         if !validation.valid {
-            return Err(OperatorError::InvalidResource(
-                validation.errors.join("; "),
-            ));
+            return Err(OperatorError::InvalidResource(validation.errors.join("; ")));
         }
 
         let actions = match direction {
@@ -136,8 +134,8 @@ impl ScalingManager {
             ScaleDirection::None => vec![],
         };
 
-        let requires_migration = direction == ScaleDirection::Down
-            && cluster.spec.cluster_mode.enabled;
+        let requires_migration =
+            direction == ScaleDirection::Down && cluster.spec.cluster_mode.enabled;
 
         let migration_state = if requires_migration {
             let pods_to_drain = (desired_replicas..current_replicas)
@@ -147,8 +145,8 @@ impl ScalingManager {
             let target_pods = (0..desired_replicas)
                 .map(|i| format!("{}-{}", cluster.metadata.name, i))
                 .collect::<Vec<_>>();
-            let total_slots = Self::slots_per_node(current_replicas) as u32
-                * pods_to_drain.len() as u32;
+            let total_slots =
+                Self::slots_per_node(current_replicas) as u32 * pods_to_drain.len() as u32;
 
             Some(SlotMigrationState {
                 total_slots,
@@ -185,17 +183,11 @@ impl ScalingManager {
         let max_replicas = 100;
 
         if desired_replicas < min_replicas {
-            errors.push(format!(
-                "Cannot scale below {} replica(s)",
-                min_replicas
-            ));
+            errors.push(format!("Cannot scale below {} replica(s)", min_replicas));
         }
 
         if desired_replicas > max_replicas {
-            errors.push(format!(
-                "Cannot scale above {} replicas",
-                max_replicas
-            ));
+            errors.push(format!("Cannot scale above {} replicas", max_replicas));
         }
 
         // For sentinel-enabled clusters, ensure quorum is maintained

@@ -3,7 +3,6 @@
 //! Provides local filesystem scanning and HTTP-based registry discovery
 //! of WASM modules, as well as manifest parsing for `ferrite-plugin.toml`.
 
-
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
@@ -127,9 +126,7 @@ pub fn discover_local(dir: &Path) -> Result<Vec<DiscoveredModule>, DiscoveryErro
     for entry in entries.flatten() {
         let path = entry.path();
         if path.extension().is_some_and(|e| e == "wasm") {
-            let size_bytes = std::fs::metadata(&path)
-                .map(|m| m.len())
-                .unwrap_or(0);
+            let size_bytes = std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
 
             // Look for manifest alongside the wasm file
             let manifest_path = path.with_file_name("ferrite-plugin.toml");
@@ -171,9 +168,7 @@ pub struct RemoteCatalogEntry {
 ///
 /// This is a placeholder that defines the expected API. Real HTTP fetching
 /// requires an async HTTP client at runtime.
-pub fn fetch_remote_catalog(
-    registry_url: &str,
-) -> Result<Vec<RemoteCatalogEntry>, DiscoveryError> {
+pub fn fetch_remote_catalog(registry_url: &str) -> Result<Vec<RemoteCatalogEntry>, DiscoveryError> {
     if registry_url.is_empty() {
         return Err(DiscoveryError::Http("registry URL is empty".into()));
     }

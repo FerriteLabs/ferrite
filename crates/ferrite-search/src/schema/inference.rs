@@ -85,9 +85,7 @@ impl SchemaInferrer {
                 format!("{}.{}", prefix, key)
             };
 
-            let entry = stats
-                .entry(field_name.clone())
-                .or_default();
+            let entry = stats.entry(field_name.clone()).or_default();
             entry.count += 1;
 
             let inferred_type = FieldType::infer_from_json(value);

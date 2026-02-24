@@ -52,7 +52,7 @@
 //! pipeline.run().await?;
 //! ```
 
-#![allow(dead_code, unused_imports, unused_variables)]
+#![allow(dead_code)]
 pub mod cep;
 pub mod event_bus;
 pub mod operator;

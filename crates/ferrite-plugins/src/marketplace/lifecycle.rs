@@ -24,13 +24,12 @@
 //!                      └──────────┘
 //! ```
 
-
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::time::SystemTime;
 
-use super::{InstalledPlugin, MarketplaceError};
+use super::MarketplaceError;
 
 // ---------------------------------------------------------------------------
 // Audit log
@@ -126,11 +125,7 @@ impl PluginLifecycleManager {
     }
 
     /// Perform an install operation with audit logging.
-    pub fn audit_install(
-        &self,
-        plugin_name: &str,
-        version: &str,
-    ) -> Result<(), MarketplaceError> {
+    pub fn audit_install(&self, plugin_name: &str, version: &str) -> Result<(), MarketplaceError> {
         self.record_audit(
             plugin_name,
             AuditOperation::Install,

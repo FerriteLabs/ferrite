@@ -296,10 +296,7 @@ impl ResourceManager {
     // ========================================================================
 
     /// Create a PodDisruptionBudget
-    pub async fn create_pdb(
-        &self,
-        spec: &PodDisruptionBudgetSpec,
-    ) -> Result<(), OperatorError> {
+    pub async fn create_pdb(&self, spec: &PodDisruptionBudgetSpec) -> Result<(), OperatorError> {
         let key = format!("{}/{}", spec.namespace, spec.name);
         tracing::debug!(pdb = %key, "Creating PodDisruptionBudget");
 
@@ -373,10 +370,7 @@ impl ResourceManager {
     // ========================================================================
 
     /// Create a CronJob
-    pub async fn create_cronjob(
-        &self,
-        spec: &CronJobSpec,
-    ) -> Result<(), OperatorError> {
+    pub async fn create_cronjob(&self, spec: &CronJobSpec) -> Result<(), OperatorError> {
         let key = format!("{}/{}", spec.namespace, spec.name);
         tracing::debug!(cronjob = %key, "Creating CronJob");
 
@@ -390,21 +384,13 @@ impl ResourceManager {
     }
 
     /// Check if CronJob exists
-    pub async fn cronjob_exists(
-        &self,
-        namespace: &str,
-        name: &str,
-    ) -> Result<bool, OperatorError> {
+    pub async fn cronjob_exists(&self, namespace: &str, name: &str) -> Result<bool, OperatorError> {
         let key = format!("{}/{}", namespace, name);
         Ok(self.cronjobs.read().contains_key(&key))
     }
 
     /// Delete a CronJob
-    pub async fn delete_cronjob(
-        &self,
-        namespace: &str,
-        name: &str,
-    ) -> Result<(), OperatorError> {
+    pub async fn delete_cronjob(&self, namespace: &str, name: &str) -> Result<(), OperatorError> {
         let key = format!("{}/{}", namespace, name);
         self.cronjobs.write().remove(&key);
         Ok(())

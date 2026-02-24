@@ -220,9 +220,10 @@
 //! 4. **Design for conflicts**: Multi-value registers when conflicts are important
 //! 5. **Compact periodically**: Remove tombstones from OrSets
 
-#![allow(dead_code, unused_imports, unused_variables)]
+#![allow(dead_code)]
 mod clock;
 mod counter;
+pub mod geo_replication;
 mod map;
 mod register;
 mod set;

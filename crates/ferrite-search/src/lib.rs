@@ -6,6 +6,7 @@
 //! Full-text search, query engine, and auto-indexing for Ferrite
 
 pub mod autoindex;
+pub mod bm25;
 pub mod routing;
 pub mod schema;
 pub mod search;

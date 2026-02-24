@@ -142,11 +142,7 @@ impl PendingEntryList {
 
     /// Acknowledge all messages up to and including `event_id`.
     pub fn ack_up_to(&mut self, event_id: u64) -> usize {
-        let to_remove: Vec<u64> = self
-            .entries
-            .range(..=event_id)
-            .map(|(&id, _)| id)
-            .collect();
+        let to_remove: Vec<u64> = self.entries.range(..=event_id).map(|(&id, _)| id).collect();
         let count = to_remove.len();
         for id in to_remove {
             self.entries.remove(&id);
@@ -310,10 +306,7 @@ impl ConsumerGroup {
         let generation = self.rebalance().await;
 
         let assignments = self.assignments.read().await;
-        let partitions = assignments
-            .get(&consumer_id)
-            .cloned()
-            .unwrap_or_default();
+        let partitions = assignments.get(&consumer_id).cloned().unwrap_or_default();
 
         tracing::info!(
             group = %self.name,
@@ -391,7 +384,10 @@ impl ConsumerGroup {
         drop(members);
 
         let partitions: Vec<u32> = (0..self.config.num_partitions).collect();
-        let new_assignments = self.config.assignment_strategy.assign(&partitions, &consumer_ids);
+        let new_assignments = self
+            .config
+            .assignment_strategy
+            .assign(&partitions, &consumer_ids);
 
         // Update member partition lists
         let mut members = self.members.write().await;
@@ -704,7 +700,9 @@ mod tests {
             .unwrap();
         assert_eq!(group.name, "group1");
 
-        assert!(mgr.create("group1", ConsumerGroupConfig::default()).is_err());
+        assert!(mgr
+            .create("group1", ConsumerGroupConfig::default())
+            .is_err());
         assert!(mgr.get("group1").is_some());
         assert_eq!(mgr.len(), 1);
 

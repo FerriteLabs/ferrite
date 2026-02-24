@@ -277,20 +277,19 @@ impl QueryAnalyzer {
     }
 
     fn extract_key_prefix(&self, args: &[Bytes]) -> Option<String> {
-        args.first()
-            .and_then(|arg| {
-                let s = String::from_utf8_lossy(arg);
-                // Extract prefix up to first wildcard or special char
-                let prefix: String = s
-                    .chars()
-                    .take_while(|c| !matches!(c, '*' | '?' | '['))
-                    .collect();
-                if prefix.is_empty() {
-                    None
-                } else {
-                    Some(prefix)
-                }
-            })
+        args.first().and_then(|arg| {
+            let s = String::from_utf8_lossy(arg);
+            // Extract prefix up to first wildcard or special char
+            let prefix: String = s
+                .chars()
+                .take_while(|c| !matches!(c, '*' | '?' | '['))
+                .collect();
+            if prefix.is_empty() {
+                None
+            } else {
+                Some(prefix)
+            }
+        })
     }
 }
 

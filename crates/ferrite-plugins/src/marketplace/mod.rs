@@ -38,7 +38,7 @@
 //! let installed = marketplace.list_installed();
 //! ```
 
-#![allow(dead_code, unused_imports, unused_variables)]
+#![allow(dead_code)]
 pub mod client;
 pub mod discovery;
 pub mod lifecycle;
@@ -207,7 +207,7 @@ impl Marketplace {
     }
 
     /// Searches the plugin catalog by query string.
-    pub fn search(&self, query: &str) -> Vec<&PluginMetadata> {
+    pub fn search(&self, _query: &str) -> Vec<&PluginMetadata> {
         let catalog = self.catalog_cache.read();
         // Need to collect owned copies due to RwLockReadGuard lifetime
         drop(catalog);

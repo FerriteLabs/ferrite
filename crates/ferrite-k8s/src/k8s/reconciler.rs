@@ -238,8 +238,6 @@ pub struct ReconcileContext {
     pub last_error: Option<String>,
 }
 
-
-
 impl ReconcileContext {
     /// Record an error and get next action
     pub fn on_error(&mut self, error: impl Into<String>) -> ReconcileResult {

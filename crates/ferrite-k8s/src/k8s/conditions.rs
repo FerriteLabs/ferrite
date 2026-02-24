@@ -115,11 +115,7 @@ impl<'a> StatusConditionManager<'a> {
     // -- Degraded ------------------------------------------------------------
 
     /// Mark the cluster as degraded due to partial replica failure.
-    pub fn set_degraded_partial_failure(
-        &mut self,
-        ready_replicas: i32,
-        desired_replicas: i32,
-    ) {
+    pub fn set_degraded_partial_failure(&mut self, ready_replicas: i32, desired_replicas: i32) {
         let is_degraded = ready_replicas < desired_replicas && ready_replicas > 0;
         self.status.set_condition(
             Condition::new(CONDITION_DEGRADED, is_degraded)
@@ -149,11 +145,7 @@ impl<'a> StatusConditionManager<'a> {
     }
 
     /// Mark the cluster as degraded because quorum is at risk.
-    pub fn set_degraded_quorum_at_risk(
-        &mut self,
-        ready_replicas: i32,
-        quorum_size: i32,
-    ) {
+    pub fn set_degraded_quorum_at_risk(&mut self, ready_replicas: i32, quorum_size: i32) {
         self.status.set_condition(
             Condition::new(CONDITION_DEGRADED, true)
                 .with_reason(REASON_QUORUM_AT_RISK)
@@ -239,10 +231,7 @@ impl<'a> StatusConditionManager<'a> {
         self.status.set_condition(
             Condition::new(CONDITION_UPGRADING, true)
                 .with_reason(REASON_ROLLBACK_IN_PROGRESS)
-                .with_message(format!(
-                    "Rolling back to {}: {}",
-                    target_version, reason
-                )),
+                .with_message(format!("Rolling back to {}: {}", target_version, reason)),
         );
     }
 
@@ -334,10 +323,7 @@ mod tests {
 
         assert!(status.is_condition_true(CONDITION_DEGRADED));
         let cond = status.get_condition(CONDITION_DEGRADED).unwrap();
-        assert_eq!(
-            cond.reason.as_deref(),
-            Some(REASON_PARTIAL_REPLICA_FAILURE)
-        );
+        assert_eq!(cond.reason.as_deref(), Some(REASON_PARTIAL_REPLICA_FAILURE));
     }
 
     #[test]

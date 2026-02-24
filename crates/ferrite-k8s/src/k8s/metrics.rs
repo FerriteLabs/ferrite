@@ -51,9 +51,7 @@ impl OperatorMetrics {
         self.reconciliations_success.fetch_add(1, Ordering::Relaxed);
 
         let mut metrics = self.cluster_metrics.write();
-        let entry = metrics
-            .entry(cluster.to_string())
-            .or_default();
+        let entry = metrics.entry(cluster.to_string()).or_default();
         entry.reconciliations_total.fetch_add(1, Ordering::Relaxed);
         entry
             .reconciliations_success
@@ -66,9 +64,7 @@ impl OperatorMetrics {
         self.reconciliations_failed.fetch_add(1, Ordering::Relaxed);
 
         let mut metrics = self.cluster_metrics.write();
-        let entry = metrics
-            .entry(cluster.to_string())
-            .or_default();
+        let entry = metrics.entry(cluster.to_string()).or_default();
         entry.reconciliations_total.fetch_add(1, Ordering::Relaxed);
         entry.reconciliations_failed.fetch_add(1, Ordering::Relaxed);
     }

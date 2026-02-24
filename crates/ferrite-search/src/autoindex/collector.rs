@@ -217,10 +217,7 @@ impl PatternCollector {
 
         // Track field access
         if let Some(fields) = fields {
-            let field_map = self
-                .field_counts
-                .entry(pattern.to_string())
-                .or_default();
+            let field_map = self.field_counts.entry(pattern.to_string()).or_default();
 
             for field in fields {
                 field_map

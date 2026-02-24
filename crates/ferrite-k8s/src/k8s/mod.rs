@@ -62,7 +62,9 @@
 //!     replicas: 3
 //! ```
 
-#![allow(dead_code, unused_imports, unused_variables)]
+#![allow(dead_code)]
+/// Backup and restore manager for K8s-deployed clusters.
+pub mod backup;
 pub mod conditions;
 mod controller;
 mod crd;
@@ -71,24 +73,25 @@ pub mod generators;
 pub mod leader_election;
 mod metrics;
 mod operator;
+/// Predictive auto-scaling with time-series forecasting.
+pub mod predictive_scaling;
 mod reconciler;
 mod resources;
 pub mod rolling_update;
 pub mod scaling;
 
+pub use conditions::{
+    StatusConditionManager, CONDITION_DEGRADED, CONDITION_READY, CONDITION_SCALING,
+    CONDITION_UPGRADING,
+};
 pub use controller::{
     BackupController, ClusterController, CronJobSpec, MonitorEndpoint, PodDisruptionBudgetSpec,
     RestoreController, ServiceMonitorSpec,
 };
 pub use crd::{
     BackupPhase, BackupScheduleConfig, ClusterPhase, FerriteBackup, FerriteBackupSpec,
-    FerriteBackupStatus, FerriteCluster, FerriteClusterSpec, FerriteClusterStatus,
-    FerriteRestore, FerriteRestoreSpec, FerriteRestoreStatus, RestorePhase,
-    RollingUpdateConfig,
-};
-pub use conditions::{
-    StatusConditionManager, CONDITION_DEGRADED, CONDITION_READY, CONDITION_SCALING,
-    CONDITION_UPGRADING,
+    FerriteBackupStatus, FerriteCluster, FerriteClusterSpec, FerriteClusterStatus, FerriteRestore,
+    FerriteRestoreSpec, FerriteRestoreStatus, RestorePhase, RollingUpdateConfig,
 };
 pub use failover::{FailoverEvent, FailoverManager, FailoverPlan, HealthStatus};
 pub use generators::{
@@ -96,9 +99,7 @@ pub use generators::{
     generate_headless_service, generate_pdb, generate_service, generate_service_monitor,
     generate_statefulset,
 };
-pub use leader_election::{
-    ElectorState, LeaderElectionConfig, LeaderElector, LeaderEvent,
-};
+pub use leader_election::{ElectorState, LeaderElectionConfig, LeaderElector, LeaderEvent};
 pub use metrics::OperatorMetrics;
 pub use operator::{Operator, OperatorConfig, OperatorError};
 pub use reconciler::{ReconcileAction, ReconcileResult, Reconciler};
@@ -384,8 +385,6 @@ pub enum ClientAuthMode {
     /// Required client auth
     Need,
 }
-
-
 
 /// Affinity rules
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]

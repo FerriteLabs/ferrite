@@ -182,10 +182,12 @@
 
 pub mod backpressure;
 pub mod capture;
+/// Pre-built CDC connectors for Kafka, NATS, PostgreSQL, S3, and webhooks.
+pub mod connectors;
 pub mod consumer_group;
 mod engine;
-pub mod exactly_once;
 mod event;
+pub mod exactly_once;
 pub mod kafka_bridge;
 mod log;
 mod sink;

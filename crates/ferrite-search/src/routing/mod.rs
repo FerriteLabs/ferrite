@@ -454,7 +454,11 @@ impl QueryRouter {
             (RoutingStrategy::Custom(_), true) => self.auto_select_target(pattern),
         };
 
-        let decision = RouteDecision { target, index, ..Default::default() };
+        let decision = RouteDecision {
+            target,
+            index,
+            ..Default::default()
+        };
 
         // Track index usage
         match decision.index {

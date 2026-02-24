@@ -137,10 +137,7 @@ impl LeaderElector {
             }
             _ => {
                 // Lease is vacant or expired — acquire
-                let transitions = lease_guard
-                    .as_ref()
-                    .map(|r| r.transitions + 1)
-                    .unwrap_or(0);
+                let transitions = lease_guard.as_ref().map(|r| r.transitions + 1).unwrap_or(0);
 
                 let now = Instant::now();
                 *lease_guard = Some(LeaseRecord {

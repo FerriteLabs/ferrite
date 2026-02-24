@@ -96,10 +96,7 @@ impl IdempotentProducer {
 
     /// Get the next expected sequence for a producer.
     pub fn next_sequence(&self, producer_id: &str) -> u64 {
-        self.sequences
-            .get(producer_id)
-            .map(|v| *v)
-            .unwrap_or(0)
+        self.sequences.get(producer_id).map(|v| *v).unwrap_or(0)
     }
 
     /// Reset sequence tracking for a producer.
@@ -279,8 +276,7 @@ impl ConsumerOffsetStore {
 
     /// Commit an offset for a group/partition.
     pub fn commit(&self, group: &str, partition: u32, offset: u64) {
-        self.offsets
-            .insert((group.to_string(), partition), offset);
+        self.offsets.insert((group.to_string(), partition), offset);
     }
 
     /// Get the committed offset for a group/partition.

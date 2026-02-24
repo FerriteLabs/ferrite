@@ -41,7 +41,6 @@
 //! );
 //! ```
 
-
 pub mod api;
 pub mod commands;
 pub mod types;
@@ -223,11 +222,7 @@ impl RedisModuleManager {
 
     /// Get a snapshot of module info for all loaded modules.
     pub fn list(&self) -> Vec<ModuleInfo> {
-        self.modules
-            .read()
-            .iter()
-            .map(|m| m.info.clone())
-            .collect()
+        self.modules.read().iter().map(|m| m.info.clone()).collect()
     }
 
     /// Number of loaded modules.

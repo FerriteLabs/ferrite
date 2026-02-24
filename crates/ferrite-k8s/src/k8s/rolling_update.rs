@@ -176,8 +176,7 @@ impl RollingUpdateManager {
         };
 
         // Separate primary and replicas
-        let mut replicas: Vec<&PodInfo> =
-            pods.iter().filter(|p| !p.is_primary).collect();
+        let mut replicas: Vec<&PodInfo> = pods.iter().filter(|p| !p.is_primary).collect();
         let primary: Option<&PodInfo> = pods.iter().find(|p| p.is_primary);
 
         // Sort replicas by ordinal descending (update highest first)
@@ -187,8 +186,7 @@ impl RollingUpdateManager {
             ord_b.cmp(&ord_a)
         });
 
-        let mut pods_to_update: Vec<String> =
-            replicas.iter().map(|p| p.name.clone()).collect();
+        let mut pods_to_update: Vec<String> = replicas.iter().map(|p| p.name.clone()).collect();
 
         // Primary is updated last
         if let Some(p) = primary {
@@ -325,11 +323,8 @@ impl RollingUpdateManager {
             .await?;
 
         // Replicas first (high ordinal → low), then primary
-        let mut replicas: Vec<&PodInfo> =
-            pods.iter().filter(|p| !p.is_primary).collect();
-        replicas.sort_by(|a, b| {
-            ordinal_from_name(&b.name).cmp(&ordinal_from_name(&a.name))
-        });
+        let mut replicas: Vec<&PodInfo> = pods.iter().filter(|p| !p.is_primary).collect();
+        replicas.sort_by(|a, b| ordinal_from_name(&b.name).cmp(&ordinal_from_name(&a.name)));
 
         for r in &replicas {
             actions.push(ReconcileAction::DeletePod(r.name.clone()));
@@ -490,7 +485,10 @@ mod tests {
         let plan = rum.plan_update(&cluster, "2.0.0").await.unwrap();
         let mut progress = RollingUpdateManager::new_progress(&plan);
 
-        let result = rum.execute_step(&cluster, &plan, &mut progress).await.unwrap();
+        let result = rum
+            .execute_step(&cluster, &plan, &mut progress)
+            .await
+            .unwrap();
         // Simulated pods are always ready, so should continue
         assert!(matches!(result, UpdateStepResult::Continue));
         assert_eq!(progress.completed, 1);
@@ -568,8 +566,7 @@ mod tests {
     #[test]
     fn test_custom_settings() {
         let rm = Arc::new(ResourceManager::new());
-        let rum =
-            RollingUpdateManager::with_settings(rm, Duration::from_secs(120), 3);
+        let rum = RollingUpdateManager::with_settings(rm, Duration::from_secs(120), 3);
         assert_eq!(rum.health_check_timeout(), Duration::from_secs(120));
         assert_eq!(rum.max_failures(), 3);
     }

@@ -272,7 +272,7 @@ mod registry;
 mod types;
 
 pub use executor::{ExecutionResult, WasmExecutor};
-pub use host::{HostContext, HostFunction, StoreBackend, NoopStoreBackend};
+pub use host::{HostContext, HostFunction, NoopStoreBackend, StoreBackend};
 pub use observability::{FunctionMetrics, FunctionMetricsSnapshot, WasmMetricsRegistry};
 pub use registry::FunctionRegistry;
 pub use types::{

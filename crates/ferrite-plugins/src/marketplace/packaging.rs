@@ -14,7 +14,6 @@
 //! [M bytes]   raw WASM binary
 //! ```
 
-
 use serde::{Deserialize, Serialize};
 
 use super::discovery::ModuleManifest;
@@ -73,12 +72,11 @@ pub fn pack(manifest: &ModuleManifest, wasm_bytes: &[u8]) -> Result<Vec<u8>, Pac
         wasm_size: wasm_bytes.len() as u64,
     };
 
-    let header_json = serde_json::to_vec(&header)
-        .map_err(|e| PackagingError::Serialization(e.to_string()))?;
+    let header_json =
+        serde_json::to_vec(&header).map_err(|e| PackagingError::Serialization(e.to_string()))?;
     let header_len = header_json.len() as u32;
 
-    let mut archive =
-        Vec::with_capacity(4 + 4 + header_json.len() + wasm_bytes.len());
+    let mut archive = Vec::with_capacity(4 + 4 + header_json.len() + wasm_bytes.len());
     archive.extend_from_slice(FERRPKG_MAGIC);
     archive.extend_from_slice(&header_len.to_le_bytes());
     archive.extend_from_slice(&header_json);
@@ -111,8 +109,7 @@ pub fn unpack(archive: &[u8]) -> Result<UnpackedPackage, PackagingError> {
         ));
     }
 
-    let header_len =
-        u32::from_le_bytes([archive[4], archive[5], archive[6], archive[7]]) as usize;
+    let header_len = u32::from_le_bytes([archive[4], archive[5], archive[6], archive[7]]) as usize;
 
     if archive.len() < 8 + header_len {
         return Err(PackagingError::InvalidArchive(
@@ -424,7 +421,10 @@ min_ferrite_version = "0.1.0"
         // Tamper with the wasm bytes
         unpacked.wasm_bytes.push(0xFF);
         let result = verify_checksum(&unpacked);
-        assert!(matches!(result, Err(PackagingError::ChecksumMismatch { .. })));
+        assert!(matches!(
+            result,
+            Err(PackagingError::ChecksumMismatch { .. })
+        ));
     }
 
     #[test]
