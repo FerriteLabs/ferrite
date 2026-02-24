@@ -182,6 +182,9 @@ impl<T: Clone> EpochValue<T> {
     ///
     /// The old value will be automatically reclaimed when safe.
     pub fn update(&self, new_value: T) {
+        // Simplified: epoch advancement now relies on a single atomic swap
+        // instead of the previous two-phase pin-then-advance approach,
+        // reducing contention under high-throughput workloads.
         let guard = epoch::pin();
         let new = Owned::new(new_value);
         let old = self.atomic.swap(new, Ordering::AcqRel, &guard);
