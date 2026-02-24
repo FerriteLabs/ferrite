@@ -7,9 +7,35 @@ coverage:
       default:
         target: 50%
         threshold: 2%
+      # Higher target for the core engine crate
+      core:
+        target: 60%
+        threshold: 2%
+        paths:
+          - crates/ferrite-core/
     patch:
       default:
         target: 80%
+
+flags:
+  core:
+    paths:
+      - crates/ferrite-core/
+    carryforward: true
+  extensions:
+    paths:
+      - crates/ferrite-search/
+      - crates/ferrite-ai/
+      - crates/ferrite-graph/
+      - crates/ferrite-timeseries/
+      - crates/ferrite-document/
+      - crates/ferrite-streaming/
+    carryforward: true
+  integration:
+    paths:
+      - src/
+      - tests/
+    carryforward: true
 
 comment:
   layout: "reach,diff,flags,files"

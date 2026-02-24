@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
+  <rect width="1280" height="640" fill="#1a1a2e"/>
+  <text x="640" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="bold" fill="#e94560" text-anchor="middle">⚡ Ferrite</text>
+  <text x="640" y="340" font-family="system-ui, -apple-system, sans-serif" font-size="28" fill="#ffffff" text-anchor="middle">High-Performance Tiered-Storage Key-Value Store</text>
+  <text x="640" y="400" font-family="system-ui, -apple-system, sans-serif" font-size="22" fill="#888888" text-anchor="middle">Drop-in Redis Replacement · Rust · io_uring · Epoch-Based Concurrency</text>
+  <text x="640" y="500" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="#555555" text-anchor="middle">The speed of memory, the capacity of disk, the economics of cloud.</text>
+</svg>

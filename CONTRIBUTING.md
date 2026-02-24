@@ -361,6 +361,13 @@ pub type Result<T> = std::result::Result<T, FerriteError>;
 - Preserve the error chain with `#[from]`
 - Add `#[error("...")]` messages that are user-friendly
 
+**Error type naming convention:**
+- Prefix error types with the module or crate name to avoid collisions across crates
+- Use `<Feature>Error` pattern (e.g., `CdcSyncError`, `CloudPipelineError`, `K8sBackupError`)
+- Avoid generic names like `SyncError`, `QueryError`, `PipelineError` — they conflict across crate boundaries
+- Each crate should define errors in a dedicated `error.rs` module re-exported from `lib.rs`
+- Always derive `thiserror::Error` rather than manually implementing `std::error::Error`
+
 ### Unsafe Code Guidelines
 
 **Minimize use of `unsafe` code.** When absolutely necessary for performance:
@@ -574,6 +581,13 @@ cargo audit
 cargo outdated --exit-code 0
 cargo license
 ```
+
+> **Corporate/private registries:** If your organization uses private crate registries or git mirrors,
+> `cargo deny` may fail with "unknown registry" errors. Override locally with:
+> ```bash
+> cargo deny --config deny.toml check --allow unknown-registry --allow unknown-git
+> ```
+> Do not commit changes to `deny.toml` that weaken the default policy.
 
 **Benchmarks** (in `benches/` directory)
 ```rust

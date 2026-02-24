@@ -21,7 +21,9 @@
         "tamasfe.even-better-toml",
         "serayuzgur.crates",
         "vadimcn.vscode-lldb",
-        "fill-labs.dependi"
+        "fill-labs.dependi",
+        "eamodio.gitlens",
+        "ms-vscode.makefile-tools"
       ]
     }
   },

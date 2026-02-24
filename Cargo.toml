@@ -26,7 +26,7 @@ repository = "https://github.com/ferritelabs/ferrite"
 
 [workspace.lints.rust]
 # Structural suppressions
-missing_docs = "allow"       # TODO: enable progressively starting with ferrite-core public API
+missing_docs = "warn"        # Enabled progressively; ferrite-core public API enforced first
 private_interfaces = "allow"
 rust_2018_idioms = { level = "allow", priority = -1 }
 # Unused code: split from blanket `unused` for granular future tightening
@@ -44,10 +44,14 @@ unwrap_used = "deny"
 print_stdout = "deny"
 print_stderr = "deny"
 dbg_macro = "deny"
+await_holding_lock = "deny"
 
 # ── Lint groups (lower priority so individual overrides take precedence) ──────
 pedantic = { level = "warn", priority = -1 }
 nursery = { level = "warn", priority = -1 }
+
+# ── Explicit warnings for high-value lints ────────────────────────────────────
+large_enum_variant = "warn"
 
 # ── Pedantic overrides (too noisy or inapplicable at current maturity) ────────
 module_name_repetitions = "allow"
@@ -102,7 +106,7 @@ string_to_string = "allow"
 struct_field_names = "allow"
 implicit_clone = "allow"
 suspicious_operation_groupings = "allow"
-manual_let_else = "allow"
+manual_let_else = "warn"
 ref_patterns = "allow"
 collection_is_never_read = "allow"
 iter_on_empty_collections = "allow"
@@ -343,8 +347,8 @@ tokio-test.workspace = true
 tempfile.workspace = true
 
 [features]
-# Default: Core + standard extensions
-default = ["scripting", "tls", "cloud", "crypto", "cli"]
+# Default: Core + TLS + CLI (lean build; add "scripting", "cloud", "crypto" as needed)
+default = ["tls", "cli"]
 lite = []
 experimental = ["ferrite-k8s", "ferrite-enterprise", "ferrite-studio"]
 io-uring = ["ferrite-core/io-uring"]
@@ -357,7 +361,7 @@ tls = ["rustls", "tokio-rustls", "rustls-pemfile"]
 cloud = ["ferrite-cloud", "ferrite-core/cloud"]
 crypto = ["ferrite-core/crypto"]
 cli = ["rustyline", "colored", "atty", "clap_complete"]
-all = ["default", "experimental", "otel", "tui", "wasm", "onnx", "io-uring"]
+all = ["default", "experimental", "scripting", "cloud", "crypto", "otel", "tui", "wasm", "onnx", "io-uring"]
 
 [[bin]]
 name = "ferrite"

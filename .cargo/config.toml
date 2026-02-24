@@ -5,8 +5,9 @@
 
 # Limit parallel jobs to prevent OOM and machine freezes during compilation.
 # Adjust based on your machine's RAM (rule of thumb: 1 job per 2-4 GB RAM).
+# CI runners typically have 8+ cores; local dev machines vary.
 [build]
-jobs = 4
+jobs = 8
 
 # macOS: uncomment after installing lld (brew install llvm) for ~20-30% faster linking.
 # [target.aarch64-apple-darwin]

@@ -37,6 +37,8 @@
             pkgs.cargo-audit
             pkgs.cargo-watch
             pkgs.cargo-release
+            pkgs.cargo-edit
+            pkgs.cargo-expand
           ];
 
           # Set library paths for linking

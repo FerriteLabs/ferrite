@@ -106,6 +106,26 @@ jobs:
     if: needs.changes.outputs.any-rust == 'true'
     steps:
       - uses: actions/checkout@v4
+      - name: Verify toolchain consistency
+        run: |
+          MSRV=$(grep '^rust-version' Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
+          TOOLCHAIN=$(grep '^channel' rust-toolchain.toml | sed 's/.*"\(.*\)"/\1/')
+          echo "MSRV from Cargo.toml: $MSRV"
+          echo "Toolchain from rust-toolchain.toml: $TOOLCHAIN"
+          if [ -z "$MSRV" ]; then
+            echo "::error::rust-version not found in Cargo.toml"
+            exit 1
+          fi
+          if [ -z "$TOOLCHAIN" ]; then
+            echo "::error::channel not found in rust-toolchain.toml"
+            exit 1
+          fi
+          TOOLCHAIN_MAJOR_MINOR=$(echo "$TOOLCHAIN" | grep -oE '^[0-9]+\.[0-9]+')
+          if [ "$(printf '%s\n' "$MSRV" "$TOOLCHAIN_MAJOR_MINOR" | sort -V | head -1)" != "$MSRV" ]; then
+            echo "::error::rust-toolchain.toml channel ($TOOLCHAIN) is older than MSRV ($MSRV)"
+            exit 1
+          fi
+          echo "✅ Toolchain $TOOLCHAIN >= MSRV $MSRV"
       - uses: dtolnay/rust-toolchain@1.80
       - uses: Swatinem/rust-cache@v2
         with:

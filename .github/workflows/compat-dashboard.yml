@@ -1,0 +1,122 @@
+# Compatibility Dashboard Workflow
+#
+# Runs the Redis TCL test suite against Ferrite nightly and publishes
+# a per-command compatibility matrix to GitHub Pages.
+
+name: Compatibility Dashboard
+
+on:
+  schedule:
+    # Run nightly at 03:00 UTC
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "compat-dashboard"
+  cancel-in-progress: true
+
+jobs:
+  compatibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout Ferrite
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-compat-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build Ferrite
+        run: cargo build --release
+
+      - name: Install Tcl
+        run: sudo apt-get update && sudo apt-get install -y tcl redis-tools
+
+      - name: Clone Redis tests
+        run: git clone --depth 1 https://github.com/redis/redis.git redis-tests
+
+      - name: Run compatibility tests
+        run: |
+          chmod +x scripts/tcl-compat.sh
+          ./scripts/tcl-compat.sh \
+            --ferrite-bin ./target/release/ferrite \
+            --redis-tests ./redis-tests \
+            --output ./compat-results/ \
+            --skip "cluster,sentinel,repl" || true
+
+      - name: Generate dashboard HTML
+        run: |
+          mkdir -p compat-site
+          cat > compat-site/index.html << 'HTMLEOF'
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Ferrite Redis Compatibility Dashboard</title>
+            <style>
+              body { font-family: -apple-system, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; color: #333; }
+              h1 { color: #d4380d; }
+              .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-weight: bold; }
+              .pass { background: #f6ffed; color: #389e0d; border: 1px solid #b7eb8f; }
+              .fail { background: #fff2f0; color: #cf1322; border: 1px solid #ffa39e; }
+              table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+              th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #f0f0f0; }
+              th { background: #fafafa; font-weight: 600; }
+              tr:hover { background: #fafafa; }
+              .updated { color: #8c8c8c; font-size: 0.85em; }
+            </style>
+          </head>
+          <body>
+            <h1>🧲 Ferrite Redis Compatibility</h1>
+            <p class="updated">Updated nightly. Last run: <span id="date"></span></p>
+            <script>document.getElementById('date').textContent = new Date().toISOString().split('T')[0];</script>
+          HTMLEOF
+
+          # Convert markdown table to HTML
+          if [ -f compat-results/compatibility-matrix.md ]; then
+            echo "<h2>Summary</h2>" >> compat-site/index.html
+            # Extract summary table
+            sed -n '/^## Summary/,/^## /p' compat-results/compatibility-matrix.md | \
+              grep '|' | head -20 >> compat-site/index.html
+            echo "<h2>Detailed Results</h2>" >> compat-site/index.html
+            echo "<p>Full report: <a href='compatibility-matrix.md'>compatibility-matrix.md</a></p>" >> compat-site/index.html
+            cp compat-results/compatibility-matrix.md compat-site/
+            cp compat-results/results.csv compat-site/ 2>/dev/null || true
+          else
+            echo "<p>No results available. Check the workflow logs.</p>" >> compat-site/index.html
+          fi
+
+          echo "</body></html>" >> compat-site/index.html
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: compat-site/
+
+  deploy:
+    needs: compatibility
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

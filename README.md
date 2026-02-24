@@ -10,6 +10,7 @@ A high-performance, tiered-storage key-value store designed as a drop-in Redis r
 [![Crates.io](https://img.shields.io/crates/v/ferrite.svg)](https://crates.io/crates/ferrite)
 [![Documentation](https://docs.rs/ferrite/badge.svg)](https://docs.rs/ferrite)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
+[![MSRV](https://img.shields.io/crates/msrv/ferrite?label=MSRV)](https://crates.io/crates/ferrite)
 [![Rust](https://img.shields.io/badge/rust-1.80%2B-orange)](https://www.rust-lang.org/)
 [![codecov](https://codecov.io/gh/ferritelabs/ferrite/branch/main/graph/badge.svg)](https://codecov.io/gh/ferritelabs/ferrite)
 [![Redis Compat](https://img.shields.io/badge/Redis%20Compat-72%25-yellow)](docs/REDIS_COMPAT.md)
@@ -731,6 +732,38 @@ Features:
 - Real-time metrics visualization
 - Cluster topology view
 - Slow query log
+
+## Crate Architecture
+
+Ferrite is organized as a Cargo workspace with 12 independent crates:
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                    ferrite (top-level binary)                        │
+│              commands/ · server/ · replication/ · sdk/               │
+└─────────────────────────────┬────────────────────────────────────────┘
+                              │ depends on all crates below
+          ┌───────────────────┼───────────────────────┐
+          ▼                   ▼                       ▼
+┌──────────────────┐ ┌───────────────────┐ ┌──────────────────────────┐
+│   ferrite-core   │ │  Extension Crates │ │  Platform Crates         │
+│                  │ │  (self-contained) │ │  (self-contained)        │
+│ · storage/       │ │                   │ │                          │
+│ · protocol/      │ │ · ferrite-ai      │ │ · ferrite-k8s            │
+│ · persistence/   │ │ · ferrite-search  │ │ · ferrite-enterprise     │
+│ · cluster/       │ │ · ferrite-graph   │ │ · ferrite-studio         │
+│ · query/         │ │ · ferrite-ts      │ │ · ferrite-cloud          │
+│ · transaction/   │ │ · ferrite-doc     │ │ · ferrite-plugins        │
+│ · auth/          │ │ · ferrite-stream  │ │                          │
+│ · tiering/       │ │                   │ │                          │
+│ · metrics/       │ │                   │ │                          │
+│ · observability/ │ │                   │ │                          │
+│ · runtime/       │ │                   │ │                          │
+└──────────────────┘ └───────────────────┘ └──────────────────────────┘
+
+Key design rule: Extension crates have ZERO dependencies on ferrite-core
+or each other. Only the top-level crate integrates them.
+```
 
 ## Project Structure
 

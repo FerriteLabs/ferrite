@@ -2,8 +2,8 @@
 # https://embarkstudios.github.io/cargo-deny/
 
 [graph]
-# Exclude dev dependencies from checks
-exclude-dev = true
+# Include dev dependencies in vulnerability checks for supply-chain safety
+exclude-dev = false
 
 [advisories]
 # The database of security advisories

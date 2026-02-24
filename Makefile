@@ -337,6 +337,12 @@ update: ## Update dependencies
 	@$(CARGO) update
 	@echo "$(GREEN)Dependencies updated!$(NC)"
 
+dead-code-audit: ## List all #[allow(dead_code)] annotations
+	@echo "$(BLUE)$(BOLD)Dead code audit — items planned for future versions:$(NC)"
+	@grep -rn 'allow(dead_code)' src/ crates/ --include='*.rs' | grep -v test | grep -v '#!' | wc -l | xargs -I{} echo "  Total annotations: {}"
+	@echo ""
+	@grep -rn 'allow(dead_code)' src/ crates/ --include='*.rs' | grep -v test | grep -v '#!'
+
 ##@ Workflow Helpers
 
 pre-commit: fmt-check lint test ## Run pre-commit checks
@@ -352,6 +358,24 @@ msrv: ## Check Minimum Supported Rust Version
 	@echo "$(BLUE)$(BOLD)Checking MSRV (1.88)...$(NC)"
 	@$(CARGO) +1.88 check --all-features
 	@echo "$(GREEN)MSRV check passed!$(NC)"
+
+completions: ## Generate shell completions for bash, zsh, fish
+	@echo "$(BLUE)$(BOLD)Generating shell completions...$(NC)"
+	@mkdir -p target/completions
+	@$(CARGO) run --release --bin ferrite -- completions bash > target/completions/ferrite.bash 2>/dev/null || echo "$(YELLOW)ferrite completions not yet supported — add clap_complete$(NC)"
+	@$(CARGO) run --release --bin ferrite -- completions zsh > target/completions/_ferrite 2>/dev/null || true
+	@$(CARGO) run --release --bin ferrite -- completions fish > target/completions/ferrite.fish 2>/dev/null || true
+	@$(CARGO) run --release --bin ferrite-cli -- completions bash > target/completions/ferrite-cli.bash 2>/dev/null || true
+	@$(CARGO) run --release --bin ferrite-cli -- completions zsh > target/completions/_ferrite-cli 2>/dev/null || true
+	@$(CARGO) run --release --bin ferrite-cli -- completions fish > target/completions/ferrite-cli.fish 2>/dev/null || true
+	@echo "$(GREEN)Completions written to target/completions/$(NC)"
+
+man-pages: ## Generate man pages (requires clap_mangen)
+	@echo "$(BLUE)$(BOLD)Generating man pages...$(NC)"
+	@mkdir -p target/man
+	@$(CARGO) run --release --bin ferrite -- man > target/man/ferrite.1 2>/dev/null || echo "$(YELLOW)Man page generation not yet supported — add clap_mangen$(NC)"
+	@$(CARGO) run --release --bin ferrite-cli -- man > target/man/ferrite-cli.1 2>/dev/null || true
+	@echo "$(GREEN)Man pages written to target/man/$(NC)"
 
 ##@ Help
 
