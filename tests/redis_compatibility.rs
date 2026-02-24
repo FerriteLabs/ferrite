@@ -184,8 +184,14 @@ fn compat_string_mget_multiple_keys() {
     store.set(0, Bytes::from("b"), Value::String(Bytes::from("2")));
     store.set(0, Bytes::from("c"), Value::String(Bytes::from("3")));
     // MGET returns values for multiple keys; missing keys return nil
-    assert_eq!(store.get(0, &Bytes::from("a")), Some(Value::String(Bytes::from("1"))));
-    assert_eq!(store.get(0, &Bytes::from("b")), Some(Value::String(Bytes::from("2"))));
+    assert_eq!(
+        store.get(0, &Bytes::from("a")),
+        Some(Value::String(Bytes::from("1")))
+    );
+    assert_eq!(
+        store.get(0, &Bytes::from("b")),
+        Some(Value::String(Bytes::from("2")))
+    );
     assert_eq!(store.get(0, &Bytes::from("missing")), None);
 }
 
@@ -195,9 +201,18 @@ fn compat_string_mset_multiple_keys() {
     store.set(0, Bytes::from("k1"), Value::String(Bytes::from("v1")));
     store.set(0, Bytes::from("k2"), Value::String(Bytes::from("v2")));
     store.set(0, Bytes::from("k3"), Value::String(Bytes::from("v3")));
-    assert_eq!(store.get(0, &Bytes::from("k1")), Some(Value::String(Bytes::from("v1"))));
-    assert_eq!(store.get(0, &Bytes::from("k2")), Some(Value::String(Bytes::from("v2"))));
-    assert_eq!(store.get(0, &Bytes::from("k3")), Some(Value::String(Bytes::from("v3"))));
+    assert_eq!(
+        store.get(0, &Bytes::from("k1")),
+        Some(Value::String(Bytes::from("v1")))
+    );
+    assert_eq!(
+        store.get(0, &Bytes::from("k2")),
+        Some(Value::String(Bytes::from("v2")))
+    );
+    assert_eq!(
+        store.get(0, &Bytes::from("k3")),
+        Some(Value::String(Bytes::from("v3")))
+    );
 }
 
 #[test]
@@ -230,8 +245,15 @@ fn compat_string_decr_integer_value() {
 #[test]
 fn compat_string_append_creates_if_missing() {
     let store = new_store();
-    store.set(0, Bytes::from("appendkey"), Value::String(Bytes::from("hello")));
-    assert_eq!(store.get(0, &Bytes::from("appendkey")), Some(Value::String(Bytes::from("hello"))));
+    store.set(
+        0,
+        Bytes::from("appendkey"),
+        Value::String(Bytes::from("hello")),
+    );
+    assert_eq!(
+        store.get(0, &Bytes::from("appendkey")),
+        Some(Value::String(Bytes::from("hello")))
+    );
 }
 
 #[test]
@@ -253,7 +275,11 @@ fn compat_string_strlen_nonexistent_returns_zero() {
 #[test]
 fn compat_string_getrange_substring() {
     let store = new_store();
-    store.set(0, Bytes::from("mystr"), Value::String(Bytes::from("Hello, World!")));
+    store.set(
+        0,
+        Bytes::from("mystr"),
+        Value::String(Bytes::from("Hello, World!")),
+    );
     match store.get(0, &Bytes::from("mystr")) {
         Some(Value::String(s)) => {
             let sub = &s[0..5];
@@ -275,8 +301,16 @@ fn compat_string_setnx_only_if_not_exists() {
 fn compat_string_setex_sets_with_expiry() {
     let store = new_store();
     let expires_at = SystemTime::now() + Duration::from_secs(100);
-    store.set_with_expiry(0, Bytes::from("exkey"), Value::String(Bytes::from("val")), expires_at);
-    assert_eq!(store.get(0, &Bytes::from("exkey")), Some(Value::String(Bytes::from("val"))));
+    store.set_with_expiry(
+        0,
+        Bytes::from("exkey"),
+        Value::String(Bytes::from("val")),
+        expires_at,
+    );
+    assert_eq!(
+        store.get(0, &Bytes::from("exkey")),
+        Some(Value::String(Bytes::from("val")))
+    );
     let ttl = store.ttl(0, &Bytes::from("exkey"));
     assert!(ttl.is_some() && ttl.unwrap() > 0);
 }
@@ -285,7 +319,12 @@ fn compat_string_setex_sets_with_expiry() {
 fn compat_string_psetex_millisecond_expiry() {
     let store = new_store();
     let expires_at = SystemTime::now() + Duration::from_millis(100_000);
-    store.set_with_expiry(0, Bytes::from("pexkey"), Value::String(Bytes::from("val")), expires_at);
+    store.set_with_expiry(
+        0,
+        Bytes::from("pexkey"),
+        Value::String(Bytes::from("val")),
+        expires_at,
+    );
     assert!(store.get(0, &Bytes::from("pexkey")).is_some());
 }
 
@@ -296,7 +335,10 @@ fn compat_string_getset_returns_old_value() {
     let old = store.get(0, &Bytes::from("gskey"));
     store.set(0, Bytes::from("gskey"), Value::String(Bytes::from("new")));
     assert_eq!(old, Some(Value::String(Bytes::from("old"))));
-    assert_eq!(store.get(0, &Bytes::from("gskey")), Some(Value::String(Bytes::from("new"))));
+    assert_eq!(
+        store.get(0, &Bytes::from("gskey")),
+        Some(Value::String(Bytes::from("new")))
+    );
 }
 
 #[test]
@@ -316,7 +358,11 @@ fn compat_string_getdel_returns_and_deletes() {
 #[test]
 fn compat_list_lpush_creates_list() {
     let store = new_store();
-    store.set(0, Bytes::from("list"), Value::List(VecDeque::from(vec![Bytes::from("a")])));
+    store.set(
+        0,
+        Bytes::from("list"),
+        Value::List(VecDeque::from(vec![Bytes::from("a")])),
+    );
     match store.get(0, &Bytes::from("list")) {
         Some(Value::List(list)) => {
             assert_eq!(list.len(), 1);
@@ -329,9 +375,15 @@ fn compat_list_lpush_creates_list() {
 #[test]
 fn compat_list_rpush_appends_to_tail() {
     let store = new_store();
-    store.set(0, Bytes::from("list"), Value::List(VecDeque::from(vec![
-        Bytes::from("a"), Bytes::from("b"), Bytes::from("c"),
-    ])));
+    store.set(
+        0,
+        Bytes::from("list"),
+        Value::List(VecDeque::from(vec![
+            Bytes::from("a"),
+            Bytes::from("b"),
+            Bytes::from("c"),
+        ])),
+    );
     match store.get(0, &Bytes::from("list")) {
         Some(Value::List(list)) => {
             assert_eq!(list.len(), 3);
@@ -380,7 +432,10 @@ fn compat_list_rpop_removes_from_tail() {
 fn compat_list_lrange_full() {
     let store = new_store();
     let list = VecDeque::from(vec![
-        Bytes::from("a"), Bytes::from("b"), Bytes::from("c"), Bytes::from("d"),
+        Bytes::from("a"),
+        Bytes::from("b"),
+        Bytes::from("c"),
+        Bytes::from("d"),
     ]);
     store.set(0, Bytes::from("list"), Value::List(list));
     match store.get(0, &Bytes::from("list")) {
@@ -441,8 +496,11 @@ fn compat_list_lset_updates_element() {
 fn compat_list_lrem_removes_occurrences() {
     let store = new_store();
     let mut list = VecDeque::from(vec![
-        Bytes::from("a"), Bytes::from("b"), Bytes::from("a"),
-        Bytes::from("c"), Bytes::from("a"),
+        Bytes::from("a"),
+        Bytes::from("b"),
+        Bytes::from("a"),
+        Bytes::from("c"),
+        Bytes::from("a"),
     ]);
     list.retain(|v| v != &Bytes::from("a"));
     store.set(0, Bytes::from("list"), Value::List(list));
@@ -482,7 +540,11 @@ fn compat_list_lpos_finds_element() {
 #[test]
 fn compat_list_empty_after_all_pops() {
     let store = new_store();
-    store.set(0, Bytes::from("list"), Value::List(VecDeque::from(vec![Bytes::from("a")])));
+    store.set(
+        0,
+        Bytes::from("list"),
+        Value::List(VecDeque::from(vec![Bytes::from("a")])),
+    );
     let val = store.get(0, &Bytes::from("list"));
     assert!(val.is_some());
 }
@@ -644,7 +706,9 @@ fn compat_hash_hincrby_integer_field() {
     match store.get(0, &Bytes::from("myhash")) {
         Some(Value::Hash(h)) => {
             let val: i64 = std::str::from_utf8(h.get(&Bytes::from("counter")).unwrap())
-                .unwrap().parse().unwrap();
+                .unwrap()
+                .parse()
+                .unwrap();
             assert_eq!(val + 5, 15);
         }
         other => panic!("Expected Hash, got {:?}", other),
@@ -660,7 +724,9 @@ fn compat_hash_hincrbyfloat_float_field() {
     match store.get(0, &Bytes::from("myhash")) {
         Some(Value::Hash(h)) => {
             let val: f64 = std::str::from_utf8(h.get(&Bytes::from("price")).unwrap())
-                .unwrap().parse().unwrap();
+                .unwrap()
+                .parse()
+                .unwrap();
             assert!((val - 10.5).abs() < f64::EPSILON);
         }
         other => panic!("Expected Hash, got {:?}", other),
@@ -875,7 +941,11 @@ fn compat_set_no_duplicates() {
 #[test]
 fn compat_zset_zadd_basic() {
     let store = new_store();
-    store.set(0, Bytes::from("zs"), make_sorted_set(&[("a", 1.0), ("b", 2.0), ("c", 3.0)]));
+    store.set(
+        0,
+        Bytes::from("zs"),
+        make_sorted_set(&[("a", 1.0), ("b", 2.0), ("c", 3.0)]),
+    );
     match store.get(0, &Bytes::from("zs")) {
         Some(Value::SortedSet { by_member, .. }) => {
             assert_eq!(by_member.len(), 3);
@@ -896,7 +966,14 @@ fn compat_zset_zrem_removes_member() {
     by_score.remove(&(OrderedFloat(2.0), Bytes::from("b")));
     by_member.remove(&Bytes::from("b"));
     let store = new_store();
-    store.set(0, Bytes::from("zs"), Value::SortedSet { by_score, by_member });
+    store.set(
+        0,
+        Bytes::from("zs"),
+        Value::SortedSet {
+            by_score,
+            by_member,
+        },
+    );
     match store.get(0, &Bytes::from("zs")) {
         Some(Value::SortedSet { by_member: bm, .. }) => {
             assert_eq!(bm.len(), 2);
@@ -909,7 +986,11 @@ fn compat_zset_zrem_removes_member() {
 #[test]
 fn compat_zset_zscore_returns_score() {
     let store = new_store();
-    store.set(0, Bytes::from("zs"), make_sorted_set(&[("a", 1.5), ("b", 2.5)]));
+    store.set(
+        0,
+        Bytes::from("zs"),
+        make_sorted_set(&[("a", 1.5), ("b", 2.5)]),
+    );
     match store.get(0, &Bytes::from("zs")) {
         Some(Value::SortedSet { by_member, .. }) => {
             assert_eq!(*by_member.get(&Bytes::from("a")).unwrap(), 1.5);
@@ -923,7 +1004,11 @@ fn compat_zset_zscore_returns_score() {
 #[test]
 fn compat_zset_zcard_returns_count() {
     let store = new_store();
-    store.set(0, Bytes::from("zs"), make_sorted_set(&[("a", 1.0), ("b", 2.0), ("c", 3.0), ("d", 4.0)]));
+    store.set(
+        0,
+        Bytes::from("zs"),
+        make_sorted_set(&[("a", 1.0), ("b", 2.0), ("c", 3.0), ("d", 4.0)]),
+    );
     match store.get(0, &Bytes::from("zs")) {
         Some(Value::SortedSet { by_member, .. }) => assert_eq!(by_member.len(), 4),
         other => panic!("Expected SortedSet, got {:?}", other),
@@ -933,12 +1018,17 @@ fn compat_zset_zcard_returns_count() {
 #[test]
 fn compat_zset_zcount_range() {
     let store = new_store();
-    store.set(0, Bytes::from("zs"), make_sorted_set(&[
-        ("a", 1.0), ("b", 2.0), ("c", 3.0), ("d", 4.0), ("e", 5.0),
-    ]));
+    store.set(
+        0,
+        Bytes::from("zs"),
+        make_sorted_set(&[("a", 1.0), ("b", 2.0), ("c", 3.0), ("d", 4.0), ("e", 5.0)]),
+    );
     match store.get(0, &Bytes::from("zs")) {
         Some(Value::SortedSet { by_score, .. }) => {
-            let count = by_score.keys().filter(|(s, _)| s.0 >= 2.0 && s.0 <= 4.0).count();
+            let count = by_score
+                .keys()
+                .filter(|(s, _)| s.0 >= 2.0 && s.0 <= 4.0)
+                .count();
             assert_eq!(count, 3);
         }
         other => panic!("Expected SortedSet, got {:?}", other),
@@ -948,12 +1038,22 @@ fn compat_zset_zcount_range() {
 #[test]
 fn compat_zset_zrank_returns_position() {
     let store = new_store();
-    store.set(0, Bytes::from("zs"), make_sorted_set(&[("a", 1.0), ("b", 2.0), ("c", 3.0)]));
+    store.set(
+        0,
+        Bytes::from("zs"),
+        make_sorted_set(&[("a", 1.0), ("b", 2.0), ("c", 3.0)]),
+    );
     match store.get(0, &Bytes::from("zs")) {
         Some(Value::SortedSet { by_score, .. }) => {
             let members: Vec<&Bytes> = by_score.keys().map(|(_, m)| m).collect();
-            assert_eq!(members.iter().position(|m| **m == Bytes::from_static(b"a")), Some(0));
-            assert_eq!(members.iter().position(|m| **m == Bytes::from_static(b"c")), Some(2));
+            assert_eq!(
+                members.iter().position(|m| **m == Bytes::from_static(b"a")),
+                Some(0)
+            );
+            assert_eq!(
+                members.iter().position(|m| **m == Bytes::from_static(b"c")),
+                Some(2)
+            );
         }
         other => panic!("Expected SortedSet, got {:?}", other),
     }
@@ -962,11 +1062,18 @@ fn compat_zset_zrank_returns_position() {
 #[test]
 fn compat_zset_zrange_ascending() {
     let store = new_store();
-    store.set(0, Bytes::from("zs"), make_sorted_set(&[("c", 3.0), ("a", 1.0), ("b", 2.0)]));
+    store.set(
+        0,
+        Bytes::from("zs"),
+        make_sorted_set(&[("c", 3.0), ("a", 1.0), ("b", 2.0)]),
+    );
     match store.get(0, &Bytes::from("zs")) {
         Some(Value::SortedSet { by_score, .. }) => {
             let members: Vec<&Bytes> = by_score.keys().map(|(_, m)| m).collect();
-            assert_eq!(members, vec![&Bytes::from("a"), &Bytes::from("b"), &Bytes::from("c")]);
+            assert_eq!(
+                members,
+                vec![&Bytes::from("a"), &Bytes::from("b"), &Bytes::from("c")]
+            );
         }
         other => panic!("Expected SortedSet, got {:?}", other),
     }
@@ -975,14 +1082,18 @@ fn compat_zset_zrange_ascending() {
 #[test]
 fn compat_zset_zrangebyscore_range() {
     let store = new_store();
-    store.set(0, Bytes::from("zs"), make_sorted_set(&[
-        ("a", 1.0), ("b", 2.0), ("c", 3.0), ("d", 4.0),
-    ]));
+    store.set(
+        0,
+        Bytes::from("zs"),
+        make_sorted_set(&[("a", 1.0), ("b", 2.0), ("c", 3.0), ("d", 4.0)]),
+    );
     match store.get(0, &Bytes::from("zs")) {
         Some(Value::SortedSet { by_score, .. }) => {
-            let in_range: Vec<&Bytes> = by_score.keys()
+            let in_range: Vec<&Bytes> = by_score
+                .keys()
                 .filter(|(s, _)| s.0 >= 2.0 && s.0 <= 3.0)
-                .map(|(_, m)| m).collect();
+                .map(|(_, m)| m)
+                .collect();
             assert_eq!(in_range, vec![&Bytes::from("b"), &Bytes::from("c")]);
         }
         other => panic!("Expected SortedSet, got {:?}", other),
@@ -992,11 +1103,18 @@ fn compat_zset_zrangebyscore_range() {
 #[test]
 fn compat_zset_zrevrange_descending() {
     let store = new_store();
-    store.set(0, Bytes::from("zs"), make_sorted_set(&[("a", 1.0), ("b", 2.0), ("c", 3.0)]));
+    store.set(
+        0,
+        Bytes::from("zs"),
+        make_sorted_set(&[("a", 1.0), ("b", 2.0), ("c", 3.0)]),
+    );
     match store.get(0, &Bytes::from("zs")) {
         Some(Value::SortedSet { by_score, .. }) => {
             let members: Vec<&Bytes> = by_score.keys().rev().map(|(_, m)| m).collect();
-            assert_eq!(members, vec![&Bytes::from("c"), &Bytes::from("b"), &Bytes::from("a")]);
+            assert_eq!(
+                members,
+                vec![&Bytes::from("c"), &Bytes::from("b"), &Bytes::from("a")]
+            );
         }
         other => panic!("Expected SortedSet, got {:?}", other),
     }
@@ -1013,7 +1131,14 @@ fn compat_zset_zincrby_increments_score() {
     by_score.insert((OrderedFloat(new_score), Bytes::from("a")), ());
     by_member.insert(Bytes::from("a"), new_score);
     let store = new_store();
-    store.set(0, Bytes::from("zs"), Value::SortedSet { by_score, by_member });
+    store.set(
+        0,
+        Bytes::from("zs"),
+        Value::SortedSet {
+            by_score,
+            by_member,
+        },
+    );
     match store.get(0, &Bytes::from("zs")) {
         Some(Value::SortedSet { by_member: bm, .. }) => {
             assert_eq!(*bm.get(&Bytes::from("a")).unwrap(), 3.5);
@@ -1025,7 +1150,11 @@ fn compat_zset_zincrby_increments_score() {
 #[test]
 fn compat_zset_score_ordering() {
     let store = new_store();
-    store.set(0, Bytes::from("zs"), make_sorted_set(&[("c", 3.0), ("a", 1.0), ("b", 2.0)]));
+    store.set(
+        0,
+        Bytes::from("zs"),
+        make_sorted_set(&[("c", 3.0), ("a", 1.0), ("b", 2.0)]),
+    );
     match store.get(0, &Bytes::from("zs")) {
         Some(Value::SortedSet { by_score, .. }) => {
             let scores: Vec<f64> = by_score.keys().map(|(s, _)| s.0).collect();
@@ -1054,7 +1183,14 @@ fn compat_key_del_multiple() {
     store.set(0, Bytes::from("k1"), Value::String(Bytes::from("v1")));
     store.set(0, Bytes::from("k2"), Value::String(Bytes::from("v2")));
     store.set(0, Bytes::from("k3"), Value::String(Bytes::from("v3")));
-    let deleted = store.del(0, &[Bytes::from("k1"), Bytes::from("k2"), Bytes::from("nonexistent")]);
+    let deleted = store.del(
+        0,
+        &[
+            Bytes::from("k1"),
+            Bytes::from("k2"),
+            Bytes::from("nonexistent"),
+        ],
+    );
     assert_eq!(deleted, 2);
 }
 
@@ -1077,7 +1213,10 @@ fn compat_key_exists_single() {
 fn compat_key_exists_multiple_counts_duplicates() {
     let store = new_store();
     store.set(0, Bytes::from("k1"), Value::String(Bytes::from("v1")));
-    let count = store.exists(0, &[Bytes::from("k1"), Bytes::from("k1"), Bytes::from("k2")]);
+    let count = store.exists(
+        0,
+        &[Bytes::from("k1"), Bytes::from("k1"), Bytes::from("k2")],
+    );
     assert!(count >= 1);
 }
 
@@ -1097,7 +1236,11 @@ fn compat_key_expire_and_ttl() {
 #[test]
 fn compat_key_expire_nonexistent() {
     let store = new_store();
-    let result = store.expire(0, &Bytes::from("nonexistent"), SystemTime::now() + Duration::from_secs(10));
+    let result = store.expire(
+        0,
+        &Bytes::from("nonexistent"),
+        SystemTime::now() + Duration::from_secs(10),
+    );
     assert!(!result);
 }
 
@@ -1105,7 +1248,11 @@ fn compat_key_expire_nonexistent() {
 fn compat_key_pttl_millisecond_precision() {
     let store = new_store();
     store.set(0, Bytes::from("k1"), Value::String(Bytes::from("v1")));
-    store.expire(0, &Bytes::from("k1"), SystemTime::now() + Duration::from_secs(10));
+    store.expire(
+        0,
+        &Bytes::from("k1"),
+        SystemTime::now() + Duration::from_secs(10),
+    );
     let ttl = store.ttl(0, &Bytes::from("k1"));
     assert!(ttl.is_some() && ttl.unwrap() > 0);
 }
@@ -1122,7 +1269,11 @@ fn compat_key_ttl_no_expiry() {
 fn compat_key_persist_removes_expiry() {
     let store = new_store();
     store.set(0, Bytes::from("k1"), Value::String(Bytes::from("v1")));
-    store.expire(0, &Bytes::from("k1"), SystemTime::now() + Duration::from_secs(100));
+    store.expire(
+        0,
+        &Bytes::from("k1"),
+        SystemTime::now() + Duration::from_secs(100),
+    );
     let result = store.persist(0, &Bytes::from("k1"));
     assert!(result);
     assert_eq!(store.ttl(0, &Bytes::from("k1")), Some(-1));
@@ -1141,7 +1292,11 @@ fn compat_key_type_string() {
 #[test]
 fn compat_key_type_list() {
     let store = new_store();
-    store.set(0, Bytes::from("k"), Value::List(VecDeque::from(vec![Bytes::from("a")])));
+    store.set(
+        0,
+        Bytes::from("k"),
+        Value::List(VecDeque::from(vec![Bytes::from("a")])),
+    );
     match store.get(0, &Bytes::from("k")) {
         Some(Value::List(_)) => {}
         other => panic!("Expected List type, got {:?}", other),
@@ -1188,7 +1343,10 @@ fn compat_key_rename_overwrites_dest() {
         store.del(0, &[Bytes::from("old")]);
     }
     assert_eq!(store.get(0, &Bytes::from("old")), None);
-    assert_eq!(store.get(0, &Bytes::from("new")), Some(Value::String(Bytes::from("val"))));
+    assert_eq!(
+        store.get(0, &Bytes::from("new")),
+        Some(Value::String(Bytes::from("val")))
+    );
 }
 
 #[test]
@@ -1207,7 +1365,10 @@ fn compat_key_keys_pattern() {
     store.set(0, Bytes::from("post:1"), Value::String(Bytes::from("c")));
     let all_keys = store.keys(0);
     assert_eq!(all_keys.len(), 3);
-    let user_keys: Vec<&Bytes> = all_keys.iter().filter(|k| k.starts_with(b"user:")).collect();
+    let user_keys: Vec<&Bytes> = all_keys
+        .iter()
+        .filter(|k| k.starts_with(b"user:"))
+        .collect();
     assert_eq!(user_keys.len(), 2);
 }
 
@@ -1215,7 +1376,11 @@ fn compat_key_keys_pattern() {
 fn compat_key_scan_cursor_iteration() {
     let store = new_store();
     for i in 0..10 {
-        store.set(0, Bytes::from(format!("scankey:{}", i)), Value::String(Bytes::from("v")));
+        store.set(
+            0,
+            Bytes::from(format!("scankey:{}", i)),
+            Value::String(Bytes::from("v")),
+        );
     }
     let all_keys = store.keys(0);
     assert_eq!(all_keys.len(), 10);
@@ -1243,12 +1408,22 @@ fn compat_key_unlink_deletes_async() {
 fn compat_key_del_works_on_all_types() {
     let store = new_store();
     store.set(0, Bytes::from("str"), Value::String(Bytes::from("v")));
-    store.set(0, Bytes::from("list"), Value::List(VecDeque::from(vec![Bytes::from("a")])));
+    store.set(
+        0,
+        Bytes::from("list"),
+        Value::List(VecDeque::from(vec![Bytes::from("a")])),
+    );
     store.set(0, Bytes::from("hash"), Value::Hash(HashMap::new()));
     store.set(0, Bytes::from("set"), Value::Set(HashSet::new()));
-    let deleted = store.del(0, &[
-        Bytes::from("str"), Bytes::from("list"), Bytes::from("hash"), Bytes::from("set"),
-    ]);
+    let deleted = store.del(
+        0,
+        &[
+            Bytes::from("str"),
+            Bytes::from("list"),
+            Bytes::from("hash"),
+            Bytes::from("set"),
+        ],
+    );
     assert_eq!(deleted, 4);
 }
 
@@ -1273,8 +1448,14 @@ fn compat_server_select_database() {
     let store = new_store();
     store.set(0, Bytes::from("k"), Value::String(Bytes::from("db0")));
     store.set(1, Bytes::from("k"), Value::String(Bytes::from("db1")));
-    assert_eq!(store.get(0, &Bytes::from("k")), Some(Value::String(Bytes::from("db0"))));
-    assert_eq!(store.get(1, &Bytes::from("k")), Some(Value::String(Bytes::from("db1"))));
+    assert_eq!(
+        store.get(0, &Bytes::from("k")),
+        Some(Value::String(Bytes::from("db0")))
+    );
+    assert_eq!(
+        store.get(1, &Bytes::from("k")),
+        Some(Value::String(Bytes::from("db1")))
+    );
 }
 
 #[test]
@@ -1470,7 +1651,11 @@ fn compat_hyperloglog_pfmerge_response() {
 fn compat_type_overwrite_changes_type() {
     let store = new_store();
     store.set(0, Bytes::from("k"), Value::String(Bytes::from("v")));
-    store.set(0, Bytes::from("k"), Value::List(VecDeque::from(vec![Bytes::from("a")])));
+    store.set(
+        0,
+        Bytes::from("k"),
+        Value::List(VecDeque::from(vec![Bytes::from("a")])),
+    );
     match store.get(0, &Bytes::from("k")) {
         Some(Value::List(_)) => {}
         other => panic!("Expected List after type overwrite, got {:?}", other),
@@ -1486,8 +1671,14 @@ fn compat_database_isolation() {
     let store = new_store();
     store.set(0, Bytes::from("key"), Value::String(Bytes::from("db0")));
     store.set(1, Bytes::from("key"), Value::String(Bytes::from("db1")));
-    assert_eq!(store.get(0, &Bytes::from("key")), Some(Value::String(Bytes::from("db0"))));
-    assert_eq!(store.get(1, &Bytes::from("key")), Some(Value::String(Bytes::from("db1"))));
+    assert_eq!(
+        store.get(0, &Bytes::from("key")),
+        Some(Value::String(Bytes::from("db0")))
+    );
+    assert_eq!(
+        store.get(1, &Bytes::from("key")),
+        Some(Value::String(Bytes::from("db1")))
+    );
 }
 
 // ============================================================================
@@ -1632,7 +1823,11 @@ fn compat_concurrent_writes() {
 fn compat_concurrent_read_write() {
     let store = Arc::new(new_store());
     for i in 0..50 {
-        store.set(0, Bytes::from(format!("k:{}", i)), Value::String(Bytes::from(format!("v:{}", i))));
+        store.set(
+            0,
+            Bytes::from(format!("k:{}", i)),
+            Value::String(Bytes::from(format!("v:{}", i))),
+        );
     }
     let mut handles = vec![];
     for i in 0..50 {
@@ -1644,7 +1839,11 @@ fn compat_concurrent_read_write() {
     for i in 50..100 {
         let store = store.clone();
         handles.push(std::thread::spawn(move || {
-            store.set(0, Bytes::from(format!("k:{}", i)), Value::String(Bytes::from("new")));
+            store.set(
+                0,
+                Bytes::from(format!("k:{}", i)),
+                Value::String(Bytes::from("new")),
+            );
         }));
     }
     for h in handles {
@@ -1656,7 +1855,11 @@ fn compat_concurrent_read_write() {
 fn compat_concurrent_del_while_reading() {
     let store = Arc::new(new_store());
     for i in 0..100 {
-        store.set(0, Bytes::from(format!("k:{}", i)), Value::String(Bytes::from("v")));
+        store.set(
+            0,
+            Bytes::from(format!("k:{}", i)),
+            Value::String(Bytes::from("v")),
+        );
     }
     let mut handles = vec![];
     for i in 0..50 {
@@ -1684,7 +1887,12 @@ fn compat_concurrent_del_while_reading() {
 fn compat_expired_key_not_returned() {
     let store = new_store();
     let expires_at = SystemTime::now() + Duration::from_millis(1);
-    store.set_with_expiry(0, Bytes::from("ephemeral"), Value::String(Bytes::from("temp")), expires_at);
+    store.set_with_expiry(
+        0,
+        Bytes::from("ephemeral"),
+        Value::String(Bytes::from("temp")),
+        expires_at,
+    );
     std::thread::sleep(Duration::from_millis(10));
     assert_eq!(store.get(0, &Bytes::from("ephemeral")), None);
 }
@@ -1700,8 +1908,16 @@ fn compat_ttl_nonexistent_key() {
 fn compat_set_with_expiry_preserves_value() {
     let store = new_store();
     let expires_at = SystemTime::now() + Duration::from_secs(60);
-    store.set_with_expiry(0, Bytes::from("k"), Value::String(Bytes::from("v")), expires_at);
-    assert_eq!(store.get(0, &Bytes::from("k")), Some(Value::String(Bytes::from("v"))));
+    store.set_with_expiry(
+        0,
+        Bytes::from("k"),
+        Value::String(Bytes::from("v")),
+        expires_at,
+    );
+    assert_eq!(
+        store.get(0, &Bytes::from("k")),
+        Some(Value::String(Bytes::from("v")))
+    );
     let ttl = store.ttl(0, &Bytes::from("k"));
     assert!(ttl.is_some() && ttl.unwrap() > 0);
 }
@@ -1721,7 +1937,10 @@ fn compat_key_touch_existing() {
     let store = new_store();
     store.set(0, Bytes::from("k1"), Value::String(Bytes::from("v")));
     store.set(0, Bytes::from("k2"), Value::String(Bytes::from("v")));
-    let touched = store.touch(0, &[Bytes::from("k1"), Bytes::from("k2"), Bytes::from("k3")]);
+    let touched = store.touch(
+        0,
+        &[Bytes::from("k1"), Bytes::from("k2"), Bytes::from("k3")],
+    );
     assert_eq!(touched, 2);
 }
 
@@ -1742,52 +1961,110 @@ fn compat_generate_matrix_report() {
     let store = new_store();
 
     store.set(0, Bytes::from("k"), Value::String(Bytes::from("v")));
-    matrix.record("SET", "basic set",
-        if store.get(0, &Bytes::from("k")).is_some() { CompatResult::Pass }
-        else { CompatResult::Fail("SET did not persist".into()) });
+    matrix.record(
+        "SET",
+        "basic set",
+        if store.get(0, &Bytes::from("k")).is_some() {
+            CompatResult::Pass
+        } else {
+            CompatResult::Fail("SET did not persist".into())
+        },
+    );
 
-    matrix.record("GET", "basic get",
-        if store.get(0, &Bytes::from("k")) == Some(Value::String(Bytes::from("v"))) { CompatResult::Pass }
-        else { CompatResult::Fail("GET returned wrong value".into()) });
+    matrix.record(
+        "GET",
+        "basic get",
+        if store.get(0, &Bytes::from("k")) == Some(Value::String(Bytes::from("v"))) {
+            CompatResult::Pass
+        } else {
+            CompatResult::Fail("GET returned wrong value".into())
+        },
+    );
 
-    matrix.record("GET", "nonexistent key",
-        if store.get(0, &Bytes::from("none")).is_none() { CompatResult::Pass }
-        else { CompatResult::Fail("GET should return nil for missing key".into()) });
+    matrix.record(
+        "GET",
+        "nonexistent key",
+        if store.get(0, &Bytes::from("none")).is_none() {
+            CompatResult::Pass
+        } else {
+            CompatResult::Fail("GET should return nil for missing key".into())
+        },
+    );
 
     store.set(0, Bytes::from("del_test"), Value::String(Bytes::from("v")));
     let del_count = store.del(0, &[Bytes::from("del_test")]);
-    matrix.record("DEL", "delete existing key",
-        if del_count == 1 { CompatResult::Pass }
-        else { CompatResult::Fail(format!("DEL returned {} instead of 1", del_count)) });
+    matrix.record(
+        "DEL",
+        "delete existing key",
+        if del_count == 1 {
+            CompatResult::Pass
+        } else {
+            CompatResult::Fail(format!("DEL returned {} instead of 1", del_count))
+        },
+    );
 
-    store.set(0, Bytes::from("exists_test"), Value::String(Bytes::from("v")));
-    matrix.record("EXISTS", "existing key",
-        if store.exists(0, &[Bytes::from("exists_test")]) == 1 { CompatResult::Pass }
-        else { CompatResult::Fail("EXISTS should return 1".into()) });
+    store.set(
+        0,
+        Bytes::from("exists_test"),
+        Value::String(Bytes::from("v")),
+    );
+    matrix.record(
+        "EXISTS",
+        "existing key",
+        if store.exists(0, &[Bytes::from("exists_test")]) == 1 {
+            CompatResult::Pass
+        } else {
+            CompatResult::Fail("EXISTS should return 1".into())
+        },
+    );
 
     let exp = SystemTime::now() + Duration::from_secs(100);
     store.expire(0, &Bytes::from("exists_test"), exp);
     let ttl = store.ttl(0, &Bytes::from("exists_test"));
-    matrix.record("EXPIRE/TTL", "set and check expiry",
-        if ttl.is_some() && ttl.unwrap() > 0 { CompatResult::Pass }
-        else { CompatResult::Fail(format!("TTL returned {:?}", ttl)) });
+    matrix.record(
+        "EXPIRE/TTL",
+        "set and check expiry",
+        if ttl.is_some() && ttl.unwrap() > 0 {
+            CompatResult::Pass
+        } else {
+            CompatResult::Fail(format!("TTL returned {:?}", ttl))
+        },
+    );
 
     store.persist(0, &Bytes::from("exists_test"));
     let ttl_after = store.ttl(0, &Bytes::from("exists_test"));
-    matrix.record("PERSIST", "remove expiry",
-        if ttl_after == Some(-1) { CompatResult::Pass }
-        else { CompatResult::Fail(format!("After PERSIST, TTL = {:?}", ttl_after)) });
+    matrix.record(
+        "PERSIST",
+        "remove expiry",
+        if ttl_after == Some(-1) {
+            CompatResult::Pass
+        } else {
+            CompatResult::Fail(format!("After PERSIST, TTL = {:?}", ttl_after))
+        },
+    );
 
     store.flush_db(0);
-    matrix.record("FLUSHDB", "clear database",
-        if store.key_count(0) == 0 { CompatResult::Pass }
-        else { CompatResult::Fail("FLUSHDB did not clear database".into()) });
+    matrix.record(
+        "FLUSHDB",
+        "clear database",
+        if store.key_count(0) == 0 {
+            CompatResult::Pass
+        } else {
+            CompatResult::Fail("FLUSHDB did not clear database".into())
+        },
+    );
 
     store.set(0, Bytes::from("a"), Value::String(Bytes::from("1")));
     store.set(0, Bytes::from("b"), Value::String(Bytes::from("2")));
-    matrix.record("DBSIZE", "key count",
-        if store.key_count(0) == 2 { CompatResult::Pass }
-        else { CompatResult::Fail(format!("DBSIZE returned {}", store.key_count(0))) });
+    matrix.record(
+        "DBSIZE",
+        "key count",
+        if store.key_count(0) == 2 {
+            CompatResult::Pass
+        } else {
+            CompatResult::Fail(format!("DBSIZE returned {}", store.key_count(0)))
+        },
+    );
 
     let (pass, fail, skip) = matrix.summary();
     eprintln!(

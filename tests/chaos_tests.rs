@@ -36,8 +36,13 @@ use ferrite::storage::{Store, Value};
 
 /// Start a Ferrite server on a random port and return the port number.
 async fn start_test_server() -> u16 {
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.expect("bind should succeed");
-    let port = listener.local_addr().expect("should have local addr").port();
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind should succeed");
+    let port = listener
+        .local_addr()
+        .expect("should have local addr")
+        .port();
     drop(listener);
 
     let mut config = Config::default();
@@ -78,7 +83,10 @@ async fn send_command(stream: &mut BufReader<TcpStream>, args: &[&str]) -> Strin
     for arg in args {
         cmd.push_str(&format!("${}\r\n{}\r\n", arg.len(), arg));
     }
-    inner.write_all(cmd.as_bytes()).await.expect("write should succeed");
+    inner
+        .write_all(cmd.as_bytes())
+        .await
+        .expect("write should succeed");
     inner.flush().await.expect("flush should succeed");
     read_resp_value(stream).await
 }
@@ -174,7 +182,10 @@ async fn test_network_partition_primary_replica() {
 
     // Replica should be able to catch up via partial sync
     let can_sync = stream.can_partial_sync(0).await;
-    assert!(can_sync, "Backlog should still contain entries for catch-up");
+    assert!(
+        can_sync,
+        "Backlog should still contain entries for catch-up"
+    );
 }
 
 /// Test that writes to a partitioned primary are buffered in the replication
@@ -195,9 +206,7 @@ async fn test_partition_write_buffering_and_replay() {
 
     // Partition heals — replay all buffered commands
     let mut received = 0u64;
-    while let Ok(result) =
-        tokio::time::timeout(Duration::from_millis(100), rx.recv()).await
-    {
+    while let Ok(result) = tokio::time::timeout(Duration::from_millis(100), rx.recv()).await {
         if result.is_ok() {
             received += 1;
         }
@@ -482,7 +491,10 @@ async fn test_concurrent_writes_same_key() {
 
     // Final value should exist and be from one of the writers
     let val = store.get(0, &key);
-    assert!(val.is_some(), "Key should have a value after concurrent writes");
+    assert!(
+        val.is_some(),
+        "Key should have a value after concurrent writes"
+    );
     if let Some(Value::String(s)) = val {
         let sv = String::from_utf8_lossy(&s);
         assert!(sv.starts_with('w'), "Value should be from a writer: {}", sv);
@@ -508,7 +520,10 @@ async fn test_setnx_under_contention() {
             b.wait().await;
             let db = s.database(0).expect("db 0 should exist");
             let db = db.read();
-            let won = db.set_nx(k, Value::String(Bytes::from(format!("winner_{}", contender_id))));
+            let won = db.set_nx(
+                k,
+                Value::String(Bytes::from(format!("winner_{}", contender_id))),
+            );
             if won {
                 w.fetch_add(1, Ordering::Relaxed);
             }
@@ -520,7 +535,11 @@ async fn test_setnx_under_contention() {
     }
 
     // Exactly one should win
-    assert_eq!(wins.load(Ordering::Relaxed), 1, "Only one SET_NX should win");
+    assert_eq!(
+        wins.load(Ordering::Relaxed),
+        1,
+        "Only one SET_NX should win"
+    );
 
     let val = store.get(0, &key);
     assert!(val.is_some());
@@ -589,7 +608,11 @@ async fn test_many_keys_stress() {
     // Verify store reports correct size
     let db = store.database(0).expect("db 0 should exist");
     let db = db.read();
-    assert!(db.len() >= num_keys, "Database should contain at least {} keys", num_keys);
+    assert!(
+        db.len() >= num_keys,
+        "Database should contain at least {} keys",
+        num_keys
+    );
 }
 
 /// Test behavior with large payloads.
@@ -677,7 +700,12 @@ async fn test_ttl_expiry_accuracy() {
     let ttl = Duration::from_millis(200);
 
     let expires_at = SystemTime::now() + ttl;
-    store.set_with_expiry(0, key.clone(), Value::String(Bytes::from("ephemeral")), expires_at);
+    store.set_with_expiry(
+        0,
+        key.clone(),
+        Value::String(Bytes::from("ephemeral")),
+        expires_at,
+    );
 
     // Should exist immediately
     assert!(store.get(0, &key).is_some(), "Key should exist before TTL");
@@ -756,7 +784,9 @@ fn test_chaos_experiment_network_partition() {
     };
 
     engine.register_experiment(experiment);
-    let result = engine.run_experiment("net-partition-1").expect("experiment should run");
+    let result = engine
+        .run_experiment("net-partition-1")
+        .expect("experiment should run");
     assert_eq!(result.status, ExperimentStatus::Passed);
     assert!(result.steady_state_maintained);
 
@@ -807,7 +837,9 @@ fn test_chaos_engine_metrics_accumulation() {
             steady_state_check: Some(SteadyStateCheck::default()),
         };
         engine.register_experiment(experiment);
-        engine.run_experiment(&format!("metric-test-{}", i)).expect("should run");
+        engine
+            .run_experiment(&format!("metric-test-{}", i))
+            .expect("should run");
     }
 
     let metrics = engine.metrics();
@@ -872,7 +904,10 @@ fn test_anomaly_detection_during_chaos() {
     // Build stable baseline
     for _ in 0..50 {
         let anomalies = engine.observe_metrics(10.0, 5000.0, 0.001);
-        assert!(anomalies.is_empty(), "Stable metrics should not trigger anomalies initially");
+        assert!(
+            anomalies.is_empty(),
+            "Stable metrics should not trigger anomalies initially"
+        );
     }
 
     // Inject anomalous metrics (simulating chaos impact)
@@ -929,9 +964,7 @@ fn test_playbook_registration() {
                 condition: PlaybookCondition::HighMemory {
                     threshold_percent: 90,
                 },
-                action: RemediationAction::EvictColdData {
-                    target_percent: 70,
-                },
+                action: RemediationAction::EvictColdData { target_percent: 70 },
                 cooldown: Duration::from_secs(30),
                 max_retries: 5,
             },
@@ -1001,7 +1034,9 @@ async fn test_concurrent_replica_state_updates() {
         let p = primary.clone();
         let b = barrier.clone();
         handles.push(tokio::spawn(async move {
-            let addr: SocketAddr = format!("127.0.0.1:{}", 6400 + i).parse().expect("valid addr");
+            let addr: SocketAddr = format!("127.0.0.1:{}", 6400 + i)
+                .parse()
+                .expect("valid addr");
             b.wait().await;
             p.register_replica(addr, 6400 + i as u16).await;
             p.set_replica_state(&addr, ReplicaConnectionState::Online)
@@ -1113,7 +1148,10 @@ async fn test_pipeline_saturation() {
                 val.len(),
                 val
             );
-            inner.write_all(cmd.as_bytes()).await.expect("write should succeed");
+            inner
+                .write_all(cmd.as_bytes())
+                .await
+                .expect("write should succeed");
         }
         inner.flush().await.expect("flush should succeed");
     }
@@ -1153,7 +1191,10 @@ fn test_deterministic_fault_recovery_sequence() {
     engine.register_experiment(exp1);
     let r1 = engine.run_experiment("seq-1-latency").expect("should run");
     assert_eq!(r1.status, ExperimentStatus::Passed);
-    assert!(engine.active_faults().is_empty(), "Faults cleared after phase 1");
+    assert!(
+        engine.active_faults().is_empty(),
+        "Faults cleared after phase 1"
+    );
 
     // Phase 2: Process kill
     let exp2 = ChaosExperiment {
@@ -1224,11 +1265,7 @@ async fn test_multi_database_concurrent_access() {
         for i in 0..keys_per_db {
             let key = Bytes::from(format!("db{}_key_{}", db_id, i));
             let val = store.get(db_id, &key);
-            assert!(
-                val.is_some(),
-                "db {} key {} should exist",
-                db_id, i
-            );
+            assert!(val.is_some(), "db {} key {} should exist", db_id, i);
         }
         // Key from another db should not exist
         let foreign_db = (db_id + 1) % num_dbs;
@@ -1237,7 +1274,8 @@ async fn test_multi_database_concurrent_access() {
         assert!(
             cross_val.is_none(),
             "Key from db {} should not exist in db {}",
-            db_id, foreign_db
+            db_id,
+            foreign_db
         );
     }
 }

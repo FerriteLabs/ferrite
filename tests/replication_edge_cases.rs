@@ -38,8 +38,7 @@ mod tests {
         assert!(
             can_partial_resync,
             "Gap {} should be within backlog size {} for partial resync",
-            gap,
-            backlog_size
+            gap, backlog_size
         );
 
         // Update replica to current
@@ -74,11 +73,13 @@ mod tests {
         assert!(
             needs_full_resync,
             "Gap {} exceeds backlog {}, should trigger full resync",
-            gap,
-            backlog_size
+            gap, backlog_size
         );
 
-        println!("  ✅ Full resync detected: gap={} > backlog={}", gap, backlog_size);
+        println!(
+            "  ✅ Full resync detected: gap={} > backlog={}",
+            gap, backlog_size
+        );
     }
 
     /// Test: Replication lag monitoring accuracy
@@ -89,7 +90,8 @@ mod tests {
         let primary_offset = AtomicU64::new(10000);
         let replica_offset = AtomicU64::new(8000);
 
-        let lag_bytes = primary_offset.load(Ordering::SeqCst) - replica_offset.load(Ordering::SeqCst);
+        let lag_bytes =
+            primary_offset.load(Ordering::SeqCst) - replica_offset.load(Ordering::SeqCst);
 
         assert_eq!(lag_bytes, 2000, "Lag should be 2000 bytes");
 
@@ -100,7 +102,8 @@ mod tests {
 
         // Fully caught up
         replica_offset.store(10000, Ordering::SeqCst);
-        let caught_up_lag = primary_offset.load(Ordering::SeqCst) - replica_offset.load(Ordering::SeqCst);
+        let caught_up_lag =
+            primary_offset.load(Ordering::SeqCst) - replica_offset.load(Ordering::SeqCst);
         assert_eq!(caught_up_lag, 0, "Lag should be 0 when caught up");
 
         println!("  ✅ Lag monitoring: 2000 → 500 → 0 bytes");
@@ -115,9 +118,7 @@ mod tests {
         let secondary_repl_id = "def456".to_string();
 
         // Replica should accept either ID during PSYNC handshake
-        let replica_knows = |id: &str| -> bool {
-            id == primary_repl_id || id == secondary_repl_id
-        };
+        let replica_knows = |id: &str| -> bool { id == primary_repl_id || id == secondary_repl_id };
 
         assert!(replica_knows("abc123"), "Should accept primary ID");
         assert!(replica_knows("def456"), "Should accept secondary ID");
@@ -166,7 +167,10 @@ mod tests {
 
         // Simulate reading back
         let restored = u64::from_le_bytes(serialized);
-        assert_eq!(restored, offset, "Offset should survive serialization roundtrip");
+        assert_eq!(
+            restored, offset,
+            "Offset should survive serialization roundtrip"
+        );
 
         println!("  ✅ Offset persistence: {} roundtrip OK", offset);
     }

@@ -15,9 +15,7 @@
 
 use bytes::Bytes;
 use ferrite_core::embedded::lite::{LiteConfig, LiteDatabase};
-use ferrite_core::embedded::sync::{
-    ChangeType, ConflictResolution, SyncConfig, SyncEngine,
-};
+use ferrite_core::embedded::sync::{ChangeType, ConflictResolution, SyncConfig, SyncEngine};
 
 fn main() -> anyhow::Result<()> {
     println!("=== Ferrite Embedded -- Edge Cache + Cloud Sync ===\n");
@@ -134,7 +132,9 @@ fn main() -> anyhow::Result<()> {
     remote_engine.record_change(
         "sensor:temp-north:1700000000",
         ChangeType::Set,
-        Some(Bytes::from("{\"v\":99.9,\"ts\":1700000000,\"source\":\"cloud\"}")),
+        Some(Bytes::from(
+            "{\"v\":99.9,\"ts\":1700000000,\"source\":\"cloud\"}",
+        )),
     );
     remote_engine.record_change(
         "config:sample_rate",
@@ -177,9 +177,7 @@ fn main() -> anyhow::Result<()> {
     let sync_stats = sync.stats();
     println!(
         "  Sync stats: {} syncs, {} changes synced, {} conflicts resolved",
-        sync_stats.sync_count,
-        sync_stats.changes_synced,
-        sync_stats.conflicts_resolved,
+        sync_stats.sync_count, sync_stats.changes_synced, sync_stats.conflicts_resolved,
     );
 
     // ── 7. Summary ──────────────────────────────────────────────────────

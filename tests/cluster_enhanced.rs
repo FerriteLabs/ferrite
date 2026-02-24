@@ -14,11 +14,10 @@ use std::sync::Arc;
 
 // Re-exports from ferrite-core
 use ferrite::cluster::{
-    ClusterCommand, ClusterConfig, ClusterManager, ClusterNodeInfo, ClusterRouter,
-    ClusterState, ClusterStateManager, FailoverOption, GossipConfig, GossipManager,
-    GossipMessage, GossipMessageType, GossipNodeInfo, HashSlot, NodeRole, NodeState,
-    Redirect, RedirectResult, RouteResult, SetSlotAction, SlotMap, SlotRange,
-    CLUSTER_SLOTS,
+    ClusterCommand, ClusterConfig, ClusterManager, ClusterNodeInfo, ClusterRouter, ClusterState,
+    ClusterStateManager, FailoverOption, GossipConfig, GossipManager, GossipMessage,
+    GossipMessageType, GossipNodeInfo, HashSlot, NodeRole, NodeState, Redirect, RedirectResult,
+    RouteResult, SetSlotAction, SlotMap, SlotRange, CLUSTER_SLOTS,
 };
 
 // ============================================================================
@@ -57,10 +56,7 @@ fn test_crc16_hash_tag_extraction() {
     assert_eq!(empty_tag, full_key);
 
     // Multiple braces: first pair wins
-    assert_eq!(
-        HashSlot::for_key(b"{a}{b}"),
-        HashSlot::for_key(b"{a}other"),
-    );
+    assert_eq!(HashSlot::for_key(b"{a}{b}"), HashSlot::for_key(b"{a}other"),);
 }
 
 #[test]
@@ -230,10 +226,7 @@ fn test_state_manager_ask_redirect() {
 #[test]
 fn test_router_local_routing() {
     let router = ClusterRouter::new("self-node".into());
-    router.assign_slots(
-        &"self-node".into(),
-        &SlotRange::new(0, CLUSTER_SLOTS - 1),
-    );
+    router.assign_slots(&"self-node".into(), &SlotRange::new(0, CLUSTER_SLOTS - 1));
     router.set_state(ClusterState::Ok);
 
     assert!(matches!(router.route(b"foo"), RouteResult::Local));
@@ -263,10 +256,7 @@ fn test_router_cluster_down() {
 #[test]
 fn test_router_cross_slot_error() {
     let router = ClusterRouter::new("self-node".into());
-    router.assign_slots(
-        &"self-node".into(),
-        &SlotRange::new(0, CLUSTER_SLOTS - 1),
-    );
+    router.assign_slots(&"self-node".into(), &SlotRange::new(0, CLUSTER_SLOTS - 1));
     router.set_state(ClusterState::Ok);
 
     // Keys with different hash tags → cross-slot error
@@ -278,10 +268,7 @@ fn test_router_cross_slot_error() {
 #[test]
 fn test_router_same_hash_tag_multi() {
     let router = ClusterRouter::new("self-node".into());
-    router.assign_slots(
-        &"self-node".into(),
-        &SlotRange::new(0, CLUSTER_SLOTS - 1),
-    );
+    router.assign_slots(&"self-node".into(), &SlotRange::new(0, CLUSTER_SLOTS - 1));
     router.set_state(ClusterState::Ok);
 
     let keys: Vec<&[u8]> = vec![b"{user}:1", b"{user}:2", b"{user}:3"];
@@ -529,16 +516,18 @@ fn test_cluster_manager_distribute_slots_three_nodes() {
 
     let n2 = ferrite::cluster::generate_node_id();
     let n3 = ferrite::cluster::generate_node_id();
-    mgr.add_node(ferrite::cluster::ClusterNode::new(n2.clone(), make_addr(6380)));
-    mgr.add_node(ferrite::cluster::ClusterNode::new(n3.clone(), make_addr(6381)));
+    mgr.add_node(ferrite::cluster::ClusterNode::new(
+        n2.clone(),
+        make_addr(6380),
+    ));
+    mgr.add_node(ferrite::cluster::ClusterNode::new(
+        n3.clone(),
+        make_addr(6381),
+    ));
 
     mgr.distribute_slots();
 
-    let total: usize = mgr
-        .get_all_nodes()
-        .iter()
-        .map(|n| n.slot_count())
-        .sum();
+    let total: usize = mgr.get_all_nodes().iter().map(|n| n.slot_count()).sum();
     assert_eq!(total, CLUSTER_SLOTS as usize);
 
     for slot in 0..CLUSTER_SLOTS {
@@ -613,11 +602,7 @@ fn test_cluster_command_parse_keyslot() {
 
 #[test]
 fn test_cluster_command_parse_addslots() {
-    let cmd = ClusterCommand::parse(
-        "ADDSLOTS",
-        &["0".into(), "1".into(), "2".into()],
-    )
-    .unwrap();
+    let cmd = ClusterCommand::parse("ADDSLOTS", &["0".into(), "1".into(), "2".into()]).unwrap();
     assert_eq!(cmd, ClusterCommand::ClusterAddSlots(vec![0, 1, 2]));
 }
 

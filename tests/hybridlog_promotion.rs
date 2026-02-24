@@ -108,7 +108,8 @@ fn test_concurrent_heavy_write_load() {
         }
     }
     assert_eq!(
-        missing, 0,
+        missing,
+        0,
         "all {} keys should be present",
         num_threads * keys_per_thread
     );
@@ -175,11 +176,7 @@ fn test_empty_key_and_value() {
     let store = Store::new(16);
 
     // Empty value
-    store.set(
-        0,
-        Bytes::from("empty_val"),
-        Value::String(Bytes::from("")),
-    );
+    store.set(0, Bytes::from("empty_val"), Value::String(Bytes::from("")));
     assert_eq!(
         store.get(0, &Bytes::from("empty_val")),
         Some(Value::String(Bytes::from("")))
@@ -233,11 +230,7 @@ fn test_mixed_data_types_same_store() {
     let store = Store::new(16);
 
     // String
-    store.set(
-        0,
-        Bytes::from("str"),
-        Value::String(Bytes::from("hello")),
-    );
+    store.set(0, Bytes::from("str"), Value::String(Bytes::from("hello")));
 
     // List
     let list = VecDeque::from([Bytes::from("a"), Bytes::from("b")]);

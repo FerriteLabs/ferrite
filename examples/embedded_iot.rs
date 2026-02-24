@@ -206,7 +206,11 @@ fn ingest_reading(db: &Ferrite, reading: &SensorReading) -> anyhow::Result<()> {
         Some(b) => String::from_utf8_lossy(&b).parse::<f64>().unwrap_or(0.0),
         None => 0.0,
     };
-    db.hset(agg_key.clone(), "sum_temp", format!("{:.2}", sum + reading.temperature))?;
+    db.hset(
+        agg_key.clone(),
+        "sum_temp",
+        format!("{:.2}", sum + reading.temperature),
+    )?;
 
     // Min
     let should_update_min = match db.hget(&agg_key, "min_temp")? {
@@ -233,10 +237,7 @@ fn ingest_reading(db: &Ferrite, reading: &SensorReading) -> anyhow::Result<()> {
     }
 
     // Track sensor in active set
-    db.sadd(
-        "active_sensors",
-        &[Bytes::from(reading.sensor_id.clone())],
-    )?;
+    db.sadd("active_sensors", &[Bytes::from(reading.sensor_id.clone())])?;
 
     Ok(())
 }

@@ -255,15 +255,36 @@ fn main() -> Result<()> {
     println!("  INSERT INTO hash 'user:1002' SET name='Alice', email='alice@example.com'");
     println!("  → Parses: INSERT INTO users (name, age) VALUES ('Alice', 30)");
     let result = db.query("INSERT INTO users (name, age) VALUES ('Alice', 30)");
-    println!("  → Result: {}\n", if result.is_ok() { "OK" } else { "parsed (execution depends on store)" });
+    println!(
+        "  → Result: {}\n",
+        if result.is_ok() {
+            "OK"
+        } else {
+            "parsed (execution depends on store)"
+        }
+    );
 
     println!("  UPDATE users SET name = 'Bob' WHERE id = 1");
     let result = db.query("UPDATE users SET name = 'Bob' WHERE id = 1");
-    println!("  → Result: {}\n", if result.is_ok() { "OK" } else { "parsed (execution depends on store)" });
+    println!(
+        "  → Result: {}\n",
+        if result.is_ok() {
+            "OK"
+        } else {
+            "parsed (execution depends on store)"
+        }
+    );
 
     println!("  DELETE FROM keys WHERE key LIKE 'temp:*'");
     let result = db.query("DELETE FROM keys WHERE key LIKE 'temp:*'");
-    println!("  → Result: {}\n", if result.is_ok() { "OK" } else { "parsed (execution depends on store)" });
+    println!(
+        "  → Result: {}\n",
+        if result.is_ok() {
+            "OK"
+        } else {
+            "parsed (execution depends on store)"
+        }
+    );
 
     println!("=== FerriteQL Demo Complete ===");
     Ok(())
@@ -274,7 +295,14 @@ fn print_result(result: &ferrite::embedded::core::QueryResult) {
     // Print column headers
     if let Some(columns) = result.columns() {
         println!("  {}", columns.join(" | "));
-        println!("  {}", columns.iter().map(|c| "-".repeat(c.len().max(8))).collect::<Vec<_>>().join("-+-"));
+        println!(
+            "  {}",
+            columns
+                .iter()
+                .map(|c| "-".repeat(c.len().max(8)))
+                .collect::<Vec<_>>()
+                .join("-+-")
+        );
     }
 
     // Print rows
@@ -284,7 +312,8 @@ fn print_result(result: &ferrite::embedded::core::QueryResult) {
     }
 
     if let Some(stats) = result.stats() {
-        println!("\n  ({} rows, {} keys scanned, {:.1}ms)\n",
+        println!(
+            "\n  ({} rows, {} keys scanned, {:.1}ms)\n",
             result.row_count(),
             stats.keys_scanned,
             stats.execution_time_ms,

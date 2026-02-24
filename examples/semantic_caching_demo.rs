@@ -151,7 +151,10 @@ fn main() {
 
     println!("Configuration:");
     println!("  Embedding dimensions : {}", DIM);
-    println!("  Similarity threshold : {:.0}%", SIMILARITY_THRESHOLD * 100.0);
+    println!(
+        "  Similarity threshold : {:.0}%",
+        SIMILARITY_THRESHOLD * 100.0
+    );
     println!("  Total queries        : {}", TOTAL_QUERIES);
     println!("  Unique topics        : {}", UNIQUE_TOPICS);
     println!(
@@ -220,7 +223,10 @@ fn main() {
     }
 
     let total_wall = bench_start.elapsed();
-    println!("\r  Processed {}/{} queries ✓   \n", TOTAL_QUERIES, TOTAL_QUERIES);
+    println!(
+        "\r  Processed {}/{} queries ✓   \n",
+        TOTAL_QUERIES, TOTAL_QUERIES
+    );
 
     // -- Sort latency arrays for percentile computation ----------------------
     hit_latencies_us.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
@@ -241,22 +247,60 @@ fn main() {
     println!("┌──────────────────────────────────────────────────────────────┐");
     println!("│                        Results                              │");
     println!("├──────────────────────────────────────────────────────────────┤");
-    println!("│  Total queries        : {:>8}                             │", TOTAL_QUERIES);
-    println!("│  Cache hits           : {:>8}  ({:.1}%)                    │", hits, hits as f64 / TOTAL_QUERIES as f64 * 100.0);
-    println!("│  Cache misses         : {:>8}  ({:.1}%)                    │", misses, misses as f64 / TOTAL_QUERIES as f64 * 100.0);
-    println!("│  Wall-clock time      : {:>8.2}s                           │", total_wall.as_secs_f64());
+    println!(
+        "│  Total queries        : {:>8}                             │",
+        TOTAL_QUERIES
+    );
+    println!(
+        "│  Cache hits           : {:>8}  ({:.1}%)                    │",
+        hits,
+        hits as f64 / TOTAL_QUERIES as f64 * 100.0
+    );
+    println!(
+        "│  Cache misses         : {:>8}  ({:.1}%)                    │",
+        misses,
+        misses as f64 / TOTAL_QUERIES as f64 * 100.0
+    );
+    println!(
+        "│  Wall-clock time      : {:>8.2}s                           │",
+        total_wall.as_secs_f64()
+    );
     println!("├──────────────────────────────────────────────────────────────┤");
     println!("│  Latency (cache hit)                                        │");
-    println!("│    P50                : {:>10.1} µs                        │", percentile(&hit_latencies_us, 50.0));
-    println!("│    P99                : {:>10.1} µs                        │", percentile(&hit_latencies_us, 99.0));
+    println!(
+        "│    P50                : {:>10.1} µs                        │",
+        percentile(&hit_latencies_us, 50.0)
+    );
+    println!(
+        "│    P99                : {:>10.1} µs                        │",
+        percentile(&hit_latencies_us, 99.0)
+    );
     println!("│  Latency (API call / miss)                                  │");
-    println!("│    P50                : {:>10.1} ms                        │", percentile(&miss_latencies_us, 50.0) / 1000.0);
-    println!("│    P99                : {:>10.1} ms                        │", percentile(&miss_latencies_us, 99.0) / 1000.0);
+    println!(
+        "│    P50                : {:>10.1} ms                        │",
+        percentile(&miss_latencies_us, 50.0) / 1000.0
+    );
+    println!(
+        "│    P99                : {:>10.1} ms                        │",
+        percentile(&miss_latencies_us, 99.0) / 1000.0
+    );
     println!("├──────────────────────────────────────────────────────────────┤");
-    println!("│  Cost Analysis (@ ${:.4}/1K tokens, {} avg tokens)        │", COST_PER_1K_TOKENS, AVG_TOKENS_PER_QUERY as u64);
-    println!("│    Without cache      : ${:>10.2}                          │", cost_without_cache);
-    println!("│    With semantic cache: ${:>10.2}                          │", cost_with_cache);
-    println!("│    Estimated savings  : ${:>10.2}  ({:.1}%)               │", savings, savings_pct);
+    println!(
+        "│  Cost Analysis (@ ${:.4}/1K tokens, {} avg tokens)        │",
+        COST_PER_1K_TOKENS, AVG_TOKENS_PER_QUERY as u64
+    );
+    println!(
+        "│    Without cache      : ${:>10.2}                          │",
+        cost_without_cache
+    );
+    println!(
+        "│    With semantic cache: ${:>10.2}                          │",
+        cost_with_cache
+    );
+    println!(
+        "│    Estimated savings  : ${:>10.2}  ({:.1}%)               │",
+        savings, savings_pct
+    );
     println!("└──────────────────────────────────────────────────────────────┘");
     println!();
     println!("💡 In production, Ferrite replaces the in-memory map with its");

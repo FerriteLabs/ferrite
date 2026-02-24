@@ -66,7 +66,10 @@ mod tests {
             error_count
         );
 
-        assert_eq!(error_count, 0, "Data corruption detected during concurrent writes");
+        assert_eq!(
+            error_count, 0,
+            "Data corruption detected during concurrent writes"
+        );
     }
 
     /// Test: Large value handling
@@ -86,12 +89,7 @@ mod tests {
             store.insert(key.clone(), value.clone());
             let read = store.get(&key).unwrap();
 
-            assert_eq!(
-                read.len(),
-                size,
-                "Value size mismatch for {} bytes",
-                size
-            );
+            assert_eq!(read.len(), size, "Value size mismatch for {} bytes", size);
             assert_eq!(
                 &read[..],
                 &value[..],
@@ -146,7 +144,11 @@ mod tests {
         let checksum = crc32fast::hash(data);
 
         // Verify correct data passes
-        assert_eq!(crc32fast::hash(data), checksum, "Checksum should match for unmodified data");
+        assert_eq!(
+            crc32fast::hash(data),
+            checksum,
+            "Checksum should match for unmodified data"
+        );
 
         // Verify corrupted data fails
         let mut corrupted = data.to_vec();
@@ -209,7 +211,11 @@ mod tests {
         assert_eq!(v1_header[1], 0x00, "Magic byte 1 mismatch");
 
         // Simulate version check
-        assert!(v1_version <= 2, "Version {} should be supported", v1_version);
+        assert!(
+            v1_version <= 2,
+            "Version {} should be supported",
+            v1_version
+        );
 
         println!("  ✅ Data format v{} compatibility verified", v1_version);
     }

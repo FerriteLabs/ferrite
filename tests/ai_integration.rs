@@ -9,10 +9,7 @@ use ferrite_ai::vector::{DistanceMetric, HnswIndex, VectorConfig, VectorIndex};
 fn test_vector_config_defaults() {
     let config = VectorConfig::default();
     assert!(config.enabled, "vectors should be enabled by default");
-    assert!(
-        config.max_dimension > 0,
-        "max_dimension should be positive"
-    );
+    assert!(config.max_dimension > 0, "max_dimension should be positive");
 }
 
 #[test]

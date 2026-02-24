@@ -123,49 +123,37 @@ fn bench_knn_search(c: &mut Criterion) {
 
     for k in [10, 50, 100] {
         // HNSW KNN search
-        group.bench_with_input(
-            BenchmarkId::new("hnsw", format!("k={}", k)),
-            &k,
-            |b, &k| {
-                let mut query_idx = 0u64;
-                b.iter(|| {
-                    let query = deterministic_embedding(dim, 100_000 + query_idx);
-                    let results = hnsw_index.search(black_box(&query), black_box(k));
-                    black_box(results);
-                    query_idx += 1;
-                });
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("hnsw", format!("k={}", k)), &k, |b, &k| {
+            let mut query_idx = 0u64;
+            b.iter(|| {
+                let query = deterministic_embedding(dim, 100_000 + query_idx);
+                let results = hnsw_index.search(black_box(&query), black_box(k));
+                black_box(results);
+                query_idx += 1;
+            });
+        });
 
         // IVF KNN search
-        group.bench_with_input(
-            BenchmarkId::new("ivf", format!("k={}", k)),
-            &k,
-            |b, &k| {
-                let mut query_idx = 0u64;
-                b.iter(|| {
-                    let query = deterministic_embedding(dim, 100_000 + query_idx);
-                    let results = ivf_index.search(black_box(&query), black_box(k));
-                    black_box(results);
-                    query_idx += 1;
-                });
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("ivf", format!("k={}", k)), &k, |b, &k| {
+            let mut query_idx = 0u64;
+            b.iter(|| {
+                let query = deterministic_embedding(dim, 100_000 + query_idx);
+                let results = ivf_index.search(black_box(&query), black_box(k));
+                black_box(results);
+                query_idx += 1;
+            });
+        });
 
         // Flat (brute force) KNN search
-        group.bench_with_input(
-            BenchmarkId::new("flat", format!("k={}", k)),
-            &k,
-            |b, &k| {
-                let mut query_idx = 0u64;
-                b.iter(|| {
-                    let query = deterministic_embedding(dim, 100_000 + query_idx);
-                    let results = flat_index.search(black_box(&query), black_box(k));
-                    black_box(results);
-                    query_idx += 1;
-                });
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("flat", format!("k={}", k)), &k, |b, &k| {
+            let mut query_idx = 0u64;
+            b.iter(|| {
+                let query = deterministic_embedding(dim, 100_000 + query_idx);
+                let results = flat_index.search(black_box(&query), black_box(k));
+                black_box(results);
+                query_idx += 1;
+            });
+        });
     }
 
     group.finish();

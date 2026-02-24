@@ -13,6 +13,7 @@
 //! Run with: `cargo run --example edge_sync`
 
 fn main() {
-    eprintln!("edge_sync example is disabled: ferrite::embedded::iot module is not yet implemented");
+    eprintln!(
+        "edge_sync example is disabled: ferrite::embedded::iot module is not yet implemented"
+    );
 }
-

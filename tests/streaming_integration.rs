@@ -17,12 +17,9 @@ fn test_stream_event_creation() {
 
 #[test]
 fn test_stream_event_with_metadata() {
-    let event = StreamEvent::new(
-        Some("key".to_string()),
-        serde_json::json!("value"),
-    )
-    .with_header("source", "test")
-    .with_partition(0);
+    let event = StreamEvent::new(Some("key".to_string()), serde_json::json!("value"))
+        .with_header("source", "test")
+        .with_partition(0);
 
     assert_eq!(event.get_str("source"), Some("test"));
 }
@@ -30,10 +27,7 @@ fn test_stream_event_with_metadata() {
 #[test]
 fn test_stream_config_defaults() {
     let config = StreamConfig::default();
-    assert!(
-        config.num_threads > 0,
-        "should have positive thread count"
-    );
+    assert!(config.num_threads > 0, "should have positive thread count");
 }
 
 #[test]
@@ -58,11 +52,7 @@ async fn test_cdc_engine_creation() {
 async fn test_cdc_subscribe() {
     let engine = CdcEngine::default();
     let result = engine
-        .subscribe(
-            "test_sub",
-            vec!["user:*".to_string()],
-            Default::default(),
-        )
+        .subscribe("test_sub", vec!["user:*".to_string()], Default::default())
         .await;
     assert!(result.is_ok(), "subscribe should succeed");
 

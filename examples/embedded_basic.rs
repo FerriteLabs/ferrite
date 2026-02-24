@@ -86,7 +86,10 @@ fn main() -> anyhow::Result<()> {
     if let Some(task) = db.lpop("tasks")? {
         println!("LPOP tasks = {}", String::from_utf8_lossy(&task));
     }
-    println!("LRANGE tasks 0 -1 (after pop) = {:?}", db.lrange("tasks", 0, -1)?);
+    println!(
+        "LRANGE tasks 0 -1 (after pop) = {:?}",
+        db.lrange("tasks", 0, -1)?
+    );
 
     // ── Set (tags) ──────────────────────────────────────────────────────
     println!("\n--- Set Operations ---");
