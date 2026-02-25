@@ -348,6 +348,9 @@ impl Store {
             StorageBackendType::Memory => Ok(Self::new(config.databases)),
             StorageBackendType::HybridLog => {
                 let mut hybrid_logs = Vec::with_capacity(config.databases as usize);
+                // Pre-allocate the vector to avoid repeated heap allocations
+                // during mutable region compaction. This reduces pressure on the
+                // allocator when migrating entries from the mutable to read-only region.
                 for db_idx in 0..config.databases {
                     let hl_config = HybridLogConfig {
                         mutable_size: config.hybridlog_mutable_size,
