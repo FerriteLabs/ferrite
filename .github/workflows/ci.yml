@@ -26,7 +26,7 @@ jobs:
       top-level: ${{ steps.filter.outputs.top-level }}
       any-rust: ${{ steps.filter.outputs.any-rust }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v3
         id: filter
         with:
@@ -63,7 +63,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.any-rust == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
@@ -76,7 +76,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.any-rust == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
@@ -105,7 +105,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.any-rust == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Verify toolchain consistency
         run: |
           MSRV=$(grep '^rust-version' Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
@@ -126,7 +126,7 @@ jobs:
             exit 1
           fi
           echo "✅ Toolchain $TOOLCHAIN >= MSRV $MSRV"
-      - uses: dtolnay/rust-toolchain@1.80
+      - uses: dtolnay/rust-toolchain@1.100
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: msrv
@@ -139,7 +139,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.any-rust == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
@@ -158,7 +158,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
@@ -185,7 +185,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
@@ -200,7 +200,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.any-rust == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
@@ -219,7 +219,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.any-rust == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
       - name: Install cargo-deny
         run: cargo install cargo-deny --locked
@@ -237,7 +237,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.any-rust == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: llvm-tools-preview
@@ -249,14 +249,14 @@ jobs:
       - name: Generate coverage
         run: cargo llvm-cov --workspace --lcov --output-path lcov.info
       - name: Upload to Codecov
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: lcov.info
           fail_ci_if_error: false
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: coverage-report
           path: lcov.info
@@ -266,7 +266,7 @@ jobs:
     name: Secret Scanning
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - uses: gitleaks/gitleaks-action@v2
@@ -281,7 +281,7 @@ jobs:
     if: needs.changes.outputs.any-rust == 'true'
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@nightly
       - uses: Swatinem/rust-cache@v2
         with:
@@ -298,7 +298,7 @@ jobs:
     needs: changes
     if: github.event_name == 'pull_request' && needs.changes.outputs.any-rust == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: obi1kenobi/cargo-semver-checks-action@v2
         with:
           feature-group: all-features

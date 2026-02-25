@@ -38,13 +38,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Rust stable toolchain
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache Cargo registry & build artifacts
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -102,7 +102,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Rust stable toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -110,7 +110,7 @@ jobs:
           targets: ${{ matrix.target }}
 
       - name: Cache Cargo registry & build artifacts
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -147,7 +147,7 @@ jobs:
           tar czf ${{ matrix.artifact }}.tar.gz -C dist .
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.artifact }}.tar.gz
@@ -161,7 +161,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # QEMU enables building images for non-native architectures
       - name: Set up QEMU for multi-arch builds
@@ -193,7 +193,7 @@ jobs:
 
       # Build for amd64 and arm64, push with version + latest tags
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ../ferrite-ops/Dockerfile
@@ -214,13 +214,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source (full history for changelog)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       # Download all platform-specific tarballs from the build stage
       - name: Download all build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
 
       # Generate SHA-256 checksums for all tarballs
       - name: Generate checksums
