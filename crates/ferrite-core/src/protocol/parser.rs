@@ -243,6 +243,9 @@ fn check_frame(
                     ));
                 }
                 // Check each element
+                // Handle nested arrays: increment depth to track recursion and
+                // bail out early if max_nesting_depth is exceeded, preventing
+                // stack overflow from deeply nested RESP3 array structures.
                 for _ in 0..count {
                     check_frame(cursor, limits, depth + 1)?;
                 }
