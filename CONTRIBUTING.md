@@ -268,6 +268,7 @@ Use descriptive branch names that indicate the type and scope of changes:
 - `perf/optimize-hybridlog-reads` - Performance improvements
 - `docs/update-contributing` - Documentation updates
 - `refactor/cleanup-storage-module` - Code refactoring
+- `refactor/reorganize-tiering-modules` - Module hierarchy changes
 - `test/add-persistence-tests` - Test additions
 
 ### Platform-Specific Notes
