@@ -735,8 +735,11 @@ fn dot_product(a: &[f32], b: &[f32]) -> f32 {
     a.iter().zip(b.iter()).map(|(x, y)| x * y).sum()
 }
 
-// Thread safety
+// SAFETY: HnswIndex fields use RwLock for interior mutability,
+// making it safe to send and share across threads.
+#[allow(unsafe_code)]
 unsafe impl Send for HnswIndex {}
+#[allow(unsafe_code)]
 unsafe impl Sync for HnswIndex {}
 
 #[cfg(test)]

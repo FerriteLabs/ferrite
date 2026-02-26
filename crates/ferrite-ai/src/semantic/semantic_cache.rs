@@ -374,7 +374,9 @@ impl EnhancedSemanticCache {
 
 // SAFETY: EnhancedSemanticCache uses RwLock and atomic types for all
 // interior mutability, making it safe to share across threads.
+#[allow(unsafe_code)]
 unsafe impl Send for EnhancedSemanticCache {}
+#[allow(unsafe_code)]
 unsafe impl Sync for EnhancedSemanticCache {}
 
 // ============================================================================

@@ -761,8 +761,11 @@ impl Default for LlmCacheBuilder {
     }
 }
 
-// Thread safety
+// SAFETY: LlmCache fields use RwLock/Mutex for interior mutability,
+// making it safe to send and share across threads.
+#[allow(unsafe_code)]
 unsafe impl Send for LlmCache {}
+#[allow(unsafe_code)]
 unsafe impl Sync for LlmCache {}
 
 #[cfg(test)]

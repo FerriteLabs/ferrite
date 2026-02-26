@@ -47,6 +47,8 @@
 //! ```
 
 mod chunk;
+/// Advanced standalone chunking functions (recursive, sentence-boundary, fixed-size).
+pub mod chunking;
 mod context;
 mod document;
 mod embed;

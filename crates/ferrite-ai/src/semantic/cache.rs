@@ -520,8 +520,11 @@ impl Default for SemanticCacheBuilder {
     }
 }
 
-// Make SemanticCache thread-safe
+// SAFETY: SemanticCache fields use RwLock/Mutex for interior mutability,
+// making it safe to send and share across threads.
+#[allow(unsafe_code)]
 unsafe impl Send for SemanticCache {}
+#[allow(unsafe_code)]
 unsafe impl Sync for SemanticCache {}
 
 #[cfg(test)]

@@ -701,8 +701,11 @@ impl<'a> EmbeddingStream<'a> {
     }
 }
 
-// Thread safety
+// SAFETY: StreamingEmbedder fields use RwLock/Mutex for interior mutability,
+// making it safe to send and share across threads.
+#[allow(unsafe_code)]
 unsafe impl Send for StreamingEmbedder {}
+#[allow(unsafe_code)]
 unsafe impl Sync for StreamingEmbedder {}
 
 #[cfg(test)]

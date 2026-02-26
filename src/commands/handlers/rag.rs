@@ -30,6 +30,7 @@ use ferrite_ai::rag::{
     ChunkingStrategy, Document, DocumentId, EmbeddingProviderType, RagConfig, RagPipeline,
     SearchFilter,
 };
+use ferrite_ai::rag::chunking;
 
 use super::{err_frame, ok_frame, HandlerContext};
 
@@ -520,12 +521,13 @@ pub fn rag_search(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
 /// Handle RAG.CHUNK command
 ///
 /// Chunks a document without storing (for debugging).
+/// Supports an optional STRATEGY override to select the chunking algorithm.
 ///
 /// # Syntax
-/// `RAG.CHUNK <name> <document>`
+/// `RAG.CHUNK <name> <document> [STRATEGY <RECURSIVE|SENTENCES|FIXED>] [SIZE <n>] [OVERLAP <n>]`
 ///
 /// # Returns
-/// Array of chunk texts.
+/// Array with strategy description and chunk texts.
 pub fn rag_chunk(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     if args.len() < 2 {
         return err_frame("wrong number of arguments for 'RAG.CHUNK' command");
@@ -542,51 +544,120 @@ pub fn rag_chunk(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
         None => return err_frame(&format!("RAG pipeline '{}' not found", name)),
     };
 
-    // We don't have direct access to the chunker, but we can describe the config
-    let config = pipeline.config();
-    let chunk_info = match &config.chunking.strategy {
-        ChunkingStrategy::FixedSize { size, overlap } => {
-            format!("FixedSize(size={}, overlap={})", size, overlap)
-        }
-        ChunkingStrategy::Sentence {
-            max_sentences,
-            min_size,
-        } => {
-            format!("Sentence(max={}, min_size={})", max_sentences, min_size)
-        }
-        ChunkingStrategy::Paragraph {
-            max_paragraphs,
-            min_size,
-        } => {
-            format!("Paragraph(max={}, min_size={})", max_paragraphs, min_size)
-        }
-        ChunkingStrategy::Recursive { target_size, .. } => {
-            format!("Recursive(target={})", target_size)
-        }
-        ChunkingStrategy::Semantic {
-            target_size,
-            threshold,
-        } => {
-            format!("Semantic(target={}, threshold={})", target_size, threshold)
-        }
-    };
+    // Parse optional overrides
+    let mut strategy_override: Option<String> = None;
+    let mut size_override: Option<usize> = None;
+    let mut overlap_override: Option<usize> = None;
 
-    // Simple chunking approximation for preview
-    let chunk_size = match &config.chunking.strategy {
+    let mut i = 2;
+    while i < args.len() {
+        let arg = String::from_utf8_lossy(&args[i]).to_uppercase();
+        match arg.as_str() {
+            "STRATEGY" => {
+                if i + 1 >= args.len() {
+                    return err_frame("STRATEGY requires a value");
+                }
+                strategy_override =
+                    Some(String::from_utf8_lossy(&args[i + 1]).to_uppercase());
+                i += 2;
+            }
+            "SIZE" => {
+                if i + 1 >= args.len() {
+                    return err_frame("SIZE requires a value");
+                }
+                match String::from_utf8_lossy(&args[i + 1]).parse::<usize>() {
+                    Ok(v) => size_override = Some(v),
+                    Err(_) => return err_frame("SIZE must be a positive integer"),
+                }
+                i += 2;
+            }
+            "OVERLAP" => {
+                if i + 1 >= args.len() {
+                    return err_frame("OVERLAP requires a value");
+                }
+                match String::from_utf8_lossy(&args[i + 1]).parse::<usize>() {
+                    Ok(v) => overlap_override = Some(v),
+                    Err(_) => return err_frame("OVERLAP must be a positive integer"),
+                }
+                i += 2;
+            }
+            _ => {
+                i += 1;
+            }
+        }
+    }
+
+    let config = pipeline.config();
+    let default_size = match &config.chunking.strategy {
         ChunkingStrategy::FixedSize { size, .. } => *size,
+        ChunkingStrategy::Recursive { target_size, .. } => *target_size,
+        ChunkingStrategy::Semantic { target_size, .. } => *target_size,
         _ => 512,
     };
+    let default_overlap = match &config.chunking.strategy {
+        ChunkingStrategy::FixedSize { overlap, .. } => *overlap,
+        _ => 50,
+    };
 
-    let chunks: Vec<Frame> = document_text
-        .chars()
-        .collect::<Vec<_>>()
-        .chunks(chunk_size)
-        .map(|c| Frame::bulk(c.iter().collect::<String>()))
+    let chunk_size = size_override.unwrap_or(default_size);
+    let overlap = overlap_override.unwrap_or(default_overlap);
+
+    let (strategy_label, text_chunks) = match strategy_override.as_deref() {
+        Some("RECURSIVE") => (
+            format!("Recursive(size={}, overlap={})", chunk_size, overlap),
+            chunking::chunk_recursive(&document_text, chunk_size, overlap),
+        ),
+        Some("SENTENCES") => (
+            format!("Sentences(max_size={}, overlap={})", chunk_size, overlap),
+            chunking::chunk_sentences(&document_text, chunk_size, overlap),
+        ),
+        Some("FIXED") => (
+            format!("Fixed(size={}, overlap={})", chunk_size, overlap),
+            chunking::fixed_split(&document_text, chunk_size, overlap),
+        ),
+        Some(other) => {
+            return err_frame(&format!(
+                "unknown chunking strategy '{}'; use RECURSIVE, SENTENCES, or FIXED",
+                other
+            ));
+        }
+        None => {
+            // Use the pipeline's configured strategy description + fixed_split as default
+            let label = match &config.chunking.strategy {
+                ChunkingStrategy::FixedSize { size, overlap } => {
+                    format!("FixedSize(size={}, overlap={})", size, overlap)
+                }
+                ChunkingStrategy::Sentence {
+                    max_sentences,
+                    min_size,
+                } => format!("Sentence(max={}, min_size={})", max_sentences, min_size),
+                ChunkingStrategy::Paragraph {
+                    max_paragraphs,
+                    min_size,
+                } => format!("Paragraph(max={}, min_size={})", max_paragraphs, min_size),
+                ChunkingStrategy::Recursive { target_size, .. } => {
+                    format!("Recursive(target={})", target_size)
+                }
+                ChunkingStrategy::Semantic {
+                    target_size,
+                    threshold,
+                } => format!("Semantic(target={}, threshold={})", target_size, threshold),
+            };
+            (
+                label,
+                chunking::fixed_split(&document_text, chunk_size, overlap),
+            )
+        }
+    };
+
+    let chunk_frames: Vec<Frame> = text_chunks
+        .into_iter()
+        .map(Frame::bulk)
         .collect();
 
     Frame::array(vec![
-        Frame::bulk(format!("strategy: {}", chunk_info)),
-        Frame::array(chunks),
+        Frame::bulk(format!("strategy: {}", strategy_label)),
+        Frame::array(chunk_frames),
     ])
 }
 

@@ -803,8 +803,11 @@ impl FunctionCache {
     }
 }
 
-// Thread safety
+// SAFETY: FunctionCache fields use RwLock/Mutex for interior mutability,
+// making it safe to send and share across threads.
+#[allow(unsafe_code)]
 unsafe impl Send for FunctionCache {}
+#[allow(unsafe_code)]
 unsafe impl Sync for FunctionCache {}
 
 /// Normalize JSON for embedding generation

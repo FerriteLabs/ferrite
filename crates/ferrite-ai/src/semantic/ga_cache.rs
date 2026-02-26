@@ -442,7 +442,9 @@ pub struct GaSemanticCache {
 }
 
 // SAFETY: all fields use parking_lot locks or atomics for interior mutability.
+#[allow(unsafe_code)]
 unsafe impl Send for GaSemanticCache {}
+#[allow(unsafe_code)]
 unsafe impl Sync for GaSemanticCache {}
 
 impl GaSemanticCache {
