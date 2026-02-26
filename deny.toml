@@ -76,6 +76,7 @@ skip = [
     { name = "bitflags" },
     { name = "hashbrown" },
     { name = "indexmap" },
+    { name = "logos" },       # Used by query parser token lookahead optimization
 ]
 
 # Tree of allowed duplicate dependencies
