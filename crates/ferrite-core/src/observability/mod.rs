@@ -43,6 +43,9 @@ pub mod diagnostics;
 pub mod distributed_trace;
 /// eBPF zero-overhead kernel-level tracing and profiling.
 pub mod ebpf;
+/// Linux-native eBPF tracer using ftrace/perf_event_open (no aya-rs required).
+#[cfg(target_os = "linux")]
+pub mod ebpf_linux;
 pub mod heatmap;
 pub mod profiler;
 pub mod recommendations;

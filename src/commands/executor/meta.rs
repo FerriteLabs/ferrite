@@ -1,5 +1,7 @@
 //! ACL metadata for commands.
 
+use bytes::Bytes;
+
 use crate::auth::Permission;
 use crate::commands::parser::Command;
 
@@ -1116,6 +1118,18 @@ impl Command {
                 keys: vec![],
                 permission: Permission::ReadWrite,
             },
+            Command::Edge { .. } => CommandMeta {
+                name: "EDGE",
+                category: "admin",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+            Command::Ebpf { .. } => CommandMeta {
+                name: "EBPF",
+                category: "admin",
+                keys: vec![],
+                permission: Permission::Read,
+            },
             Command::History { key, .. } => CommandMeta {
                 name: "HISTORY",
                 category: "temporal",
@@ -1777,6 +1791,13 @@ impl Command {
                 permission: Permission::ReadWrite,
             },
 
+            Command::AutoTune { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("AUTOTUNE.{}", subcommand).into_boxed_str()),
+                category: "admin",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+
             // Key management commands
             Command::Keys { .. } => CommandMeta {
                 name: "KEYS",
@@ -1914,6 +1935,24 @@ impl Command {
                 name: "VIEW.INFO",
                 category: "views",
                 keys: vec![name.clone()],
+                permission: Permission::Read,
+            },
+            Command::ViewSubscribe { ref name } => CommandMeta {
+                name: "VIEW.SUBSCRIBE",
+                category: "views",
+                keys: vec![Bytes::from(name.clone())],
+                permission: Permission::Read,
+            },
+            Command::ViewUnsubscribe { ref name } => CommandMeta {
+                name: "VIEW.UNSUBSCRIBE",
+                category: "views",
+                keys: vec![Bytes::from(name.clone())],
+                permission: Permission::Read,
+            },
+            Command::ViewMaintenance { ref name } => CommandMeta {
+                name: "VIEW.MAINTENANCE",
+                category: "views",
+                keys: vec![Bytes::from(name.clone())],
                 permission: Permission::Read,
             },
 
@@ -2127,6 +2166,22 @@ impl Command {
                 category: "admin",
                 keys: vec![],
                 permission: Permission::Read,
+            },
+
+            // Unified Query Gateway commands
+            Command::Gateway { .. } => CommandMeta {
+                name: "GATEWAY",
+                category: "admin",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+
+            // Cost-Aware Intelligent Tiering budget commands
+            Command::Budget { .. } => CommandMeta {
+                name: "BUDGET",
+                category: "admin",
+                keys: vec![],
+                permission: Permission::ReadWrite,
             },
 
             // Studio developer-experience commands

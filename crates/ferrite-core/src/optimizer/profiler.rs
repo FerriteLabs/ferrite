@@ -9,6 +9,8 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
+use super::tiering::{TierMove, TierRecommendation, TierThresholds, TuningReport, WorkloadReport};
+
 /// Maximum number of entries in the ring buffer for ops/sec calculation.
 const RING_BUFFER_SIZE: usize = 300;
 /// Maximum number of hot keys to track.
@@ -280,6 +282,155 @@ impl WorkloadProfiler {
             memory_usage_fraction: *self.memory_usage.read(),
             unique_keys_accessed: self.key_stats.len() as u64,
             timestamp_ms: now_ms,
+        }
+    }
+
+    /// Classify a key based on its access frequency and recency.
+    ///
+    /// Uses the provided thresholds to decide whether the key belongs in the
+    /// hot, warm, or cold tier.
+    pub fn classify(&self, key: &str, thresholds: &TierThresholds) -> TierRecommendation {
+        let elapsed_secs = self.start.elapsed().as_secs().max(1);
+        if let Some(stats) = self.key_stats.get(key) {
+            let total = stats.access_count.load(Ordering::Relaxed);
+            let freq = total as f64 / elapsed_secs as f64;
+            let last_ms = stats.last_access_ms.load(Ordering::Relaxed);
+            let now_ms = self.start.elapsed().as_millis() as u64;
+            let secs_ago = (now_ms.saturating_sub(last_ms)) / 1000;
+            thresholds.classify(freq, secs_ago)
+        } else {
+            TierRecommendation::Cold
+        }
+    }
+
+    /// Generate a full workload report with tier classification for all tracked keys.
+    pub fn report(&self, thresholds: &TierThresholds) -> WorkloadReport {
+        let elapsed_secs = self.start.elapsed().as_secs().max(1);
+        let now_ms = self.start.elapsed().as_millis() as u64;
+
+        let mut hot: u64 = 0;
+        let mut warm: u64 = 0;
+        let mut cold: u64 = 0;
+
+        for entry in self.key_stats.iter() {
+            let total = entry.value().access_count.load(Ordering::Relaxed);
+            let freq = total as f64 / elapsed_secs as f64;
+            let last_ms = entry.value().last_access_ms.load(Ordering::Relaxed);
+            let secs_ago = (now_ms.saturating_sub(last_ms)) / 1000;
+            match thresholds.classify(freq, secs_ago) {
+                TierRecommendation::Hot => hot += 1,
+                TierRecommendation::Warm => warm += 1,
+                TierRecommendation::Cold => cold += 1,
+            }
+        }
+
+        let total_reads = self.total_reads.load(Ordering::Relaxed);
+        let total_writes = self.total_writes.load(Ordering::Relaxed);
+        let total = total_reads + total_writes;
+        let rw_ratio = if total > 0 {
+            total_reads as f64 / total as f64
+        } else {
+            0.5
+        };
+
+        let snap = self.snapshot();
+
+        WorkloadReport {
+            total_keys_analyzed: self.key_stats.len() as u64,
+            hot_keys: hot,
+            warm_keys: warm,
+            cold_keys: cold,
+            read_write_ratio: rw_ratio,
+            throughput_ops_per_sec: snap.ops_per_sec,
+            avg_value_size: snap.avg_value_size,
+            memory_usage_fraction: snap.memory_usage_fraction,
+        }
+    }
+
+    /// Generate a tuning report with tier-move recommendations.
+    ///
+    /// Identifies keys whose current usage pattern suggests they belong in a
+    /// different tier and returns concrete move recommendations.
+    pub fn tuning_report(&self, thresholds: &TierThresholds) -> TuningReport {
+        let elapsed_secs = self.start.elapsed().as_secs().max(1);
+        let now_ms = self.start.elapsed().as_millis() as u64;
+
+        let mut hot: u64 = 0;
+        let mut warm: u64 = 0;
+        let mut cold: u64 = 0;
+        let mut recommendations = Vec::new();
+
+        for entry in self.key_stats.iter() {
+            let total = entry.value().access_count.load(Ordering::Relaxed);
+            let freq = total as f64 / elapsed_secs as f64;
+            let last_ms = entry.value().last_access_ms.load(Ordering::Relaxed);
+            let secs_ago = (now_ms.saturating_sub(last_ms)) / 1000;
+            let tier = thresholds.classify(freq, secs_ago);
+
+            match tier {
+                TierRecommendation::Hot => hot += 1,
+                TierRecommendation::Warm => warm += 1,
+                TierRecommendation::Cold => cold += 1,
+            }
+
+            // Recommend moves for keys that look like they changed tiers.
+            // Heuristic: high-frequency keys sitting in cold, or zero-frequency
+            // keys sitting in hot, deserve a move.
+            let current_tier = if freq >= thresholds.hot_threshold * 2.0 {
+                // Was very hot before
+                TierRecommendation::Hot
+            } else if secs_ago >= thresholds.cold_threshold_secs * 2 {
+                TierRecommendation::Cold
+            } else {
+                TierRecommendation::Warm
+            };
+
+            if current_tier != tier {
+                recommendations.push(TierMove {
+                    key_pattern: entry.key().clone(),
+                    current_tier,
+                    recommended_tier: tier,
+                    access_frequency: freq,
+                    last_access_secs_ago: secs_ago,
+                });
+            }
+        }
+
+        // Cap recommendations to avoid huge reports.
+        recommendations.sort_by(|a, b| {
+            b.access_frequency
+                .partial_cmp(&a.access_frequency)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+        recommendations.truncate(100);
+
+        let total_keys = self.key_stats.len() as u64;
+        let estimated_savings = if total_keys > 0 {
+            (cold as f64 / total_keys as f64) * 100.0
+        } else {
+            0.0
+        };
+
+        let total_reads = self.total_reads.load(Ordering::Relaxed);
+        let total_writes = self.total_writes.load(Ordering::Relaxed);
+        let total = total_reads + total_writes;
+        let rw_ratio = if total > 0 {
+            total_reads as f64 / total as f64
+        } else {
+            0.5
+        };
+
+        let snap = self.snapshot();
+
+        TuningReport {
+            total_keys_analyzed: total_keys,
+            hot_keys: hot,
+            warm_keys: warm,
+            cold_keys: cold,
+            estimated_memory_savings_pct: estimated_savings,
+            recommendations,
+            read_write_ratio: rw_ratio,
+            throughput_ops_per_sec: snap.ops_per_sec,
         }
     }
 

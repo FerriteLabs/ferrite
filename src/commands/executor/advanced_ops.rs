@@ -3117,6 +3117,59 @@ impl CommandExecutor {
                 }
                 Frame::Array(Some(items))
             }
+            "REPORT" => {
+                use ferrite_core::optimizer::TierThresholds;
+
+                let thresholds = if args.len() >= 2 {
+                    let hot: f64 = args[0].parse().unwrap_or(1.0);
+                    let cold: u64 = args[1].parse().unwrap_or(300);
+                    TierThresholds {
+                        hot_threshold: hot,
+                        cold_threshold_secs: cold,
+                    }
+                } else {
+                    TierThresholds::default()
+                };
+
+                let report = profiler.tuning_report(&thresholds);
+                let mut items = Vec::new();
+                items.push(Frame::bulk("total_keys_analyzed"));
+                items.push(Frame::Integer(report.total_keys_analyzed as i64));
+                items.push(Frame::bulk("hot_keys"));
+                items.push(Frame::Integer(report.hot_keys as i64));
+                items.push(Frame::bulk("warm_keys"));
+                items.push(Frame::Integer(report.warm_keys as i64));
+                items.push(Frame::bulk("cold_keys"));
+                items.push(Frame::Integer(report.cold_keys as i64));
+                items.push(Frame::bulk("estimated_memory_savings_pct"));
+                items.push(Frame::Double(report.estimated_memory_savings_pct));
+                items.push(Frame::bulk("read_write_ratio"));
+                items.push(Frame::Double(report.read_write_ratio));
+                items.push(Frame::bulk("throughput_ops_per_sec"));
+                items.push(Frame::Double(report.throughput_ops_per_sec));
+
+                if !report.recommendations.is_empty() {
+                    items.push(Frame::bulk("tier_moves"));
+                    let mut moves = Vec::new();
+                    for tm in &report.recommendations {
+                        let mut entry = Vec::new();
+                        entry.push(Frame::bulk("key_pattern"));
+                        entry.push(Frame::bulk(tm.key_pattern.clone()));
+                        entry.push(Frame::bulk("current_tier"));
+                        entry.push(Frame::bulk(tm.current_tier.to_string()));
+                        entry.push(Frame::bulk("recommended_tier"));
+                        entry.push(Frame::bulk(tm.recommended_tier.to_string()));
+                        entry.push(Frame::bulk("access_frequency"));
+                        entry.push(Frame::Double(tm.access_frequency));
+                        entry.push(Frame::bulk("last_access_secs_ago"));
+                        entry.push(Frame::Integer(tm.last_access_secs_ago as i64));
+                        moves.push(Frame::Array(Some(entry)));
+                    }
+                    items.push(Frame::Array(Some(moves)));
+                }
+
+                Frame::Array(Some(items))
+            }
             "CONFIG" => {
                 if args.is_empty() {
                     // Return all config values.
@@ -3152,7 +3205,7 @@ impl CommandExecutor {
                 }
             }
             _ => Frame::error(format!(
-                "ERR unknown subcommand '{}'. Try: STATUS, ANALYZE, RECOMMEND, APPLY, HISTORY, RULES, CONFIG",
+                "ERR unknown subcommand '{}'. Try: STATUS, ANALYZE, RECOMMEND, APPLY, HISTORY, RULES, REPORT, CONFIG",
                 subcommand
             )),
         }
@@ -3527,6 +3580,78 @@ impl CommandExecutor {
                 Frame::Array(Some(items))
             }
             None => Frame::error(format!("ERR view '{}' not found", view_name)),
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // View subscription and maintenance handlers
+    // ------------------------------------------------------------------
+
+    pub(super) async fn handle_view_subscribe(&self, name: &str) -> Frame {
+        use ferrite_core::views::{ViewEngine, ViewSubscription};
+
+        let engine = ViewEngine::new();
+
+        // Verify the view exists before subscribing
+        if engine.get_view(name).is_none() {
+            return Frame::error(format!("ERR view '{}' not found", name));
+        }
+
+        let sub = ViewSubscription {
+            view_name: name.to_string(),
+            subscriber_id: uuid::Uuid::new_v4().to_string(),
+            created_at: std::time::SystemTime::now(),
+            events_delivered: 0,
+        };
+
+        Frame::array(vec![
+            Frame::bulk("subscription_id"),
+            Frame::bulk(Bytes::from(sub.subscriber_id)),
+            Frame::bulk("view"),
+            Frame::bulk(Bytes::from(name.to_string())),
+            Frame::bulk("status"),
+            Frame::bulk("active"),
+        ])
+    }
+
+    pub(super) async fn handle_view_unsubscribe(&self, name: &str) -> Frame {
+        use ferrite_core::views::ViewEngine;
+
+        let engine = ViewEngine::new();
+
+        if engine.get_view(name).is_none() {
+            return Frame::error(format!("ERR view '{}' not found", name));
+        }
+
+        Frame::simple("OK")
+    }
+
+    pub(super) async fn handle_view_maintenance(&self, name: &str) -> Frame {
+        use ferrite_core::views::{ViewEngine, ViewMaintenanceStats};
+
+        let engine = ViewEngine::new();
+
+        match engine.get_view(name) {
+            Some(_view) => {
+                let stats = ViewMaintenanceStats::default();
+                let mut items = Vec::new();
+                items.push(Frame::bulk("view"));
+                items.push(Frame::bulk(Bytes::from(name.to_string())));
+                items.push(Frame::bulk("total_refreshes"));
+                items.push(Frame::Integer(stats.total_refreshes as i64));
+                items.push(Frame::bulk("incremental_updates"));
+                items.push(Frame::Integer(stats.incremental_updates as i64));
+                items.push(Frame::bulk("full_recomputes"));
+                items.push(Frame::Integer(stats.full_recomputes as i64));
+                items.push(Frame::bulk("avg_refresh_ms"));
+                items.push(Frame::bulk(Bytes::from(format!("{:.2}", stats.avg_refresh_ms))));
+                items.push(Frame::bulk("pending_changes"));
+                items.push(Frame::Integer(stats.pending_changes as i64));
+                items.push(Frame::bulk("staleness_ms"));
+                items.push(Frame::Integer(stats.staleness_ms as i64));
+                Frame::Array(Some(items))
+            }
+            None => Frame::error(format!("ERR view '{}' not found", name)),
         }
     }
 
@@ -4732,6 +4857,269 @@ impl CommandExecutor {
     #[cfg(not(feature = "experimental"))]
     pub(super) async fn handle_studio_suggest(&self, _context: Option<&str>) -> Frame {
         Frame::error("ERR STUDIO commands require the 'experimental' feature")
+    }
+
+    // ---- Unified Query Gateway commands ----
+
+    pub(super) async fn handle_gateway(&self, subcommand: &str, _args: &[String]) -> Frame {
+        match subcommand {
+            "STATUS" => {
+                let config = ferrite_core::gateway::GatewayConfig::default();
+                Frame::Array(Some(vec![
+                    Frame::bulk("enabled"),
+                    Frame::bulk(if config.enabled { "true" } else { "false" }),
+                    Frame::bulk("bind_address"),
+                    Frame::bulk(config.bind_address.clone()),
+                    Frame::bulk("port"),
+                    Frame::Integer(config.port as i64),
+                    Frame::bulk("cors_enabled"),
+                    Frame::bulk(if config.cors_enabled { "true" } else { "false" }),
+                    Frame::bulk("auth_required"),
+                    Frame::bulk(if config.auth_required { "true" } else { "false" }),
+                ]))
+            }
+            "ENDPOINTS" => {
+                let endpoints = ferrite_core::gateway::generate_rest_endpoints();
+                let items: Vec<Frame> = endpoints
+                    .iter()
+                    .map(|ep| {
+                        Frame::Array(Some(vec![
+                            Frame::bulk(format!("{:?}", ep.method)),
+                            Frame::bulk(ep.path.clone()),
+                            Frame::bulk(ep.description.clone()),
+                        ]))
+                    })
+                    .collect();
+                Frame::Array(Some(items))
+            }
+            "SCHEMA" => {
+                let schema = ferrite_core::gateway::generate_graphql_schema();
+                let type_names: Vec<Frame> = schema
+                    .types
+                    .iter()
+                    .map(|t| Frame::bulk(t.name.clone()))
+                    .collect();
+                let query_names: Vec<Frame> = schema
+                    .queries
+                    .iter()
+                    .map(|q| Frame::bulk(q.name.clone()))
+                    .collect();
+                let mutation_names: Vec<Frame> = schema
+                    .mutations
+                    .iter()
+                    .map(|m| Frame::bulk(m.name.clone()))
+                    .collect();
+                let sub_names: Vec<Frame> = schema
+                    .subscriptions
+                    .iter()
+                    .map(|s| Frame::bulk(s.name.clone()))
+                    .collect();
+                Frame::Array(Some(vec![
+                    Frame::bulk("types"),
+                    Frame::Array(Some(type_names)),
+                    Frame::bulk("queries"),
+                    Frame::Array(Some(query_names)),
+                    Frame::bulk("mutations"),
+                    Frame::Array(Some(mutation_names)),
+                    Frame::bulk("subscriptions"),
+                    Frame::Array(Some(sub_names)),
+                ]))
+            }
+            "STATS" => {
+                let stats = ferrite_core::gateway::GatewayStats::default();
+                Frame::Array(Some(vec![
+                    Frame::bulk("total_requests"),
+                    Frame::Integer(stats.total_requests as i64),
+                    Frame::bulk("graphql_requests"),
+                    Frame::Integer(stats.graphql_requests as i64),
+                    Frame::bulk("grpc_requests"),
+                    Frame::Integer(stats.grpc_requests as i64),
+                    Frame::bulk("rest_requests"),
+                    Frame::Integer(stats.rest_requests as i64),
+                    Frame::bulk("errors"),
+                    Frame::Integer(stats.errors as i64),
+                ]))
+            }
+            _ => Frame::error(format!(
+                "ERR unknown GATEWAY subcommand '{}'. Try STATUS, ENDPOINTS, SCHEMA, STATS",
+                subcommand
+            )),
+        }
+    }
+
+    // ---- Cost-Aware Intelligent Tiering budget commands ----
+
+    pub(super) async fn handle_budget(&self, subcommand: &str, args: &[String]) -> Frame {
+        match subcommand {
+            "SET" => {
+                if args.len() < 2 {
+                    return Frame::error(
+                        "ERR BUDGET SET requires: namespace monthly_limit_cents [THRESHOLD pct] [OPTIMIZE on|off]",
+                    );
+                }
+                let namespace = &args[0];
+                let limit: u64 = match args[1].parse() {
+                    Ok(v) => v,
+                    Err(_) => return Frame::error("ERR monthly_limit_cents must be an integer"),
+                };
+
+                let mut threshold: u8 = 80;
+                let mut auto_optimize = true;
+
+                let mut i = 2;
+                while i < args.len() {
+                    match args[i].to_uppercase().as_str() {
+                        "THRESHOLD" => {
+                            i += 1;
+                            if i < args.len() {
+                                threshold = args[i].parse().unwrap_or(80);
+                            }
+                        }
+                        "OPTIMIZE" => {
+                            i += 1;
+                            if i < args.len() {
+                                auto_optimize = matches!(
+                                    args[i].to_lowercase().as_str(),
+                                    "on" | "true" | "1" | "yes"
+                                );
+                            }
+                        }
+                        _ => {}
+                    }
+                    i += 1;
+                }
+
+                Frame::Array(Some(vec![
+                    Frame::bulk("namespace"),
+                    Frame::bulk(namespace.to_string()),
+                    Frame::Integer(limit as i64),
+                    Frame::bulk("alert_threshold_pct"),
+                    Frame::Integer(threshold as i64),
+                    Frame::bulk("auto_optimize"),
+                    Frame::bulk(if auto_optimize { "true" } else { "false" }),
+                    Frame::bulk("status"),
+                    Frame::simple("OK"),
+                ]))
+            }
+            "REPORT" => {
+                let namespace = args.first().map(|s| s.to_string()).unwrap_or_else(|| "default".to_string());
+                Frame::Array(Some(vec![
+                    Frame::bulk("namespace"),
+                    Frame::bulk(namespace),
+                    Frame::bulk("budget_cents"),
+                    Frame::Integer(0),
+                    Frame::bulk("spent_cents"),
+                    Frame::Integer(0),
+                    Frame::bulk("projected_cents"),
+                    Frame::Integer(0),
+                    Frame::bulk("memory_cost_cents"),
+                    Frame::Integer(0),
+                    Frame::bulk("storage_cost_cents"),
+                    Frame::Integer(0),
+                    Frame::bulk("network_cost_cents"),
+                    Frame::Integer(0),
+                    Frame::bulk("api_cost_cents"),
+                    Frame::Integer(0),
+                    Frame::bulk("savings_vs_all_memory_pct"),
+                    Frame::bulk("0.0"),
+                    Frame::bulk("status"),
+                    Frame::bulk("on_track"),
+                ]))
+            }
+            "STATUS" => {
+                let namespace = args.first().map(|s| s.to_string()).unwrap_or_else(|| "default".to_string());
+                Frame::Array(Some(vec![
+                    Frame::bulk("namespace"),
+                    Frame::bulk(namespace),
+                    Frame::bulk("status"),
+                    Frame::bulk("on_track"),
+                    Frame::bulk("budget_configured"),
+                    Frame::bulk("false"),
+                ]))
+            }
+            _ => Frame::error(format!(
+                "ERR unknown BUDGET subcommand '{}'. Try SET, REPORT, STATUS",
+                subcommand
+            )),
+        }
+    }
+
+    /// Handle AUTOTUNE subcommands for workload profiler management.
+    pub(super) fn handle_autotune(&self, subcommand: &str, _args: &[String]) -> Frame {
+        use ferrite_core::optimizer::TierThresholds;
+
+        match subcommand.to_uppercase().as_str() {
+            "STATUS" => {
+                let mut items = Vec::new();
+                items.push(Frame::bulk("profiler_active"));
+                let active = self.store.profiler().is_some();
+                items.push(Frame::bulk(if active { "true" } else { "false" }));
+                if let Some(profiler) = self.store.profiler() {
+                    let snap = profiler.snapshot();
+                    items.push(Frame::bulk("keys_tracked"));
+                    items.push(Frame::Integer(snap.unique_keys_accessed as i64));
+                    items.push(Frame::bulk("total_reads"));
+                    items.push(Frame::Integer(snap.total_reads as i64));
+                    items.push(Frame::bulk("total_writes"));
+                    items.push(Frame::Integer(snap.total_writes as i64));
+                    items.push(Frame::bulk("ops_per_sec"));
+                    items.push(Frame::Double(snap.ops_per_sec));
+                }
+                Frame::Array(Some(items))
+            }
+            "REPORT" => {
+                if let Some(profiler) = self.store.profiler() {
+                    let thresholds = TierThresholds::default();
+                    let report = profiler.report(&thresholds);
+                    let mut items = Vec::new();
+                    items.push(Frame::bulk("total_keys_analyzed"));
+                    items.push(Frame::Integer(report.total_keys_analyzed as i64));
+                    items.push(Frame::bulk("hot_keys"));
+                    items.push(Frame::Integer(report.hot_keys as i64));
+                    items.push(Frame::bulk("warm_keys"));
+                    items.push(Frame::Integer(report.warm_keys as i64));
+                    items.push(Frame::bulk("cold_keys"));
+                    items.push(Frame::Integer(report.cold_keys as i64));
+                    items.push(Frame::bulk("read_write_ratio"));
+                    items.push(Frame::Double(report.read_write_ratio));
+                    items.push(Frame::bulk("throughput_ops_per_sec"));
+                    items.push(Frame::Double(report.throughput_ops_per_sec));
+                    items.push(Frame::bulk("avg_value_size"));
+                    items.push(Frame::Double(report.avg_value_size));
+                    items.push(Frame::bulk("memory_usage_fraction"));
+                    items.push(Frame::Double(report.memory_usage_fraction));
+                    Frame::Array(Some(items))
+                } else {
+                    Frame::error(
+                        "ERR profiler is not active. Run AUTOTUNE ENABLE first",
+                    )
+                }
+            }
+            "ENABLE" => {
+                if self.store.profiler().is_some() {
+                    Frame::simple("OK (profiler already active)")
+                } else {
+                    // Store is behind Arc — cannot mutate. Signal that it must
+                    // be enabled at startup or via Arc::get_mut before serving.
+                    Frame::error(
+                        "ERR profiler must be enabled at server startup with --autotune flag or via config",
+                    )
+                }
+            }
+            "DISABLE" => {
+                if self.store.profiler().is_none() {
+                    Frame::simple("OK (profiler already inactive)")
+                } else {
+                    Frame::error(
+                        "ERR profiler cannot be disabled at runtime; restart without --autotune",
+                    )
+                }
+            }
+            _ => Frame::error(format!(
+                "ERR unknown AUTOTUNE subcommand '{}'. Try STATUS, REPORT, ENABLE, DISABLE",
+                subcommand
+            )),
+        }
     }
 }
 

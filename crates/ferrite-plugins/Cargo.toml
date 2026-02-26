@@ -36,11 +36,13 @@ base64.workspace = true
 num_cpus.workspace = true
 scopeguard.workspace = true
 toml.workspace = true
+reqwest = { workspace = true, optional = true }
 wasmtime = { workspace = true, optional = true }
 
 [features]
 default = []
 wasm = ["wasmtime"]
+marketplace = ["reqwest"]
 
 [dev-dependencies]
 tokio-test.workspace = true

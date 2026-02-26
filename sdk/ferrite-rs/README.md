@@ -10,7 +10,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-ferrite-rs = { path = "sdk/ferrite-rs" }
+ferrite-rs = "0.1"
 tokio = { version = "1", features = ["full"] }
 ```
 
@@ -18,7 +18,7 @@ For TLS support:
 
 ```toml
 [dependencies]
-ferrite-rs = { path = "sdk/ferrite-rs", features = ["tls"] }
+ferrite-rs = { version = "0.1", features = ["tls"] }
 ```
 
 ## Quick Start
@@ -104,6 +104,61 @@ let client = AsyncClient::connect_pooled(config).await?;
 ### Server
 `PING`, `ECHO`, `INFO`, `DBSIZE`, `FLUSHDB`, `FLUSHALL`, `SELECT`, `CLIENT SETNAME`, `CLIENT GETNAME`, `CONFIG GET`, `CONFIG SET`, `KEYS`, `SCAN`
 
+### Ferrite-Specific: Vector Search
+`VECTOR.CREATE`, `VECTOR.ADD`, `VECTOR.SEARCH`, `VECTOR.DELETE`, `VECTOR.INFO`
+
+```rust
+// Create an HNSW index for 384-dim embeddings
+client.vector_create("docs", 384)
+    .distance("cosine")
+    .index_type("hnsw")
+    .m(16)
+    .ef_construction(200)
+    .execute().await?;
+
+// Add a vector with metadata
+client.vector_add("docs", "doc:1", &[0.1, 0.2, 0.3, /* ... */])
+    .metadata(r#"{"title": "Hello"}"#)
+    .execute().await?;
+
+// Search for nearest neighbors
+let results = client.vector_search("docs", &query_embedding)
+    .top(10)
+    .filter("category = 'tech'")
+    .execute().await?;
+```
+
+### Ferrite-Specific: Semantic Caching
+`SEMANTIC.SET`, `SEMANTIC.GET`, `SEMANTIC.DEL`, `SEMANTIC.STATS`
+
+```rust
+// Cache a response by semantic meaning (reduces LLM API costs)
+client.semantic_set("What is Rust?", "Rust is a systems programming language...")
+    .ttl(3600)
+    .execute().await?;
+
+// Retrieve by meaning (not exact key match)
+let cached = client.semantic_get("Tell me about Rust programming")
+    .threshold(0.85)
+    .execute().await?;
+```
+
+### Ferrite-Specific: FerriteQL
+`QUERY`, `VIEW.CREATE`, `VIEW.QUERY`, `VIEW.DROP`
+
+```rust
+// Execute a FerriteQL query
+let results = client.query("FROM users:* WHERE $.active = true SELECT $.name")
+    .limit(100)
+    .execute().await?;
+
+// Create a materialized view
+client.create_view("active_users")
+    .query("FROM users:* WHERE $.active = true")
+    .refresh_interval(60)
+    .execute().await?;
+```
+
 ### Raw Commands
 
 For commands not yet in the typed API:
@@ -126,12 +181,15 @@ ferrite-rs/
 │   ├── error.rs        — Error types
 │   ├── types.rs        — Value types and ToArg trait
 │   └── commands/       — Command implementations
-│       ├── strings.rs
-│       ├── lists.rs
-│       ├── hashes.rs
-│       ├── sets.rs
-│       ├── sorted_sets.rs
-│       └── server.rs
+│       ├── strings.rs    — GET, SET, INCR, etc.
+│       ├── lists.rs      — LPUSH, RPOP, LRANGE, etc.
+│       ├── hashes.rs     — HSET, HGET, HGETALL, etc.
+│       ├── sets.rs       — SADD, SMEMBERS, etc.
+│       ├── sorted_sets.rs — ZADD, ZRANGE, etc.
+│       ├── server.rs     — PING, INFO, etc.
+│       ├── vector.rs     — VECTOR.CREATE/ADD/SEARCH (Ferrite-specific)
+│       ├── semantic.rs   — SEMANTIC.SET/GET (Ferrite-specific)
+│       └── ferriteql.rs  — QUERY, VIEW.* (Ferrite-specific)
 └── examples/
     └── basic.rs        — Usage example
 ```

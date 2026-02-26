@@ -384,6 +384,15 @@ impl Handler {
         // Check if this command needs RESP3 response transformation
         let resp3_transform = self.get_resp3_transform(&command);
 
+        // Check cluster slot redirect (MOVED/ASK) if cluster mode is active
+        if let Some(csm) = self.executor.cluster_state_manager() {
+            if let Some(redirect) = super::cluster_redirect::check_slot_redirect(csm, &command) {
+                self.log_audit_result(audit_entry, start_time, &redirect)
+                    .await;
+                return redirect;
+            }
+        }
+
         // Create OTel span for this command and execute within it
         let first_key = keys_for_otel.first().map(|k| k.as_bytes());
         let otel_span =

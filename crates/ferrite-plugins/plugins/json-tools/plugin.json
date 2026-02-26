@@ -1,0 +1,20 @@
+{
+  "name": "json-tools",
+  "display_name": "json-tools",
+  "description": "",
+  "version": "2.0.0",
+  "author": "",
+  "license": "Apache-2.0",
+  "homepage": null,
+  "repository": null,
+  "plugin_type": "Extension",
+  "min_ferrite_version": "0.1.0",
+  "sdk_version": "1.0.0",
+  "dependencies": [],
+  "tags": [],
+  "downloads": 0,
+  "rating": 0.0,
+  "rating_count": 0,
+  "published_at": "2026-02-25T23:35:50.311913Z",
+  "security_status": "Pending"
+}

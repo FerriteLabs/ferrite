@@ -57,6 +57,7 @@ use super::ScriptExecutor;
 pub mod admin;
 pub mod cluster;
 pub mod crdt;
+pub mod ebpf;
 pub mod keys;
 pub mod query;
 pub mod server;
@@ -92,6 +93,8 @@ pub mod s3;
 pub mod schema;
 
 // Handler modules — cloud feature
+#[cfg(feature = "cloud")]
+pub mod edge;
 #[cfg(feature = "cloud")]
 pub mod rag;
 #[cfg(feature = "cloud")]

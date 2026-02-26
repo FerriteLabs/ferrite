@@ -222,6 +222,11 @@ impl ClusterStateManager {
         self.importing_slots.remove(&slot);
     }
 
+    /// Return a snapshot of all known nodes.
+    pub fn all_nodes(&self) -> Vec<ClusterNodeInfo> {
+        self.nodes.iter().map(|entry| entry.value().clone()).collect()
+    }
+
     /// Determine whether a key should be processed locally, or redirected.
     pub fn check_redirect(&self, key: &[u8]) -> RedirectResult {
         let slot = HashSlot::for_key(key);

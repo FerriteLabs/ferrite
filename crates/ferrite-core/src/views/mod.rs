@@ -19,13 +19,19 @@
 //! - `VIEW.LIST`
 //! - `VIEW.REFRESH name`
 //! - `VIEW.INFO name`
+//! - `VIEW.SUBSCRIBE name` — subscribe to live view change notifications
+//! - `VIEW.UNSUBSCRIBE name` — unsubscribe from view changes
+//! - `VIEW.MAINTENANCE name` — get incremental maintenance statistics
 
 pub mod definition;
 pub mod dependency;
 pub mod engine;
 pub mod refresh;
 
-pub use definition::{RefreshStrategy, ViewDefinition, ViewRefreshResult, ViewRow, ViewStatus};
+pub use definition::{
+    RefreshStrategy, ViewChangeEvent, ViewChangeType, ViewDefinition, ViewMaintenanceStats,
+    ViewRefreshResult, ViewRow, ViewStatus, ViewSubscription,
+};
 pub use dependency::DependencyGraph;
 pub use engine::ViewEngine;
 pub use refresh::ViewRefresher;

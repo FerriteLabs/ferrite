@@ -1463,7 +1463,9 @@ impl CommandExecutor {
         use std::sync::OnceLock;
 
         static MARKETPLACE: OnceLock<Marketplace> = OnceLock::new();
-        let mp = MARKETPLACE.get_or_init(|| Marketplace::new(MarketplaceConfig::default()));
+        let mp = MARKETPLACE.get_or_init(|| {
+            Marketplace::with_builtin_catalog(MarketplaceConfig::default())
+        });
 
         match subcommand {
             "INSTALL" => {
@@ -1533,11 +1535,79 @@ impl CommandExecutor {
                     return Frame::error("ERR wrong number of arguments for 'PLUGIN INFO'");
                 }
                 let name = String::from_utf8_lossy(&args[0]).to_string();
-                if mp.is_installed(&name) {
-                    Frame::simple("installed")
-                } else {
-                    Frame::null()
+                let installed = mp.list_installed();
+                match installed.iter().find(|p| p.metadata.name == name) {
+                    Some(plugin) => {
+                        let mut items = Vec::new();
+                        items.push(Frame::bulk("name"));
+                        items.push(Frame::bulk(Bytes::from(plugin.metadata.name.clone())));
+                        items.push(Frame::bulk("version"));
+                        items.push(Frame::bulk(Bytes::from(plugin.metadata.version.clone())));
+                        items.push(Frame::bulk("description"));
+                        items.push(Frame::bulk(Bytes::from(
+                            plugin.metadata.description.clone(),
+                        )));
+                        items.push(Frame::bulk("author"));
+                        items.push(Frame::bulk(Bytes::from(plugin.metadata.author.clone())));
+                        items.push(Frame::bulk("license"));
+                        items.push(Frame::bulk(Bytes::from(plugin.metadata.license.clone())));
+                        items.push(Frame::bulk("type"));
+                        items.push(Frame::bulk(Bytes::from(format!(
+                            "{:?}",
+                            plugin.metadata.plugin_type
+                        ))));
+                        items.push(Frame::bulk("enabled"));
+                        items.push(Frame::Integer(if plugin.enabled { 1 } else { 0 }));
+                        items.push(Frame::bulk("tags"));
+                        items.push(Frame::Array(Some(
+                            plugin
+                                .metadata
+                                .tags
+                                .iter()
+                                .map(|t| Frame::bulk(Bytes::from(t.clone())))
+                                .collect(),
+                        )));
+                        items.push(Frame::bulk("installed_at"));
+                        items.push(Frame::bulk(Bytes::from(
+                            plugin.installed_at.to_rfc3339(),
+                        )));
+                        Frame::Array(Some(items))
+                    }
+                    None => Frame::null(),
                 }
+            }
+            "SEARCH" => {
+                if args.is_empty() {
+                    return Frame::error("ERR wrong number of arguments for 'PLUGIN SEARCH'");
+                }
+                let query = String::from_utf8_lossy(&args[0]).to_string();
+                let results = mp.search(&query);
+                let mut entries = Vec::with_capacity(results.len());
+                for plugin in &results {
+                    let mut entry = Vec::new();
+                    entry.push(Frame::bulk("name"));
+                    entry.push(Frame::bulk(Bytes::from(plugin.name.clone())));
+                    entry.push(Frame::bulk("version"));
+                    entry.push(Frame::bulk(Bytes::from(plugin.version.clone())));
+                    entry.push(Frame::bulk("description"));
+                    entry.push(Frame::bulk(Bytes::from(plugin.description.clone())));
+                    entry.push(Frame::bulk("author"));
+                    entry.push(Frame::bulk(Bytes::from(plugin.author.clone())));
+                    entry.push(Frame::bulk("downloads"));
+                    entry.push(Frame::Integer(plugin.downloads as i64));
+                    entry.push(Frame::bulk("rating"));
+                    entry.push(Frame::bulk(Bytes::from(format!("{:.1}", plugin.rating))));
+                    entry.push(Frame::bulk("tags"));
+                    entry.push(Frame::Array(Some(
+                        plugin
+                            .tags
+                            .iter()
+                            .map(|t| Frame::bulk(Bytes::from(t.clone())))
+                            .collect(),
+                    )));
+                    entries.push(Frame::array(entry));
+                }
+                Frame::array(entries)
             }
             "HELP" => Frame::array(vec![
                 Frame::bulk("PLUGIN INSTALL <name> [version]"),
@@ -1546,12 +1616,14 @@ impl CommandExecutor {
                 Frame::bulk("    Remove an installed plugin."),
                 Frame::bulk("PLUGIN LIST"),
                 Frame::bulk("    List all installed plugins."),
+                Frame::bulk("PLUGIN SEARCH <query>"),
+                Frame::bulk("    Search the marketplace for plugins."),
                 Frame::bulk("PLUGIN ENABLE <name>"),
                 Frame::bulk("    Enable a disabled plugin."),
                 Frame::bulk("PLUGIN DISABLE <name>"),
                 Frame::bulk("    Disable an installed plugin without removing it."),
                 Frame::bulk("PLUGIN INFO <name>"),
-                Frame::bulk("    Get information about a plugin."),
+                Frame::bulk("    Get detailed information about a plugin."),
             ]),
             _ => Frame::error(format!(
                 "ERR Unknown PLUGIN subcommand '{}'. Try PLUGIN HELP.",

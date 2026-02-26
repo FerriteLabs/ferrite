@@ -59,6 +59,8 @@ use super::streams;
 use super::strings;
 use super::{ScriptCache, ScriptExecutor};
 
+use super::handlers;
+
 /// Command metadata for ACL checking
 pub(crate) struct CommandMeta {
     pub(crate) name: &'static str,
@@ -1451,6 +1453,21 @@ impl CommandExecutor {
             // CDC commands
             Command::Cdc { subcommand, args } => self.cdc(&subcommand, &args).await,
 
+            // Edge runtime commands
+            #[cfg(feature = "cloud")]
+            Command::Edge { subcommand, args } => {
+                handlers::edge::handle_edge(&subcommand, &args)
+            }
+            #[cfg(not(feature = "cloud"))]
+            Command::Edge { .. } => {
+                Frame::error("ERR edge commands require the 'cloud' feature")
+            }
+
+            // eBPF tracing commands
+            Command::Ebpf { subcommand, args } => {
+                handlers::ebpf::handle_ebpf(&subcommand, &args)
+            }
+
             // Temporal commands
             Command::History {
                 key,
@@ -2095,6 +2112,11 @@ impl CommandExecutor {
                 self.ferrite_debug(&subcommand, &args).await
             }
 
+            // Workload profiler management
+            Command::AutoTune { subcommand, args } => {
+                self.handle_autotune(&subcommand, &args)
+            }
+
             // Hybrid vector search
             Command::VectorHybridSearch {
                 index,
@@ -2129,6 +2151,9 @@ impl CommandExecutor {
             Command::ViewList => self.handle_view_list().await,
             Command::ViewRefresh { name } => self.handle_view_refresh(&name).await,
             Command::ViewInfo { name } => self.handle_view_info(&name).await,
+            Command::ViewSubscribe { name } => self.handle_view_subscribe(&name).await,
+            Command::ViewUnsubscribe { name } => self.handle_view_unsubscribe(&name).await,
+            Command::ViewMaintenance { name } => self.handle_view_maintenance(&name).await,
 
             // Live migration commands
             Command::MigrateStart {
@@ -2225,6 +2250,16 @@ impl CommandExecutor {
             }
             Command::FederationContracts => self.handle_federation_contracts().await,
             Command::FederationStats => self.handle_federation_stats().await,
+
+            // Unified Query Gateway commands
+            Command::Gateway { subcommand, args } => {
+                self.handle_gateway(&subcommand, &args).await
+            }
+
+            // Cost-Aware Intelligent Tiering budget commands
+            Command::Budget { subcommand, args } => {
+                self.handle_budget(&subcommand, &args).await
+            }
 
             // Studio developer-experience commands
             Command::StudioSchema { db } => self.handle_studio_schema(db).await,

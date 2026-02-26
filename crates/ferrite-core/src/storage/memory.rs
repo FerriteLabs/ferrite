@@ -310,7 +310,10 @@ impl Default for Database {
     }
 }
 
+use std::sync::Arc;
+
 use crate::config::{StorageBackendType, StorageConfig};
+use crate::optimizer::profiler::{CommandKind, WorkloadProfiler};
 use crate::storage::hybridlog::{HybridLog, HybridLogConfig, HybridLogStats};
 
 /// Storage backend wrapper
@@ -327,6 +330,8 @@ pub struct Store {
     backend: StorageBackend,
     /// Number of databases
     num_dbs: usize,
+    /// Optional workload profiler for adaptive tiering
+    profiler: Option<Arc<WorkloadProfiler>>,
 }
 
 impl Store {
@@ -339,6 +344,7 @@ impl Store {
         Self {
             backend: StorageBackend::Memory(databases),
             num_dbs: num_databases as usize,
+            profiler: None,
         }
     }
 
@@ -366,9 +372,20 @@ impl Store {
                 Ok(Self {
                     backend: StorageBackend::HybridLog(hybrid_logs),
                     num_dbs: config.databases as usize,
+                    profiler: None,
                 })
             }
         }
+    }
+
+    /// Set the workload profiler for access pattern tracking.
+    pub fn set_profiler(&mut self, profiler: Arc<WorkloadProfiler>) {
+        self.profiler = Some(profiler);
+    }
+
+    /// Get the profiler reference.
+    pub fn profiler(&self) -> Option<&Arc<WorkloadProfiler>> {
+        self.profiler.as_ref()
     }
 
     /// Get the storage backend type
@@ -436,6 +453,10 @@ impl Store {
 
     /// Get a value from a specific database
     pub fn get(&self, db: u8, key: &Bytes) -> Option<Value> {
+        if let Some(profiler) = &self.profiler {
+            let key_str = String::from_utf8_lossy(key);
+            profiler.record_key_access(&key_str, CommandKind::Read, None);
+        }
         match &self.backend {
             StorageBackend::Memory(databases) => databases[db as usize].read().get(key),
             StorageBackend::HybridLog(logs) => {
@@ -469,6 +490,10 @@ impl Store {
 
     /// Set a value in a specific database
     pub fn set(&self, db: u8, key: Bytes, value: Value) {
+        if let Some(profiler) = &self.profiler {
+            let key_str = String::from_utf8_lossy(&key);
+            profiler.record_key_access(&key_str, CommandKind::Write, None);
+        }
         match &self.backend {
             StorageBackend::Memory(databases) => databases[db as usize].read().set(key, value),
             StorageBackend::HybridLog(logs) => {
@@ -1042,5 +1067,39 @@ mod tests {
         let store = Store::new(16);
         store.reset_stats(); // Should not panic
                              // Memory backend has no stats to check, just verify it doesn't crash
+    }
+
+    #[test]
+    fn test_store_profiler_integration() {
+        use crate::optimizer::profiler::WorkloadProfiler;
+
+        let profiler = Arc::new(WorkloadProfiler::new());
+        let mut store = Store::new(1);
+        store.set_profiler(profiler.clone());
+
+        assert!(store.profiler().is_some());
+
+        let key = Bytes::from("hello");
+        let value = Value::String(Bytes::from("world"));
+        store.set(0, key.clone(), value);
+        store.get(0, &key);
+        store.get(0, &key);
+
+        let snap = profiler.snapshot();
+        assert_eq!(snap.total_reads, 2);
+        assert_eq!(snap.total_writes, 1);
+        assert!(snap.unique_keys_accessed >= 1);
+    }
+
+    #[test]
+    fn test_store_without_profiler() {
+        let store = Store::new(1);
+        assert!(store.profiler().is_none());
+
+        // Operations should work fine without a profiler
+        let key = Bytes::from("test");
+        let value = Value::String(Bytes::from("data"));
+        store.set(0, key.clone(), value);
+        assert!(store.get(0, &key).is_some());
     }
 }

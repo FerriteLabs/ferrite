@@ -149,9 +149,8 @@ impl MarketplaceClient {
 
     /// Download the WASM binary for a plugin.
     ///
-    /// In the real implementation this performs an HTTP GET against
-    /// `{registry_url}/plugins/{name}/{version}/download`.
-    /// Returns the raw bytes of the `.ferrpkg` archive.
+    /// Performs an HTTP GET against `{registry_url}/plugins/{name}/{version}/download`.
+    /// Returns the raw bytes of the `.ferrpkg` archive (or WASM binary).
     pub async fn download(&self, name: &str, version: &str) -> Result<Vec<u8>, MarketplaceError> {
         if self.offline.load(std::sync::atomic::Ordering::Relaxed) {
             return Err(MarketplaceError::RegistryError(
@@ -162,12 +161,40 @@ impl MarketplaceClient {
         // Verify plugin exists in catalog
         let _meta = self.get_plugin(name, version).await?;
 
-        // Placeholder: real implementation would HTTP GET the binary.
-        // Return empty bytes to signal no-op.
-        Err(MarketplaceError::RegistryError(format!(
-            "download not implemented for {}@{} (registry: {})",
-            name, version, self.registry_url
-        )))
+        #[cfg(feature = "marketplace")]
+        {
+            let url = format!(
+                "{}/plugins/{}/{}/download",
+                self.registry_url, name, version
+            );
+
+            let client = reqwest::Client::builder()
+                .timeout(std::time::Duration::from_secs(120))
+                .build()
+                .map_err(|e| MarketplaceError::RegistryError(format!("HTTP client error: {e}")))?;
+
+            let response = client.get(&url).send().await.map_err(|e| {
+                MarketplaceError::RegistryError(format!("download request failed: {e}"))
+            })?;
+
+            if !response.status().is_success() {
+                return Err(MarketplaceError::RegistryError(format!(
+                    "download returned HTTP {}",
+                    response.status()
+                )));
+            }
+
+            let bytes = response.bytes().await.map_err(|e| {
+                MarketplaceError::RegistryError(format!("failed to read download body: {e}"))
+            })?;
+
+            return Ok(bytes.to_vec());
+        }
+
+        #[cfg(not(feature = "marketplace"))]
+        Err(MarketplaceError::RegistryError(
+            "download requires the 'marketplace' feature (compile with --features marketplace)".to_string(),
+        ))
     }
 
     /// List all available marketplace categories.
@@ -185,14 +212,44 @@ impl MarketplaceClient {
 
     /// Refresh the local catalog cache from the remote registry.
     ///
-    /// In the real implementation this fetches `{registry_url}/catalog`.
+    /// Fetches `{registry_url}/catalog` and updates the local cache.
     pub async fn refresh_catalog(&self) -> Result<usize, MarketplaceError> {
         if self.offline.load(std::sync::atomic::Ordering::Relaxed) {
             return Err(MarketplaceError::RegistryError(
                 "client is in offline mode".to_string(),
             ));
         }
-        // Placeholder: real implementation would HTTP GET and parse JSON.
+
+        #[cfg(feature = "marketplace")]
+        {
+            let url = format!("{}/catalog", self.registry_url);
+
+            let client = reqwest::Client::builder()
+                .timeout(std::time::Duration::from_secs(30))
+                .build()
+                .map_err(|e| MarketplaceError::RegistryError(format!("HTTP client error: {e}")))?;
+
+            let response = client.get(&url).send().await.map_err(|e| {
+                MarketplaceError::RegistryError(format!("catalog fetch failed: {e}"))
+            })?;
+
+            if !response.status().is_success() {
+                return Err(MarketplaceError::RegistryError(format!(
+                    "catalog returned HTTP {}",
+                    response.status()
+                )));
+            }
+
+            let catalog: Vec<PluginMetadata> = response.json().await.map_err(|e| {
+                MarketplaceError::RegistryError(format!("failed to parse catalog JSON: {e}"))
+            })?;
+
+            let count = catalog.len();
+            *self.catalog_cache.write() = catalog;
+            return Ok(count);
+        }
+
+        #[cfg(not(feature = "marketplace"))]
         Ok(self.catalog_cache.read().len())
     }
 

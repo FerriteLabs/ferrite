@@ -345,6 +345,8 @@ criterion.workspace = true
 proptest.workspace = true
 tokio-test.workspace = true
 tempfile.workspace = true
+ferrite-plugins = { workspace = true }
+ferrite-enterprise = { workspace = true }
 
 [features]
 # Default: Core + TLS + CLI (lean build; add "scripting", "cloud", "crypto" as needed)

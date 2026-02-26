@@ -83,6 +83,24 @@ pub(crate) fn parse_cdc(args: &[Frame]) -> Result<Command> {
     })
 }
 
+pub(crate) fn parse_edge(args: &[Frame]) -> Result<Command> {
+    if args.is_empty() {
+        return Err(FerriteError::WrongArity("EDGE".to_string()));
+    }
+
+    let subcommand = get_string(&args[0])?.to_uppercase();
+
+    let edge_args: Vec<bytes::Bytes> = args[1..]
+        .iter()
+        .filter_map(|f| get_bytes(f).ok())
+        .collect();
+
+    Ok(Command::Edge {
+        subcommand,
+        args: edge_args,
+    })
+}
+
 pub(crate) fn parse_history(args: &[Frame]) -> Result<Command> {
     if args.is_empty() {
         return Err(FerriteError::WrongArity("HISTORY".to_string()));
@@ -259,5 +277,23 @@ pub(crate) fn parse_temporal(args: &[Frame]) -> Result<Command> {
     Ok(Command::Temporal {
         subcommand,
         args: temporal_args,
+    })
+}
+
+pub(crate) fn parse_ebpf(args: &[Frame]) -> Result<Command> {
+    if args.is_empty() {
+        return Err(FerriteError::WrongArity("EBPF".to_string()));
+    }
+
+    let subcommand = get_string(&args[0])?.to_uppercase();
+
+    let ebpf_args: Vec<String> = args[1..]
+        .iter()
+        .filter_map(|f| get_string(f).ok())
+        .collect();
+
+    Ok(Command::Ebpf {
+        subcommand,
+        args: ebpf_args,
     })
 }

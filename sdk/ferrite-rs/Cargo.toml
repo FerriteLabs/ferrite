@@ -6,10 +6,13 @@ rust-version = "1.80"
 authors = ["Jose David Baena"]
 license = "Apache-2.0"
 repository = "https://github.com/ferritelabs/ferrite"
-description = "Official Rust client SDK for Ferrite — a high-performance Redis-compatible key-value store"
+homepage = "https://github.com/ferritelabs/ferrite"
+documentation = "https://docs.rs/ferrite-rs"
+description = "Official Rust client SDK for Ferrite — a high-performance Redis-compatible key-value store with vector search, semantic caching, and FerriteQL"
 readme = "README.md"
-keywords = ["ferrite", "redis", "client", "cache", "key-value"]
+keywords = ["ferrite", "redis", "client", "cache", "vector-search"]
 categories = ["database", "caching", "network-programming"]
+exclude = ["/tests", "/examples"]
 
 [dependencies]
 tokio = { version = "1", features = ["net", "io-util", "rt", "sync", "time", "macros"] }

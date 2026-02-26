@@ -86,6 +86,48 @@ impl VectorClock {
     pub fn clocks(&self) -> &BTreeMap<String, u64> {
         &self.clocks
     }
+
+    /// Alias for [`clocks`] — returns a reference to the internal map.
+    pub fn to_map(&self) -> &BTreeMap<String, u64> {
+        &self.clocks
+    }
+
+    /// Check if this clock strictly dominates another (happened after).
+    pub fn dominates(&self, other: &VectorClock) -> bool {
+        matches!(self.compare(other), ClockOrdering::After)
+    }
+}
+
+/// Record of a detected conflict for audit / diagnostics.
+#[derive(Debug, Clone)]
+pub struct ConflictRecord {
+    /// Key involved in the conflict.
+    pub key: String,
+    /// Region A identifier.
+    pub region_a: String,
+    /// Region B identifier.
+    pub region_b: String,
+    /// Vector clock from region A.
+    pub clock_a: VectorClock,
+    /// Vector clock from region B.
+    pub clock_b: VectorClock,
+    /// How the conflict was resolved.
+    pub resolution: ConflictResolutionKind,
+    /// When the conflict was recorded.
+    pub timestamp: std::time::SystemTime,
+}
+
+/// The kind of resolution applied to a conflict.
+#[derive(Debug, Clone)]
+pub enum ConflictResolutionKind {
+    /// Last writer wins based on timestamp.
+    LastWriterWins,
+    /// CRDT-aware merge.
+    CrdtMerge,
+    /// A specific region was given priority.
+    RegionPriority(String),
+    /// Deferred to manual resolution.
+    Manual,
 }
 
 #[cfg(test)]
@@ -182,5 +224,29 @@ mod tests {
         a.merge(&b);
         assert_eq!(a.get("r1"), 3); // kept higher
         assert_eq!(a.get("r2"), 2); // merged in
+    }
+
+    #[test]
+    fn test_dominates() {
+        let mut a = VectorClock::new();
+        a.increment("r1");
+        a.increment("r1");
+
+        let mut b = VectorClock::new();
+        b.increment("r1");
+
+        assert!(a.dominates(&b));
+        assert!(!b.dominates(&a));
+    }
+
+    #[test]
+    fn test_to_map() {
+        let mut vc = VectorClock::new();
+        vc.increment("r1");
+        vc.increment("r2");
+        let map = vc.to_map();
+        assert_eq!(map.len(), 2);
+        assert_eq!(map["r1"], 1);
+        assert_eq!(map["r2"], 1);
     }
 }

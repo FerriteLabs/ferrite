@@ -3,13 +3,19 @@
 //! Each sub-module provides command builders for a specific command group
 //! (strings, lists, hashes, sets, sorted sets, server). All builders follow
 //! the pattern of accumulating options and executing via `.execute().await`.
+//!
+//! Ferrite-specific command modules (vector, ferriteql, semantic) provide
+//! type-safe builders for features beyond standard Redis.
 
+pub mod ferriteql;
 pub mod hashes;
 pub mod lists;
+pub mod semantic;
 pub mod server;
 pub mod sets;
 pub mod sorted_sets;
 pub mod strings;
+pub mod vector;
 
 use bytes::Bytes;
 

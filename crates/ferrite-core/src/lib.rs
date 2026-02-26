@@ -40,6 +40,8 @@ pub mod transaction;
 // ── Modules with core deps (moved here to avoid circular deps) ───────────────
 
 pub mod audit;
+pub mod gateway;
+pub mod graphql;
 pub mod grpc;
 pub mod optimizer;
 pub mod temporal;

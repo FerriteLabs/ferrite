@@ -761,6 +761,20 @@ pub enum Command {
         /// Arguments
         args: Vec<String>,
     },
+    /// EDGE subcommand [args...] - Edge runtime commands
+    Edge {
+        /// Subcommand (STATUS, STATS, CONFIG, SYNC, PREFIXES)
+        subcommand: String,
+        /// Arguments
+        args: Vec<Bytes>,
+    },
+    /// EBPF subcommand [args...] - eBPF tracing management
+    Ebpf {
+        /// Subcommand (STATUS, PROBES, STATS, ATTACH, DETACH)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
     /// HISTORY key [FROM ts] [TO ts] [LIMIT count] [ORDER ASC|DESC] [WITHVALUES]
     History {
         /// Key to get history for
@@ -1429,6 +1443,14 @@ pub enum Command {
         args: Vec<String>,
     },
 
+    /// AUTOTUNE subcommand [args...] - Workload profiler management
+    AutoTune {
+        /// Subcommand (STATUS, REPORT, ENABLE, DISABLE)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+
     // Hybrid vector search commands
     /// VECTOR.HYBRID index query_vector query_text [TOP k] [ALPHA f] [STRATEGY rrf|linear]
     VectorHybridSearch {
@@ -1490,6 +1512,21 @@ pub enum Command {
     ViewInfo {
         /// View name
         name: Bytes,
+    },
+    /// VIEW.SUBSCRIBE name — subscribe to view changes
+    ViewSubscribe {
+        /// View name
+        name: String,
+    },
+    /// VIEW.UNSUBSCRIBE name — unsubscribe from view changes
+    ViewUnsubscribe {
+        /// View name
+        name: String,
+    },
+    /// VIEW.MAINTENANCE name — get maintenance stats for a view
+    ViewMaintenance {
+        /// View name
+        name: String,
     },
 
     // Live migration commands
@@ -1625,6 +1662,24 @@ pub enum Command {
     FederationContracts,
     /// FEDERATION.STATS
     FederationStats,
+
+    // Unified Query Gateway commands
+    /// GATEWAY subcommand [args...] — Multi-protocol gateway management
+    Gateway {
+        /// Subcommand (STATUS, ENDPOINTS, SCHEMA, STATS)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+
+    // Cost-Aware Intelligent Tiering budget commands
+    /// BUDGET subcommand [args...] — Budget management for storage tiers
+    Budget {
+        /// Subcommand (SET, REPORT, STATUS)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
 
     // Studio developer-experience commands
     /// STUDIO.SCHEMA [DB n]
@@ -1842,6 +1897,8 @@ impl Command {
             "CLUSTER" => parsers::cluster::parse_cluster(args),
             "TIERING" => parsers::cluster::parse_tiering(args),
             "CDC" => parsers::cluster::parse_cdc(args),
+            "EDGE" => parsers::cluster::parse_edge(args),
+            "EBPF" => parsers::cluster::parse_ebpf(args),
             "HISTORY" => parsers::cluster::parse_history(args),
             "HISTORY.COUNT" => parsers::cluster::parse_history_count(args),
             "HISTORY.FIRST" => parsers::cluster::parse_history_first(args),
@@ -1973,6 +2030,9 @@ impl Command {
             // Adaptive query optimizer
             "FERRITE.ADVISOR" => parsers::advanced::parse_ferrite_advisor(args),
 
+            // Workload profiler management
+            "AUTOTUNE" => parsers::advanced::parse_autotune(args),
+
             // Integrated observability diagnostics
             "FERRITE.DEBUG" => parsers::advanced::parse_ferrite_debug(args),
 
@@ -1987,6 +2047,9 @@ impl Command {
             "VIEW.LIST" => parsers::advanced::parse_view_list(args),
             "VIEW.REFRESH" => parsers::advanced::parse_view_refresh(args),
             "VIEW.INFO" => parsers::advanced::parse_view_info(args),
+            "VIEW.SUBSCRIBE" => parsers::advanced::parse_view_subscribe(args),
+            "VIEW.UNSUBSCRIBE" => parsers::advanced::parse_view_unsubscribe(args),
+            "VIEW.MAINTENANCE" => parsers::advanced::parse_view_maintenance(args),
 
             // Live migration commands
             "MIGRATE.START" => parsers::advanced::parse_migrate_start(args),
@@ -2029,6 +2092,12 @@ impl Command {
             "FEDERATION.CONTRACT" => parsers::advanced::parse_federation_contract(args),
             "FEDERATION.CONTRACTS" => Ok(Command::FederationContracts),
             "FEDERATION.STATS" => Ok(Command::FederationStats),
+
+            // Unified Query Gateway commands
+            "GATEWAY" => parsers::advanced::parse_gateway(args),
+
+            // Cost-Aware Intelligent Tiering budget commands
+            "BUDGET" => parsers::advanced::parse_budget(args),
 
             // Studio developer-experience commands
             "STUDIO.SCHEMA" => parsers::advanced::parse_studio_schema(args),

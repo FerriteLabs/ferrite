@@ -2,6 +2,7 @@
 //!
 //! This module implements the TCP server and connection handling.
 
+pub mod cluster_redirect;
 mod connection;
 mod handler;
 mod listener;

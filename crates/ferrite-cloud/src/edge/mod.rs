@@ -311,6 +311,204 @@ pub struct EdgeStatsSnapshot {
 }
 
 // ---------------------------------------------------------------------------
+// Edge Runtime
+// ---------------------------------------------------------------------------
+
+/// Status of the edge runtime.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum EdgeRuntimeStatus {
+    /// Node is initializing.
+    Initializing,
+    /// Node is syncing initial state.
+    Syncing,
+    /// Node is online and serving requests.
+    Online,
+    /// Node is offline (upstream unreachable).
+    Offline,
+    /// Node is degraded (partial sync).
+    Degraded,
+}
+
+/// Sync statistics tracked by the edge runtime.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct EdgeSyncStats {
+    /// Last successful sync time.
+    pub last_sync: Option<chrono::DateTime<chrono::Utc>>,
+    /// Total number of syncs.
+    pub total_syncs: u64,
+    /// Number of failed syncs.
+    pub failed_syncs: u64,
+    /// Total bytes sent.
+    pub bytes_sent: u64,
+    /// Total bytes received.
+    pub bytes_received: u64,
+    /// Number of keys synced.
+    pub keys_synced: u64,
+    /// Number of conflicts resolved.
+    pub conflicts_resolved: u64,
+    /// Average sync duration in milliseconds.
+    pub avg_sync_duration_ms: f64,
+    /// Current sync lag in milliseconds.
+    pub sync_lag_ms: u64,
+}
+
+/// Edge runtime manager providing high-level status, sync tracking, and
+/// CRDT-aware conflict resolution bookkeeping.
+pub struct EdgeRuntime {
+    node: EdgeNode,
+    status: EdgeRuntimeStatus,
+    sync_stats: EdgeSyncStats,
+    started_at: std::time::Instant,
+    local_version: u64,
+    /// Data prefixes replicated to this edge node.
+    replicated_prefixes: Vec<String>,
+}
+
+impl EdgeRuntime {
+    /// Create a new edge runtime from the given [`EdgeConfig`].
+    pub fn new(config: EdgeConfig) -> Self {
+        Self {
+            node: EdgeNode::new(config),
+            status: EdgeRuntimeStatus::Initializing,
+            sync_stats: EdgeSyncStats::default(),
+            started_at: std::time::Instant::now(),
+            local_version: 0,
+            replicated_prefixes: vec!["*".to_string()],
+        }
+    }
+
+    /// Create an edge runtime with default configuration.
+    pub fn with_defaults() -> Self {
+        Self::new(EdgeConfig::default())
+    }
+
+    /// Current runtime status.
+    pub fn status(&self) -> EdgeRuntimeStatus {
+        self.status
+    }
+
+    /// Reference to the underlying [`EdgeConfig`].
+    pub fn config(&self) -> &EdgeConfig {
+        self.node.config()
+    }
+
+    /// Reference to the sync statistics.
+    pub fn sync_stats(&self) -> &EdgeSyncStats {
+        &self.sync_stats
+    }
+
+    /// How long this runtime has been up.
+    pub fn uptime(&self) -> Duration {
+        self.started_at.elapsed()
+    }
+
+    /// Node identifier.
+    pub fn node_id(&self) -> &str {
+        self.node.node_id()
+    }
+
+    /// The replicated key prefixes.
+    pub fn replicated_prefixes(&self) -> &[String] {
+        &self.replicated_prefixes
+    }
+
+    /// Set the replicated prefixes.
+    pub fn set_replicated_prefixes(&mut self, prefixes: Vec<String>) {
+        self.replicated_prefixes = prefixes;
+    }
+
+    /// Record a successful sync.
+    pub fn record_sync(
+        &mut self,
+        bytes_sent: u64,
+        bytes_received: u64,
+        keys: u64,
+        duration: Duration,
+    ) {
+        self.sync_stats.last_sync = Some(chrono::Utc::now());
+        self.sync_stats.total_syncs += 1;
+        self.sync_stats.bytes_sent += bytes_sent;
+        self.sync_stats.bytes_received += bytes_received;
+        self.sync_stats.keys_synced += keys;
+
+        let prev_total =
+            self.sync_stats.avg_sync_duration_ms * (self.sync_stats.total_syncs - 1) as f64;
+        self.sync_stats.avg_sync_duration_ms =
+            (prev_total + duration.as_millis() as f64) / self.sync_stats.total_syncs as f64;
+        self.sync_stats.sync_lag_ms = 0;
+        self.local_version += 1;
+
+        self.node.record_sync_success(bytes_sent + bytes_received);
+
+        if self.status == EdgeRuntimeStatus::Initializing
+            || self.status == EdgeRuntimeStatus::Offline
+        {
+            self.status = EdgeRuntimeStatus::Online;
+        }
+    }
+
+    /// Record a failed sync attempt.
+    pub fn record_sync_failure(&mut self) {
+        self.sync_stats.failed_syncs += 1;
+        self.node.record_sync_failure();
+
+        if self.sync_stats.failed_syncs > 3 && self.status == EdgeRuntimeStatus::Online {
+            self.status = EdgeRuntimeStatus::Degraded;
+        }
+        if self.sync_stats.failed_syncs > 10 {
+            self.status = EdgeRuntimeStatus::Offline;
+        }
+    }
+
+    /// Record a resolved conflict.
+    pub fn record_conflict(&mut self) {
+        self.sync_stats.conflicts_resolved += 1;
+    }
+
+    /// Build a summary map suitable for RESP display.
+    pub fn summary(&self) -> std::collections::HashMap<String, String> {
+        let mut info = std::collections::HashMap::new();
+        info.insert("node_id".into(), self.node.node_id().to_string());
+        info.insert("status".into(), format!("{:?}", self.status));
+        info.insert(
+            "uptime_secs".into(),
+            self.started_at.elapsed().as_secs().to_string(),
+        );
+        info.insert(
+            "total_syncs".into(),
+            self.sync_stats.total_syncs.to_string(),
+        );
+        info.insert(
+            "failed_syncs".into(),
+            self.sync_stats.failed_syncs.to_string(),
+        );
+        info.insert(
+            "keys_synced".into(),
+            self.sync_stats.keys_synced.to_string(),
+        );
+        info.insert(
+            "conflicts_resolved".into(),
+            self.sync_stats.conflicts_resolved.to_string(),
+        );
+        info.insert("local_version".into(), self.local_version.to_string());
+        info.insert(
+            "conflict_resolution".into(),
+            format!("{:?}", self.node.conflict_resolution()),
+        );
+        info.insert(
+            "sync_policy".into(),
+            format!("{:?}", self.node.sync_policy()),
+        );
+        info.insert(
+            "offline_queue_len".into(),
+            self.node.offline_queue_len().to_string(),
+        );
+        info.insert("is_online".into(), self.node.is_online().to_string());
+        info
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Error type
 // ---------------------------------------------------------------------------
 
@@ -427,5 +625,53 @@ mod tests {
         assert_eq!(stats.syncs_completed, 1);
         assert_eq!(stats.bytes_synced, 1024);
         assert_eq!(stats.offline_queue_len, 1);
+    }
+
+    #[test]
+    fn test_edge_runtime_creation() {
+        let rt = EdgeRuntime::with_defaults();
+        assert_eq!(rt.status(), EdgeRuntimeStatus::Initializing);
+        assert_eq!(rt.node_id(), "edge-default");
+        assert_eq!(rt.replicated_prefixes(), &["*".to_string()]);
+    }
+
+    #[test]
+    fn test_edge_runtime_record_sync() {
+        let mut rt = EdgeRuntime::with_defaults();
+        rt.record_sync(100, 200, 10, Duration::from_millis(50));
+        assert_eq!(rt.status(), EdgeRuntimeStatus::Online);
+        assert_eq!(rt.sync_stats().total_syncs, 1);
+        assert_eq!(rt.sync_stats().bytes_sent, 100);
+        assert_eq!(rt.sync_stats().bytes_received, 200);
+        assert_eq!(rt.sync_stats().keys_synced, 10);
+    }
+
+    #[test]
+    fn test_edge_runtime_degraded_on_failures() {
+        let mut rt = EdgeRuntime::with_defaults();
+        // First bring online
+        rt.record_sync(0, 0, 0, Duration::from_millis(1));
+        assert_eq!(rt.status(), EdgeRuntimeStatus::Online);
+
+        // 4 failures → degraded
+        for _ in 0..4 {
+            rt.record_sync_failure();
+        }
+        assert_eq!(rt.status(), EdgeRuntimeStatus::Degraded);
+
+        // 7 more failures (total 11) → offline
+        for _ in 0..7 {
+            rt.record_sync_failure();
+        }
+        assert_eq!(rt.status(), EdgeRuntimeStatus::Offline);
+    }
+
+    #[test]
+    fn test_edge_runtime_summary() {
+        let rt = EdgeRuntime::with_defaults();
+        let summary = rt.summary();
+        assert!(summary.contains_key("node_id"));
+        assert!(summary.contains_key("status"));
+        assert!(summary.contains_key("total_syncs"));
     }
 }

@@ -73,6 +73,76 @@ pub struct ViewRefreshResult {
     pub was_stale: bool,
 }
 
+// ---------------------------------------------------------------------------
+// Subscription types for VIEW.SUBSCRIBE
+// ---------------------------------------------------------------------------
+
+/// Subscription handle for view change notifications.
+#[derive(Debug, Clone)]
+pub struct ViewSubscription {
+    /// Name of the view being observed.
+    pub view_name: String,
+    /// Unique identifier for this subscription.
+    pub subscriber_id: String,
+    /// When the subscription was created.
+    pub created_at: std::time::SystemTime,
+    /// Number of events delivered so far.
+    pub events_delivered: u64,
+}
+
+/// A change event emitted to subscribers.
+#[derive(Debug, Clone)]
+pub struct ViewChangeEvent {
+    /// Name of the view that changed.
+    pub view_name: String,
+    /// Kind of change.
+    pub change_type: ViewChangeType,
+    /// When the change occurred.
+    pub timestamp: std::time::SystemTime,
+    /// Number of rows affected.
+    pub affected_rows: u64,
+    /// Optional payload data.
+    pub data: Option<String>,
+}
+
+/// The kind of change that occurred on a view.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ViewChangeType {
+    /// New rows added to the view.
+    Insert,
+    /// Existing rows updated.
+    Update,
+    /// Rows removed from the view.
+    Delete,
+    /// Full or incremental refresh completed.
+    Refresh,
+    /// The view definition itself was altered.
+    SchemaChange,
+}
+
+// ---------------------------------------------------------------------------
+// Incremental maintenance statistics
+// ---------------------------------------------------------------------------
+
+/// Statistics about a view's incremental maintenance.
+#[derive(Debug, Clone, Default)]
+pub struct ViewMaintenanceStats {
+    /// Total number of refresh operations.
+    pub total_refreshes: u64,
+    /// Number of incremental (delta) updates.
+    pub incremental_updates: u64,
+    /// Number of full recomputes.
+    pub full_recomputes: u64,
+    /// Average refresh duration in milliseconds.
+    pub avg_refresh_ms: f64,
+    /// When the last refresh completed.
+    pub last_refresh: Option<std::time::SystemTime>,
+    /// Number of pending source changes not yet applied.
+    pub pending_changes: u64,
+    /// Estimated staleness in milliseconds.
+    pub staleness_ms: u64,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

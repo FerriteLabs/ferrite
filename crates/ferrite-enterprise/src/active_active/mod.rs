@@ -14,4 +14,4 @@ pub use region::{Region, RegionStatus};
 pub use replicator::{
     ActiveActiveReplicator, ConsistencyLevel, ReplicationConfig, ReplicationStats,
 };
-pub use vector_clock::{ClockOrdering, VectorClock};
+pub use vector_clock::{ClockOrdering, ConflictRecord, ConflictResolutionKind, VectorClock};

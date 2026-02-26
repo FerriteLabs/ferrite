@@ -32,6 +32,10 @@ mod model;
 mod planner;
 mod strategy;
 
+/// Budget management for cost-aware intelligent tiering.
+pub mod budget;
+
+pub use budget::{BudgetConfig, BudgetReport, BudgetStatus, TierCostModel};
 pub use executor::{CostAwareExecutor, CostMetrics, ExecutionHints};
 pub use model::{CostEstimate, CostModel, ResourceCost, TierCost};
 pub use planner::{CostAwarePlanner, OptimizedPlan, PlanChoice};

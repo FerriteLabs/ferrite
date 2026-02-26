@@ -34,6 +34,7 @@ impl CommandExecutor {
             "SAVECONFIG" => self.cluster_saveconfig(),
             "FLUSHSLOTS" => self.cluster_flushslots(),
             "SET-CONFIG-EPOCH" => self.cluster_set_config_epoch(args),
+            "LINKS" => self.cluster_links(),
             "HELP" => self.cluster_help(),
             _ => Frame::error(format!(
                 "ERR Unknown subcommand or wrong number of arguments for '{}'",
@@ -564,6 +565,50 @@ total_cluster_links_buffer_limit_exceeded:0";
         Frame::simple("OK")
     }
 
+    // ── LINKS (Redis 7.0+) ────────────────────────────────────────────
+
+    fn cluster_links(&self) -> Frame {
+        if let Some(csm) = &self.cluster_state {
+            let nodes = csm.all_nodes();
+            let my_id = csm.my_id().to_string();
+            let mut links = Vec::new();
+            for node in &nodes {
+                if node.node_id == my_id {
+                    continue;
+                }
+                links.push(Frame::Map(std::collections::HashMap::from([
+                    (
+                        Bytes::from_static(b"direction"),
+                        Frame::bulk("to"),
+                    ),
+                    (
+                        Bytes::from_static(b"node"),
+                        Frame::bulk(node.node_id.clone()),
+                    ),
+                    (
+                        Bytes::from_static(b"create-time"),
+                        Frame::Integer(0),
+                    ),
+                    (
+                        Bytes::from_static(b"events"),
+                        Frame::bulk("rw"),
+                    ),
+                    (
+                        Bytes::from_static(b"send-buffer-allocated"),
+                        Frame::Integer(0),
+                    ),
+                    (
+                        Bytes::from_static(b"send-buffer-used"),
+                        Frame::Integer(0),
+                    ),
+                ])));
+            }
+            Frame::array(links)
+        } else {
+            Frame::array(vec![])
+        }
+    }
+
     // ── HELP ────────────────────────────────────────────────────────────
 
     fn cluster_help(&self) -> Frame {
@@ -588,6 +633,7 @@ total_cluster_links_buffer_limit_exceeded:0";
             Frame::bulk("SAVECONFIG -- Save cluster config to disk."),
             Frame::bulk("FLUSHSLOTS -- Delete all slots from this node."),
             Frame::bulk("SET-CONFIG-EPOCH <epoch> -- Set configuration epoch."),
+            Frame::bulk("LINKS -- Return information about cluster links (Redis 7.0+)."),
         ])
     }
 

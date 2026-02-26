@@ -64,3 +64,14 @@ pub use connection::ConnectionConfig;
 pub use error::{Error, Result};
 pub use pool::PoolConfig;
 pub use types::{ToArg, Value};
+
+// ── Ferrite-specific command builders ───────────────────────────────────────
+
+pub use commands::ferriteql::{CreateViewCommand, DropViewCommand, QueryCommand, QueryViewCommand};
+pub use commands::semantic::{
+    SemanticDelCommand, SemanticGetCommand, SemanticSetCommand, SemanticStatsCommand,
+};
+pub use commands::vector::{
+    VectorAddCommand, VectorCreateCommand, VectorDeleteCommand, VectorInfoCommand,
+    VectorSearchCommand,
+};

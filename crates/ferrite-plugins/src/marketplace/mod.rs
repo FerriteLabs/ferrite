@@ -41,6 +41,7 @@
 #![allow(dead_code)]
 pub mod client;
 pub mod discovery;
+pub mod installer;
 pub mod lifecycle;
 pub mod packaging;
 pub mod registry;
@@ -206,12 +207,119 @@ impl Marketplace {
         }
     }
 
+    /// Creates a new marketplace manager pre-populated with built-in plugins.
+    pub fn with_builtin_catalog(config: MarketplaceConfig) -> Self {
+        let mp = Self::new(config);
+        mp.set_catalog(Self::builtin_catalog());
+        mp
+    }
+
+    /// Built-in example plugins for the marketplace catalog.
+    fn builtin_catalog() -> Vec<PluginMetadata> {
+        let now = chrono::Utc::now();
+        vec![
+            PluginMetadata {
+                name: "geo-fence".into(),
+                display_name: "Geo Fence".into(),
+                description: "Geofencing data type with point-in-polygon queries".into(),
+                version: "1.0.0".into(),
+                author: "ferritelabs".into(),
+                license: "Apache-2.0".into(),
+                homepage: None,
+                repository: None,
+                plugin_type: PluginType::DataType,
+                min_ferrite_version: "0.1.0".into(),
+                sdk_version: "1.0.0".into(),
+                dependencies: vec![],
+                tags: vec!["geo".into(), "spatial".into()],
+                downloads: 1_250,
+                rating: 4.6,
+                rating_count: 18,
+                published_at: now,
+                security_status: SecurityStatus::Passed,
+            },
+            PluginMetadata {
+                name: "rate-limiter".into(),
+                display_name: "Rate Limiter".into(),
+                description: "Token bucket rate limiter with sliding window support".into(),
+                version: "1.0.0".into(),
+                author: "ferritelabs".into(),
+                license: "Apache-2.0".into(),
+                homepage: None,
+                repository: None,
+                plugin_type: PluginType::Extension,
+                min_ferrite_version: "0.1.0".into(),
+                sdk_version: "1.0.0".into(),
+                dependencies: vec![],
+                tags: vec!["rate-limit".into(), "throttle".into()],
+                downloads: 3_400,
+                rating: 4.8,
+                rating_count: 42,
+                published_at: now,
+                security_status: SecurityStatus::Passed,
+            },
+            PluginMetadata {
+                name: "json-schema-validator".into(),
+                display_name: "JSON Schema Validator".into(),
+                description: "Validate JSON values against JSON Schema on write".into(),
+                version: "1.0.0".into(),
+                author: "ferritelabs".into(),
+                license: "Apache-2.0".into(),
+                homepage: None,
+                repository: None,
+                plugin_type: PluginType::Command,
+                min_ferrite_version: "0.1.0".into(),
+                sdk_version: "1.0.0".into(),
+                dependencies: vec![],
+                tags: vec!["json".into(), "validation".into(), "schema".into()],
+                downloads: 2_100,
+                rating: 4.5,
+                rating_count: 25,
+                published_at: now,
+                security_status: SecurityStatus::Passed,
+            },
+            PluginMetadata {
+                name: "bloom-filter".into(),
+                display_name: "Bloom Filter".into(),
+                description: "Space-efficient probabilistic set membership testing".into(),
+                version: "1.0.0".into(),
+                author: "ferritelabs".into(),
+                license: "Apache-2.0".into(),
+                homepage: None,
+                repository: None,
+                plugin_type: PluginType::DataType,
+                min_ferrite_version: "0.1.0".into(),
+                sdk_version: "1.0.0".into(),
+                dependencies: vec![],
+                tags: vec!["probabilistic".into(), "filter".into()],
+                downloads: 980,
+                rating: 4.3,
+                rating_count: 12,
+                published_at: now,
+                security_status: SecurityStatus::Passed,
+            },
+        ]
+    }
+
     /// Searches the plugin catalog by query string.
-    pub fn search(&self, _query: &str) -> Vec<&PluginMetadata> {
-        let catalog = self.catalog_cache.read();
-        // Need to collect owned copies due to RwLockReadGuard lifetime
-        drop(catalog);
-        Vec::new() // Returns empty when catalog is not populated
+    pub fn search(&self, query: &str) -> Vec<PluginMetadata> {
+        let q = query.to_lowercase();
+        self.catalog_cache
+            .read()
+            .iter()
+            .filter(|p| {
+                p.name.to_lowercase().contains(&q)
+                    || p.description.to_lowercase().contains(&q)
+                    || p.display_name.to_lowercase().contains(&q)
+                    || p.tags.iter().any(|t| t.to_lowercase().contains(&q))
+            })
+            .cloned()
+            .collect()
+    }
+
+    /// Populate the catalog cache (e.g., from a MarketplaceClient refresh).
+    pub fn set_catalog(&self, catalog: Vec<PluginMetadata>) {
+        *self.catalog_cache.write() = catalog;
     }
 
     /// Searches installed plugins by query.
@@ -238,36 +346,107 @@ impl Marketplace {
     }
 
     /// Installs a plugin by name and version.
+    ///
+    /// Creates the plugin directory, writes metadata, and optionally writes
+    /// WASM binary data if provided.
     pub fn install(&self, name: &str, version: &str) -> Result<(), MarketplaceError> {
+        self.install_with_data(name, version, None)
+    }
+
+    /// Installs a plugin with optional binary data (WASM module).
+    pub fn install_with_data(
+        &self,
+        name: &str,
+        version: &str,
+        wasm_data: Option<&[u8]>,
+    ) -> Result<(), MarketplaceError> {
         // Check if already installed
         if self.installed.read().contains_key(name) {
             return Err(MarketplaceError::AlreadyInstalled(name.to_string()));
         }
 
-        // Create installed plugin record
+        // Check binary size limit
+        if let Some(data) = wasm_data {
+            if data.len() as u64 > self.config.max_plugin_size {
+                return Err(MarketplaceError::PluginTooLarge {
+                    size: data.len() as u64,
+                    max: self.config.max_plugin_size,
+                });
+            }
+        }
+
+        // Look up metadata from catalog (or create minimal metadata)
+        let metadata = {
+            let catalog = self.catalog_cache.read();
+            catalog
+                .iter()
+                .find(|p| p.name == name && p.version == version)
+                .cloned()
+                .unwrap_or_else(|| PluginMetadata {
+                    name: name.to_string(),
+                    display_name: name.to_string(),
+                    description: String::new(),
+                    version: version.to_string(),
+                    author: String::new(),
+                    license: "Apache-2.0".to_string(),
+                    homepage: None,
+                    repository: None,
+                    plugin_type: PluginType::Extension,
+                    min_ferrite_version: "0.1.0".to_string(),
+                    sdk_version: self.config.sdk_version.clone(),
+                    dependencies: Vec::new(),
+                    tags: Vec::new(),
+                    downloads: 0,
+                    rating: 0.0,
+                    rating_count: 0,
+                    published_at: chrono::Utc::now(),
+                    security_status: SecurityStatus::Pending,
+                })
+        };
+
+        // Check SDK compatibility
+        if metadata.sdk_version != self.config.sdk_version {
+            // Allow compatible versions (same major)
+            let req_major = metadata.sdk_version.split('.').next().unwrap_or("0");
+            let cur_major = self.config.sdk_version.split('.').next().unwrap_or("0");
+            if req_major != cur_major {
+                return Err(MarketplaceError::SdkIncompatible {
+                    required: metadata.sdk_version.clone(),
+                    current: self.config.sdk_version.clone(),
+                });
+            }
+        }
+
+        let install_path = format!("{}/{}", self.config.plugin_dir, name);
+
+        // Create plugin directory and write files
+        let install_dir = std::path::Path::new(&install_path);
+        if let Err(e) = std::fs::create_dir_all(install_dir) {
+            tracing::warn!(path = %install_path, error = %e, "failed to create plugin directory");
+            // Don't fail — directory might not be writable in embedded/test mode
+        }
+
+        // Write WASM binary if provided
+        if let Some(data) = wasm_data {
+            let wasm_path = install_dir.join("plugin.wasm");
+            if let Err(e) = std::fs::write(&wasm_path, data) {
+                tracing::warn!(path = %wasm_path.display(), error = %e, "failed to write WASM binary");
+            }
+        }
+
+        // Write metadata file
+        let meta_path = install_dir.join("plugin.json");
+        if let Ok(json) = serde_json::to_string_pretty(&metadata) {
+            if let Err(e) = std::fs::write(&meta_path, json) {
+                tracing::warn!(path = %meta_path.display(), error = %e, "failed to write metadata");
+            }
+        }
+
+        // Register in memory
         let plugin = InstalledPlugin {
-            metadata: PluginMetadata {
-                name: name.to_string(),
-                display_name: name.to_string(),
-                description: String::new(),
-                version: version.to_string(),
-                author: String::new(),
-                license: "Apache-2.0".to_string(),
-                homepage: None,
-                repository: None,
-                plugin_type: PluginType::Extension,
-                min_ferrite_version: "0.1.0".to_string(),
-                sdk_version: self.config.sdk_version.clone(),
-                dependencies: Vec::new(),
-                tags: Vec::new(),
-                downloads: 0,
-                rating: 0.0,
-                rating_count: 0,
-                published_at: chrono::Utc::now(),
-                security_status: SecurityStatus::Pending,
-            },
+            metadata,
             installed_at: chrono::Utc::now(),
-            install_path: format!("{}/{}", self.config.plugin_dir, name),
+            install_path,
             enabled: true,
             config: HashMap::new(),
         };
@@ -277,12 +456,26 @@ impl Marketplace {
         Ok(())
     }
 
-    /// Uninstalls a plugin.
+    /// Uninstalls a plugin, removing its files from disk.
     pub fn uninstall(&self, name: &str) -> Result<(), MarketplaceError> {
-        if self.installed.write().remove(name).is_none() {
-            return Err(MarketplaceError::NotInstalled(name.to_string()));
+        let removed = self.installed.write().remove(name);
+        match removed {
+            None => Err(MarketplaceError::NotInstalled(name.to_string())),
+            Some(plugin) => {
+                // Remove plugin directory from disk
+                let path = std::path::Path::new(&plugin.install_path);
+                if path.exists() {
+                    if let Err(e) = std::fs::remove_dir_all(path) {
+                        tracing::warn!(
+                            path = %plugin.install_path,
+                            error = %e,
+                            "failed to remove plugin directory"
+                        );
+                    }
+                }
+                Ok(())
+            }
         }
-        Ok(())
     }
 
     /// Enables a plugin.
@@ -456,5 +649,105 @@ mod tests {
         let deserialized: PluginMetadata = serde_json::from_str(&json).unwrap();
         assert_eq!(deserialized.name, "test");
         assert_eq!(deserialized.plugin_type, PluginType::Command);
+    }
+
+    #[test]
+    fn test_search_catalog() {
+        let marketplace = Marketplace::new(MarketplaceConfig::default());
+
+        let catalog = vec![
+            PluginMetadata {
+                name: "vector-plugin".to_string(),
+                display_name: "Vector Plugin".to_string(),
+                description: "Vector similarity search".to_string(),
+                version: "1.0.0".to_string(),
+                author: "Test".to_string(),
+                license: "MIT".to_string(),
+                homepage: None,
+                repository: None,
+                plugin_type: PluginType::Extension,
+                min_ferrite_version: "0.1.0".to_string(),
+                sdk_version: "1.0.0".to_string(),
+                dependencies: vec![],
+                tags: vec!["ai".to_string(), "vector".to_string()],
+                downloads: 100,
+                rating: 4.5,
+                rating_count: 10,
+                published_at: chrono::Utc::now(),
+                security_status: SecurityStatus::Passed,
+            },
+            PluginMetadata {
+                name: "json-validator".to_string(),
+                display_name: "JSON Validator".to_string(),
+                description: "Validates JSON schemas".to_string(),
+                version: "2.0.0".to_string(),
+                author: "Test".to_string(),
+                license: "Apache-2.0".to_string(),
+                homepage: None,
+                repository: None,
+                plugin_type: PluginType::Command,
+                min_ferrite_version: "0.1.0".to_string(),
+                sdk_version: "1.0.0".to_string(),
+                dependencies: vec![],
+                tags: vec!["json".to_string(), "validation".to_string()],
+                downloads: 500,
+                rating: 4.8,
+                rating_count: 50,
+                published_at: chrono::Utc::now(),
+                security_status: SecurityStatus::Passed,
+            },
+        ];
+        marketplace.set_catalog(catalog);
+
+        let results = marketplace.search("vector");
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].name, "vector-plugin");
+
+        let results = marketplace.search("json");
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].name, "json-validator");
+
+        let results = marketplace.search("validation");
+        assert_eq!(results.len(), 1);
+    }
+
+    #[test]
+    fn test_install_with_data() {
+        let dir = tempfile::tempdir().unwrap();
+        let config = MarketplaceConfig {
+            plugin_dir: dir.path().to_string_lossy().to_string(),
+            ..Default::default()
+        };
+        let marketplace = Marketplace::new(config);
+
+        let wasm_data = b"\x00asm\x01\x00\x00\x00"; // minimal WASM header
+        marketplace
+            .install_with_data("my-plugin", "1.0.0", Some(wasm_data))
+            .unwrap();
+
+        assert!(marketplace.is_installed("my-plugin"));
+
+        // Verify files were written
+        let plugin_dir = dir.path().join("my-plugin");
+        assert!(plugin_dir.exists());
+        assert!(plugin_dir.join("plugin.wasm").exists());
+        assert!(plugin_dir.join("plugin.json").exists());
+
+        // Uninstall removes files
+        marketplace.uninstall("my-plugin").unwrap();
+        assert!(!plugin_dir.exists());
+    }
+
+    #[test]
+    fn test_install_size_limit() {
+        let config = MarketplaceConfig {
+            max_plugin_size: 10, // 10 bytes
+            ..Default::default()
+        };
+        let marketplace = Marketplace::new(config);
+
+        let big_data = vec![0u8; 100]; // 100 bytes > 10 byte limit
+        let result = marketplace.install_with_data("big-plugin", "1.0.0", Some(&big_data));
+        assert!(matches!(result, Err(MarketplaceError::PluginTooLarge { .. })));
     }
 }

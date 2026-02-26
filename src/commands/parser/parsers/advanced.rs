@@ -905,6 +905,23 @@ pub(crate) fn parse_ferrite_advisor(args: &[Frame]) -> Result<Command> {
     })
 }
 
+pub(crate) fn parse_autotune(args: &[Frame]) -> Result<Command> {
+    let subcommand = if args.is_empty() {
+        "STATUS".to_string()
+    } else {
+        get_string(&args[0])?.to_uppercase()
+    };
+    let rest_args = args
+        .iter()
+        .skip(1)
+        .filter_map(|f| get_string(f).ok())
+        .collect();
+    Ok(Command::AutoTune {
+        subcommand,
+        args: rest_args,
+    })
+}
+
 pub(crate) fn parse_vector_hybrid(args: &[Frame]) -> Result<Command> {
     if args.len() < 3 {
         return Err(FerriteError::WrongArity("VECTOR.HYBRID".to_string()));
@@ -1080,6 +1097,30 @@ pub(crate) fn parse_view_info(args: &[Frame]) -> Result<Command> {
     }
     let name = get_bytes(&args[0])?;
     Ok(Command::ViewInfo { name })
+}
+
+pub(crate) fn parse_view_subscribe(args: &[Frame]) -> Result<Command> {
+    if args.is_empty() {
+        return Err(FerriteError::WrongArity("VIEW.SUBSCRIBE".to_string()));
+    }
+    let name = get_string(&args[0])?;
+    Ok(Command::ViewSubscribe { name })
+}
+
+pub(crate) fn parse_view_unsubscribe(args: &[Frame]) -> Result<Command> {
+    if args.is_empty() {
+        return Err(FerriteError::WrongArity("VIEW.UNSUBSCRIBE".to_string()));
+    }
+    let name = get_string(&args[0])?;
+    Ok(Command::ViewUnsubscribe { name })
+}
+
+pub(crate) fn parse_view_maintenance(args: &[Frame]) -> Result<Command> {
+    if args.is_empty() {
+        return Err(FerriteError::WrongArity("VIEW.MAINTENANCE".to_string()));
+    }
+    let name = get_string(&args[0])?;
+    Ok(Command::ViewMaintenance { name })
 }
 
 /// Parse `MIGRATE.START source_uri [BATCH size] [WORKERS n] [VERIFY] [DRY-RUN]`
@@ -1564,4 +1605,36 @@ pub(crate) fn parse_studio_help(args: &[Frame]) -> Result<Command> {
 pub(crate) fn parse_studio_suggest(args: &[Frame]) -> Result<Command> {
     let context = args.first().map(get_string).transpose()?;
     Ok(Command::StudioSuggest { context })
+}
+
+/// Parse `GATEWAY subcommand [args...]`
+pub(crate) fn parse_gateway(args: &[Frame]) -> Result<Command> {
+    if args.is_empty() {
+        return Err(FerriteError::WrongArity("GATEWAY".to_string()));
+    }
+    let subcommand = get_string(&args[0])?.to_uppercase();
+    let gateway_args: Vec<String> = args[1..]
+        .iter()
+        .filter_map(|f| get_string(f).ok())
+        .collect();
+    Ok(Command::Gateway {
+        subcommand,
+        args: gateway_args,
+    })
+}
+
+/// Parse `BUDGET subcommand [args...]`
+pub(crate) fn parse_budget(args: &[Frame]) -> Result<Command> {
+    if args.is_empty() {
+        return Err(FerriteError::WrongArity("BUDGET".to_string()));
+    }
+    let subcommand = get_string(&args[0])?.to_uppercase();
+    let budget_args: Vec<String> = args[1..]
+        .iter()
+        .filter_map(|f| get_string(f).ok())
+        .collect();
+    Ok(Command::Budget {
+        subcommand,
+        args: budget_args,
+    })
 }
