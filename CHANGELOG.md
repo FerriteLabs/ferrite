@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Delta sync protocol for edge replication, enabling bandwidth-efficient incremental updates between edge nodes and cloud hub
 - ROADMAP.md with versioned milestones and feature graduation targets
 - `detect-secrets` pre-commit hook for secret scanning
 - `gitleaks` secret scanning in CI for all organization repositories
