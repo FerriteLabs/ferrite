@@ -13,6 +13,12 @@ coverage:
         threshold: 2%
         paths:
           - crates/ferrite-core/
+      # Track compatibility module coverage (race condition regression tests)
+      compatibility:
+        target: 75%
+        threshold: 3%
+        paths:
+          - crates/ferrite-core/src/compatibility/
     patch:
       default:
         target: 80%
