@@ -49,6 +49,7 @@ For security vulnerabilities, please email **security@ferritelabs.dev** instead 
 - [CONTRIBUTING.md](./CONTRIBUTING.md) — How to set up your dev environment and submit PRs
 - [Good First Issues](https://github.com/FerriteLabs/ferrite/labels/good%20first%20issue) — Curated tasks for new contributors
 - [Architecture Overview](https://ferrite.dev/docs/architecture) — Understand how Ferrite works under the hood
+- [Observability Guide](https://ferrite.dev/docs/observability) — Unified observer tracing for storage operations
 - [Code of Conduct](./CODE_OF_CONDUCT.md) — Our standards for a welcoming community
 
 ## Contributor Recognition
