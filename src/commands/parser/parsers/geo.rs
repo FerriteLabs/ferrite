@@ -317,3 +317,93 @@ pub(crate) fn parse_geosearch(args: &[Frame]) -> Result<Command> {
         with_hash,
     })
 }
+
+pub(crate) fn parse_geosearchstore(args: &[Frame]) -> Result<Command> {
+    if args.len() < 6 {
+        return Err(FerriteError::WrongArity("GEOSEARCHSTORE".to_string()));
+    }
+
+    let destination = get_bytes(&args[0])?;
+    let source = get_bytes(&args[1])?;
+    let mut from_member = None;
+    let mut from_lonlat = None;
+    let mut by_radius = None;
+    let mut by_box = None;
+    let mut asc = true;
+    let mut count = None;
+    let mut any = false;
+    let mut storedist = false;
+
+    let mut idx = 2;
+    while idx < args.len() {
+        let opt = get_string(&args[idx])?.to_uppercase();
+        match opt.as_str() {
+            "FROMMEMBER" => {
+                idx += 1;
+                if idx < args.len() {
+                    from_member = Some(get_bytes(&args[idx])?);
+                }
+            }
+            "FROMLONLAT" => {
+                if idx + 2 < args.len() {
+                    let lon: f64 = get_string(&args[idx + 1])?
+                        .parse()
+                        .map_err(|_| FerriteError::Protocol("Invalid longitude".to_string()))?;
+                    let lat: f64 = get_string(&args[idx + 2])?
+                        .parse()
+                        .map_err(|_| FerriteError::Protocol("Invalid latitude".to_string()))?;
+                    from_lonlat = Some((lon, lat));
+                    idx += 2;
+                }
+            }
+            "BYRADIUS" => {
+                if idx + 2 < args.len() {
+                    let r: f64 = get_string(&args[idx + 1])?
+                        .parse()
+                        .map_err(|_| FerriteError::Protocol("Invalid radius".to_string()))?;
+                    let u = get_string(&args[idx + 2])?.to_lowercase();
+                    by_radius = Some((r, u));
+                    idx += 2;
+                }
+            }
+            "BYBOX" => {
+                if idx + 3 < args.len() {
+                    let w: f64 = get_string(&args[idx + 1])?
+                        .parse()
+                        .map_err(|_| FerriteError::Protocol("Invalid width".to_string()))?;
+                    let h: f64 = get_string(&args[idx + 2])?
+                        .parse()
+                        .map_err(|_| FerriteError::Protocol("Invalid height".to_string()))?;
+                    let u = get_string(&args[idx + 3])?.to_lowercase();
+                    by_box = Some((w, h, u));
+                    idx += 3;
+                }
+            }
+            "ASC" => asc = true,
+            "DESC" => asc = false,
+            "COUNT" => {
+                idx += 1;
+                if idx < args.len() {
+                    count = Some(get_int(&args[idx])? as usize);
+                }
+            }
+            "ANY" => any = true,
+            "STOREDIST" => storedist = true,
+            _ => {}
+        }
+        idx += 1;
+    }
+
+    Ok(Command::GeoSearchStore {
+        destination,
+        source,
+        from_member,
+        from_lonlat,
+        by_radius,
+        by_box,
+        asc,
+        count,
+        any,
+        storedist,
+    })
+}

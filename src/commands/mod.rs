@@ -5,6 +5,10 @@
 mod bitmap;
 /// Blocking list commands
 pub mod blocking;
+/// Extended ACL commands (LOG, CAT, GENPASS, DRYRUN)
+pub mod acl_commands;
+/// Extended CLIENT commands (INFO, NO-EVICT, NO-TOUCH)
+pub mod client_commands;
 mod executor;
 mod geo;
 /// Command handlers organized by category
@@ -12,7 +16,11 @@ pub mod handlers;
 mod hashes;
 mod hyperloglog;
 mod keys;
+/// LATENCY command family with LatencyTracker
+pub mod latency;
 mod lists;
+/// Extended OBJECT commands (FREQ, IDLETIME, HELP)
+pub mod object_commands;
 mod parser;
 /// Pub/Sub commands
 pub mod pubsub;

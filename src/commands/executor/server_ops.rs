@@ -1230,6 +1230,10 @@ impl CommandExecutor {
                 // CLIENT NO-EVICT ON|OFF
                 Frame::simple("OK")
             }
+            "NO-TOUCH" => {
+                // CLIENT NO-TOUCH ON|OFF
+                Frame::simple("OK")
+            }
             "SETINFO" => {
                 // CLIENT SETINFO LIB-NAME|LIB-VER value
                 Frame::simple("OK")
@@ -1242,6 +1246,7 @@ impl CommandExecutor {
                     Frame::bulk("CLIENT KILL <ip:port>|ID <id>|TYPE <normal|master|replica|pubsub>|USER <username>|ADDR <ip:port>|LADDR <ip:port>|SKIPME <yes|no>"),
                     Frame::bulk("CLIENT LIST [TYPE <normal|master|replica|pubsub>] [ID <id> [id...]]"),
                     Frame::bulk("CLIENT NO-EVICT <ON|OFF>"),
+                    Frame::bulk("CLIENT NO-TOUCH <ON|OFF>"),
                     Frame::bulk("CLIENT PAUSE <timeout> [WRITE|ALL]"),
                     Frame::bulk("CLIENT REPLY <ON|OFF|SKIP>"),
                     Frame::bulk("CLIENT SETNAME <connection-name>"),
@@ -1848,47 +1853,28 @@ impl CommandExecutor {
                 Frame::bulk("DELUSER <username> [...] -- Delete users."),
                 Frame::bulk("CAT [<category>] -- List command categories."),
                 Frame::bulk("GENPASS [<len>] -- Generate a secure password."),
+                Frame::bulk("LOG [<count> | RESET] -- Show or reset the ACL log."),
+                Frame::bulk("DRYRUN <username> <command> [<arg> ...] -- Test ACL permissions without executing."),
             ]),
             "CAT" => {
-                // Return command categories
-                if args.is_empty() {
-                    Frame::array(vec![
-                        Frame::bulk("read"),
-                        Frame::bulk("write"),
-                        Frame::bulk("admin"),
-                        Frame::bulk("dangerous"),
-                        Frame::bulk("connection"),
-                        Frame::bulk("transaction"),
-                        Frame::bulk("scripting"),
-                        Frame::bulk("slow"),
-                        Frame::bulk("fast"),
-                        Frame::bulk("pubsub"),
-                        Frame::bulk("keyspace"),
-                        Frame::bulk("string"),
-                        Frame::bulk("list"),
-                        Frame::bulk("hash"),
-                        Frame::bulk("set"),
-                        Frame::bulk("sortedset"),
-                    ])
-                } else {
-                    // Return commands in category (empty for now)
-                    Frame::array(vec![])
-                }
+                use crate::commands::acl_commands;
+                acl_commands::acl_cat(args)
             }
             "GENPASS" => {
-                // Generate a random password
-                use rand::Rng;
-                let len: usize = if !args.is_empty() {
-                    args[0].parse().unwrap_or(64)
-                } else {
-                    64
-                };
-                let password: String = rand::thread_rng()
-                    .sample_iter(&rand::distributions::Alphanumeric)
-                    .take(len)
-                    .map(char::from)
-                    .collect();
-                Frame::bulk(password)
+                use crate::commands::acl_commands;
+                acl_commands::acl_genpass(args)
+            }
+            "LOG" => {
+                use crate::commands::acl_commands;
+                // Use a static ACL log for now
+                use std::sync::OnceLock;
+                static ACL_LOG: OnceLock<acl_commands::SharedAclLog> = OnceLock::new();
+                let log = ACL_LOG.get_or_init(|| std::sync::Arc::new(acl_commands::AclLog::new()));
+                acl_commands::acl_log(log, args)
+            }
+            "DRYRUN" => {
+                use crate::commands::acl_commands;
+                acl_commands::acl_dryrun(args)
             }
             _ => {
                 // For async operations (LIST, USERS, GETUSER, SETUSER, DELUSER),

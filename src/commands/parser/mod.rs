@@ -1073,6 +1073,19 @@ pub enum Command {
         with_dist: bool,
         with_hash: bool,
     },
+    /// GEOSEARCHSTORE destination source FROMMEMBER member|FROMLONLAT lon lat BYRADIUS radius M|KM|FT|MI|BYBOX width height M|KM|FT|MI [ASC|DESC] [COUNT count [ANY]] [STOREDIST]
+    GeoSearchStore {
+        destination: Bytes,
+        source: Bytes,
+        from_member: Option<Bytes>,
+        from_lonlat: Option<(f64, f64)>,
+        by_radius: Option<(f64, String)>,
+        by_box: Option<(f64, f64, String)>,
+        asc: bool,
+        count: Option<usize>,
+        any: bool,
+        storedist: bool,
+    },
 
     // HyperLogLog commands
     /// PFADD key element [element ...]
@@ -1941,6 +1954,7 @@ impl Command {
             "GEORADIUS" => parsers::geo::parse_georadius(args),
             "GEORADIUSBYMEMBER" => parsers::geo::parse_georadiusbymember(args),
             "GEOSEARCH" => parsers::geo::parse_geosearch(args),
+            "GEOSEARCHSTORE" => parsers::geo::parse_geosearchstore(args),
 
             // HyperLogLog commands
             "PFADD" => parsers::hyperloglog::parse_pfadd(args),

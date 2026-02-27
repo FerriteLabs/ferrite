@@ -534,6 +534,123 @@ pub fn georadiusbymember(
     geosearch(store, db, key, &options)
 }
 
+/// Execute GEOSEARCHSTORE command
+/// Stores results of GEOSEARCH into a destination sorted set.
+/// Returns the number of elements stored.
+pub fn geosearchstore(
+    store: &Arc<Store>,
+    db: u8,
+    destination: &Bytes,
+    source: &Bytes,
+    options: &GeoSearchOptions,
+    storedist: bool,
+) -> Frame {
+    use ordered_float::OrderedFloat;
+    use std::collections::{BTreeMap, HashMap};
+
+    match store.get(db, source) {
+        Some(Value::SortedSet { by_member, .. }) => {
+            // Get center coordinates
+            let center = match &options.center {
+                GeoSearchCenter::LonLat(lon, lat) => match GeoCoord::new(*lon, *lat) {
+                    Some(c) => c,
+                    None => return Frame::error("ERR invalid longitude,latitude pair"),
+                },
+                GeoSearchCenter::Member(member) => match by_member.get(member) {
+                    Some(score) => geohash_decode(*score),
+                    None => {
+                        // Member not found — store empty set
+                        store.del(db, &[destination.clone()]);
+                        return Frame::Integer(0);
+                    }
+                },
+            };
+
+            // Collect matching members with distances
+            let mut matches: Vec<(Bytes, f64, f64)> = Vec::new(); // (member, distance_m, geohash)
+
+            for (member, score) in by_member.iter() {
+                let coord = geohash_decode(*score);
+                let distance = haversine_distance(&center, &coord);
+
+                let in_range = match &options.shape {
+                    GeoSearchShape::Radius(radius, unit) => distance <= unit.to_meters(*radius),
+                    GeoSearchShape::Box(width, height, unit) => {
+                        let width_m = unit.to_meters(*width);
+                        let height_m = unit.to_meters(*height);
+                        let lat_rad = center.latitude * PI / 180.0;
+                        let lon_per_meter = 1.0 / (111_320.0 * lat_rad.cos());
+                        let lat_per_meter = 1.0 / 110_540.0;
+                        let dlon = (coord.longitude - center.longitude).abs();
+                        let dlat = (coord.latitude - center.latitude).abs();
+                        dlon <= (width_m / 2.0) * lon_per_meter
+                            && dlat <= (height_m / 2.0) * lat_per_meter
+                    }
+                };
+
+                if in_range {
+                    matches.push((member.clone(), distance, *score));
+                }
+            }
+
+            // Sort
+            if options.asc {
+                matches.sort_by(|a, b| a.1.total_cmp(&b.1));
+            } else {
+                matches.sort_by(|a, b| b.1.total_cmp(&a.1));
+            }
+
+            // Apply count limit
+            if let Some(count) = options.count {
+                matches.truncate(count);
+            }
+
+            let count = matches.len() as i64;
+
+            // Build destination sorted set
+            let mut by_score = BTreeMap::new();
+            let mut by_member_map = HashMap::new();
+
+            let output_unit = match &options.shape {
+                GeoSearchShape::Radius(_, unit) => *unit,
+                GeoSearchShape::Box(_, _, unit) => *unit,
+            };
+
+            for (member, distance_m, geohash) in matches {
+                let score = if storedist {
+                    output_unit.from_meters(distance_m)
+                } else {
+                    geohash
+                };
+                by_score.insert((OrderedFloat(score), member.clone()), ());
+                by_member_map.insert(member, score);
+            }
+
+            if by_member_map.is_empty() {
+                store.del(db, &[destination.clone()]);
+            } else {
+                store.set(
+                    db,
+                    destination.clone(),
+                    Value::SortedSet {
+                        by_score,
+                        by_member: by_member_map,
+                    },
+                );
+            }
+
+            Frame::Integer(count)
+        }
+        Some(_) => {
+            Frame::error("WRONGTYPE Operation against a key holding the wrong kind of value")
+        }
+        None => {
+            store.del(db, &[destination.clone()]);
+            Frame::Integer(0)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     #![allow(clippy::unwrap_used)]

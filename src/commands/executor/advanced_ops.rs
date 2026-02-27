@@ -1458,6 +1458,55 @@ impl CommandExecutor {
         geo::geosearch(&self.store, db, key, &options)
     }
 
+    #[allow(clippy::too_many_arguments)]
+    pub(super) fn geosearchstore(
+        &self,
+        db: u8,
+        destination: &Bytes,
+        source: &Bytes,
+        from_member: Option<Bytes>,
+        from_lonlat: Option<(f64, f64)>,
+        by_radius: Option<(f64, String)>,
+        by_box: Option<(f64, f64, String)>,
+        asc: bool,
+        count: Option<usize>,
+        any: bool,
+        storedist: bool,
+    ) -> Frame {
+        // Build center
+        let center = if let Some(member) = from_member {
+            geo::GeoSearchCenter::Member(member)
+        } else if let Some((lon, lat)) = from_lonlat {
+            geo::GeoSearchCenter::LonLat(lon, lat)
+        } else {
+            return Frame::error("ERR FROMMEMBER or FROMLONLAT is required for GEOSEARCHSTORE");
+        };
+
+        // Build shape
+        let shape = if let Some((radius, unit_str)) = by_radius {
+            let unit = geo::DistanceUnit::parse(&unit_str).unwrap_or(geo::DistanceUnit::Meters);
+            geo::GeoSearchShape::Radius(radius, unit)
+        } else if let Some((width, height, unit_str)) = by_box {
+            let unit = geo::DistanceUnit::parse(&unit_str).unwrap_or(geo::DistanceUnit::Meters);
+            geo::GeoSearchShape::Box(width, height, unit)
+        } else {
+            return Frame::error("ERR BYRADIUS or BYBOX is required for GEOSEARCHSTORE");
+        };
+
+        let options = geo::GeoSearchOptions {
+            center,
+            shape,
+            count,
+            any,
+            asc,
+            with_coord: false,
+            with_dist: false,
+            with_hash: false,
+        };
+
+        geo::geosearchstore(&self.store, db, destination, source, &options, storedist)
+    }
+
     // HyperLogLog methods
 
     pub(super) fn pfadd(&self, db: u8, key: &Bytes, elements: &[Bytes]) -> Frame {

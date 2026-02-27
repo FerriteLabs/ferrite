@@ -1400,6 +1400,16 @@ impl Command {
                 keys: vec![key.clone()],
                 permission: Permission::Read,
             },
+            Command::GeoSearchStore {
+                destination,
+                source,
+                ..
+            } => CommandMeta {
+                name: "GEOSEARCHSTORE",
+                category: "geo",
+                keys: vec![destination.clone(), source.clone()],
+                permission: Permission::Write,
+            },
 
             // HyperLogLog commands
             Command::PfAdd { key, .. } => CommandMeta {
