@@ -28,6 +28,7 @@
 //! - **Health Monitoring**: Automatic health checks and failover
 //! - **Traffic Routing**: Geo-aware routing and load balancing
 
+pub mod active_active;
 pub mod consistency;
 mod health;
 pub mod hlc;
@@ -37,6 +38,12 @@ pub mod replication_protocol;
 mod routing;
 mod sync;
 
+pub use active_active::{
+    ActiveActiveConfig, ActiveActiveManager, CloudProvider as ActiveCloudProvider,
+    ConflictEntry, ConflictResolution as ActiveConflictResolution, PeerState, RegionHealth,
+    RegionPeer, ReplicationError as ActiveReplicationError, ResolveResult, SyncResult,
+    SyncStatus as ActiveSyncStatus, VectorClock,
+};
 pub use consistency::{ConsistencyChecker, ConsistencyLevel, ConsistencyResult};
 pub use health::{HealthConfig, HealthMonitor, HealthStatus};
 pub use hlc::{HlcTimestamp, HybridClock};

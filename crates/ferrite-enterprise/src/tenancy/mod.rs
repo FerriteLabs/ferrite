@@ -29,20 +29,31 @@
 //! TENANT MIGRATE acme TO other-cluster --zero-downtime
 //! ```
 
+pub mod backup;
 pub mod isolation;
+pub mod lifecycle;
 pub mod limits;
 pub mod manager;
 pub mod metrics;
 pub mod migration;
+pub mod namespace;
 pub mod quota;
+pub mod quota_resource;
 pub mod routing;
 
+pub use backup::{BackupError, BackupManifest, BackupOptions, TenantBackupManager};
 pub use isolation::{IsolationEnforcer, KeyValidator};
+pub use lifecycle::{
+    CreateTenantRequest, LifecycleError, LifecycleState, TenantFilter, TenantLifecycleManager,
+    TenantRecord, TenantStats,
+};
 pub use limits::{RateLimiter, ResourceLimits, TenantLimits};
 pub use manager::{TenantInfo, TenantManager};
 pub use metrics::{TenantMetrics, TenantMetricsCollector, TenantUsage};
 pub use migration::{MigrationPlan, MigrationProgress, MigrationStatus, TenantMigrator};
+pub use namespace::{CrossTenantGuard, NamespaceManager, NamespacePolicy, TenantIsolationError};
 pub use quota::{QuotaAction, QuotaEnforcer, QuotaPolicy, QuotaStatus, QuotaViolation};
+pub use quota_resource::{QuotaConfig, QuotaExceeded, QuotaUsageReport, ResourceQuotaEnforcer};
 pub use routing::{TenantIdentity, TenantRouter, TenantSession};
 
 use serde::{Deserialize, Serialize};

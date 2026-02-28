@@ -52,10 +52,12 @@
 #![allow(dead_code)]
 pub mod decay;
 pub mod episodic;
+pub mod feature_store;
 pub mod mcp;
 pub mod procedural;
 pub mod semantic_memory;
 pub mod sharing;
+pub mod store;
 pub mod working;
 
 pub use episodic::{Episode, EpisodeSummary, EpisodicEvent, EpisodicMemory};
@@ -64,6 +66,10 @@ pub use semantic_memory::{
     cosine_similarity, SemanticEntry, SemanticMemoryStore, SemanticSearchResult,
 };
 pub use sharing::{MemorySharingHub, SharedMemory, SharingError, SharingPermission, Visibility};
+pub use store::{
+    AgentMemoryConfig, AgentMemoryStats, MemoryError, PersistentAgentMemoryStore,
+    StoreMemoryEntry, StoreMemoryType,
+};
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};

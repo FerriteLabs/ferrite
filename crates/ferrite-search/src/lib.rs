@@ -8,6 +8,7 @@
 
 pub mod autoindex;
 pub mod bm25;
+pub mod global_index;
 pub mod routing;
 pub mod schema;
 pub mod search;

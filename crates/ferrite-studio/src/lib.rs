@@ -6,6 +6,7 @@
 //!
 //! Web-based management UI and interactive playground for Ferrite
 
+pub mod dashboard;
 pub mod devtools;
 pub mod insights;
 pub mod playground;

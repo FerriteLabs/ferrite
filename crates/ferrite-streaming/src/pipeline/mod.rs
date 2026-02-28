@@ -42,6 +42,9 @@
 //! ```
 
 pub mod checkpoint;
+pub mod composable;
+pub mod kafka_live;
+pub mod kafka_wire;
 pub mod operator;
 pub mod window;
 

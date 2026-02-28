@@ -9,6 +9,7 @@
 pub mod cloud;
 pub mod costoptimizer;
 pub mod edge;
+pub mod managed;
 pub mod multicloud;
 pub mod s3;
 pub mod serverless;
