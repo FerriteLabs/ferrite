@@ -1,0 +1,38 @@
+name: Java SDK
+
+on:
+  push:
+    paths: ['sdk/java/**']
+  pull_request:
+    paths: ['sdk/java/**']
+  workflow_dispatch:
+
+# Cancel in-progress runs for the same PR/branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Java ${{ matrix.java }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        java: [11, 17, 21]
+        os: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+      - name: Build
+        run: cd sdk/java && mvn compile -B
+      - name: Test
+        run: |
+          if [ -d "sdk/java/src/test" ]; then
+            cd sdk/java && mvn test -B
+          else
+            echo "No test sources found, skipping tests"
+          fi

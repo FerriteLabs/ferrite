@@ -1,0 +1,49 @@
+name: "🌱 Good First Issue"
+description: "A well-scoped task suitable for new contributors"
+title: "[Good First Issue] "
+labels: ["good first issue", "help wanted"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your interest in contributing to Ferrite! This issue is designed to be approachable for first-time contributors.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What needs to be done?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context & Background
+      description: Why is this change needed?
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Implementation Guide
+      description: Step-by-step guide for implementing this
+  - type: textarea
+    id: files
+    attributes:
+      label: Files to Modify
+      description: Which files need changes?
+  - type: textarea
+    id: testing
+    attributes:
+      label: How to Test
+      description: How to verify the implementation is correct
+  - type: dropdown
+    id: difficulty
+    attributes:
+      label: Difficulty
+      options:
+        - "Easy (< 1 hour)"
+        - "Medium (1-4 hours)"
+        - "Advanced (4+ hours)"
+  - type: textarea
+    id: mentor
+    attributes:
+      label: Mentor
+      description: Who can help if you get stuck?

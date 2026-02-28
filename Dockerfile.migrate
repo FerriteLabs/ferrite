@@ -1,0 +1,13 @@
+# Ferrite Migration Tool
+# Usage: docker run --rm ferritelabs/ferrite-migrate:latest snapshot --source redis://host:6379
+
+FROM rust:1.80-slim AS builder
+WORKDIR /build
+COPY . .
+RUN cargo build --release --bin ferrite-migrate --features cli
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /build/target/release/ferrite-migrate /usr/local/bin/ferrite-migrate
+ENTRYPOINT ["ferrite-migrate"]
+CMD ["--help"]

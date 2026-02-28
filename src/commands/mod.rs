@@ -33,6 +33,10 @@ pub mod scripting_stub;
 mod sets;
 pub mod sorted_sets;
 mod streams;
+/// Extended Streams commands (XINFO dispatcher, XAUTOCLAIM, XPENDING extended, XCLAIM extended)
+pub mod streams_extended;
+/// Extended CONFIG / COMMAND sub-commands
+pub mod config_commands;
 mod strings;
 
 pub use blocking::{

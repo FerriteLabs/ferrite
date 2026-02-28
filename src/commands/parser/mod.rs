@@ -775,6 +775,11 @@ pub enum Command {
         /// Arguments
         args: Vec<String>,
     },
+    /// TENANT subcommand [args...]
+    Tenant {
+        subcommand: String,
+        args: Vec<String>,
+    },
     /// HISTORY key [FROM ts] [TO ts] [LIMIT count] [ORDER ASC|DESC] [WITHVALUES]
     History {
         /// Key to get history for
@@ -1707,6 +1712,189 @@ pub enum Command {
     StudioHelp { command: String },
     /// STUDIO.SUGGEST [context]
     StudioSuggest { context: Option<String> },
+
+    /// CLOUD subcommand [args...] - Managed cloud service commands
+    Cloud {
+        /// Subcommand (PROVISION, LIST, INFO, TERMINATE, SCALE, COST, USAGE, HEALTH, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+    /// OBSERVE subcommand [args...] - Observability heatmap commands
+    Observe {
+        /// Subcommand (HOTKEYS, HOTPREFIXES, HEATMAP, RECORD, RESET, STATS, LATENCY, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+    /// VIEW subcommand [args...] - Materialized view management commands (standalone handler)
+    View {
+        /// Subcommand (CREATE, GET, REFRESH, DROP, LIST, INFO, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+    /// AGENT subcommand [args...] - AI Agent memory commands
+    Agent {
+        /// Subcommand (REMEMBER, RECALL, FORGET, CHECKPOINT, RESTORE, STATS, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+    /// AUDIT subcommand [args...] - Compliance and audit commands
+    Audit {
+        /// Subcommand (LOG, VERIFY, EXPORT, RETENTION, GDPR.DELETE, GDPR.EXPORT, REPORT, STATS, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+    /// PROXY subcommand [args...] - Smart proxy management commands
+    Proxy {
+        /// Subcommand (STATUS, UPSTREAM, DISCOVER, FEATURES, CACHE, INTERCEPT, STATS, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+    /// LOCK subcommand [args...] - Distributed lock service commands
+    Lock {
+        /// Subcommand (ACQUIRE, RELEASE, EXTEND, TRY, INFO, OWNER, DEADLOCKS, EXPIRE, STATS, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+    /// VERSION subcommand [args...] - Time-indexed data versioning commands
+    Version {
+        /// Subcommand (WRITE, READ, HISTORY, DIFF, BRANCH.CREATE, BRANCH.DELETE, BRANCH.LIST, BRANCH.SWITCH, MERGE, TAG, TAG.LIST, COMPACT, STATS, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+    /// FUNCTION subcommand [args...] - Serverless function runtime commands
+    FaasFunction {
+        /// Subcommand (DEPLOY, INVOKE, INVOKE.ASYNC, UNDEPLOY, LIST, INFO, RESULT, HISTORY, ENABLE, DISABLE, STATS, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+    /// FEDERATE subcommand [args...] - Federated query engine commands
+    Federation {
+        /// Subcommand (SOURCE.ADD, SOURCE.REMOVE, SOURCE.LIST, QUERY, CROSS, EXPLAIN, HEALTH, STATS, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+    /// PROTOCOL subcommand [args...] - Multi-protocol gateway commands
+    Protocol {
+        /// Subcommand (STATUS, MEMCACHED, GRPC, AMQP, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+    /// LINEAGE subcommand [args...] - Data lineage and impact graph commands
+    Lineage {
+        /// Subcommand (RECORD, ANCESTORS, DESCENDANTS, IMPACT, PATH, EXPORT, STATS, PRUNE, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+    /// PIPELINE subcommand [args...] - Composable data pipeline commands
+    Pipeline {
+        /// Subcommand (CREATE, ADD.SOURCE, ADD.TRANSFORM, ADD.SINK, LINK, START, STOP, PAUSE, RESUME, DELETE, LIST, INFO, TOPOLOGY, METRICS, VALIDATE, STATS, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+    /// OPTIMIZER subcommand [args...] - Adaptive query optimizer commands
+    Optimizer {
+        /// Subcommand (ANALYZE, RECOMMEND, WARMING, TUNE, PROFILE, CONFIG, STATS, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+    /// POLICYENGINE subcommand [args...] - Programmable access control policy commands
+    PolicyEngine {
+        /// Subcommand (CREATE, DELETE, TEST, LIST, INFO, EVALUATE, STATS, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+    /// CONTRACT subcommand [args...] - Data contract registry commands
+    Contract {
+        /// Subcommand (DEFINE, UNDEFINE, VALIDATE, EVOLVE, INFO, LIST, FIND, VIOLATIONS, COMPAT, STATS, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+    /// CLASSIFY subcommand [args...] - Automatic data classification commands
+    Classify {
+        /// Subcommand (KEY, SCAN, TAG, TAGS, FIND, RULES, SUMMARY, REPORT, STATS, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+    /// MESH subcommand [args...] - Edge mesh networking commands
+    Mesh {
+        /// Subcommand (DISCOVER, PEERS, PEER.ADD, PEER.REMOVE, PEER.BAN, PEER.INFO, TOPOLOGY, SYNC, BROADCAST, ROUTE, HEALTH, STATS, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+    /// ANALYTICS subcommand [args...] - Embedded analytics engine commands
+    Analytics {
+        /// Subcommand (QUERY, COUNT, SUM, AVG, MIN, MAX, TOP, HISTOGRAM, EXPLAIN, STATS, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+    /// GIDX subcommand [args...] - Cross-cluster global secondary index commands
+    GlobalIndex {
+        /// Subcommand (CREATE, DROP, SEARCH, SEARCH.VECTOR, INDEX, DELETE, STATUS, LIST, STATS, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+    /// CHAOS subcommand [args...] - Chaos engineering fault injection commands
+    Chaos {
+        /// Subcommand (INJECT, HEAL, LIST, SCENARIO, STATS, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+    /// MARKETPLACE subcommand [args...] - WASM extension marketplace commands
+    Marketplace {
+        /// Subcommand (INSTALL, UNINSTALL, ENABLE, DISABLE, UPDATE, LIST, SEARCH, INFO, VERIFY, STATS, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+    /// SCALING subcommand [args...] - Predictive auto-scaling commands
+    Scaling {
+        /// Subcommand (PREDICT, HISTORY, PATTERN, SAMPLE, CONFIG, STATS, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+    /// CONSENSUS subcommand [args...] - Consensus-as-a-Service commands
+    Consensus {
+        /// Subcommand (CREATE, DISSOLVE, PROPOSE, READ, LEADER, ELECT, MEMBERS, MEMBER.ADD, MEMBER.REMOVE, INFO, LIST, STATS, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+    /// FEATURE subcommand [args...] - Real-time feature store commands
+    Feature {
+        /// Subcommand (DEFINE, SET, GET, GET.AT, GET.BATCH, FRESHNESS, DRIFT, LIST, INFO, ENTITY, STATS, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+    /// REPLICATE subcommand [args...] - Multi-cloud replication commands
+    Replicate {
+        /// Subcommand (STATUS, PEERS, ADD, REMOVE, SYNC, HEALTH, CONFLICTS, RESOLVE, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
 }
 
 impl Command {
@@ -1912,6 +2100,9 @@ impl Command {
             "CDC" => parsers::cluster::parse_cdc(args),
             "EDGE" => parsers::cluster::parse_edge(args),
             "EBPF" => parsers::cluster::parse_ebpf(args),
+            "TENANT" | "TENANT.CREATE" | "TENANT.LIST" | "TENANT.DELETE" | "TENANT.INFO" | "TENANT.SUSPEND" | "TENANT.RESUME" | "TENANT.QUOTA" => {
+                parsers::cluster::parse_tenant(&command_name, args)
+            }
             "HISTORY" => parsers::cluster::parse_history(args),
             "HISTORY.COUNT" => parsers::cluster::parse_history_count(args),
             "HISTORY.FIRST" => parsers::cluster::parse_history_first(args),
@@ -2064,6 +2255,34 @@ impl Command {
             "VIEW.SUBSCRIBE" => parsers::advanced::parse_view_subscribe(args),
             "VIEW.UNSUBSCRIBE" => parsers::advanced::parse_view_unsubscribe(args),
             "VIEW.MAINTENANCE" => parsers::advanced::parse_view_maintenance(args),
+            "VIEW.GET" | "VIEW.HELP" => {
+                let subcommand = command_name
+                    .strip_prefix("VIEW.")
+                    .unwrap_or("")
+                    .to_string();
+                let view_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::View {
+                    subcommand,
+                    args: view_args,
+                })
+            }
+            "VIEW" => {
+                if args.is_empty() {
+                    return Err(FerriteError::WrongArity("VIEW".to_string()));
+                }
+                let subcommand = parsers::get_string(&args[0])?.to_uppercase();
+                let view_args: Vec<String> = args[1..]
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::View {
+                    subcommand,
+                    args: view_args,
+                })
+            }
 
             // Live migration commands
             "MIGRATE.START" => parsers::advanced::parse_migrate_start(args),
@@ -2120,6 +2339,784 @@ impl Command {
             "STUDIO.COMPAT" => parsers::advanced::parse_studio_compat(args),
             "STUDIO.HELP" => parsers::advanced::parse_studio_help(args),
             "STUDIO.SUGGEST" => parsers::advanced::parse_studio_suggest(args),
+
+            // Managed cloud commands
+            "CLOUD" => parsers::cluster::parse_cloud(args),
+            cmd if cmd.starts_with("CLOUD.") => {
+                let subcommand = cmd.strip_prefix("CLOUD.").unwrap_or("").to_string();
+                let cloud_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Cloud {
+                    subcommand,
+                    args: cloud_args,
+                })
+            }
+
+            // Observability heatmap commands
+            "OBSERVE" => parsers::cluster::parse_observe(args),
+            cmd if cmd.starts_with("OBSERVE.HOTKEYS")
+                || cmd.starts_with("OBSERVE.HOTPREFIXES")
+                || cmd.starts_with("OBSERVE.HEATMAP")
+                || cmd.starts_with("OBSERVE.RECORD")
+                || cmd.starts_with("OBSERVE.RESET")
+                || cmd.starts_with("OBSERVE.STATS")
+                || cmd.starts_with("OBSERVE.LATENCY")
+                || cmd.starts_with("OBSERVE.HELP") =>
+            {
+                let subcommand = cmd
+                    .strip_prefix("OBSERVE.")
+                    .unwrap_or("")
+                    .to_string();
+                let observe_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Observe {
+                    subcommand,
+                    args: observe_args,
+                })
+            }
+
+            // AI Agent memory commands
+            cmd if cmd.starts_with("AGENT.") => {
+                let subcommand = cmd.strip_prefix("AGENT.").unwrap_or("").to_string();
+                let agent_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Agent {
+                    subcommand,
+                    args: agent_args,
+                })
+            }
+            "AGENT" => {
+                let agent_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Agent {
+                    subcommand: "HELP".to_string(),
+                    args: agent_args,
+                })
+            }
+
+            // Federated query engine commands
+            cmd if cmd.starts_with("FEDERATE.") => {
+                let subcommand = cmd.strip_prefix("FEDERATE.").unwrap_or("").to_string();
+                let fed_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Federation {
+                    subcommand,
+                    args: fed_args,
+                })
+            }
+            "FEDERATE" => {
+                let fed_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                let subcommand = fed_args
+                    .first()
+                    .cloned()
+                    .unwrap_or_default()
+                    .to_uppercase();
+                let cmd_args = if fed_args.len() > 1 {
+                    fed_args[1..].to_vec()
+                } else {
+                    vec![]
+                };
+                Ok(Command::Federation {
+                    subcommand,
+                    args: cmd_args,
+                })
+            }
+
+            // Multi-protocol gateway commands
+            cmd if cmd.starts_with("PROTOCOL.") => {
+                let subcommand = cmd.strip_prefix("PROTOCOL.").unwrap_or("").to_string();
+                let proto_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Protocol {
+                    subcommand,
+                    args: proto_args,
+                })
+            }
+            "PROTOCOL" => {
+                let proto_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                let subcommand = proto_args
+                    .first()
+                    .cloned()
+                    .unwrap_or_default()
+                    .to_uppercase();
+                let cmd_args = if proto_args.len() > 1 {
+                    proto_args[1..].to_vec()
+                } else {
+                    vec![]
+                };
+                Ok(Command::Protocol {
+                    subcommand,
+                    args: cmd_args,
+                })
+            }
+
+            // Compliance and audit commands
+            cmd if cmd.starts_with("AUDIT.") => {
+                let subcommand = cmd.strip_prefix("AUDIT.").unwrap_or("").to_string();
+                let audit_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Audit {
+                    subcommand,
+                    args: audit_args,
+                })
+            }
+            "AUDIT" => {
+                let audit_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Audit {
+                    subcommand: "HELP".to_string(),
+                    args: audit_args,
+                })
+            }
+
+            // Smart proxy commands
+            "PROXY" => {
+                let proxy_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                let subcommand = proxy_args
+                    .first()
+                    .cloned()
+                    .unwrap_or_default()
+                    .to_uppercase();
+                let cmd_args = if proxy_args.len() > 1 {
+                    proxy_args[1..].to_vec()
+                } else {
+                    vec![]
+                };
+                Ok(Command::Proxy {
+                    subcommand,
+                    args: cmd_args,
+                })
+            }
+            cmd if cmd.starts_with("PROXY.") => {
+                let subcommand = cmd.strip_prefix("PROXY.").unwrap_or("").to_string();
+                let proxy_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Proxy {
+                    subcommand,
+                    args: proxy_args,
+                })
+            }
+
+            // Distributed lock commands
+            "LOCK" => {
+                let lock_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                let subcommand = lock_args
+                    .first()
+                    .cloned()
+                    .unwrap_or_default()
+                    .to_uppercase();
+                let cmd_args = if lock_args.len() > 1 {
+                    lock_args[1..].to_vec()
+                } else {
+                    vec![]
+                };
+                Ok(Command::Lock {
+                    subcommand,
+                    args: cmd_args,
+                })
+            }
+            cmd if cmd.starts_with("LOCK.") => {
+                let subcommand = cmd.strip_prefix("LOCK.").unwrap_or("").to_string();
+                let lock_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Lock {
+                    subcommand,
+                    args: lock_args,
+                })
+            }
+
+            // Data lineage commands
+            cmd if cmd.starts_with("LINEAGE.") => {
+                let subcommand = cmd.strip_prefix("LINEAGE.").unwrap_or("").to_string();
+                let lineage_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Lineage {
+                    subcommand,
+                    args: lineage_args,
+                })
+            }
+            "LINEAGE" => {
+                let lineage_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                let subcommand = lineage_args
+                    .first()
+                    .cloned()
+                    .unwrap_or_default()
+                    .to_uppercase();
+                let cmd_args = if lineage_args.len() > 1 {
+                    lineage_args[1..].to_vec()
+                } else {
+                    vec![]
+                };
+                Ok(Command::Lineage {
+                    subcommand,
+                    args: cmd_args,
+                })
+            }
+
+            // Composable data pipeline commands
+            cmd if cmd.starts_with("PIPELINE.") => {
+                let subcommand = cmd.strip_prefix("PIPELINE.").unwrap_or("").to_string();
+                let pipeline_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Pipeline {
+                    subcommand,
+                    args: pipeline_args,
+                })
+            }
+            "PIPELINE" => {
+                let pipeline_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                let subcommand = pipeline_args
+                    .first()
+                    .cloned()
+                    .unwrap_or_default()
+                    .to_uppercase();
+                let cmd_args = if pipeline_args.len() > 1 {
+                    pipeline_args[1..].to_vec()
+                } else {
+                    vec![]
+                };
+                Ok(Command::Pipeline {
+                    subcommand,
+                    args: cmd_args,
+                })
+            }
+
+            // Adaptive query optimizer commands
+            "OPTIMIZER" => {
+                let optimizer_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                let subcommand = optimizer_args
+                    .first()
+                    .cloned()
+                    .unwrap_or_default()
+                    .to_uppercase();
+                let cmd_args = if optimizer_args.len() > 1 {
+                    optimizer_args[1..].to_vec()
+                } else {
+                    vec![]
+                };
+                Ok(Command::Optimizer {
+                    subcommand,
+                    args: cmd_args,
+                })
+            }
+            cmd if cmd.starts_with("OPTIMIZER.") => {
+                let subcommand = cmd.strip_prefix("OPTIMIZER.").unwrap_or("").to_string();
+                let optimizer_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Optimizer {
+                    subcommand,
+                    args: optimizer_args,
+                })
+            }
+
+            // Programmable access control policy commands
+            "POLICYENGINE" => {
+                let pe_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                let subcommand = pe_args
+                    .first()
+                    .cloned()
+                    .unwrap_or_default()
+                    .to_uppercase();
+                let cmd_args = if pe_args.len() > 1 {
+                    pe_args[1..].to_vec()
+                } else {
+                    vec![]
+                };
+                Ok(Command::PolicyEngine {
+                    subcommand,
+                    args: cmd_args,
+                })
+            }
+            cmd if cmd.starts_with("POLICYENGINE.") => {
+                let subcommand = cmd.strip_prefix("POLICYENGINE.").unwrap_or("").to_string();
+                let pe_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::PolicyEngine {
+                    subcommand,
+                    args: pe_args,
+                })
+            }
+
+            // Data contract registry commands
+            "CONTRACT" => {
+                let ct_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                let subcommand = ct_args
+                    .first()
+                    .cloned()
+                    .unwrap_or_default()
+                    .to_uppercase();
+                let cmd_args = if ct_args.len() > 1 {
+                    ct_args[1..].to_vec()
+                } else {
+                    vec![]
+                };
+                Ok(Command::Contract {
+                    subcommand,
+                    args: cmd_args,
+                })
+            }
+            cmd if cmd.starts_with("CONTRACT.") => {
+                let subcommand = cmd.strip_prefix("CONTRACT.").unwrap_or("").to_string();
+                let ct_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Contract {
+                    subcommand,
+                    args: ct_args,
+                })
+            }
+
+            // Embedded analytics engine commands
+            "ANALYTICS" => {
+                let analytics_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                let subcommand = analytics_args
+                    .first()
+                    .cloned()
+                    .unwrap_or_default()
+                    .to_uppercase();
+                let cmd_args = if analytics_args.len() > 1 {
+                    analytics_args[1..].to_vec()
+                } else {
+                    vec![]
+                };
+                Ok(Command::Analytics {
+                    subcommand,
+                    args: cmd_args,
+                })
+            }
+            cmd if cmd.starts_with("ANALYTICS.") => {
+                let subcommand = cmd.strip_prefix("ANALYTICS.").unwrap_or("").to_string();
+                let analytics_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Analytics {
+                    subcommand,
+                    args: analytics_args,
+                })
+            }
+
+            // Cross-cluster global secondary index commands
+            "GIDX" => {
+                let gidx_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                let subcommand = gidx_args
+                    .first()
+                    .cloned()
+                    .unwrap_or_default()
+                    .to_uppercase();
+                let cmd_args = if gidx_args.len() > 1 {
+                    gidx_args[1..].to_vec()
+                } else {
+                    vec![]
+                };
+                Ok(Command::GlobalIndex {
+                    subcommand,
+                    args: cmd_args,
+                })
+            }
+            cmd if cmd.starts_with("GIDX.") => {
+                let subcommand = cmd.strip_prefix("GIDX.").unwrap_or("").to_string();
+                let gidx_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::GlobalIndex {
+                    subcommand,
+                    args: gidx_args,
+                })
+            }
+
+            // Automatic data classification commands
+            "CLASSIFY" => {
+                let classify_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                let subcommand = classify_args
+                    .first()
+                    .cloned()
+                    .unwrap_or_default()
+                    .to_uppercase();
+                let cmd_args = if classify_args.len() > 1 {
+                    classify_args[1..].to_vec()
+                } else {
+                    vec![]
+                };
+                Ok(Command::Classify {
+                    subcommand,
+                    args: cmd_args,
+                })
+            }
+            cmd if cmd.starts_with("CLASSIFY.") => {
+                let subcommand = cmd.strip_prefix("CLASSIFY.").unwrap_or("").to_string();
+                let classify_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Classify {
+                    subcommand,
+                    args: classify_args,
+                })
+            }
+
+            // Edge mesh networking commands
+            "MESH" => {
+                let mesh_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                let subcommand = mesh_args
+                    .first()
+                    .cloned()
+                    .unwrap_or_default()
+                    .to_uppercase();
+                let cmd_args = if mesh_args.len() > 1 {
+                    mesh_args[1..].to_vec()
+                } else {
+                    vec![]
+                };
+                Ok(Command::Mesh {
+                    subcommand,
+                    args: cmd_args,
+                })
+            }
+            cmd if cmd.starts_with("MESH.") => {
+                let subcommand = cmd.strip_prefix("MESH.").unwrap_or("").to_string();
+                let mesh_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Mesh {
+                    subcommand,
+                    args: mesh_args,
+                })
+            }
+
+            // Chaos engineering commands
+            "CHAOS" => {
+                let chaos_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                let subcommand = chaos_args
+                    .first()
+                    .cloned()
+                    .unwrap_or_default()
+                    .to_uppercase();
+                let cmd_args = if chaos_args.len() > 1 {
+                    chaos_args[1..].to_vec()
+                } else {
+                    vec![]
+                };
+                Ok(Command::Chaos {
+                    subcommand,
+                    args: cmd_args,
+                })
+            }
+            cmd if cmd.starts_with("CHAOS.") => {
+                let subcommand = cmd.strip_prefix("CHAOS.").unwrap_or("").to_string();
+                let chaos_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Chaos {
+                    subcommand,
+                    args: chaos_args,
+                })
+            }
+
+            // WASM extension marketplace commands
+            "MARKETPLACE" => {
+                let mkt_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                let subcommand = mkt_args
+                    .first()
+                    .cloned()
+                    .unwrap_or_default()
+                    .to_uppercase();
+                let cmd_args = if mkt_args.len() > 1 {
+                    mkt_args[1..].to_vec()
+                } else {
+                    vec![]
+                };
+                Ok(Command::Marketplace {
+                    subcommand,
+                    args: cmd_args,
+                })
+            }
+            cmd if cmd.starts_with("MARKETPLACE.") => {
+                let subcommand = cmd.strip_prefix("MARKETPLACE.").unwrap_or("").to_string();
+                let mkt_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Marketplace {
+                    subcommand,
+                    args: mkt_args,
+                })
+            }
+
+            // Predictive auto-scaling commands
+            "SCALING" => {
+                let scaling_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                let subcommand = scaling_args
+                    .first()
+                    .cloned()
+                    .unwrap_or_default()
+                    .to_uppercase();
+                let cmd_args = if scaling_args.len() > 1 {
+                    scaling_args[1..].to_vec()
+                } else {
+                    vec![]
+                };
+                Ok(Command::Scaling {
+                    subcommand,
+                    args: cmd_args,
+                })
+            }
+            cmd if cmd.starts_with("SCALING.") => {
+                let subcommand = cmd.strip_prefix("SCALING.").unwrap_or("").to_string();
+                let scaling_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Scaling {
+                    subcommand,
+                    args: scaling_args,
+                })
+            }
+
+            // Consensus-as-a-Service commands
+            "CONSENSUS" => {
+                let consensus_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                let subcommand = consensus_args
+                    .first()
+                    .cloned()
+                    .unwrap_or_default()
+                    .to_uppercase();
+                let cmd_args = if consensus_args.len() > 1 {
+                    consensus_args[1..].to_vec()
+                } else {
+                    vec![]
+                };
+                Ok(Command::Consensus {
+                    subcommand,
+                    args: cmd_args,
+                })
+            }
+            cmd if cmd.starts_with("CONSENSUS.") => {
+                let subcommand = cmd.strip_prefix("CONSENSUS.").unwrap_or("").to_string();
+                let consensus_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Consensus {
+                    subcommand,
+                    args: consensus_args,
+                })
+            }
+
+            // Real-time feature store commands
+            "FEATURE" => {
+                let feature_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                let subcommand = feature_args
+                    .first()
+                    .cloned()
+                    .unwrap_or_default()
+                    .to_uppercase();
+                let cmd_args = if feature_args.len() > 1 {
+                    feature_args[1..].to_vec()
+                } else {
+                    vec![]
+                };
+                Ok(Command::Feature {
+                    subcommand,
+                    args: cmd_args,
+                })
+            }
+            cmd if cmd.starts_with("FEATURE.") => {
+                let subcommand = cmd.strip_prefix("FEATURE.").unwrap_or("").to_string();
+                let feature_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Feature {
+                    subcommand,
+                    args: feature_args,
+                })
+            }
+
+            // Multi-cloud replication commands
+            "REPLICATE" => {
+                let replicate_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                let subcommand = replicate_args
+                    .first()
+                    .cloned()
+                    .unwrap_or_default()
+                    .to_uppercase();
+                let cmd_args = if replicate_args.len() > 1 {
+                    replicate_args[1..].to_vec()
+                } else {
+                    vec![]
+                };
+                Ok(Command::Replicate {
+                    subcommand,
+                    args: cmd_args,
+                })
+            }
+            cmd if cmd.starts_with("REPLICATE.") => {
+                let subcommand = cmd.strip_prefix("REPLICATE.").unwrap_or("").to_string();
+                let replicate_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Replicate {
+                    subcommand,
+                    args: replicate_args,
+                })
+            }
+
+            // Time-indexed data versioning commands
+            "VERSION" => {
+                let version_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                let subcommand = version_args
+                    .first()
+                    .cloned()
+                    .unwrap_or_else(|| "HELP".to_string())
+                    .to_uppercase();
+                let cmd_args = if version_args.len() > 1 {
+                    version_args[1..].to_vec()
+                } else {
+                    vec![]
+                };
+                Ok(Command::Version {
+                    subcommand,
+                    args: cmd_args,
+                })
+            }
+            cmd if cmd.starts_with("VERSION.") => {
+                let subcommand = cmd.strip_prefix("VERSION.").unwrap_or("").to_string();
+                let version_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Version {
+                    subcommand,
+                    args: version_args,
+                })
+            }
+
+            // Serverless function runtime commands
+            "FAAS" => {
+                let fn_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                let subcommand = fn_args
+                    .first()
+                    .cloned()
+                    .unwrap_or_else(|| "HELP".to_string())
+                    .to_uppercase();
+                let cmd_args = if fn_args.len() > 1 {
+                    fn_args[1..].to_vec()
+                } else {
+                    vec![]
+                };
+                Ok(Command::FaasFunction {
+                    subcommand,
+                    args: cmd_args,
+                })
+            }
+            cmd if cmd.starts_with("FAAS.") => {
+                let subcommand = cmd.strip_prefix("FAAS.").unwrap_or("").to_string();
+                let fn_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::FaasFunction {
+                    subcommand,
+                    args: fn_args,
+                })
+            }
 
             _ => Err(FerriteError::UnknownCommand(command_name)),
         }

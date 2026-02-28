@@ -153,6 +153,66 @@ impl CutoverOrchestrator {
         warn!("Cutover: cancellation requested");
     }
 
+    /// Run pre-cutover checks.
+    ///
+    /// Validates that replication lag is within the configured threshold
+    /// and that source/target data are consistent.
+    pub fn pre_check(&self, lag_bytes: u64, data_consistent: bool) -> Result<PreCheckResult, CutoverError> {
+        let mut warnings = Vec::new();
+
+        if lag_bytes > self.config.max_lag_ms {
+            return Err(CutoverError::LagTooHigh {
+                current_ms: lag_bytes,
+                max_ms: self.config.max_lag_ms,
+            });
+        }
+
+        if !data_consistent {
+            return Err(CutoverError::InconsistentData(
+                "source and target data do not match".to_string(),
+            ));
+        }
+
+        if lag_bytes > 0 {
+            warnings.push(format!("replication lag is {} bytes", lag_bytes));
+        }
+
+        let estimated_drain_time = if lag_bytes > 0 {
+            Duration::from_millis(lag_bytes / 10_000)
+        } else {
+            Duration::ZERO
+        };
+
+        Ok(PreCheckResult {
+            lag_bytes,
+            data_consistent,
+            estimated_drain_time,
+            warnings,
+        })
+    }
+
+    /// Execute a cutover and return a [`CutoverResult`].
+    ///
+    /// Wraps [`execute`](Self::execute) and translates the internal
+    /// [`CutoverSummary`] into the simpler [`CutoverResult`] type.
+    pub async fn execute_cutover(
+        &self,
+        current_lag_ms: u64,
+        total_keys: u64,
+        active_connections: u64,
+        final_offset: u64,
+    ) -> Result<CutoverResult, CutoverError> {
+        let summary = self.execute(current_lag_ms, total_keys, active_connections).await?;
+
+        Ok(CutoverResult {
+            success: summary.state == CutoverState::Completed,
+            duration: summary.duration,
+            keys_verified: summary.verification.keys_sampled as u64,
+            final_offset,
+            rollback_available: self.config.auto_rollback,
+        })
+    }
+
     /// Execute the full cutover process
     pub async fn execute(
         &self,
@@ -329,21 +389,64 @@ impl CutoverOrchestrator {
     }
 }
 
+/// Result of a pre-cutover readiness check.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PreCheckResult {
+    /// Current replication lag in bytes.
+    pub lag_bytes: u64,
+    /// Whether source and target data are consistent.
+    pub data_consistent: bool,
+    /// Estimated time to drain remaining lag.
+    pub estimated_drain_time: Duration,
+    /// Non-fatal warnings discovered during the check.
+    pub warnings: Vec<String>,
+}
+
+/// Outcome of a completed cutover operation.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CutoverResult {
+    /// Whether the cutover succeeded.
+    pub success: bool,
+    /// Wall-clock duration of the cutover.
+    pub duration: Duration,
+    /// Number of keys verified during cutover.
+    pub keys_verified: u64,
+    /// Final replication offset at cutover time.
+    pub final_offset: u64,
+    /// Whether a rollback path is available.
+    pub rollback_available: bool,
+}
+
 /// Cutover-specific errors
 #[derive(Debug, thiserror::Error)]
 pub enum CutoverError {
+    /// Replication lag exceeds the configured threshold.
     #[error("replication lag too high: {current_ms}ms > {max_ms}ms")]
     LagTooHigh { current_ms: u64, max_ms: u64 },
+    /// Data verification between source and target failed.
     #[error("data verification failed")]
     VerificationFailed(VerificationResult),
+    /// Cutover was cancelled by the operator.
     #[error("cutover cancelled")]
     Cancelled,
+    /// Cutover timed out.
     #[error("cutover timed out")]
     Timeout,
+    /// Invalid state transition.
     #[error("invalid state: {0}")]
     InvalidState(String),
+    /// Connection error during cutover.
     #[error("connection error: {0}")]
     ConnectionError(String),
+    /// Source and target data are inconsistent.
+    #[error("inconsistent data: {0}")]
+    InconsistentData(String),
+    /// Replication drain exceeded the configured timeout.
+    #[error("drain timed out after {0:?}")]
+    DrainTimeout(Duration),
+    /// Rollback operation failed.
+    #[error("rollback failed: {0}")]
+    RollbackFailed(String),
 }
 
 #[cfg(test)]

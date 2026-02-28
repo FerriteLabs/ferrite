@@ -452,7 +452,15 @@ impl CommandExecutor {
                 Frame::bulk("TOP COST [LIMIT n] -- Get top keys by cost."),
                 Frame::bulk("TOP SAVINGS [LIMIT n] -- Get top savings opportunities."),
                 Frame::bulk("SUBOPTIMAL [LIMIT n] -- Get keys not in optimal tier."),
+                Frame::bulk("SAVINGS -- Compute current vs optimal cost report."),
+                Frame::bulk("RECOMMEND [LIMIT n] -- Get tier change recommendations."),
+                Frame::bulk("COMPARE-REDIS <total_data_gb> [ops_per_sec] -- Compare costs with Redis."),
+                Frame::bulk("AUTO [GET|SET <field> <value>] -- Manage auto-tiering config."),
             ]),
+            "SAVINGS" => self.tiering_savings(),
+            "RECOMMEND" => self.tiering_recommend(args),
+            "COMPARE-REDIS" => self.tiering_compare_redis(args),
+            "AUTO" => self.tiering_auto_config(args),
             _ => Frame::error(format!(
                 "ERR Unknown subcommand or wrong number of arguments for 'tiering|{}'",
                 subcommand.to_lowercase()

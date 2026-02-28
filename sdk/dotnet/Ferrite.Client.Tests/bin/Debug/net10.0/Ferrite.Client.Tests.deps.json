@@ -1,0 +1,39 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "Ferrite.Client.Tests/1.0.0": {
+        "dependencies": {
+          "Ferrite.Client": "0.1.0"
+        },
+        "runtime": {
+          "Ferrite.Client.Tests.dll": {}
+        }
+      },
+      "Ferrite.Client/0.1.0": {
+        "runtime": {
+          "Ferrite.Client.dll": {
+            "assemblyVersion": "0.1.0.0",
+            "fileVersion": "0.1.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Ferrite.Client.Tests/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Ferrite.Client/0.1.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

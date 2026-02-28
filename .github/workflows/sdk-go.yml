@@ -1,0 +1,34 @@
+name: Go SDK
+
+on:
+  push:
+    paths: ['sdk/go/**']
+  pull_request:
+    paths: ['sdk/go/**']
+  workflow_dispatch:
+
+# Cancel in-progress runs for the same PR/branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Go ${{ matrix.go }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ['1.21', '1.22', '1.23']
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+      - name: Build
+        run: cd sdk/go && go build ./...
+      - name: Test
+        run: cd sdk/go && go test ./... -v -race
+      - name: Vet
+        run: cd sdk/go && go vet ./...

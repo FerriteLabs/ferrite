@@ -55,9 +55,12 @@ use super::ScriptExecutor;
 
 // Handler modules — core
 pub mod admin;
+pub mod agent;
+pub mod audit;
 pub mod cluster;
 pub mod crdt;
 pub mod ebpf;
+pub mod federation;
 pub mod keys;
 pub mod query;
 pub mod server;
@@ -68,7 +71,11 @@ pub mod timeseries;
 pub mod transaction;
 pub mod trigger;
 pub mod vector;
+pub mod version;
 pub mod wasm;
+
+// Handler modules — serverless functions
+pub mod functions;
 
 // Handler modules — experimental (require "experimental" feature)
 #[cfg(feature = "experimental")]
@@ -88,17 +95,74 @@ pub mod multicloud;
 #[cfg(feature = "experimental")]
 pub mod policy;
 #[cfg(feature = "experimental")]
+pub mod replication_cmd;
+#[cfg(feature = "experimental")]
 pub mod s3;
 #[cfg(feature = "experimental")]
 pub mod schema;
 
 // Handler modules — cloud feature
 #[cfg(feature = "cloud")]
+pub mod cloud;
+#[cfg(feature = "cloud")]
 pub mod edge;
 #[cfg(feature = "cloud")]
 pub mod rag;
 #[cfg(feature = "cloud")]
 pub mod semantic;
+
+// Handler modules — protocol
+pub mod protocol;
+
+// Handler modules — observability
+pub mod observe;
+pub mod views;
+
+// Handler modules — data lineage & pipelines
+pub mod lineage;
+pub mod optimizer;
+pub mod pipeline;
+
+// Handler modules — smart proxy
+pub mod smart_proxy_cmd;
+
+// Handler modules — distributed locking
+pub mod locks;
+
+// Handler modules — consensus-as-a-service
+pub mod consensus;
+
+// Handler modules — real-time feature store
+pub mod feature_store;
+
+// Handler modules — programmable access control
+pub mod policy_engine;
+
+// Handler modules — data contract registry
+pub mod contract;
+
+// Handler modules — analytics engine
+pub mod analytics;
+
+// Handler modules — global secondary indexes
+pub mod global_index;
+
+// Handler modules — chaos engineering
+pub mod chaos;
+
+// Handler modules — WASM extension marketplace
+pub mod marketplace;
+
+// Handler modules — predictive scaling
+#[cfg(feature = "cloud")]
+pub mod scaling;
+
+// Handler modules — data classification
+pub mod classify;
+
+// Handler modules — edge mesh networking
+#[cfg(feature = "cloud")]
+pub mod mesh;
 
 /// Context passed to all handler functions
 ///

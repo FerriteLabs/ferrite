@@ -2,10 +2,24 @@
 //!
 //! This module implements the TCP server and connection handling.
 
+/// AMQP protocol adapter for RabbitMQ-compatible message consumption
+pub mod amqp_adapter;
 pub mod cluster_redirect;
 mod connection;
+/// gRPC service definition and handler
+pub mod grpc_service;
+/// Memcached text/binary protocol support
+pub mod memcached_protocol;
+/// Native connection pooler and multiplexer
+pub mod connection_pool;
 mod handler;
+pub mod http_gateway;
+pub mod http_gateway_integration;
 mod listener;
+/// Transparent Redis proxy with connection pooling
+pub mod proxy;
+/// Zero-config smart proxy with Ferrite capability injection
+pub mod smart_proxy;
 /// TLS support for encrypted connections
 #[cfg(feature = "tls")]
 pub mod tls;

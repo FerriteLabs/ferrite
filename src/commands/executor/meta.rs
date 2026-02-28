@@ -1118,6 +1118,12 @@ impl Command {
                 keys: vec![],
                 permission: Permission::ReadWrite,
             },
+            Command::Tenant { .. } => CommandMeta {
+                name: "TENANT",
+                category: "admin",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
             Command::Edge { .. } => CommandMeta {
                 name: "EDGE",
                 category: "admin",
@@ -1965,6 +1971,12 @@ impl Command {
                 keys: vec![Bytes::from(name.clone())],
                 permission: Permission::Read,
             },
+            Command::View { ref subcommand, .. } => CommandMeta {
+                name: "VIEW",
+                category: "views",
+                keys: vec![Bytes::from(subcommand.clone())],
+                permission: Permission::Read,
+            },
 
             // Live migration commands
             Command::MigrateStart { .. } => CommandMeta {
@@ -2230,6 +2242,156 @@ impl Command {
                 category: "studio",
                 keys: vec![],
                 permission: Permission::Read,
+            },
+            Command::Cloud { .. } => CommandMeta {
+                name: "CLOUD",
+                category: "cloud",
+                keys: vec![],
+                permission: Permission::Write,
+            },
+            Command::Observe { .. } => CommandMeta {
+                name: "OBSERVE",
+                category: "observability",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+            Command::Agent { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("AGENT.{}", subcommand).into_boxed_str()),
+                category: "ai",
+                keys: vec![],
+                permission: Permission::Write,
+            },
+            Command::Audit { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("AUDIT.{}", subcommand).into_boxed_str()),
+                category: "admin",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+            Command::Proxy { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("PROXY.{}", subcommand).into_boxed_str()),
+                category: "proxy",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+            Command::Lock { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("LOCK.{}", subcommand).into_boxed_str()),
+                category: "locking",
+                keys: vec![],
+                permission: Permission::Write,
+            },
+            Command::Version { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("VERSION.{}", subcommand).into_boxed_str()),
+                category: "versioning",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+            Command::FaasFunction { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("FAAS.{}", subcommand).into_boxed_str()),
+                category: "functions",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+            Command::Federation { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("FEDERATE.{}", subcommand).into_boxed_str()),
+                category: "query",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+            Command::Protocol { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("PROTOCOL.{}", subcommand).into_boxed_str()),
+                category: "server",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+            Command::Lineage { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("LINEAGE.{}", subcommand).into_boxed_str()),
+                category: "lineage",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+            Command::Pipeline { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("PIPELINE.{}", subcommand).into_boxed_str()),
+                category: "pipeline",
+                keys: vec![],
+                permission: Permission::Write,
+            },
+            Command::Optimizer { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("OPTIMIZER.{}", subcommand).into_boxed_str()),
+                category: "optimizer",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+            Command::Analytics { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("ANALYTICS.{}", subcommand).into_boxed_str()),
+                category: "analytics",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+            Command::GlobalIndex { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("GIDX.{}", subcommand).into_boxed_str()),
+                category: "search",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+            Command::Classify { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("CLASSIFY.{}", subcommand).into_boxed_str()),
+                category: "classify",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+            Command::Mesh { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("MESH.{}", subcommand).into_boxed_str()),
+                category: "mesh",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+            Command::Chaos { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("CHAOS.{}", subcommand).into_boxed_str()),
+                category: "chaos",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+            Command::Marketplace { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("MARKETPLACE.{}", subcommand).into_boxed_str()),
+                category: "marketplace",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+            Command::Scaling { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("SCALING.{}", subcommand).into_boxed_str()),
+                category: "scaling",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+            Command::Consensus { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("CONSENSUS.{}", subcommand).into_boxed_str()),
+                category: "consensus",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+            Command::Feature { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("FEATURE.{}", subcommand).into_boxed_str()),
+                category: "feature_store",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+            Command::PolicyEngine { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("POLICYENGINE.{}", subcommand).into_boxed_str()),
+                category: "admin",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+            Command::Contract { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("CONTRACT.{}", subcommand).into_boxed_str()),
+                category: "admin",
+                keys: vec![],
+                permission: Permission::ReadWrite,
+            },
+            Command::Replicate { subcommand, .. } => CommandMeta {
+                name: Box::leak(format!("REPLICATE.{}", subcommand).into_boxed_str()),
+                category: "replication",
+                keys: vec![],
+                permission: Permission::Write,
             },
         }
     }

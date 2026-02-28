@@ -30,6 +30,9 @@ mod key_ops;
 mod meta;
 mod server_ops;
 mod string_ops;
+#[cfg(feature = "experimental")]
+mod tenant_ops;
+mod tiering_ops;
 #[cfg(test)]
 mod tests;
 
@@ -886,6 +889,7 @@ impl CommandExecutor {
 
             // List commands
             Command::LPush { key, values } => {
+                crate::commands::handlers::observe::record_command_access(key.as_ref(), true);
                 let result = lists::lpush(&self.store, db, &key, &values);
                 // Notify blocking manager that elements were pushed
                 if matches!(result, Frame::Integer(n) if n > 0) {
@@ -894,6 +898,7 @@ impl CommandExecutor {
                 result
             }
             Command::RPush { key, values } => {
+                crate::commands::handlers::observe::record_command_access(key.as_ref(), true);
                 let result = lists::rpush(&self.store, db, &key, &values);
                 // Notify blocking manager that elements were pushed
                 if matches!(result, Frame::Integer(n) if n > 0) {
@@ -1018,7 +1023,10 @@ impl CommandExecutor {
             }
 
             // Hash commands
-            Command::HSet { key, pairs } => hashes::hset(&self.store, db, &key, &pairs),
+            Command::HSet { key, pairs } => {
+                crate::commands::handlers::observe::record_command_access(key.as_ref(), true);
+                hashes::hset(&self.store, db, &key, &pairs)
+            }
             Command::HGet { key, field } => hashes::hget(&self.store, db, &key, &field),
             Command::HMSet { key, pairs } => hashes::hmset(&self.store, db, &key, &pairs),
             Command::HMGet { key, fields } => hashes::hmget(&self.store, db, &key, &fields),
@@ -1060,7 +1068,10 @@ impl CommandExecutor {
             ),
 
             // Set commands
-            Command::SAdd { key, members } => sets::sadd(&self.store, db, &key, &members),
+            Command::SAdd { key, members } => {
+                crate::commands::handlers::observe::record_command_access(key.as_ref(), true);
+                sets::sadd(&self.store, db, &key, &members)
+            }
             Command::SRem { key, members } => sets::srem(&self.store, db, &key, &members),
             Command::SMembers { key } => sets::smembers(&self.store, db, &key),
             Command::SIsMember { key, member } => sets::sismember(&self.store, db, &key, &member),
@@ -1095,6 +1106,7 @@ impl CommandExecutor {
                 options,
                 pairs,
             } => {
+                crate::commands::handlers::observe::record_command_access(key.as_ref(), true);
                 let result = sorted_sets::zadd(&self.store, db, &key, &options, &pairs);
                 // Notify blocking sorted set manager when elements are added
                 if let Frame::Integer(added) = &result {
@@ -1454,6 +1466,14 @@ impl CommandExecutor {
             // CDC commands
             Command::Cdc { subcommand, args } => self.cdc(&subcommand, &args).await,
 
+            // Tenant commands
+            #[cfg(feature = "experimental")]
+            Command::Tenant { subcommand, args } => self.tenant_command(&subcommand, &args),
+            #[cfg(not(feature = "experimental"))]
+            Command::Tenant { .. } => {
+                Frame::error("ERR tenant commands require the 'experimental' feature")
+            }
+
             // Edge runtime commands
             #[cfg(feature = "cloud")]
             Command::Edge { subcommand, args } => {
@@ -1467,6 +1487,26 @@ impl CommandExecutor {
             // eBPF tracing commands
             Command::Ebpf { subcommand, args } => {
                 handlers::ebpf::handle_ebpf(&subcommand, &args)
+            }
+
+            // Managed cloud commands
+            #[cfg(feature = "cloud")]
+            Command::Cloud { subcommand, args } => {
+                handlers::cloud::cloud(&subcommand, &args)
+            }
+            #[cfg(not(feature = "cloud"))]
+            Command::Cloud { .. } => {
+                Frame::error("ERR cloud commands require the 'cloud' feature")
+            }
+
+            // Observability heatmap commands
+            Command::Observe { subcommand, args } => {
+                handlers::observe::observe(&subcommand, &args)
+            }
+
+            // Materialized view commands (standalone handler)
+            Command::View { subcommand, args } => {
+                handlers::views::view_command(&subcommand, &args)
             }
 
             // Temporal commands
@@ -2296,6 +2336,136 @@ impl CommandExecutor {
             Command::StudioHelp { command } => self.handle_studio_help(&command).await,
             Command::StudioSuggest { context } => {
                 self.handle_studio_suggest(context.as_deref()).await
+            }
+
+            // AI Agent memory commands
+            Command::Agent { subcommand, args } => {
+                handlers::agent::agent_command(&subcommand, &args)
+            }
+
+            // Compliance and audit commands
+            Command::Audit { subcommand, args } => {
+                handlers::audit::audit_command(&subcommand, &args)
+            }
+
+            // Smart proxy commands
+            Command::Proxy { subcommand, args } => {
+                handlers::smart_proxy_cmd::proxy_command(&subcommand, &args)
+            }
+
+            // Distributed lock commands
+            Command::Lock { subcommand, args } => {
+                handlers::locks::lock_command(&subcommand, &args)
+            }
+
+            // Time-indexed data versioning commands
+            Command::Version { subcommand, args } => {
+                handlers::version::version_command(&subcommand, &args)
+            }
+
+            // Serverless function runtime commands
+            Command::FaasFunction { subcommand, args } => {
+                handlers::functions::function_command(&subcommand, &args)
+            }
+
+            // Federated query engine commands
+            Command::Federation { subcommand, args } => {
+                handlers::federation::federation_command(&subcommand, &args)
+            }
+
+            // Multi-protocol gateway commands
+            Command::Protocol { subcommand, args } => {
+                handlers::protocol::protocol_command(&subcommand, &args)
+            }
+
+            // Data lineage commands
+            Command::Lineage { subcommand, args } => {
+                handlers::lineage::lineage_command(&subcommand, &args)
+            }
+
+            // Composable data pipeline commands
+            Command::Pipeline { subcommand, args } => {
+                handlers::pipeline::pipeline_command(&subcommand, &args)
+            }
+
+            // Adaptive query optimizer commands
+            Command::Optimizer { subcommand, args } => {
+                handlers::optimizer::optimizer_command(&subcommand, &args)
+            }
+
+            // Programmable access control policy commands
+            Command::PolicyEngine { subcommand, args } => {
+                handlers::policy_engine::policy_engine_command(&subcommand, &args)
+            }
+
+            // Data contract registry commands
+            Command::Contract { subcommand, args } => {
+                handlers::contract::contract_command(&subcommand, &args)
+            }
+
+            // Embedded analytics engine commands
+            Command::Analytics { subcommand, args } => {
+                handlers::analytics::analytics_command(&subcommand, &args)
+            }
+
+            // Cross-cluster global secondary index commands
+            Command::GlobalIndex { subcommand, args } => {
+                handlers::global_index::global_index_command(&subcommand, &args)
+            }
+
+            // Automatic data classification commands
+            Command::Classify { subcommand, args } => {
+                handlers::classify::classify_command(&subcommand, &args)
+            }
+
+            // Edge mesh networking commands
+            #[cfg(feature = "cloud")]
+            Command::Mesh { subcommand, args } => {
+                handlers::mesh::mesh_command(&subcommand, &args)
+            }
+            #[cfg(not(feature = "cloud"))]
+            Command::Mesh { .. } => {
+                Frame::error("ERR mesh commands require the 'cloud' feature")
+            }
+
+            // Chaos engineering commands
+            Command::Chaos { subcommand, args } => {
+                handlers::chaos::chaos_command(&subcommand, &args)
+            }
+
+            // WASM extension marketplace commands
+            Command::Marketplace { subcommand, args } => {
+                handlers::marketplace::marketplace_command(&subcommand, &args)
+            }
+
+            // Predictive auto-scaling commands
+            #[cfg(feature = "cloud")]
+            Command::Scaling { subcommand, args } => {
+                handlers::scaling::scaling_command(&subcommand, &args)
+            }
+            #[cfg(not(feature = "cloud"))]
+            Command::Scaling { .. } => {
+                Frame::error("ERR scaling commands require the 'cloud' feature")
+            }
+
+            // Consensus-as-a-Service commands
+            Command::Consensus { subcommand, args } => {
+                handlers::consensus::consensus_command(&subcommand, &args)
+            }
+
+            // Real-time feature store commands
+            Command::Feature { subcommand, args } => {
+                handlers::feature_store::feature_command(&subcommand, &args)
+            }
+
+            // Multi-cloud replication commands
+            #[cfg(feature = "experimental")]
+            Command::Replicate { subcommand, args } => {
+                handlers::replication_cmd::replicate_command(&subcommand, &args)
+            }
+            #[cfg(not(feature = "experimental"))]
+            Command::Replicate { .. } => {
+                Frame::error("ERR replication commands require the 'experimental' feature")
             }
         }
     }

@@ -19,6 +19,8 @@
 //! crates/ferrite-plugins/src/wasm/  (core types, executor, permissions)
 //! ```
 
+pub mod playground;
+
 #[cfg(feature = "wasm")]
 pub mod runtime;
 

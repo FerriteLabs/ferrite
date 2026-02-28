@@ -12,6 +12,7 @@ use super::CommandExecutor;
 impl CommandExecutor {
     #[inline]
     pub(super) fn get(&self, db: u8, key: &Bytes) -> Frame {
+        crate::commands::handlers::observe::record_command_access(key.as_ref(), false);
         match self.store.get(db, key) {
             Some(Value::String(data)) => Frame::bulk(data),
             Some(_) => {
@@ -29,6 +30,7 @@ impl CommandExecutor {
         value: Bytes,
         options: crate::commands::parser::SetOptions,
     ) -> Frame {
+        crate::commands::handlers::observe::record_command_access(key.as_ref(), true);
         // Handle NX/XX conditions
         let exists = self.store.get(db, &key).is_some();
 
@@ -68,6 +70,9 @@ impl CommandExecutor {
 
     #[inline]
     pub(super) fn del(&self, db: u8, keys: &[Bytes]) -> Frame {
+        for key in keys {
+            crate::commands::handlers::observe::record_command_access(key.as_ref(), true);
+        }
         let count = self.store.del(db, keys);
         Frame::Integer(count)
     }
@@ -92,6 +97,9 @@ impl CommandExecutor {
 
     #[inline]
     pub(super) fn mset(&self, db: u8, pairs: Vec<(Bytes, Bytes)>) -> Frame {
+        for (key, _) in &pairs {
+            crate::commands::handlers::observe::record_command_access(key.as_ref(), true);
+        }
         for (key, value) in pairs {
             self.store.set(db, key, Value::String(value));
         }

@@ -5,12 +5,15 @@
 #![allow(clippy::print_stdout, clippy::print_stderr)]
 
 use std::process::ExitCode;
+use std::time::Duration;
 
 use clap::{Parser, Subcommand, ValueEnum};
 use colored::Colorize;
 
 use ferrite::migration::{
-    executor::MigrationStatus, MigrationConfig, MigrationMode, MigrationWizard,
+    executor::MigrationStatus, CutoverConfig as LibCutoverConfig, CutoverOrchestrator,
+    MigrationConfig, MigrationMode, MigrationWizard, RdbImportConfig, RdbImporter,
+    ReplicationConfig, ReplicationStream,
 };
 
 /// ferrite-migrate - Redis to Ferrite migration tool
@@ -109,6 +112,62 @@ enum Commands {
         #[arg(long)]
         no_verify: bool,
     },
+
+    /// Take a live snapshot from a running Redis instance via SCAN
+    Snapshot {
+        /// Source Redis URL (e.g., redis://host:port)
+        #[arg(long)]
+        source: String,
+
+        /// Source Redis password
+        #[arg(long)]
+        password: Option<String>,
+
+        /// Target database number
+        #[arg(long, default_value = "0")]
+        db: u8,
+    },
+
+    /// Start live replication stream from a Redis primary
+    Replicate {
+        /// Source Redis URL (e.g., redis://host:port)
+        #[arg(long)]
+        source: String,
+
+        /// Source Redis password
+        #[arg(long)]
+        password: Option<String>,
+    },
+
+    /// Execute zero-downtime cutover from Redis to Ferrite
+    Cutover {
+        /// Source Redis URL (e.g., redis://host:port)
+        #[arg(long)]
+        source: String,
+
+        /// Verify data consistency before cutover
+        #[arg(long)]
+        verify: bool,
+
+        /// Maximum time to wait for replication drain (e.g., 30s)
+        #[arg(long, default_value = "30s", value_parser = parse_duration_arg)]
+        drain_timeout: Duration,
+    },
+
+    /// Verify data consistency between Redis source and Ferrite
+    VerifyConsistency {
+        /// Source Redis URL (e.g., redis://host:port)
+        #[arg(long)]
+        source: String,
+
+        /// Source Redis password
+        #[arg(long)]
+        password: Option<String>,
+
+        /// Number of keys to sample for verification
+        #[arg(long, default_value = "1000")]
+        sample: usize,
+    },
 }
 
 /// CLI-friendly migration mode enum
@@ -187,6 +246,24 @@ async fn run(args: MigrateArgs) -> anyhow::Result<()> {
             key_pattern,
             no_verify,
         } => cmd_import(&file, &target, key_pattern.as_deref(), !no_verify).await,
+        Commands::Snapshot {
+            source,
+            password,
+            db,
+        } => cmd_snapshot(&source, password.as_deref(), db).await,
+        Commands::Replicate { source, password } => {
+            cmd_replicate(&source, password.as_deref()).await
+        }
+        Commands::Cutover {
+            source,
+            verify,
+            drain_timeout,
+        } => cmd_cutover(&source, verify, drain_timeout).await,
+        Commands::VerifyConsistency {
+            source,
+            password,
+            sample,
+        } => cmd_verify_consistency(&source, password.as_deref(), sample).await,
     }
 }
 
@@ -696,7 +773,316 @@ async fn cmd_import(
     Ok(())
 }
 
+// ── Snapshot ─────────────────────────────────────────────────────────
+
+async fn cmd_snapshot(source: &str, password: Option<&str>, db: u8) -> anyhow::Result<()> {
+    let (host, port) = parse_redis_url(source)?;
+
+    println!(
+        "{} Snapshotting Redis at {}:{}...",
+        "→".cyan().bold(),
+        host.yellow(),
+        port.to_string().yellow(),
+    );
+    println!();
+
+    let config = RdbImportConfig {
+        source_host: host,
+        source_port: port,
+        source_password: password.map(String::from),
+        target_db: db,
+        ..RdbImportConfig::default()
+    };
+
+    let mut importer = RdbImporter::new(config);
+
+    let info = importer
+        .connect()
+        .await
+        .map_err(|e| anyhow::anyhow!("{}", e))?;
+
+    println!("{}", "Source Info".bold().underline());
+    println!("  Redis version: {}", info.redis_version);
+    println!("  DB size:       {} keys", info.db_size);
+    println!("  Memory used:   {}", format_bytes(info.memory_used));
+    println!("  Role:          {}", info.role);
+    println!();
+
+    println!("{} Scanning and importing keys...", "→".cyan().bold());
+
+    let result = importer
+        .scan_and_import()
+        .await
+        .map_err(|e| anyhow::anyhow!("{}", e))?;
+
+    println!();
+    println!("{}", "Snapshot Summary".bold().underline());
+    println!(
+        "  {} Keys imported: {}",
+        "✓".green(),
+        result.keys_imported.to_string().green().bold()
+    );
+    println!("  {} Keys skipped: {}", "ℹ".blue(), result.keys_skipped);
+    println!(
+        "  {} Bytes transferred: {}",
+        "ℹ".blue(),
+        format_bytes(result.bytes_transferred)
+    );
+    println!(
+        "  {} Duration: {:.2}s",
+        "⏱".cyan(),
+        result.duration.as_secs_f64()
+    );
+
+    if !result.errors.is_empty() {
+        println!();
+        println!("{}", "Errors".bold().underline());
+        for e in &result.errors {
+            println!("  {} {}", "✗".red(), e);
+        }
+    }
+
+    println!();
+    Ok(())
+}
+
+// ── Replicate ────────────────────────────────────────────────────────
+
+async fn cmd_replicate(source: &str, password: Option<&str>) -> anyhow::Result<()> {
+    let (host, port) = parse_redis_url(source)?;
+
+    println!(
+        "{} Starting replication from {}:{}...",
+        "→".cyan().bold(),
+        host.yellow(),
+        port.to_string().yellow(),
+    );
+    println!();
+
+    let config = ReplicationConfig {
+        source_host: host,
+        source_port: port,
+        source_password: password.map(String::from),
+        replica_id: "ferrite-replica-001".to_string(),
+        replication_offset: 0,
+    };
+
+    let mut stream = ReplicationStream::new(config);
+
+    let handle = stream
+        .start_replication()
+        .await
+        .map_err(|e| anyhow::anyhow!("{}", e))?;
+
+    println!("{}", "Replication Started".bold().underline());
+    println!("  Stream ID: {}", handle.stream_id);
+    println!("  State:     {}", handle.state);
+    println!("  Offset:    {}", stream.current_offset());
+    println!();
+
+    let stats = stream.stats();
+    println!("{}", "Stream Stats".bold().underline());
+    println!("  Commands received: {}", stats.commands_received);
+    println!("  Bytes received:    {}", format_bytes(stats.bytes_received));
+    println!("  Lag:               {} bytes", stats.lag_bytes);
+    println!();
+
+    println!(
+        "{}",
+        "Replication is running. Press Ctrl+C to stop.".dimmed()
+    );
+
+    tokio::signal::ctrl_c()
+        .await
+        .map_err(|e| anyhow::anyhow!("signal error: {}", e))?;
+
+    stream.stop().map_err(|e| anyhow::anyhow!("{}", e))?;
+
+    println!();
+    println!("{}", "✓ Replication stopped.".green().bold());
+    Ok(())
+}
+
+// ── Cutover ──────────────────────────────────────────────────────────
+
+async fn cmd_cutover(
+    _source: &str,
+    verify: bool,
+    drain_timeout: Duration,
+) -> anyhow::Result<()> {
+    println!("{} Preparing zero-downtime cutover...", "→".cyan().bold());
+    println!();
+
+    let config = LibCutoverConfig {
+        drain_timeout,
+        auto_rollback: true,
+        verification_sample_size: if verify { 1000 } else { 0 },
+        ..LibCutoverConfig::default()
+    };
+
+    let orchestrator = CutoverOrchestrator::new(config);
+
+    println!("{} Running pre-cutover checks...", "→".cyan());
+    let pre = orchestrator
+        .pre_check(0, true)
+        .map_err(|e| anyhow::anyhow!("{}", e))?;
+
+    println!("{}", "Pre-Check Results".bold().underline());
+    println!("  Lag:             {} bytes", pre.lag_bytes);
+    println!(
+        "  Data consistent: {}",
+        if pre.data_consistent {
+            "yes".green()
+        } else {
+            "no".red()
+        }
+    );
+    println!(
+        "  Est. drain time: {:.2}s",
+        pre.estimated_drain_time.as_secs_f64()
+    );
+    for w in &pre.warnings {
+        println!("  {} {}", "⚠".yellow(), w);
+    }
+    println!();
+
+    println!("{} Executing cutover...", "→".cyan());
+    let result = orchestrator
+        .execute_cutover(0, 0, 0, 0)
+        .await
+        .map_err(|e| anyhow::anyhow!("{}", e))?;
+
+    println!();
+    if result.success {
+        println!("{}", "✓ Cutover completed successfully!".green().bold());
+    } else {
+        println!("{}", "✗ Cutover failed.".red().bold());
+    }
+    println!();
+
+    println!("{}", "Cutover Summary".bold().underline());
+    println!(
+        "  Duration:           {:.2}s",
+        result.duration.as_secs_f64()
+    );
+    println!("  Keys verified:      {}", result.keys_verified);
+    println!("  Final offset:       {}", result.final_offset);
+    println!(
+        "  Rollback available: {}",
+        if result.rollback_available {
+            "yes".green()
+        } else {
+            "no".red()
+        }
+    );
+    println!();
+
+    Ok(())
+}
+
+// ── Verify Consistency ───────────────────────────────────────────────
+
+async fn cmd_verify_consistency(
+    source: &str,
+    password: Option<&str>,
+    sample: usize,
+) -> anyhow::Result<()> {
+    let (host, port) = parse_redis_url(source)?;
+
+    println!(
+        "{} Verifying consistency against {}:{}...",
+        "→".cyan().bold(),
+        host.yellow(),
+        port.to_string().yellow(),
+    );
+    println!("  Sample size: {}", sample);
+    println!();
+
+    let config = RdbImportConfig {
+        source_host: host,
+        source_port: port,
+        source_password: password.map(String::from),
+        ..RdbImportConfig::default()
+    };
+
+    let importer = RdbImporter::new(config);
+    let result = importer
+        .verify_consistency(sample)
+        .await
+        .map_err(|e| anyhow::anyhow!("{}", e))?;
+
+    println!("{}", "Verification Results".bold().underline());
+    println!("  Sampled:    {}", result.sampled);
+    println!(
+        "  Matched:    {}",
+        result.matched.to_string().green().bold()
+    );
+    println!("  Mismatched: {}", result.mismatched);
+    println!("  Missing:    {}", result.missing);
+
+    if !result.mismatches.is_empty() {
+        println!();
+        println!("{}", "Mismatches".bold().underline());
+        for m in &result.mismatches {
+            println!("  {} {}: {}", "✗".red(), m.key, m.reason);
+        }
+    }
+
+    println!();
+    if result.mismatched == 0 && result.missing == 0 {
+        println!("{}", "✓ All sampled keys are consistent.".green().bold());
+    } else {
+        println!(
+            "{}",
+            "⚠ Inconsistencies found. Review mismatches above."
+                .yellow()
+                .bold()
+        );
+    }
+
+    Ok(())
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────
+
+/// Parse a Redis URL into (host, port).
+fn parse_redis_url(url: &str) -> anyhow::Result<(String, u16)> {
+    let stripped = url
+        .trim_start_matches("redis://")
+        .trim_start_matches("ferrite://")
+        .trim_start_matches("tcp://");
+    if let Some((host, port_str)) = stripped.rsplit_once(':') {
+        let port: u16 = port_str
+            .parse()
+            .map_err(|_| anyhow::anyhow!("invalid port: {}", port_str))?;
+        Ok((host.to_string(), port))
+    } else {
+        Ok((stripped.to_string(), 6379))
+    }
+}
+
+/// Parse a duration string like "30s", "5m", "1h" for clap.
+fn parse_duration_arg(s: &str) -> Result<Duration, String> {
+    let s = s.trim();
+    if let Some(secs) = s.strip_suffix('s') {
+        secs.parse::<u64>()
+            .map(Duration::from_secs)
+            .map_err(|e| format!("invalid seconds: {}", e))
+    } else if let Some(mins) = s.strip_suffix('m') {
+        mins.parse::<u64>()
+            .map(|m| Duration::from_secs(m * 60))
+            .map_err(|e| format!("invalid minutes: {}", e))
+    } else if let Some(hours) = s.strip_suffix('h') {
+        hours
+            .parse::<u64>()
+            .map(|h| Duration::from_secs(h * 3600))
+            .map_err(|e| format!("invalid hours: {}", e))
+    } else {
+        s.parse::<u64>()
+            .map(Duration::from_secs)
+            .map_err(|e| format!("invalid duration '{}': {}", s, e))
+    }
+}
 
 fn format_bytes(bytes: u64) -> String {
     const KB: u64 = 1024;
@@ -733,7 +1119,7 @@ async fn import_rdb(
     key_pattern: Option<&str>,
     verify: bool,
 ) -> anyhow::Result<()> {
-    use ferrite::migration::rdb_parser::{RdbParser, RdbValue};
+    use ferrite::migration::rdb_parser::{RdbParserV1 as RdbParser, RdbValueV1 as RdbValue};
     use std::time::Instant;
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     use tokio::net::TcpStream;

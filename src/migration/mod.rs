@@ -36,8 +36,14 @@ pub mod live;
 pub mod live_migration;
 pub mod planner;
 pub mod progress;
+/// Migration report generation.
+pub mod migration_report;
 /// Redis RDB file parser for snapshot-based migration.
 pub mod rdb_parser;
+/// Redis RDB snapshot import via SCAN.
+pub mod redis_import;
+/// Live replication stream for zero-downtime migration.
+pub mod replication_stream;
 pub mod validator;
 
 pub use analyzer::{CompatibilityAnalyzer, CompatibilityIssue, CompatibilityReport};
@@ -46,14 +52,22 @@ pub use cluster_migration::{
     ClusterMigrationState, MigrationCheckpoint, SlotMigrationPhase,
 };
 pub use cutover::{
-    CutoverConfig, CutoverError, CutoverOrchestrator, CutoverState, CutoverSummary,
-    VerificationResult,
+    CutoverConfig, CutoverError, CutoverOrchestrator, CutoverResult, CutoverState,
+    CutoverSummary, PreCheckResult, VerificationResult,
 };
 pub use executor::{MigrationExecutor, MigrationProgress, MigrationResult};
 pub use planner::{MigrationPlan, MigrationPlanner, MigrationStep};
 pub use progress::{
     DataVerifier, MigrationOutcome, MigrationPhase as ProgressPhase, MigrationProgressError,
     MigrationProgressTracker, MigrationReport, ProgressSnapshot,
+};
+pub use redis_import::{
+    ConnectionInfo, ImportError, ImportResult, MismatchDetail, RdbImportConfig, RdbImporter,
+    VerifyResult,
+};
+pub use replication_stream::{
+    ReplicationConfig, ReplicationError, ReplicationHandle, ReplicationState, ReplicationStats,
+    ReplicationStream,
 };
 pub use validator::{MigrationValidator, ValidationResult};
 

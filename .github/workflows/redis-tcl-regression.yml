@@ -1,0 +1,40 @@
+name: Redis TCL Test Regression
+on:
+  pull_request:
+    paths: ['src/**', 'crates/**']
+  push:
+    branches: [main]
+    paths: ['src/**', 'crates/**']
+
+jobs:
+  redis-compat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build Ferrite
+        run: cargo build --release
+      - name: Run Redis TCL Tests
+        run: |
+          ./target/release/ferrite &
+          sleep 2
+          cargo test --test redis_compatibility --release 2>&1 | tee compat-results.txt
+          kill %1
+      - name: Parse Results
+        run: |
+          PASS=$(grep -c "test .* ok" compat-results.txt || echo 0)
+          FAIL=$(grep -c "test .* FAILED" compat-results.txt || echo 0)
+          TOTAL=$((PASS + FAIL))
+          PCT=$((PASS * 100 / TOTAL))
+          echo "## Redis Compatibility: ${PCT}% (${PASS}/${TOTAL})" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Passed | ${PASS} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Failed | ${FAIL} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Total  | ${TOTAL} |" >> $GITHUB_STEP_SUMMARY
+      - name: Check threshold
+        run: |
+          PCT=$(grep -c "test .* ok" compat-results.txt || echo 0)
+          TOTAL=$(grep -c "test " compat-results.txt || echo 1)
+          RATIO=$((PCT * 100 / TOTAL))
+          if [ "$RATIO" -lt 90 ]; then echo "::warning::Compatibility below 90%"; fi

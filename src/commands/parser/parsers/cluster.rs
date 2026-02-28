@@ -83,6 +83,37 @@ pub(crate) fn parse_cdc(args: &[Frame]) -> Result<Command> {
     })
 }
 
+pub(crate) fn parse_tenant(command_name: &str, args: &[Frame]) -> Result<Command> {
+    // Handle both "TENANT subcommand" and "TENANT.SUBCOMMAND" forms
+    if command_name.contains('.') {
+        // TENANT.CREATE, TENANT.LIST, etc.
+        let subcommand = command_name
+            .splitn(2, '.')
+            .nth(1)
+            .unwrap_or("HELP")
+            .to_uppercase();
+        let tenant_args: Vec<String> = args.iter().filter_map(|f| get_string(f).ok()).collect();
+        Ok(Command::Tenant {
+            subcommand,
+            args: tenant_args,
+        })
+    } else {
+        // TENANT subcommand [args...]
+        if args.is_empty() {
+            return Err(FerriteError::WrongArity("TENANT".to_string()));
+        }
+        let subcommand = get_string(&args[0])?.to_uppercase();
+        let tenant_args: Vec<String> = args[1..]
+            .iter()
+            .filter_map(|f| get_string(f).ok())
+            .collect();
+        Ok(Command::Tenant {
+            subcommand,
+            args: tenant_args,
+        })
+    }
+}
+
 pub(crate) fn parse_edge(args: &[Frame]) -> Result<Command> {
     if args.is_empty() {
         return Err(FerriteError::WrongArity("EDGE".to_string()));
@@ -295,5 +326,41 @@ pub(crate) fn parse_ebpf(args: &[Frame]) -> Result<Command> {
     Ok(Command::Ebpf {
         subcommand,
         args: ebpf_args,
+    })
+}
+
+pub(crate) fn parse_cloud(args: &[Frame]) -> Result<Command> {
+    if args.is_empty() {
+        return Err(FerriteError::WrongArity("CLOUD".to_string()));
+    }
+
+    let subcommand = get_string(&args[0])?.to_uppercase();
+
+    let cloud_args: Vec<String> = args[1..]
+        .iter()
+        .filter_map(|f| get_string(f).ok())
+        .collect();
+
+    Ok(Command::Cloud {
+        subcommand,
+        args: cloud_args,
+    })
+}
+
+pub(crate) fn parse_observe(args: &[Frame]) -> Result<Command> {
+    if args.is_empty() {
+        return Err(FerriteError::WrongArity("OBSERVE".to_string()));
+    }
+
+    let subcommand = get_string(&args[0])?.to_uppercase();
+
+    let observe_args: Vec<String> = args[1..]
+        .iter()
+        .filter_map(|f| get_string(f).ok())
+        .collect();
+
+    Ok(Command::Observe {
+        subcommand,
+        args: observe_args,
     })
 }
