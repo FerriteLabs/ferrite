@@ -47,6 +47,7 @@ pub mod ebpf;
 #[cfg(target_os = "linux")]
 pub mod ebpf_linux;
 pub mod heatmap;
+pub mod key_heatmap;
 pub mod profiler;
 pub mod recommendations;
 pub mod slow_query_log;

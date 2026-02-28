@@ -29,5 +29,15 @@
 //! ```
 
 mod logger;
+pub mod classifier;
+pub mod compliance;
+pub mod contracts;
+pub mod lineage;
 
+pub use compliance::{
+    AuditConfig, AuditError, AuditEventType, AuditFilter, AuditResult, ChecklistItem,
+    ChecklistStatus, ComplianceAuditEntry, ComplianceAuditLog, ComplianceReport,
+    ComplianceReportData, DataExportResult, DeletionResult, ExportFormat, GdprHandler,
+    IntegrityResult, RetentionPolicy, RetentionStatus,
+};
 pub use logger::{noop_handle, AuditEntry, AuditHandle, AuditLogger, SharedAuditHandle};

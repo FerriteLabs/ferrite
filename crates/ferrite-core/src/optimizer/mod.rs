@@ -29,6 +29,7 @@
 //! println!("Recommendations: {}", plan.len());
 //! ```
 
+pub mod adaptive;
 pub mod auto_tuner;
 pub mod optimizer;
 pub mod profiler;

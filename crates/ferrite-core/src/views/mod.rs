@@ -26,6 +26,7 @@
 pub mod definition;
 pub mod dependency;
 pub mod engine;
+pub mod materialized;
 pub mod refresh;
 
 pub use definition::{
