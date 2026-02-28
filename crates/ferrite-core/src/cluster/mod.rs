@@ -11,6 +11,8 @@
 #![allow(dead_code)]
 pub mod auto_reshard;
 pub mod cluster_metrics;
+pub mod consensus_api;
+pub mod distributed_lock;
 pub mod failover;
 pub mod gossip;
 pub mod health;

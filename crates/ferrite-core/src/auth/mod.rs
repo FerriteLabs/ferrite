@@ -6,6 +6,7 @@
 #![allow(dead_code)]
 
 mod acl;
+pub mod policy_engine;
 mod user;
 
 pub use acl::{Acl, AclError, SharedAcl};

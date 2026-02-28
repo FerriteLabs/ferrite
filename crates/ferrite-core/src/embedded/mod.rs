@@ -251,6 +251,8 @@
 #![allow(dead_code)]
 mod database;
 pub mod edge;
+/// Lightweight DashMap-backed embedded database for edge and WASM deployments.
+pub mod edge_db;
 mod error;
 pub mod ffi;
 pub mod iot;
@@ -272,6 +274,7 @@ pub use edge::{
     CompactValue, CompressedValue, CompressionAlgorithm, EdgeConfig, EdgeError, EdgeStore,
     EdgeStoreStats,
 };
+pub use edge_db::{DatabaseConfig, DatabaseError};
 pub use error::{EmbeddedError, Result};
 pub use ffi::{
     generate_c_header, FerriteConfig, FerriteDb, FerriteError, FerriteResult, FerriteStats,
