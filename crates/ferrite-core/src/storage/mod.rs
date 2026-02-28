@@ -14,6 +14,7 @@
 //! The HybridLog uses epoch-based reclamation for safe lock-free reads.
 //! Cloud tiering allows cold data to be automatically migrated to cloud storage.
 
+//! Cloud tiering is gated behind the `cloud` feature flag.
 pub mod backend;
 #[cfg(feature = "cloud")]
 pub mod cloud;
