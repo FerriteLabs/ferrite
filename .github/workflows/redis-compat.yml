@@ -36,7 +36,7 @@ jobs:
     name: Compatibility Unit Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -56,7 +56,7 @@ jobs:
 
       - name: Upload compatibility report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: redis-compat-report
           path: redis-compat-report.md
@@ -76,7 +76,7 @@ jobs:
 
       - name: Post PR comment with compatibility results
         if: always() && github.event_name == 'pull_request'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');
@@ -126,7 +126,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -200,7 +200,7 @@ jobs:
 
       - name: Upload live compatibility report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: redis-live-compat-report
           path: redis-live-compat-report.md
@@ -222,7 +222,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [compat-unit-tests]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install dependencies
         run: |
@@ -233,7 +233,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache cargo
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -261,7 +261,7 @@ jobs:
 
       - name: Comment PR with results
         if: github.event_name == 'pull_request' && always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');
