@@ -233,6 +233,7 @@
 mod index;
 mod query;
 mod retention;
+pub mod versioning;
 
 pub use index::{
     CompactVersionEntry, LogOffset, OperationType, TemporalIndex, TemporalStats, VersionChain,

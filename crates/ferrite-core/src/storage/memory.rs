@@ -332,6 +332,8 @@ pub struct Store {
     num_dbs: usize,
     /// Optional workload profiler for adaptive tiering
     profiler: Option<Arc<WorkloadProfiler>>,
+    /// Optional auto-tiering engine for access pattern tracking
+    auto_tier: Option<Arc<crate::tiering::auto_tier::AutoTierEngine>>,
 }
 
 impl Store {
@@ -345,6 +347,7 @@ impl Store {
             backend: StorageBackend::Memory(databases),
             num_dbs: num_databases as usize,
             profiler: None,
+            auto_tier: None,
         }
     }
 
@@ -373,6 +376,7 @@ impl Store {
                     backend: StorageBackend::HybridLog(hybrid_logs),
                     num_dbs: config.databases as usize,
                     profiler: None,
+                    auto_tier: None,
                 })
             }
         }
@@ -381,6 +385,11 @@ impl Store {
     /// Set the workload profiler for access pattern tracking.
     pub fn set_profiler(&mut self, profiler: Arc<WorkloadProfiler>) {
         self.profiler = Some(profiler);
+    }
+
+    /// Set the auto-tiering engine for access pattern tracking.
+    pub fn set_auto_tier_engine(&mut self, engine: Arc<crate::tiering::auto_tier::AutoTierEngine>) {
+        self.auto_tier = Some(engine);
     }
 
     /// Get the profiler reference.
@@ -457,6 +466,9 @@ impl Store {
             let key_str = String::from_utf8_lossy(key);
             profiler.record_key_access(&key_str, CommandKind::Read, None);
         }
+        if let Some(ref engine) = self.auto_tier {
+            engine.record_access(key.as_ref(), false, 0);
+        }
         match &self.backend {
             StorageBackend::Memory(databases) => databases[db as usize].read().get(key),
             StorageBackend::HybridLog(logs) => {
@@ -493,6 +505,9 @@ impl Store {
         if let Some(profiler) = &self.profiler {
             let key_str = String::from_utf8_lossy(&key);
             profiler.record_key_access(&key_str, CommandKind::Write, None);
+        }
+        if let Some(ref engine) = self.auto_tier {
+            engine.record_access(key.as_ref(), true, 0);
         }
         match &self.backend {
             StorageBackend::Memory(databases) => databases[db as usize].read().set(key, value),
@@ -534,6 +549,11 @@ impl Store {
 
     /// Delete keys from a specific database
     pub fn del(&self, db: u8, keys: &[Bytes]) -> i64 {
+        if let Some(ref engine) = self.auto_tier {
+            for key in keys {
+                engine.record_access(key.as_ref(), true, 0);
+            }
+        }
         match &self.backend {
             StorageBackend::Memory(databases) => {
                 let database = databases[db as usize].read();

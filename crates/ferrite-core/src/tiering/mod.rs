@@ -29,6 +29,8 @@
 //! ```
 
 mod access;
+/// Autonomous auto-tiering engine with access tracking and cost optimization.
+pub mod auto_tier;
 /// Automated tiering advisor with budget and SLA-aware recommendations.
 pub mod advisor;
 pub mod backend;
@@ -43,6 +45,8 @@ mod optimizer;
 pub mod pipeline;
 pub mod predictor;
 pub mod prefetch;
+/// Cost savings calculator for tiered storage vs Redis comparison.
+pub mod savings_calculator;
 mod stats;
 /// Intelligent cache warming with ML-driven proactive key promotion.
 pub mod warming;
