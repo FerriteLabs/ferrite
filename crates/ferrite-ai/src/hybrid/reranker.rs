@@ -39,9 +39,7 @@ pub struct SimpleReranker;
 impl SimpleReranker {
     /// Tokenize text into lowercase terms.
     fn tokenize(text: &str) -> Vec<String> {
-        text.split_whitespace()
-            .map(|t| t.to_lowercase())
-            .collect()
+        text.split_whitespace().map(|t| t.to_lowercase()).collect()
     }
 
     /// Compute keyword overlap score between query and document.
@@ -78,10 +76,7 @@ impl Reranker for SimpleReranker {
             })
             .collect();
 
-        scored.sort_by(|a, b| {
-            b.2.partial_cmp(&a.2)
-                .unwrap_or(std::cmp::Ordering::Equal)
-        });
+        scored.sort_by(|a, b| b.2.partial_cmp(&a.2).unwrap_or(std::cmp::Ordering::Equal));
         scored.truncate(top_k);
 
         scored

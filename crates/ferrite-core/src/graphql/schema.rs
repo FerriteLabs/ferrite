@@ -196,13 +196,19 @@ impl GraphQLSchema {
             "get",
             FieldType::Object("KeyValue".to_string()),
             "Retrieve a key-value pair",
-            vec![required_arg("key", FieldType::String), arg("database", FieldType::Int, Some("0"))],
+            vec![
+                required_arg("key", FieldType::String),
+                arg("database", FieldType::Int, Some("0")),
+            ],
         ));
         self.query_fields.push(query_field(
             "mget",
             FieldType::List(Box::new(FieldType::Object("KeyValue".to_string()))),
             "Retrieve multiple keys",
-            vec![required_arg("keys", FieldType::List(Box::new(FieldType::String)))],
+            vec![required_arg(
+                "keys",
+                FieldType::List(Box::new(FieldType::String)),
+            )],
         ));
         self.query_fields.push(query_field(
             "exists",
@@ -232,7 +238,9 @@ impl GraphQLSchema {
         // Vector search query
         self.query_fields.push(query_field(
             "vectorSearch",
-            FieldType::List(Box::new(FieldType::Object("VectorSearchResult".to_string()))),
+            FieldType::List(Box::new(FieldType::Object(
+                "VectorSearchResult".to_string(),
+            ))),
             "Perform vector similarity search",
             vec![
                 required_arg("index", FieldType::String),
@@ -276,7 +284,10 @@ impl GraphQLSchema {
             "del",
             FieldType::Int,
             "Delete one or more keys",
-            vec![required_arg("keys", FieldType::List(Box::new(FieldType::String)))],
+            vec![required_arg(
+                "keys",
+                FieldType::List(Box::new(FieldType::String)),
+            )],
         ));
         self.mutation_fields.push(query_field(
             "expire",
@@ -466,10 +477,7 @@ mod tests {
     #[test]
     fn test_schema_has_vector_search() {
         let schema = GraphQLSchema::build();
-        assert!(schema
-            .query_fields
-            .iter()
-            .any(|f| f.name == "vectorSearch"));
+        assert!(schema.query_fields.iter().any(|f| f.name == "vectorSearch"));
     }
 
     #[test]

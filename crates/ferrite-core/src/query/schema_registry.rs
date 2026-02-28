@@ -493,8 +493,14 @@ impl SchemaRegistry {
             .iter()
             .map(|r| {
                 let entry = r.value().read();
-                let first = entry.versions.first().unwrap();
-                let last = entry.versions.last().unwrap();
+                let first = entry
+                    .versions
+                    .first()
+                    .expect("schema entry always has at least one version");
+                let last = entry
+                    .versions
+                    .last()
+                    .expect("schema entry always has at least one version");
                 let last_evolved = if entry.versions.len() > 1 {
                     Some(last.created_at)
                 } else {
@@ -579,7 +585,11 @@ impl SchemaRegistry {
             return Err(SchemaError::MaxVersionsExceeded);
         }
 
-        let current = entry.versions.last().unwrap().clone();
+        let current = entry
+            .versions
+            .last()
+            .expect("schema entry always has at least one version")
+            .clone();
         let new_version = current.version + 1;
 
         // Build evolved field set.
@@ -846,7 +856,11 @@ impl SchemaRegistry {
 
         self.rollback_count.fetch_add(1, Ordering::Relaxed);
 
-        let current = entry.versions.last().unwrap().clone();
+        let current = entry
+            .versions
+            .last()
+            .expect("schema must have at least one version after rollback")
+            .clone();
         Ok(current)
     }
 

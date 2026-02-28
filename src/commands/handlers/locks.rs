@@ -10,9 +10,7 @@ use std::time::Duration;
 use bytes::Bytes;
 
 use crate::protocol::Frame;
-use ferrite_core::cluster::distributed_lock::{
-    DistributedLockManager, LockConfig, LockType,
-};
+use ferrite_core::cluster::distributed_lock::{DistributedLockManager, LockConfig, LockType};
 
 use super::err_frame;
 

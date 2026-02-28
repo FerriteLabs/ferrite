@@ -263,9 +263,7 @@ impl ConsensusManager {
 
         let result = group.clone();
         groups.insert(name.to_string(), group);
-        self.entries
-            .write()
-            .insert(name.to_string(), Vec::new());
+        self.entries.write().insert(name.to_string(), Vec::new());
         Ok(result)
     }
 
@@ -280,12 +278,7 @@ impl ConsensusManager {
     }
 
     /// Propose a key-value pair to the consensus group. Returns the epoch.
-    pub fn propose(
-        &self,
-        group: &str,
-        key: &str,
-        value: &[u8],
-    ) -> Result<u64, ConsensusError> {
+    pub fn propose(&self, group: &str, key: &str, value: &[u8]) -> Result<u64, ConsensusError> {
         let start = Instant::now();
         let mut groups = self.groups.write();
         let g = groups
@@ -330,11 +323,7 @@ impl ConsensusManager {
     }
 
     /// Linearizable read of a key from a consensus group.
-    pub fn read(
-        &self,
-        group: &str,
-        key: &str,
-    ) -> Result<Option<ConsensusEntry>, ConsensusError> {
+    pub fn read(&self, group: &str, key: &str) -> Result<Option<ConsensusEntry>, ConsensusError> {
         self.stats.total_reads.fetch_add(1, Ordering::Relaxed);
         let groups = self.groups.read();
         let g = groups
@@ -407,11 +396,8 @@ impl ConsensusManager {
             .get_mut(group)
             .ok_or_else(|| ConsensusError::GroupNotFound(group.to_string()))?;
 
-        let pos = g
-            .members
-            .iter()
-            .position(|m| m == member)
-            .ok_or_else(|| {
+        let pos =
+            g.members.iter().position(|m| m == member).ok_or_else(|| {
                 ConsensusError::MemberNotFound(member.to_string(), group.to_string())
             })?;
         g.members.remove(pos);
@@ -565,7 +551,8 @@ mod tests {
     #[test]
     fn test_remove_nonexistent_member() {
         let mgr = default_manager();
-        mgr.create_group("rmtest", vec!["a".into()]).expect("create");
+        mgr.create_group("rmtest", vec!["a".into()])
+            .expect("create");
         let err = mgr.remove_member("rmtest", "ghost").unwrap_err();
         assert!(matches!(err, ConsensusError::MemberNotFound(_, _)));
     }

@@ -2,9 +2,7 @@
 //! Adaptive optimizer — analyzes workload snapshots and produces optimization plans.
 
 use super::profiler::WorkloadSnapshot;
-use super::recommendation::{
-    Action, OptimizationPlan, Recommendation, RecommendationPriority,
-};
+use super::recommendation::{Action, OptimizationPlan, Recommendation, RecommendationPriority};
 
 /// A heuristic rule that inspects a workload snapshot and optionally emits a recommendation.
 pub struct Rule {
@@ -57,10 +55,7 @@ impl AdaptiveOptimizer {
 
     /// List all registered rules.
     pub fn rules(&self) -> Vec<(&'static str, &'static str)> {
-        self.rules
-            .iter()
-            .map(|r| (r.name, r.description))
-            .collect()
+        self.rules.iter().map(|r| (r.name, r.description)).collect()
     }
 
     /// Number of rules.
@@ -183,7 +178,8 @@ fn default_rules() -> Vec<Rule> {
                         priority: RecommendationPriority::Low,
                         confidence: 0.70,
                         estimated_impact: 3.0,
-                        description: "Small values — compression overhead exceeds savings".to_string(),
+                        description: "Small values — compression overhead exceeds savings"
+                            .to_string(),
                     })
                 } else {
                     None
@@ -515,10 +511,7 @@ mod tests {
     fn test_hot_key_promotion() {
         let opt = AdaptiveOptimizer::new();
         let snap = make_snapshot(|s| {
-            s.hot_keys = vec![
-                ("key1".to_string(), 100),
-                ("key2".to_string(), 50),
-            ];
+            s.hot_keys = vec![("key1".to_string(), 100), ("key2".to_string(), 50)];
         });
         let plan = opt.analyze(&snap);
         assert!(plan
@@ -554,10 +547,7 @@ mod tests {
         let snap = make_snapshot(|s| {
             s.memory_usage_fraction = 0.97;
             s.avg_value_size = 2048.0;
-            s.hot_keys = vec![
-                ("key1".to_string(), 200),
-                ("key2".to_string(), 20),
-            ];
+            s.hot_keys = vec![("key1".to_string(), 200), ("key2".to_string(), 20)];
         });
         let plan = opt.analyze(&snap);
         assert!(!plan.warnings.is_empty());

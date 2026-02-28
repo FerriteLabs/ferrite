@@ -346,7 +346,10 @@ mod tests {
     fn test_config_set_get() {
         let tuner = AutoTuner::default();
         tuner.set_config_value("enabled", "false").ok();
-        assert_eq!(tuner.get_config_value("enabled").ok(), Some("false".to_string()));
+        assert_eq!(
+            tuner.get_config_value("enabled").ok(),
+            Some("false".to_string())
+        );
 
         tuner.set_config_value("confidence_threshold", "0.9").ok();
         assert_eq!(
@@ -365,8 +368,12 @@ mod tests {
     #[test]
     fn test_config_threshold_bounds() {
         let tuner = AutoTuner::default();
-        assert!(tuner.set_config_value("confidence_threshold", "1.5").is_err());
-        assert!(tuner.set_config_value("confidence_threshold", "-0.1").is_err());
+        assert!(tuner
+            .set_config_value("confidence_threshold", "1.5")
+            .is_err());
+        assert!(tuner
+            .set_config_value("confidence_threshold", "-0.1")
+            .is_err());
     }
 
     #[test]

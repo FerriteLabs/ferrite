@@ -162,9 +162,7 @@ impl ReplicationStream {
     ///
     /// Connects to the source Redis, authenticates if needed, and sends
     /// `PSYNC <replica_id> <offset>` to begin receiving the replication stream.
-    pub async fn start_replication(
-        &mut self,
-    ) -> Result<ReplicationHandle, ReplicationError> {
+    pub async fn start_replication(&mut self) -> Result<ReplicationHandle, ReplicationError> {
         use tokio::io::{AsyncReadExt, AsyncWriteExt};
         use tokio::net::TcpStream;
 
@@ -199,8 +197,7 @@ impl ReplicationStream {
         }
 
         // REPLCONF listening-port
-        let replconf_port =
-            "*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$4\r\n6380\r\n";
+        let replconf_port = "*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$4\r\n6380\r\n";
         stream
             .write_all(replconf_port.as_bytes())
             .await

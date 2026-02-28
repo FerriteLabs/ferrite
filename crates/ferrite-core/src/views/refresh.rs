@@ -44,9 +44,7 @@ impl ViewRefresher {
         if let RefreshStrategy::Periodic { interval_secs } = &view.refresh_strategy {
             match view.last_refreshed {
                 Some(last) => {
-                    let elapsed = chrono::Utc::now()
-                        .signed_duration_since(last)
-                        .num_seconds();
+                    let elapsed = chrono::Utc::now().signed_duration_since(last).num_seconds();
                     elapsed >= (*interval_secs as i64)
                 }
                 None => true,

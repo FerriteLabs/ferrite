@@ -115,7 +115,10 @@ fn observe_hotprefixes(args: &[String]) -> Frame {
 /// OBSERVE.HEATMAP — return slot-level heatmap as array of 16384 access counts.
 fn observe_heatmap() -> Frame {
     let slots = global_heatmap().get_slot_heatmap();
-    let frames: Vec<Frame> = slots.iter().map(|&count| Frame::Integer(count as i64)).collect();
+    let frames: Vec<Frame> = slots
+        .iter()
+        .map(|&count| Frame::Integer(count as i64))
+        .collect();
     Frame::array(frames)
 }
 

@@ -9,8 +9,8 @@ use std::sync::OnceLock;
 
 use crate::protocol::Frame;
 use ferrite_core::query::analytics::{
-    AggFunction, AnalyticsConfig, AnalyticsEngine, AnalyticsQuery, FilterExpr, FilterOp,
-    OrderExpr, SelectExpr,
+    AggFunction, AnalyticsConfig, AnalyticsEngine, AnalyticsQuery, FilterExpr, FilterOp, OrderExpr,
+    SelectExpr,
 };
 
 use super::err_frame;
@@ -228,8 +228,7 @@ fn handle_histogram(args: &[String]) -> Frame {
 
     match get_engine().histogram(source, field, buckets) {
         Ok(hist) => {
-            let json =
-                serde_json::to_string(&hist).unwrap_or_else(|_| "[]".to_string());
+            let json = serde_json::to_string(&hist).unwrap_or_else(|_| "[]".to_string());
             Frame::Bulk(Some(bytes::Bytes::from(json)))
         }
         Err(e) => err_frame(&e.to_string()),
@@ -274,15 +273,13 @@ fn handle_explain(args: &[String]) -> Frame {
     };
 
     let plan = get_engine().explain(&query);
-    let json =
-        serde_json::to_string(&plan).unwrap_or_else(|_| "{}".to_string());
+    let json = serde_json::to_string(&plan).unwrap_or_else(|_| "{}".to_string());
     Frame::Bulk(Some(bytes::Bytes::from(json)))
 }
 
 fn handle_stats() -> Frame {
     let stats = get_engine().stats();
-    let json =
-        serde_json::to_string(&stats).unwrap_or_else(|_| "{}".to_string());
+    let json = serde_json::to_string(&stats).unwrap_or_else(|_| "{}".to_string());
     Frame::Bulk(Some(bytes::Bytes::from(json)))
 }
 
@@ -383,8 +380,8 @@ fn parse_filter(tokens: &[String]) -> Option<FilterExpr> {
         _ => return None,
     };
 
-    let value = serde_json::from_str(&value_str)
-        .unwrap_or_else(|_| serde_json::Value::String(value_str));
+    let value =
+        serde_json::from_str(&value_str).unwrap_or_else(|_| serde_json::Value::String(value_str));
 
     Some(FilterExpr { field, op, value })
 }

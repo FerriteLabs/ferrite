@@ -288,10 +288,7 @@ impl GlobalIndexManager {
     }
 
     /// Create a new global index.
-    pub fn create_index(
-        &self,
-        def: GlobalIndexDefinition,
-    ) -> Result<(), GlobalIndexError> {
+    pub fn create_index(&self, def: GlobalIndexDefinition) -> Result<(), GlobalIndexError> {
         if def.name.is_empty() {
             return Err(GlobalIndexError::InvalidDefinition(
                 "index name is required".to_string(),
@@ -512,11 +509,7 @@ impl GlobalIndexManager {
     }
 
     /// Delete a document from the named index.
-    pub fn delete_document(
-        &self,
-        index: &str,
-        doc_id: &str,
-    ) -> Result<(), GlobalIndexError> {
+    pub fn delete_document(&self, index: &str, doc_id: &str) -> Result<(), GlobalIndexError> {
         let mut indexes = self.indexes.write();
         let store = indexes
             .get_mut(index)
@@ -531,12 +524,7 @@ impl GlobalIndexManager {
     /// Handle a CDC (Change Data Capture) event from a cluster.
     ///
     /// If `value` is `Some`, the key is upserted; if `None`, the key is deleted.
-    pub fn on_cdc_event(
-        &self,
-        _cluster_id: &str,
-        key: &str,
-        value: Option<&[u8]>,
-    ) {
+    pub fn on_cdc_event(&self, _cluster_id: &str, key: &str, value: Option<&[u8]>) {
         let indexes = self.indexes.read();
         for store in indexes.values() {
             let pattern_prefix = store.definition.source_pattern.trim_end_matches('*');
@@ -553,10 +541,7 @@ impl GlobalIndexManager {
     }
 
     /// Return replication status for the named index.
-    pub fn replication_status(
-        &self,
-        name: &str,
-    ) -> Option<ReplicationStatus> {
+    pub fn replication_status(&self, name: &str) -> Option<ReplicationStatus> {
         let indexes = self.indexes.read();
         let store = indexes.get(name)?;
 
@@ -737,8 +722,7 @@ mod tests {
 
         assert_eq!(mgr.list_indexes()[0].total_docs, 1);
 
-        mgr.delete_document("products_idx", "doc1")
-            .expect("delete");
+        mgr.delete_document("products_idx", "doc1").expect("delete");
         assert_eq!(mgr.list_indexes()[0].total_docs, 0);
     }
 
@@ -768,20 +752,14 @@ mod tests {
         mgr.index_document(
             "vec_idx",
             "v1",
-            HashMap::from([(
-                "embedding".to_string(),
-                serde_json::json!([1.0, 0.0, 0.0]),
-            )]),
+            HashMap::from([("embedding".to_string(), serde_json::json!([1.0, 0.0, 0.0]))]),
         )
         .expect("index");
 
         mgr.index_document(
             "vec_idx",
             "v2",
-            HashMap::from([(
-                "embedding".to_string(),
-                serde_json::json!([0.0, 1.0, 0.0]),
-            )]),
+            HashMap::from([("embedding".to_string(), serde_json::json!([0.0, 1.0, 0.0]))]),
         )
         .expect("index");
 

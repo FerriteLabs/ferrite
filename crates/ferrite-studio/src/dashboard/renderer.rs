@@ -16,10 +16,7 @@ impl TerminalRenderer {
 
         // Top border
         out.push_str("╔══════════════════════════════════════════════════════════════════════╗\n");
-        out.push_str(&format!(
-            "║ {:^68} ║\n",
-            title
-        ));
+        out.push_str(&format!("║ {:^68} ║\n", title));
         out.push_str("╠══════════════════════════════════════════════════════════════════════╣\n");
 
         // Server | Tiering | Cluster
@@ -41,7 +38,10 @@ impl TerminalRenderer {
             "║ Clients: {:<13} │ Mmap: {:>10} keys │ Nodes: {:<10} ║\n",
             snapshot.server.connected_clients,
             format_number(snapshot.tiering.mmap_keys),
-            format!("{}/{}", snapshot.cluster.nodes_healthy, snapshot.cluster.nodes_total),
+            format!(
+                "{}/{}",
+                snapshot.cluster.nodes_healthy, snapshot.cluster.nodes_total
+            ),
         ));
         out.push_str(&format!(
             "║ Memory: {:<14} │ Disk: {:>10} keys │ Slots: {:<10} ║\n",
@@ -58,8 +58,7 @@ impl TerminalRenderer {
         if snapshot.tiering.monthly_cost > 0.0 {
             out.push_str(&format!(
                 "║                         │ Cost: ${:<4}/mo → ${:<4}/mo │                   ║\n",
-                snapshot.tiering.monthly_cost as u64,
-                snapshot.tiering.optimal_cost as u64,
+                snapshot.tiering.monthly_cost as u64, snapshot.tiering.optimal_cost as u64,
             ));
         }
 
@@ -80,7 +79,12 @@ impl TerminalRenderer {
                 } else {
                     hk.key.clone()
                 };
-                format!("{}. {} {:>5}/s", i + 1, short_key, format_number_f64(hk.ops_per_sec))
+                format!(
+                    "{}. {} {:>5}/s",
+                    i + 1,
+                    short_key,
+                    format_number_f64(hk.ops_per_sec)
+                )
             } else {
                 String::new()
             };
@@ -94,17 +98,11 @@ impl TerminalRenderer {
                     "SET  P50:{:<5.1}  P99:{:<5.1}",
                     snapshot.latency.set_p50_us, snapshot.latency.set_p99_us,
                 ),
-                2 => format!(
-                    "ALL  P99:{:<5.1}",
-                    snapshot.latency.overall_p99_us,
-                ),
+                2 => format!("ALL  P99:{:<5.1}", snapshot.latency.overall_p99_us,),
                 _ => String::new(),
             };
 
-            out.push_str(&format!(
-                "║ {:<23} │ {:<44} ║\n",
-                key_col, lat_col
-            ));
+            out.push_str(&format!("║ {:<23} │ {:<44} ║\n", key_col, lat_col));
         }
 
         out.push_str("╚══════════════════════════════════════════════════════════════════════╝\n");
@@ -229,7 +227,8 @@ setTimeout(() => location.reload(), 5000);
             mem_used = format_bytes(snapshot.memory.used_bytes),
             mem_peak = format_bytes(snapshot.memory.peak_bytes),
             mem_pct = if snapshot.memory.peak_bytes > 0 {
-                (snapshot.memory.used_bytes as f64 / snapshot.memory.peak_bytes as f64 * 100.0) as u64
+                (snapshot.memory.used_bytes as f64 / snapshot.memory.peak_bytes as f64 * 100.0)
+                    as u64
             } else {
                 0
             },

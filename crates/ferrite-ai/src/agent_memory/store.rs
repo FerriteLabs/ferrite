@@ -260,9 +260,7 @@ impl PersistentAgentMemoryStore {
 
         let mut scored: Vec<(f32, StoreMemoryEntry)> = memories
             .values()
-            .filter(|m| {
-                m.agent_id == agent_id && !is_expired(m, now)
-            })
+            .filter(|m| m.agent_id == agent_id && !is_expired(m, now))
             .map(|m| {
                 let sim = if self.config.enable_semantic_search {
                     term_similarity(query, &m.content)
@@ -271,7 +269,9 @@ impl PersistentAgentMemoryStore {
                 };
                 (sim, m.clone())
             })
-            .filter(|(sim, _)| *sim >= self.config.similarity_threshold || !self.config.enable_semantic_search)
+            .filter(|(sim, _)| {
+                *sim >= self.config.similarity_threshold || !self.config.enable_semantic_search
+            })
             .collect();
 
         scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
@@ -319,9 +319,7 @@ impl PersistentAgentMemoryStore {
         let mut entries: Vec<StoreMemoryEntry> = memories
             .values()
             .filter(|m| {
-                m.agent_id == agent_id
-                    && m.memory_type == memory_type
-                    && !is_expired(m, now)
+                m.agent_id == agent_id && m.memory_type == memory_type && !is_expired(m, now)
             })
             .cloned()
             .collect();
@@ -381,7 +379,10 @@ impl PersistentAgentMemoryStore {
         let id = generate_id();
         let mut checkpoints = self.checkpoints.write();
         let mut wrapper = serde_json::Map::new();
-        wrapper.insert("agent_id".to_string(), serde_json::Value::String(agent_id.to_string()));
+        wrapper.insert(
+            "agent_id".to_string(),
+            serde_json::Value::String(agent_id.to_string()),
+        );
         wrapper.insert("state".to_string(), state);
         wrapper.insert(
             "created_at".to_string(),
@@ -465,7 +466,12 @@ mod tests {
     fn test_remember_and_recall_recent() {
         let store = default_store();
         let id = store
-            .remember("a1", "hello world", StoreMemoryType::Conversation, HashMap::new())
+            .remember(
+                "a1",
+                "hello world",
+                StoreMemoryType::Conversation,
+                HashMap::new(),
+            )
             .unwrap();
         assert!(!id.is_empty());
 
@@ -478,13 +484,28 @@ mod tests {
     fn test_recall_semantic() {
         let store = store_with_threshold(0.3);
         store
-            .remember("a1", "Rust is a fast systems language", StoreMemoryType::Fact, HashMap::new())
+            .remember(
+                "a1",
+                "Rust is a fast systems language",
+                StoreMemoryType::Fact,
+                HashMap::new(),
+            )
             .unwrap();
         store
-            .remember("a1", "Python is great for scripting", StoreMemoryType::Fact, HashMap::new())
+            .remember(
+                "a1",
+                "Python is great for scripting",
+                StoreMemoryType::Fact,
+                HashMap::new(),
+            )
             .unwrap();
         store
-            .remember("a1", "Databases store data on disk", StoreMemoryType::Fact, HashMap::new())
+            .remember(
+                "a1",
+                "Databases store data on disk",
+                StoreMemoryType::Fact,
+                HashMap::new(),
+            )
             .unwrap();
 
         let results = store.recall("a1", "Rust fast", 2);
@@ -495,9 +516,15 @@ mod tests {
     #[test]
     fn test_recall_by_type() {
         let store = default_store();
-        store.remember("a1", "conv1", StoreMemoryType::Conversation, HashMap::new()).unwrap();
-        store.remember("a1", "fact1", StoreMemoryType::Fact, HashMap::new()).unwrap();
-        store.remember("a1", "obs1", StoreMemoryType::Observation, HashMap::new()).unwrap();
+        store
+            .remember("a1", "conv1", StoreMemoryType::Conversation, HashMap::new())
+            .unwrap();
+        store
+            .remember("a1", "fact1", StoreMemoryType::Fact, HashMap::new())
+            .unwrap();
+        store
+            .remember("a1", "obs1", StoreMemoryType::Observation, HashMap::new())
+            .unwrap();
 
         let facts = store.recall_by_type("a1", StoreMemoryType::Fact, 10);
         assert_eq!(facts.len(), 1);
@@ -507,7 +534,9 @@ mod tests {
     #[test]
     fn test_forget_single() {
         let store = default_store();
-        let id = store.remember("a1", "to forget", StoreMemoryType::Fact, HashMap::new()).unwrap();
+        let id = store
+            .remember("a1", "to forget", StoreMemoryType::Fact, HashMap::new())
+            .unwrap();
         assert!(store.forget(&id).is_ok());
         assert!(store.forget(&id).is_err());
         assert_eq!(store.recall_recent("a1", 10).len(), 0);
@@ -516,9 +545,15 @@ mod tests {
     #[test]
     fn test_forget_agent() {
         let store = default_store();
-        store.remember("a1", "m1", StoreMemoryType::Fact, HashMap::new()).unwrap();
-        store.remember("a1", "m2", StoreMemoryType::Fact, HashMap::new()).unwrap();
-        store.remember("a2", "m3", StoreMemoryType::Fact, HashMap::new()).unwrap();
+        store
+            .remember("a1", "m1", StoreMemoryType::Fact, HashMap::new())
+            .unwrap();
+        store
+            .remember("a1", "m2", StoreMemoryType::Fact, HashMap::new())
+            .unwrap();
+        store
+            .remember("a2", "m3", StoreMemoryType::Fact, HashMap::new())
+            .unwrap();
 
         let deleted = store.forget_agent("a1");
         assert_eq!(deleted, 2);
@@ -529,7 +564,9 @@ mod tests {
     #[test]
     fn test_forget_before() {
         let store = default_store();
-        store.remember("a1", "old", StoreMemoryType::Fact, HashMap::new()).unwrap();
+        store
+            .remember("a1", "old", StoreMemoryType::Fact, HashMap::new())
+            .unwrap();
         // All memories created at ~now, so forget_before(now+1000) should delete them
         let deleted = store.forget_before("a1", now_millis() + 1000);
         assert_eq!(deleted, 1);
@@ -538,7 +575,9 @@ mod tests {
     #[test]
     fn test_update_importance() {
         let store = default_store();
-        let id = store.remember("a1", "test", StoreMemoryType::Fact, HashMap::new()).unwrap();
+        let id = store
+            .remember("a1", "test", StoreMemoryType::Fact, HashMap::new())
+            .unwrap();
         store.update_importance(&id, 0.9).unwrap();
 
         let recent = store.recall_recent("a1", 1);
@@ -548,7 +587,9 @@ mod tests {
     #[test]
     fn test_update_importance_clamping() {
         let store = default_store();
-        let id = store.remember("a1", "test", StoreMemoryType::Fact, HashMap::new()).unwrap();
+        let id = store
+            .remember("a1", "test", StoreMemoryType::Fact, HashMap::new())
+            .unwrap();
         store.update_importance(&id, 2.0).unwrap();
 
         let recent = store.recall_recent("a1", 1);
@@ -569,14 +610,26 @@ mod tests {
     #[test]
     fn test_stats() {
         let store = default_store();
-        store.remember("a1", "conv", StoreMemoryType::Conversation, HashMap::new()).unwrap();
-        store.remember("a1", "fact1", StoreMemoryType::Fact, HashMap::new()).unwrap();
-        store.remember("a1", "fact2", StoreMemoryType::Fact, HashMap::new()).unwrap();
+        store
+            .remember("a1", "conv", StoreMemoryType::Conversation, HashMap::new())
+            .unwrap();
+        store
+            .remember("a1", "fact1", StoreMemoryType::Fact, HashMap::new())
+            .unwrap();
+        store
+            .remember("a1", "fact2", StoreMemoryType::Fact, HashMap::new())
+            .unwrap();
 
         let stats = store.stats("a1");
         assert_eq!(stats.total_memories, 3);
         assert_eq!(*stats.by_type.get(&StoreMemoryType::Fact).unwrap_or(&0), 2);
-        assert_eq!(*stats.by_type.get(&StoreMemoryType::Conversation).unwrap_or(&0), 1);
+        assert_eq!(
+            *stats
+                .by_type
+                .get(&StoreMemoryType::Conversation)
+                .unwrap_or(&0),
+            1
+        );
         assert!(stats.total_bytes > 0);
     }
 
@@ -586,8 +639,12 @@ mod tests {
             max_memories: 2,
             ..Default::default()
         });
-        store.remember("a1", "m1", StoreMemoryType::Fact, HashMap::new()).unwrap();
-        store.remember("a1", "m2", StoreMemoryType::Fact, HashMap::new()).unwrap();
+        store
+            .remember("a1", "m1", StoreMemoryType::Fact, HashMap::new())
+            .unwrap();
+        store
+            .remember("a1", "m2", StoreMemoryType::Fact, HashMap::new())
+            .unwrap();
         let result = store.remember("a1", "m3", StoreMemoryType::Fact, HashMap::new());
         assert!(matches!(result, Err(MemoryError::StoreFull(_))));
     }
@@ -601,9 +658,18 @@ mod tests {
 
     #[test]
     fn test_memory_type_parse() {
-        assert_eq!(StoreMemoryType::from_str_loose("conversation"), Some(StoreMemoryType::Conversation));
-        assert_eq!(StoreMemoryType::from_str_loose("FACT"), Some(StoreMemoryType::Fact));
-        assert_eq!(StoreMemoryType::from_str_loose("tool"), Some(StoreMemoryType::ToolResult));
+        assert_eq!(
+            StoreMemoryType::from_str_loose("conversation"),
+            Some(StoreMemoryType::Conversation)
+        );
+        assert_eq!(
+            StoreMemoryType::from_str_loose("FACT"),
+            Some(StoreMemoryType::Fact)
+        );
+        assert_eq!(
+            StoreMemoryType::from_str_loose("tool"),
+            Some(StoreMemoryType::ToolResult)
+        );
         assert_eq!(StoreMemoryType::from_str_loose("unknown"), None);
     }
 

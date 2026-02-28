@@ -153,7 +153,10 @@ impl FaaSRegistry {
 
         // Check status
         {
-            let entry = self.functions.get(name).unwrap();
+            let entry = self
+                .functions
+                .get(name)
+                .expect("function existence already checked");
             if entry.meta.status != FunctionStatus::Active {
                 return Err(FaaSRegistryError::InvocationError(format!(
                     "function '{}' is {}",
@@ -177,7 +180,10 @@ impl FaaSRegistry {
 
         // Update stats
         {
-            let mut entry = self.functions.get_mut(name).unwrap();
+            let mut entry = self
+                .functions
+                .get_mut(name)
+                .expect("function existence already checked");
             entry.meta.invocation_count += 1;
             entry.total_latency_ms += result.execution_time_ms;
             entry.meta.avg_latency_ms =

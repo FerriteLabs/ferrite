@@ -46,10 +46,7 @@ pub fn mesh_command(subcommand: &str, args: &[String]) -> Frame {
 fn handle_discover(args: &[String]) -> Frame {
     match get_manager().start_discovery() {
         Ok(()) => {
-            let method = args
-                .first()
-                .map(|s| s.as_str())
-                .unwrap_or("MDNS");
+            let method = args.first().map(|s| s.as_str()).unwrap_or("MDNS");
             Frame::Simple(Bytes::from(format!("OK discovery started ({})", method)))
         }
         Err(e) => err_frame(&e.to_string()),

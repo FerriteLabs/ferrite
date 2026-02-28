@@ -37,9 +37,9 @@ impl ConflictStrategy {
             "lww" | "lastwriterwins" | "last-writer-wins" => Some(Self::LastWriterWins),
             "highest-region-id" | "highestregionid" => Some(Self::HighestRegionId),
             "merge" => Some(Self::Merge),
-            other if other.starts_with("custom:") => {
-                Some(Self::Custom(other.trim_start_matches("custom:").to_string()))
-            }
+            other if other.starts_with("custom:") => Some(Self::Custom(
+                other.trim_start_matches("custom:").to_string(),
+            )),
             _ => None,
         }
     }
@@ -173,15 +173,9 @@ mod tests {
         remote_clock.increment("eu-west");
 
         let (lt, rt) = if local_newer {
-            (
-                Utc::now(),
-                Utc::now() - chrono::Duration::seconds(10),
-            )
+            (Utc::now(), Utc::now() - chrono::Duration::seconds(10))
         } else {
-            (
-                Utc::now() - chrono::Duration::seconds(10),
-                Utc::now(),
-            )
+            (Utc::now() - chrono::Duration::seconds(10), Utc::now())
         };
 
         Conflict {

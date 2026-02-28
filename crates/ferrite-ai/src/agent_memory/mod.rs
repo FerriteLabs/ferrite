@@ -67,8 +67,8 @@ pub use semantic_memory::{
 };
 pub use sharing::{MemorySharingHub, SharedMemory, SharingError, SharingPermission, Visibility};
 pub use store::{
-    AgentMemoryConfig, AgentMemoryStats, MemoryError, PersistentAgentMemoryStore,
-    StoreMemoryEntry, StoreMemoryType,
+    AgentMemoryConfig, AgentMemoryStats, MemoryError, PersistentAgentMemoryStore, StoreMemoryEntry,
+    StoreMemoryType,
 };
 
 use std::collections::HashMap;

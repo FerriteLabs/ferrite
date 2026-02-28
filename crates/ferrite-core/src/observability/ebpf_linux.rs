@@ -137,11 +137,7 @@ impl LinuxEbpfTracer {
     }
 
     /// Attach a tracepoint
-    pub fn attach_tracepoint(
-        &self,
-        category: &str,
-        name: &str,
-    ) -> Result<String, TracerError> {
+    pub fn attach_tracepoint(&self, category: &str, name: &str) -> Result<String, TracerError> {
         let target = format!("{}:{}", category, name);
         let tp_path = self.tracefs_path.join("events").join(category).join(name);
         if !tp_path.exists() {

@@ -269,9 +269,7 @@ impl DistributedLockManager {
             Some(entry) if now >= entry.expires_at => LockState::Expired {
                 held_ms: entry.ttl.as_millis() as u64,
             },
-            Some(entry) if entry.owner == owner => LockState::Reentrant {
-                token: entry.token,
-            },
+            Some(entry) if entry.owner == owner => LockState::Reentrant { token: entry.token },
             Some(entry) => LockState::Contended {
                 current_owner: entry.owner.clone(),
             },
@@ -359,7 +357,8 @@ impl DistributedLockManager {
         }
 
         let held_ms = entry.acquired_at.elapsed().as_millis() as u64;
-        self.hold_time_total_ms.fetch_add(held_ms, Ordering::Relaxed);
+        self.hold_time_total_ms
+            .fetch_add(held_ms, Ordering::Relaxed);
         locks.remove(key);
         self.total_released.fetch_add(1, Ordering::Relaxed);
 
@@ -396,7 +395,8 @@ impl DistributedLockManager {
         if let Some(entry) = locks.get(key) {
             if now >= entry.expires_at {
                 let held_ms = entry.ttl.as_millis() as u64;
-                self.hold_time_total_ms.fetch_add(held_ms, Ordering::Relaxed);
+                self.hold_time_total_ms
+                    .fetch_add(held_ms, Ordering::Relaxed);
                 self.total_expired.fetch_add(1, Ordering::Relaxed);
                 locks.remove(key);
             } else {
@@ -448,10 +448,7 @@ impl DistributedLockManager {
             if now >= entry.expires_at {
                 return None;
             }
-            let queue_depth = queues
-                .get(key)
-                .map(|q| q.waiters.len())
-                .unwrap_or(0);
+            let queue_depth = queues.get(key).map(|q| q.waiters.len()).unwrap_or(0);
             Some(LockInfo {
                 key: entry.key.clone(),
                 owner: entry.owner.clone(),
@@ -474,10 +471,7 @@ impl DistributedLockManager {
             .values()
             .filter(|e| e.owner == owner && now < e.expires_at)
             .map(|entry| {
-                let queue_depth = queues
-                    .get(&entry.key)
-                    .map(|q| q.waiters.len())
-                    .unwrap_or(0);
+                let queue_depth = queues.get(&entry.key).map(|q| q.waiters.len()).unwrap_or(0);
                 LockInfo {
                     key: entry.key.clone(),
                     owner: entry.owner.clone(),
@@ -558,7 +552,8 @@ impl DistributedLockManager {
         for key in &expired_keys {
             if let Some(entry) = locks.remove(key) {
                 let held_ms = entry.ttl.as_millis() as u64;
-                self.hold_time_total_ms.fetch_add(held_ms, Ordering::Relaxed);
+                self.hold_time_total_ms
+                    .fetch_add(held_ms, Ordering::Relaxed);
             }
         }
 
@@ -579,7 +574,10 @@ impl DistributedLockManager {
         let locks = self.locks.read();
         let queues = self.queues.read();
 
-        let active = locks.values().filter(|e| Instant::now() < e.expires_at).count() as u64;
+        let active = locks
+            .values()
+            .filter(|e| Instant::now() < e.expires_at)
+            .count() as u64;
         let queued: u64 = queues.values().map(|q| q.waiters.len() as u64).sum();
         let acquired = self.total_acquired.load(Ordering::Relaxed);
         let released = self.total_released.load(Ordering::Relaxed);
@@ -716,7 +714,8 @@ impl DistributedLockManager {
             let cycle_start = path.iter().position(|(_, n)| n == node);
             if let Some(start) = cycle_start {
                 let cycle_edges = &path[start..];
-                let participants: Vec<String> = cycle_edges.iter().map(|(_, n)| n.clone()).collect();
+                let participants: Vec<String> =
+                    cycle_edges.iter().map(|(_, n)| n.clone()).collect();
                 let keys: Vec<String> = cycle_edges.iter().map(|(k, _)| k.clone()).collect();
                 cycles.push(DeadlockCycle {
                     participants,
@@ -758,7 +757,12 @@ mod tests {
     fn test_basic_acquire_release() {
         let mgr = default_manager();
         let grant = mgr
-            .acquire("key1", "owner1", Duration::from_secs(10), LockType::Exclusive)
+            .acquire(
+                "key1",
+                "owner1",
+                Duration::from_secs(10),
+                LockType::Exclusive,
+            )
             .expect("acquire");
         assert_eq!(grant.key, "key1");
         assert!(grant.token > 0);
@@ -787,12 +791,22 @@ mod tests {
     fn test_contention_with_queue() {
         let mgr = default_manager();
         let _g1 = mgr
-            .acquire("key1", "owner1", Duration::from_secs(30), LockType::Exclusive)
+            .acquire(
+                "key1",
+                "owner1",
+                Duration::from_secs(30),
+                LockType::Exclusive,
+            )
             .expect("acquire");
 
         // Second acquire should queue
         let g2 = mgr
-            .acquire("key1", "owner2", Duration::from_secs(30), LockType::Exclusive)
+            .acquire(
+                "key1",
+                "owner2",
+                Duration::from_secs(30),
+                LockType::Exclusive,
+            )
             .expect("queued");
         assert!(g2.queue_position.is_some());
     }
@@ -805,10 +819,20 @@ mod tests {
         };
         let mgr = DistributedLockManager::new(config);
         let _g1 = mgr
-            .acquire("key1", "owner1", Duration::from_secs(30), LockType::Exclusive)
+            .acquire(
+                "key1",
+                "owner1",
+                Duration::from_secs(30),
+                LockType::Exclusive,
+            )
             .expect("acquire");
 
-        let result = mgr.acquire("key1", "owner2", Duration::from_secs(30), LockType::Exclusive);
+        let result = mgr.acquire(
+            "key1",
+            "owner2",
+            Duration::from_secs(30),
+            LockType::Exclusive,
+        );
         assert!(matches!(result, Err(LockError::AlreadyLocked(_, _))));
     }
 
@@ -816,7 +840,12 @@ mod tests {
     fn test_ttl_expiry() {
         let mgr = default_manager();
         let _g = mgr
-            .acquire("key1", "owner1", Duration::from_millis(1), LockType::Exclusive)
+            .acquire(
+                "key1",
+                "owner1",
+                Duration::from_millis(1),
+                LockType::Exclusive,
+            )
             .expect("acquire");
 
         std::thread::sleep(Duration::from_millis(5));
@@ -827,7 +856,12 @@ mod tests {
     fn test_extend_lease() {
         let mgr = default_manager();
         let grant = mgr
-            .acquire("key1", "owner1", Duration::from_secs(5), LockType::Exclusive)
+            .acquire(
+                "key1",
+                "owner1",
+                Duration::from_secs(5),
+                LockType::Exclusive,
+            )
             .expect("acquire");
         let original_expires = grant.expires_at;
 
@@ -841,7 +875,12 @@ mod tests {
     fn test_invalid_token_release() {
         let mgr = default_manager();
         let _g = mgr
-            .acquire("key1", "owner1", Duration::from_secs(10), LockType::Exclusive)
+            .acquire(
+                "key1",
+                "owner1",
+                Duration::from_secs(10),
+                LockType::Exclusive,
+            )
             .expect("acquire");
 
         let result = mgr.release("key1", 99999);
@@ -867,7 +906,12 @@ mod tests {
     fn test_lock_info() {
         let mgr = default_manager();
         let grant = mgr
-            .acquire("key1", "owner1", Duration::from_secs(30), LockType::Exclusive)
+            .acquire(
+                "key1",
+                "owner1",
+                Duration::from_secs(30),
+                LockType::Exclusive,
+            )
             .expect("acquire");
 
         let info = mgr.lock_info("key1").expect("info");

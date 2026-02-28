@@ -180,7 +180,9 @@ impl StreamingBroker {
             key: record.key,
             value: record.value,
             headers: record.headers,
-            timestamp: record.timestamp.unwrap_or_else(|| Utc::now().timestamp_millis()),
+            timestamp: record
+                .timestamp
+                .unwrap_or_else(|| Utc::now().timestamp_millis()),
         };
 
         let offset = log.write().append(consumer_record);
@@ -230,11 +232,7 @@ impl StreamingBroker {
     }
 
     /// Get earliest and latest offsets for a partition.
-    pub fn get_offsets(
-        &self,
-        topic: &str,
-        partition: u32,
-    ) -> Result<(i64, i64), BrokerError> {
+    pub fn get_offsets(&self, topic: &str, partition: u32) -> Result<(i64, i64), BrokerError> {
         let key = (topic.to_string(), partition);
         let log = self
             .partitions

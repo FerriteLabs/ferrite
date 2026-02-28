@@ -65,22 +65,92 @@ impl std::fmt::Display for RiskLevel {
 
 /// Core compatible commands list (subset).
 const COMPATIBLE_COMMANDS: &[&str] = &[
-    "GET", "SET", "DEL", "MGET", "MSET", "INCR", "DECR", "APPEND", "STRLEN", "EXPIRE", "TTL",
-    "PERSIST", "TYPE", "EXISTS", "KEYS", "SCAN", "HSET", "HGET", "HDEL", "HGETALL", "HMSET",
-    "HMGET", "HLEN", "HEXISTS", "HKEYS", "HVALS", "LPUSH", "RPUSH", "LPOP", "RPOP", "LLEN",
-    "LRANGE", "LINDEX", "SADD", "SREM", "SMEMBERS", "SCARD", "SISMEMBER", "SUNION", "SINTER",
-    "SDIFF", "ZADD", "ZREM", "ZRANGE", "ZRANK", "ZSCORE", "ZCARD", "ZRANGEBYSCORE", "PING",
-    "ECHO", "INFO", "DBSIZE", "FLUSHDB", "FLUSHALL", "SELECT", "AUTH", "SUBSCRIBE", "PUBLISH",
-    "UNSUBSCRIBE", "PSUBSCRIBE", "PUNSUBSCRIBE",
+    "GET",
+    "SET",
+    "DEL",
+    "MGET",
+    "MSET",
+    "INCR",
+    "DECR",
+    "APPEND",
+    "STRLEN",
+    "EXPIRE",
+    "TTL",
+    "PERSIST",
+    "TYPE",
+    "EXISTS",
+    "KEYS",
+    "SCAN",
+    "HSET",
+    "HGET",
+    "HDEL",
+    "HGETALL",
+    "HMSET",
+    "HMGET",
+    "HLEN",
+    "HEXISTS",
+    "HKEYS",
+    "HVALS",
+    "LPUSH",
+    "RPUSH",
+    "LPOP",
+    "RPOP",
+    "LLEN",
+    "LRANGE",
+    "LINDEX",
+    "SADD",
+    "SREM",
+    "SMEMBERS",
+    "SCARD",
+    "SISMEMBER",
+    "SUNION",
+    "SINTER",
+    "SDIFF",
+    "ZADD",
+    "ZREM",
+    "ZRANGE",
+    "ZRANK",
+    "ZSCORE",
+    "ZCARD",
+    "ZRANGEBYSCORE",
+    "PING",
+    "ECHO",
+    "INFO",
+    "DBSIZE",
+    "FLUSHDB",
+    "FLUSHALL",
+    "SELECT",
+    "AUTH",
+    "SUBSCRIBE",
+    "PUBLISH",
+    "UNSUBSCRIBE",
+    "PSUBSCRIBE",
+    "PUNSUBSCRIBE",
 ];
 
 /// Commands known to be incompatible or unsupported.
 const KNOWN_INCOMPATIBLE: &[(&str, &str, Option<&str>)] = &[
-    ("CLUSTER", "Ferrite uses its own cluster protocol", Some("Use Ferrite native clustering")),
-    ("WAIT", "Not supported in Ferrite replication model", Some("Use REPLCONF for sync guarantees")),
+    (
+        "CLUSTER",
+        "Ferrite uses its own cluster protocol",
+        Some("Use Ferrite native clustering"),
+    ),
+    (
+        "WAIT",
+        "Not supported in Ferrite replication model",
+        Some("Use REPLCONF for sync guarantees"),
+    ),
     ("DEBUG", "Debug commands are not exposed", None),
-    ("MODULE", "Redis modules are not compatible", Some("Check Ferrite extension crates")),
-    ("OBJECT", "Object encoding details differ", Some("Use TYPE command instead")),
+    (
+        "MODULE",
+        "Redis modules are not compatible",
+        Some("Check Ferrite extension crates"),
+    ),
+    (
+        "OBJECT",
+        "Object encoding details differ",
+        Some("Use TYPE command instead"),
+    ),
 ];
 
 impl MigrationWizard {
@@ -119,7 +189,8 @@ impl MigrationWizard {
 
         let mut warnings = Vec::new();
         if redis_version.starts_with("7.") {
-            warnings.push("Redis 7.x features like FUNCTION may not be fully supported".to_string());
+            warnings
+                .push("Redis 7.x features like FUNCTION may not be fully supported".to_string());
         }
         if !incompatible.is_empty() {
             warnings.push(format!(
@@ -133,7 +204,10 @@ impl MigrationWizard {
             "Test application compatibility in a staging environment".to_string(),
         ];
         if compat_pct < 95.0 {
-            recommendations.push("Review incompatible commands and implement workarounds before migration".to_string());
+            recommendations.push(
+                "Review incompatible commands and implement workarounds before migration"
+                    .to_string(),
+            );
         }
 
         let estimated_time = if total > 100 {
@@ -167,15 +241,14 @@ impl MigrationWizard {
             MigrationStep {
                 order: 2,
                 description: "Perform dry-run migration to detect issues".to_string(),
-                command: format!(
-                    "MIGRATE.START redis://source:6379 DRY-RUN VERIFY"
-                ),
+                command: format!("MIGRATE.START redis://source:6379 DRY-RUN VERIFY"),
                 risk_level: RiskLevel::Low,
             },
             MigrationStep {
                 order: 3,
                 description: "Start live migration with verification".to_string(),
-                command: "MIGRATE.START redis://source:6379 BATCH 1000 WORKERS 4 VERIFY".to_string(),
+                command: "MIGRATE.START redis://source:6379 BATCH 1000 WORKERS 4 VERIFY"
+                    .to_string(),
                 risk_level: RiskLevel::Medium,
             },
             MigrationStep {
@@ -290,7 +363,10 @@ cmdstat_cluster:calls=10,usec=50\r\n";
         let report = MigrationWizard::check_compatibility(info);
         assert_eq!(report.redis_version, "7.0.0");
         assert!(!report.incompatible_commands.is_empty());
-        let cluster_cmd = report.incompatible_commands.iter().find(|c| c.name == "CLUSTER");
+        let cluster_cmd = report
+            .incompatible_commands
+            .iter()
+            .find(|c| c.name == "CLUSTER");
         assert!(cluster_cmd.is_some());
         assert!(cluster_cmd.unwrap().workaround.is_some());
     }
@@ -315,7 +391,10 @@ cmdstat_cluster:calls=10,usec=50\r\n";
 
     #[test]
     fn test_extract_version_missing() {
-        assert_eq!(MigrationWizard::extract_version("no version here"), "unknown");
+        assert_eq!(
+            MigrationWizard::extract_version("no version here"),
+            "unknown"
+        );
     }
 
     #[test]

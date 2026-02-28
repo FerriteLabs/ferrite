@@ -162,27 +162,27 @@ async fn handle_request(
             };
 
             // Parse as GraphQL request
-            let gql_request: crate::graphql::GraphQLRequest = match serde_json::from_slice(&body_bytes) {
-                Ok(r) => r,
-                Err(e) => {
-                    let msg = format!(
-                        r#"{{"error":"Invalid GraphQL JSON: {}"}}"#,
-                        e.to_string().replace('"', "'")
-                    );
-                    return Ok(json_or_text_response(
-                        StatusCode::BAD_REQUEST,
-                        "application/json",
-                        msg,
-                    ));
-                }
-            };
+            let gql_request: crate::graphql::GraphQLRequest =
+                match serde_json::from_slice(&body_bytes) {
+                    Ok(r) => r,
+                    Err(e) => {
+                        let msg = format!(
+                            r#"{{"error":"Invalid GraphQL JSON: {}"}}"#,
+                            e.to_string().replace('"', "'")
+                        );
+                        return Ok(json_or_text_response(
+                            StatusCode::BAD_REQUEST,
+                            "application/json",
+                            msg,
+                        ));
+                    }
+                };
 
             // Execute
             let engine = crate::graphql::GraphQLEngine::new(store.clone());
             let response = engine.execute(gql_request);
-            let json = serde_json::to_string(&response).unwrap_or_else(|_| {
-                r#"{"error":"Failed to serialize response"}"#.to_string()
-            });
+            let json = serde_json::to_string(&response)
+                .unwrap_or_else(|_| r#"{"error":"Failed to serialize response"}"#.to_string());
 
             Ok(json_or_text_response(
                 StatusCode::OK,
@@ -192,13 +192,11 @@ async fn handle_request(
         }
 
         // ── GraphiQL IDE (GET) ──────────────────────────────────────
-        (&Method::GET, "/graphql") => {
-            Ok(json_or_text_response(
-                StatusCode::OK,
-                "text/html; charset=utf-8",
-                graphiql_html(),
-            ))
-        }
+        (&Method::GET, "/graphql") => Ok(json_or_text_response(
+            StatusCode::OK,
+            "text/html; charset=utf-8",
+            graphiql_html(),
+        )),
 
         // ── Anomaly alerts ──────────────────────────────────────────
         (&Method::GET, "/alerts") => {

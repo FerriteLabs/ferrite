@@ -11,8 +11,7 @@ use bytes::Bytes;
 
 use crate::protocol::Frame;
 use ferrite_core::audit::classifier::{
-    ClassCategory, ClassificationRule, ClassifierConfig, DataClassifier, PatternRule,
-    PatternTarget,
+    ClassCategory, ClassificationRule, ClassifierConfig, DataClassifier, PatternRule, PatternTarget,
 };
 
 use super::err_frame;
@@ -50,7 +49,9 @@ fn handle_key(args: &[String]) -> Frame {
     let value_hint = args.get(1).map(|s| s.as_bytes()).unwrap_or(b"");
     let classes = get_classifier().classify_key(key, value_hint);
     if classes.is_empty() {
-        return Frame::Array(Some(vec![Frame::Bulk(Some(Bytes::from("no classifications")))]));
+        return Frame::Array(Some(vec![Frame::Bulk(Some(Bytes::from(
+            "no classifications",
+        )))]));
     }
     let frames: Vec<Frame> = classes
         .iter()
@@ -110,10 +111,7 @@ fn handle_scan(args: &[String]) -> Frame {
         Bytes::from_static(b"scan_duration_ms"),
         Frame::Integer(report.scan_duration_ms as i64),
     );
-    map.insert(
-        Bytes::from_static(b"limit"),
-        Frame::Integer(limit as i64),
-    );
+    map.insert(Bytes::from_static(b"limit"), Frame::Integer(limit as i64));
     Frame::Map(map)
 }
 
@@ -263,10 +261,7 @@ fn handle_summary() -> Frame {
 
 /// CLASSIFY.REPORT [GDPR|HIPAA|SOC2|PCI] — compliance report.
 fn handle_report(args: &[String]) -> Frame {
-    let framework = args
-        .first()
-        .map(|s| s.as_str())
-        .unwrap_or("GDPR");
+    let framework = args.first().map(|s| s.as_str()).unwrap_or("GDPR");
     let report = get_classifier().compliance_report(framework);
     let mut map = HashMap::new();
     map.insert(

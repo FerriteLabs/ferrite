@@ -201,8 +201,10 @@ impl TokenBucket {
         let new_tokens = (elapsed_ms * self.refill_rate) as u64;
         if new_tokens > 0 {
             let current = self.tokens.load(Ordering::Relaxed);
-            self.tokens
-                .store((current + new_tokens).min(self.burst_capacity), Ordering::Relaxed);
+            self.tokens.store(
+                (current + new_tokens).min(self.burst_capacity),
+                Ordering::Relaxed,
+            );
             *last = now;
         }
     }
@@ -271,8 +273,7 @@ impl std::fmt::Debug for ResourceQuotaEnforcer {
 impl ResourceQuotaEnforcer {
     /// Create a new enforcer from the given configuration.
     pub fn new(config: QuotaConfig) -> Self {
-        let ops_bucket =
-            TokenBucket::new(config.max_ops_per_second, config.burst_multiplier);
+        let ops_bucket = TokenBucket::new(config.max_ops_per_second, config.burst_multiplier);
         let bandwidth_bucket =
             TokenBucket::new(config.max_bandwidth_bytes_per_sec, config.burst_multiplier);
         Self {
@@ -384,8 +385,7 @@ impl ResourceQuotaEnforcer {
     /// Record a change in memory usage.
     pub fn record_memory(&self, delta: i64) {
         if delta >= 0 {
-            self.memory_used
-                .fetch_add(delta as u64, Ordering::Relaxed);
+            self.memory_used.fetch_add(delta as u64, Ordering::Relaxed);
         } else {
             self.memory_used
                 .fetch_sub((-delta) as u64, Ordering::Relaxed);
@@ -397,8 +397,7 @@ impl ResourceQuotaEnforcer {
         if delta >= 0 {
             self.keys_used.fetch_add(delta as u64, Ordering::Relaxed);
         } else {
-            self.keys_used
-                .fetch_sub((-delta) as u64, Ordering::Relaxed);
+            self.keys_used.fetch_sub((-delta) as u64, Ordering::Relaxed);
         }
     }
 
@@ -441,17 +440,11 @@ impl ResourceQuotaEnforcer {
 
             connections_used,
             connections_limit: self.config.max_connections,
-            connections_percent: pct(
-                connections_used as f64,
-                self.config.max_connections as f64,
-            ),
+            connections_percent: pct(connections_used as f64, self.config.max_connections as f64),
 
             ops_rate: ops_total,
             ops_limit: self.config.max_ops_per_second,
-            ops_percent: pct(
-                ops_total as f64,
-                self.config.max_ops_per_second as f64,
-            ),
+            ops_percent: pct(ops_total as f64, self.config.max_ops_per_second as f64),
         }
     }
 

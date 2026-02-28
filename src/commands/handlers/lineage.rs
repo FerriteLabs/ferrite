@@ -10,8 +10,7 @@ use std::time::Duration;
 
 use crate::protocol::Frame;
 use ferrite_core::audit::lineage::{
-    EdgeType, LineageConfig, LineageEdge, LineageGraph, LineageNode,
-    NodeType,
+    EdgeType, LineageConfig, LineageEdge, LineageGraph, LineageNode, NodeType,
 };
 
 use super::{err_frame, ok_frame};

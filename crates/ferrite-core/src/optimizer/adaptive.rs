@@ -288,7 +288,11 @@ impl AdaptiveQueryOptimizer {
         let priority = if keys.is_empty() {
             0.0
         } else {
-            profile.hot_keys.first().map(|(_, c)| *c as f64).unwrap_or(0.0)
+            profile
+                .hot_keys
+                .first()
+                .map(|(_, c)| *c as f64)
+                .unwrap_or(0.0)
         };
 
         CacheWarmingPlan {
@@ -351,9 +355,21 @@ impl AdaptiveQueryOptimizer {
 fn is_read_command(cmd: &str) -> bool {
     matches!(
         cmd,
-        "GET" | "MGET" | "HGET" | "HGETALL" | "LRANGE" | "SMEMBERS"
-            | "ZRANGE" | "ZRANGEBYSCORE" | "XRANGE" | "XREAD"
-            | "FT.SEARCH" | "EXISTS" | "TYPE" | "TTL" | "KEYS"
+        "GET"
+            | "MGET"
+            | "HGET"
+            | "HGETALL"
+            | "LRANGE"
+            | "SMEMBERS"
+            | "ZRANGE"
+            | "ZRANGEBYSCORE"
+            | "XRANGE"
+            | "XREAD"
+            | "FT.SEARCH"
+            | "EXISTS"
+            | "TYPE"
+            | "TTL"
+            | "KEYS"
     )
 }
 

@@ -253,7 +253,9 @@ impl EmbeddingProvider for MockEmbeddingProvider {
         let mut vector = Vec::with_capacity(self.dimension);
         for _ in 0..self.dimension {
             // Simple linear congruential generator for determinism
-            rng_state = rng_state.wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1);
+            rng_state = rng_state
+                .wrapping_mul(6_364_136_223_846_793_005)
+                .wrapping_add(1);
             let val = ((rng_state >> 33) as f32) / (u32::MAX as f32) * 2.0 - 1.0;
             vector.push(val);
         }
@@ -597,9 +599,7 @@ impl EmbeddingCache {
     fn hash_text(text: &str) -> u64 {
         let crc = crc32fast::hash(text.as_bytes());
         // Extend to 64 bits with a second hash of reversed bytes
-        let crc2 = crc32fast::hash(
-            &text.as_bytes().iter().rev().copied().collect::<Vec<u8>>(),
-        );
+        let crc2 = crc32fast::hash(&text.as_bytes().iter().rev().copied().collect::<Vec<u8>>());
         ((crc as u64) << 32) | (crc2 as u64)
     }
 
@@ -693,13 +693,11 @@ impl EmbeddingPipeline {
             ProviderType::LocalOnnx => {
                 // Fall back to mock if ONNX is not compiled in
                 warn!("LocalOnnx provider requested; using mock (compile with --features onnx for real ONNX support)");
-                Box::new(MockEmbeddingProvider::new(
-                    config.provider_config.dimension,
-                ))
+                Box::new(MockEmbeddingProvider::new(config.provider_config.dimension))
             }
-            ProviderType::Mock => Box::new(MockEmbeddingProvider::new(
-                config.provider_config.dimension,
-            )),
+            ProviderType::Mock => {
+                Box::new(MockEmbeddingProvider::new(config.provider_config.dimension))
+            }
         }
     }
 
@@ -730,7 +728,8 @@ impl EmbeddingPipeline {
         let latency_us = start.elapsed().as_micros() as u64;
 
         self.total_embeddings.fetch_add(1, Ordering::Relaxed);
-        self.total_latency_us.fetch_add(latency_us, Ordering::Relaxed);
+        self.total_latency_us
+            .fetch_add(latency_us, Ordering::Relaxed);
 
         debug!(
             provider = self.provider.name(),
@@ -766,10 +765,7 @@ impl EmbeddingPipeline {
     }
 
     /// Embed multiple texts in a batch for efficiency.
-    pub async fn embed_batch(
-        &self,
-        texts: &[String],
-    ) -> Result<Vec<EmbeddingResult>, EmbedError> {
+    pub async fn embed_batch(&self, texts: &[String]) -> Result<Vec<EmbeddingResult>, EmbedError> {
         let mut results = Vec::with_capacity(texts.len());
         let mut uncached_texts = Vec::new();
         let mut uncached_indices = Vec::new();
@@ -829,7 +825,8 @@ impl EmbeddingPipeline {
 
         self.total_embeddings
             .fetch_add(batch_results.len() as u64, Ordering::Relaxed);
-        self.total_latency_us.fetch_add(latency_us, Ordering::Relaxed);
+        self.total_latency_us
+            .fetch_add(latency_us, Ordering::Relaxed);
 
         Ok(results)
     }
@@ -851,19 +848,12 @@ impl EmbeddingPipeline {
 
     /// Get pipeline statistics.
     pub fn stats(&self) -> PipelineStats {
-        let (cache_hits, cache_misses) = self
-            .cache
-            .as_ref()
-            .map_or((0, 0), |c| c.stats());
+        let (cache_hits, cache_misses) = self.cache.as_ref().map_or((0, 0), |c| c.stats());
         let total = self.total_embeddings.load(Ordering::Relaxed);
         let total_latency = self.total_latency_us.load(Ordering::Relaxed);
         PipelineStats {
             total_embeddings: total,
-            avg_latency_us: if total > 0 {
-                total_latency / total
-            } else {
-                0
-            },
+            avg_latency_us: if total > 0 { total_latency / total } else { 0 },
             cache_hits,
             cache_misses,
             provider: self.provider.name().to_string(),

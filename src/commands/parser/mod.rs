@@ -1563,9 +1563,7 @@ pub enum Command {
     /// MIGRATE.RESUME
     MigrateResume,
     /// MIGRATE.VERIFY [SAMPLE pct]
-    MigrateVerify {
-        sample_pct: Option<f64>,
-    },
+    MigrateVerify { sample_pct: Option<f64> },
     /// MIGRATE.CUTOVER
     MigrateCutover,
     /// MIGRATE.ROLLBACK
@@ -1580,9 +1578,7 @@ pub enum Command {
         replication: u16,
     },
     /// STREAM.DELETE topic
-    StreamDelete {
-        topic: String,
-    },
+    StreamDelete { topic: String },
     /// STREAM.PRODUCE topic [KEY key] value [PARTITION n]
     StreamProduce {
         topic: String,
@@ -1607,18 +1603,11 @@ pub enum Command {
     /// STREAM.TOPICS
     StreamTopics,
     /// STREAM.DESCRIBE topic
-    StreamDescribe {
-        topic: String,
-    },
+    StreamDescribe { topic: String },
     /// STREAM.GROUPS [topic]
-    StreamGroups {
-        topic: Option<String>,
-    },
+    StreamGroups { topic: Option<String> },
     /// STREAM.OFFSETS topic partition
-    StreamOffsets {
-        topic: String,
-        partition: u32,
-    },
+    StreamOffsets { topic: String, partition: u32 },
     /// STREAM.STATS
     StreamStats,
 
@@ -1630,23 +1619,15 @@ pub enum Command {
         endpoint: String,
     },
     /// REGION.REMOVE id
-    RegionRemove {
-        id: String,
-    },
+    RegionRemove { id: String },
     /// REGION.LIST
     RegionList,
     /// REGION.STATUS [id]
-    RegionStatus {
-        id: Option<String>,
-    },
+    RegionStatus { id: Option<String> },
     /// REGION.CONFLICTS [LIMIT n]
-    RegionConflicts {
-        limit: usize,
-    },
+    RegionConflicts { limit: usize },
     /// REGION.STRATEGY [strategy]
-    RegionStrategy {
-        strategy: Option<String>,
-    },
+    RegionStrategy { strategy: Option<String> },
     /// REGION.STATS
     RegionStats,
 
@@ -1665,7 +1646,10 @@ pub enum Command {
     /// FEDERATION.STATUS [id]
     FederationStatus { id: Option<String> },
     /// FEDERATION.NAMESPACE namespace source_id
-    FederationNamespace { namespace: String, source_id: String },
+    FederationNamespace {
+        namespace: String,
+        source_id: String,
+    },
     /// FEDERATION.NAMESPACES
     FederationNamespaces,
     /// FEDERATION.QUERY query_string
@@ -2100,7 +2084,8 @@ impl Command {
             "CDC" => parsers::cluster::parse_cdc(args),
             "EDGE" => parsers::cluster::parse_edge(args),
             "EBPF" => parsers::cluster::parse_ebpf(args),
-            "TENANT" | "TENANT.CREATE" | "TENANT.LIST" | "TENANT.DELETE" | "TENANT.INFO" | "TENANT.SUSPEND" | "TENANT.RESUME" | "TENANT.QUOTA" => {
+            "TENANT" | "TENANT.CREATE" | "TENANT.LIST" | "TENANT.DELETE" | "TENANT.INFO"
+            | "TENANT.SUSPEND" | "TENANT.RESUME" | "TENANT.QUOTA" => {
                 parsers::cluster::parse_tenant(&command_name, args)
             }
             "HISTORY" => parsers::cluster::parse_history(args),
@@ -2256,10 +2241,7 @@ impl Command {
             "VIEW.UNSUBSCRIBE" => parsers::advanced::parse_view_unsubscribe(args),
             "VIEW.MAINTENANCE" => parsers::advanced::parse_view_maintenance(args),
             "VIEW.GET" | "VIEW.HELP" => {
-                let subcommand = command_name
-                    .strip_prefix("VIEW.")
-                    .unwrap_or("")
-                    .to_string();
+                let subcommand = command_name.strip_prefix("VIEW.").unwrap_or("").to_string();
                 let view_args: Vec<String> = args
                     .iter()
                     .filter_map(|f| parsers::get_string(f).ok())
@@ -2365,10 +2347,7 @@ impl Command {
                 || cmd.starts_with("OBSERVE.LATENCY")
                 || cmd.starts_with("OBSERVE.HELP") =>
             {
-                let subcommand = cmd
-                    .strip_prefix("OBSERVE.")
-                    .unwrap_or("")
-                    .to_string();
+                let subcommand = cmd.strip_prefix("OBSERVE.").unwrap_or("").to_string();
                 let observe_args: Vec<String> = args
                     .iter()
                     .filter_map(|f| parsers::get_string(f).ok())
@@ -2419,11 +2398,7 @@ impl Command {
                     .iter()
                     .filter_map(|f| parsers::get_string(f).ok())
                     .collect();
-                let subcommand = fed_args
-                    .first()
-                    .cloned()
-                    .unwrap_or_default()
-                    .to_uppercase();
+                let subcommand = fed_args.first().cloned().unwrap_or_default().to_uppercase();
                 let cmd_args = if fed_args.len() > 1 {
                     fed_args[1..].to_vec()
                 } else {
@@ -2662,11 +2637,7 @@ impl Command {
                     .iter()
                     .filter_map(|f| parsers::get_string(f).ok())
                     .collect();
-                let subcommand = pe_args
-                    .first()
-                    .cloned()
-                    .unwrap_or_default()
-                    .to_uppercase();
+                let subcommand = pe_args.first().cloned().unwrap_or_default().to_uppercase();
                 let cmd_args = if pe_args.len() > 1 {
                     pe_args[1..].to_vec()
                 } else {
@@ -2695,11 +2666,7 @@ impl Command {
                     .iter()
                     .filter_map(|f| parsers::get_string(f).ok())
                     .collect();
-                let subcommand = ct_args
-                    .first()
-                    .cloned()
-                    .unwrap_or_default()
-                    .to_uppercase();
+                let subcommand = ct_args.first().cloned().unwrap_or_default().to_uppercase();
                 let cmd_args = if ct_args.len() > 1 {
                     ct_args[1..].to_vec()
                 } else {
@@ -2893,11 +2860,7 @@ impl Command {
                     .iter()
                     .filter_map(|f| parsers::get_string(f).ok())
                     .collect();
-                let subcommand = mkt_args
-                    .first()
-                    .cloned()
-                    .unwrap_or_default()
-                    .to_uppercase();
+                let subcommand = mkt_args.first().cloned().unwrap_or_default().to_uppercase();
                 let cmd_args = if mkt_args.len() > 1 {
                     mkt_args[1..].to_vec()
                 } else {

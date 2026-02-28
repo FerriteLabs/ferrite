@@ -113,7 +113,12 @@ impl HttpGateway {
     pub async fn start(&self) -> Result<(), GatewayError> {
         let addr: SocketAddr = format!("{}:{}", self.config.bind, self.config.port)
             .parse()
-            .map_err(|e| GatewayError::BindFailed(format!("{}:{}", self.config.bind, self.config.port), std::io::Error::new(std::io::ErrorKind::InvalidInput, e)))?;
+            .map_err(|e| {
+                GatewayError::BindFailed(
+                    format!("{}:{}", self.config.bind, self.config.port),
+                    std::io::Error::new(std::io::ErrorKind::InvalidInput, e),
+                )
+            })?;
 
         let listener = TcpListener::bind(addr)
             .await
@@ -202,9 +207,7 @@ async fn handle_request(
             handle_delete_key(p, &store)
         }
 
-        (Method::GET, "/api/v1/keys") if config.enable_rest => {
-            handle_scan_keys(&query, &store)
-        }
+        (Method::GET, "/api/v1/keys") if config.enable_rest => handle_scan_keys(&query, &store),
 
         (Method::GET, "/api/v1/info") if config.enable_rest => handle_info(&store),
 
@@ -281,8 +284,8 @@ fn handle_put_string(
 
     match ttl {
         Some(seconds) if seconds > 0 => {
-            let expires_at = std::time::SystemTime::now()
-                + std::time::Duration::from_secs(seconds as u64);
+            let expires_at =
+                std::time::SystemTime::now() + std::time::Duration::from_secs(seconds as u64);
             store.set_with_expiry(
                 0,
                 Bytes::from(key.clone()),
@@ -593,10 +596,7 @@ type DelResult {
   key: String!
 }
 "#;
-    json_response(
-        StatusCode::OK,
-        serde_json::json!({ "sdl": sdl }),
-    )
+    json_response(StatusCode::OK, serde_json::json!({ "sdl": sdl }))
 }
 
 // ---------------------------------------------------------------------------
@@ -626,10 +626,33 @@ fn error_response(status: StatusCode, message: &str) -> Response<Full<Bytes>> {
 /// Add CORS headers to a response.
 fn cors_headers(response: &mut Response<Full<Bytes>>) {
     let headers = response.headers_mut();
-    headers.insert("Access-Control-Allow-Origin", "*".parse().unwrap_or_else(|_| hyper::header::HeaderValue::from_static("*")));
-    headers.insert("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS".parse().unwrap_or_else(|_| hyper::header::HeaderValue::from_static("GET, POST, PUT, DELETE, OPTIONS")));
-    headers.insert("Access-Control-Allow-Headers", "Content-Type, Authorization, X-API-Key".parse().unwrap_or_else(|_| hyper::header::HeaderValue::from_static("Content-Type, Authorization, X-API-Key")));
-    headers.insert("Access-Control-Max-Age", "86400".parse().unwrap_or_else(|_| hyper::header::HeaderValue::from_static("86400")));
+    headers.insert(
+        "Access-Control-Allow-Origin",
+        "*".parse()
+            .unwrap_or_else(|_| hyper::header::HeaderValue::from_static("*")),
+    );
+    headers.insert(
+        "Access-Control-Allow-Methods",
+        "GET, POST, PUT, DELETE, OPTIONS"
+            .parse()
+            .unwrap_or_else(|_| {
+                hyper::header::HeaderValue::from_static("GET, POST, PUT, DELETE, OPTIONS")
+            }),
+    );
+    headers.insert(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization, X-API-Key"
+            .parse()
+            .unwrap_or_else(|_| {
+                hyper::header::HeaderValue::from_static("Content-Type, Authorization, X-API-Key")
+            }),
+    );
+    headers.insert(
+        "Access-Control-Max-Age",
+        "86400"
+            .parse()
+            .unwrap_or_else(|_| hyper::header::HeaderValue::from_static("86400")),
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -696,7 +719,12 @@ fn matches_pattern(s: &str, pattern: &str) -> bool {
     let mut si = s.chars().peekable();
     let mut pi = pattern.chars().peekable();
 
-    matches_pattern_inner(&mut s.chars().collect::<Vec<_>>(), &pattern.chars().collect::<Vec<_>>(), 0, 0)
+    matches_pattern_inner(
+        &mut s.chars().collect::<Vec<_>>(),
+        &pattern.chars().collect::<Vec<_>>(),
+        0,
+        0,
+    )
 }
 
 fn matches_pattern_inner(s: &[char], p: &[char], si: usize, pi: usize) -> bool {
@@ -743,10 +771,7 @@ mod tests {
             extract_path_param("/api/v1/keys/foo", "/api/v1/keys/"),
             Some("foo".to_string())
         );
-        assert_eq!(
-            extract_path_param("/other/path", "/api/v1/string/"),
-            None
-        );
+        assert_eq!(extract_path_param("/other/path", "/api/v1/string/"), None);
     }
 
     #[test]

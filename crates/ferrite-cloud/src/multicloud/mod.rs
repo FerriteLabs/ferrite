@@ -39,9 +39,9 @@ mod routing;
 mod sync;
 
 pub use active_active::{
-    ActiveActiveConfig, ActiveActiveManager, CloudProvider as ActiveCloudProvider,
-    ConflictEntry, ConflictResolution as ActiveConflictResolution, PeerState, RegionHealth,
-    RegionPeer, ReplicationError as ActiveReplicationError, ResolveResult, SyncResult,
+    ActiveActiveConfig, ActiveActiveManager, CloudProvider as ActiveCloudProvider, ConflictEntry,
+    ConflictResolution as ActiveConflictResolution, PeerState, RegionHealth, RegionPeer,
+    ReplicationError as ActiveReplicationError, ResolveResult, SyncResult,
     SyncStatus as ActiveSyncStatus, VectorClock,
 };
 pub use consistency::{ConsistencyChecker, ConsistencyLevel, ConsistencyResult};

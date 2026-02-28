@@ -7,13 +7,7 @@ use crate::protocol::Frame;
 
 /// CLIENT INFO — Return information about the current connection.
 /// Format: "id=N addr=ip:port laddr=ip:port fd=N name= db=N ..."
-pub fn client_info(
-    id: u64,
-    addr: &str,
-    local_addr: &str,
-    name: &str,
-    db: u8,
-) -> Frame {
+pub fn client_info(id: u64, addr: &str, local_addr: &str, name: &str, db: u8) -> Frame {
     let info = format!(
         "id={} addr={} laddr={} fd=0 name={} db={} sub=0 psub=0 multi=-1 \
          qbuf=0 qbuf-free=0 argv-mem=0 multi-mem=0 obl=0 oll=0 omem=0 \

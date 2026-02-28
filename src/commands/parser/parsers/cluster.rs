@@ -121,10 +121,7 @@ pub(crate) fn parse_edge(args: &[Frame]) -> Result<Command> {
 
     let subcommand = get_string(&args[0])?.to_uppercase();
 
-    let edge_args: Vec<bytes::Bytes> = args[1..]
-        .iter()
-        .filter_map(|f| get_bytes(f).ok())
-        .collect();
+    let edge_args: Vec<bytes::Bytes> = args[1..].iter().filter_map(|f| get_bytes(f).ok()).collect();
 
     Ok(Command::Edge {
         subcommand,

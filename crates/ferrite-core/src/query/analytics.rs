@@ -307,11 +307,7 @@ impl AnalyticsEngine {
     // -- helpers for testing -------------------------------------------------
 
     /// Insert mock data for a given source pattern (test helper).
-    pub fn insert_mock_data(
-        &self,
-        source: &str,
-        rows: Vec<HashMap<String, serde_json::Value>>,
-    ) {
+    pub fn insert_mock_data(&self, source: &str, rows: Vec<HashMap<String, serde_json::Value>>) {
         let mut data = self.mock_data.write();
         data.insert(source.to_string(), rows);
     }
@@ -336,10 +332,7 @@ impl AnalyticsEngine {
     // -- public API ----------------------------------------------------------
 
     /// Execute an analytics query.
-    pub fn execute(
-        &self,
-        query: AnalyticsQuery,
-    ) -> Result<AnalyticsResult, AnalyticsError> {
+    pub fn execute(&self, query: AnalyticsQuery) -> Result<AnalyticsResult, AnalyticsError> {
         let start = Instant::now();
 
         // Validate
@@ -392,12 +385,12 @@ impl AnalyticsEngine {
             result_rows.truncate(limit);
         }
 
-        let approximate =
-            self.config.enable_approximate && total_scanned > 10_000;
+        let approximate = self.config.enable_approximate && total_scanned > 10_000;
 
         let elapsed_ms = start.elapsed().as_millis() as u64;
         self.queries_executed.fetch_add(1, Ordering::Relaxed);
-        self.keys_scanned.fetch_add(total_scanned, Ordering::Relaxed);
+        self.keys_scanned
+            .fetch_add(total_scanned, Ordering::Relaxed);
         self.total_query_ms.fetch_add(elapsed_ms, Ordering::Relaxed);
         if approximate {
             self.approximate_queries.fetch_add(1, Ordering::Relaxed);
@@ -435,13 +428,7 @@ impl AnalyticsEngine {
             let order_desc: Vec<String> = query
                 .order_by
                 .iter()
-                .map(|o| {
-                    format!(
-                        "{} {}",
-                        o.field,
-                        if o.descending { "DESC" } else { "ASC" }
-                    )
-                })
+                .map(|o| format!("{} {}", o.field, if o.descending { "DESC" } else { "ASC" }))
                 .collect();
             steps.push(format!("Order by: {}", order_desc.join(", ")));
         }
@@ -494,11 +481,7 @@ impl AnalyticsEngine {
     }
 
     /// Shortcut: count matching rows.
-    pub fn count(
-        &self,
-        source: &str,
-        filter: Option<FilterExpr>,
-    ) -> Result<u64, AnalyticsError> {
+    pub fn count(&self, source: &str, filter: Option<FilterExpr>) -> Result<u64, AnalyticsError> {
         let val = self.aggregate(source, AggFunction::Count, "*", filter)?;
         Ok(val.as_u64().unwrap_or(0))
     }
@@ -791,8 +774,7 @@ impl AnalyticsEngine {
         group_by: &[String],
     ) -> (Vec<ColumnInfo>, Vec<Vec<serde_json::Value>>) {
         // Build groups
-        let mut groups: HashMap<String, Vec<&HashMap<String, serde_json::Value>>> =
-            HashMap::new();
+        let mut groups: HashMap<String, Vec<&HashMap<String, serde_json::Value>>> = HashMap::new();
 
         for row in rows {
             let key: String = group_by
@@ -873,10 +855,7 @@ impl AnalyticsEngine {
                 } else {
                     let count = rows
                         .iter()
-                        .filter(|r| {
-                            r.get(field)
-                                .map_or(false, |v| !v.is_null())
-                        })
+                        .filter(|r| r.get(field).map_or(false, |v| !v.is_null()))
                         .count();
                     serde_json::json!(count)
                 }
@@ -925,9 +904,7 @@ impl AnalyticsEngine {
             AggFunction::CountDistinct => {
                 let distinct: std::collections::HashSet<String> = rows
                     .iter()
-                    .filter_map(|r| {
-                        r.get(field).map(|v| v.to_string())
-                    })
+                    .filter_map(|r| r.get(field).map(|v| v.to_string()))
                     .collect();
                 serde_json::json!(distinct.len())
             }

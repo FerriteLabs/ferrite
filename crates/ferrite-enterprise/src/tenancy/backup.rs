@@ -175,18 +175,13 @@ impl TenantBackupManager {
         }
 
         // Mark in-progress
-        self.in_progress
-            .write()
-            .insert(tenant_id.to_string(), true);
+        self.in_progress.write().insert(tenant_id.to_string(), true);
 
         let backup_type = if options.full {
             BackupType::Full
         } else {
             BackupType::Incremental {
-                base_backup_id: options
-                    .incremental_from
-                    .clone()
-                    .unwrap_or_default(),
+                base_backup_id: options.incremental_from.clone().unwrap_or_default(),
             }
         };
 
@@ -243,9 +238,7 @@ impl TenantBackupManager {
             }
         }
 
-        self.in_progress
-            .write()
-            .insert(tenant_id.to_string(), true);
+        self.in_progress.write().insert(tenant_id.to_string(), true);
 
         let result = RestoreResult {
             keys_restored: manifest.key_count,
@@ -263,10 +256,7 @@ impl TenantBackupManager {
     /// List all backups for the given tenant, ordered by timestamp descending.
     pub fn list_backups(&self, tenant_id: &str) -> Vec<BackupManifest> {
         let backups = self.backups.read();
-        let mut list = backups
-            .get(tenant_id)
-            .cloned()
-            .unwrap_or_default();
+        let mut list = backups.get(tenant_id).cloned().unwrap_or_default();
         list.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
         list
     }
@@ -330,9 +320,7 @@ mod tests {
     #[test]
     fn test_create_backup_full() {
         let mgr = TenantBackupManager::new();
-        let manifest = mgr
-            .create_backup("acme", BackupOptions::default())
-            .unwrap();
+        let manifest = mgr.create_backup("acme", BackupOptions::default()).unwrap();
         assert_eq!(manifest.tenant_id, "acme");
         assert_eq!(manifest.backup_type, BackupType::Full);
     }
@@ -340,9 +328,7 @@ mod tests {
     #[test]
     fn test_create_backup_incremental() {
         let mgr = TenantBackupManager::new();
-        let base = mgr
-            .create_backup("acme", BackupOptions::default())
-            .unwrap();
+        let base = mgr.create_backup("acme", BackupOptions::default()).unwrap();
 
         let inc = mgr
             .create_backup(
@@ -361,10 +347,8 @@ mod tests {
     #[test]
     fn test_list_backups() {
         let mgr = TenantBackupManager::new();
-        mgr.create_backup("acme", BackupOptions::default())
-            .unwrap();
-        mgr.create_backup("acme", BackupOptions::default())
-            .unwrap();
+        mgr.create_backup("acme", BackupOptions::default()).unwrap();
+        mgr.create_backup("acme", BackupOptions::default()).unwrap();
         mgr.create_backup("other", BackupOptions::default())
             .unwrap();
 
@@ -377,9 +361,7 @@ mod tests {
     #[test]
     fn test_delete_backup() {
         let mgr = TenantBackupManager::new();
-        let m = mgr
-            .create_backup("acme", BackupOptions::default())
-            .unwrap();
+        let m = mgr.create_backup("acme", BackupOptions::default()).unwrap();
         assert_eq!(mgr.list_backups("acme").len(), 1);
 
         mgr.delete_backup(&m.id).unwrap();
@@ -398,9 +380,7 @@ mod tests {
     #[test]
     fn test_restore_backup() {
         let mgr = TenantBackupManager::new();
-        let manifest = mgr
-            .create_backup("acme", BackupOptions::default())
-            .unwrap();
+        let manifest = mgr.create_backup("acme", BackupOptions::default()).unwrap();
         let result = mgr.restore_backup("acme", &manifest).unwrap();
         assert_eq!(result.keys_restored, 0);
     }
@@ -408,8 +388,7 @@ mod tests {
     #[test]
     fn test_restore_backup_not_found() {
         let mgr = TenantBackupManager::new();
-        mgr.create_backup("acme", BackupOptions::default())
-            .unwrap();
+        mgr.create_backup("acme", BackupOptions::default()).unwrap();
 
         let fake = BackupManifest {
             id: "fake-id".to_string(),

@@ -639,10 +639,7 @@ mod tests {
         let mut buf = DeltaBuffer::new("edge-1".into(), 100);
         buf.record_set("k1", b"v1".to_vec());
         let response = SyncResponse {
-            vector_clock: HashMap::from([
-                ("upstream".into(), 5),
-                ("edge-1".into(), 0),
-            ]),
+            vector_clock: HashMap::from([("upstream".into(), 5), ("edge-1".into(), 0)]),
             deltas: vec![],
             conflicts_resolved: 0,
             ack_sequence: 1,

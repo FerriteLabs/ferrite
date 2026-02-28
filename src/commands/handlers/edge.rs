@@ -43,10 +43,7 @@ fn edge_status() -> Frame {
 
     let mut map = std::collections::HashMap::new();
     for (k, v) in &summary {
-        map.insert(
-            Bytes::from(k.clone()),
-            Frame::Bulk(Bytes::from(v.clone())),
-        );
+        map.insert(Bytes::from(k.clone()), Frame::Bulk(Bytes::from(v.clone())));
     }
     Frame::Map(map)
 }

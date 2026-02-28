@@ -99,7 +99,10 @@ impl PlaygroundInstance {
 
     /// Execute multiple commands, returning one response per command.
     pub fn execute_batch(&mut self, commands: &[&str]) -> Vec<String> {
-        commands.iter().map(|cmd| self.execute_command(cmd)).collect()
+        commands
+            .iter()
+            .map(|cmd| self.execute_command(cmd))
+            .collect()
     }
 
     /// Clear all data and reset the instance.
@@ -124,11 +127,16 @@ impl PlaygroundInstance {
     /// Pre-load sample data useful for tutorials and demos.
     pub fn load_tutorial_data(&mut self) {
         // 5 string keys
-        self.data.insert("user:1".into(), StoredValue::String("Alice".into()));
-        self.data.insert("user:2".into(), StoredValue::String("Bob".into()));
-        self.data.insert("user:3".into(), StoredValue::String("Charlie".into()));
-        self.data.insert("user:4".into(), StoredValue::String("Diana".into()));
-        self.data.insert("user:5".into(), StoredValue::String("Eve".into()));
+        self.data
+            .insert("user:1".into(), StoredValue::String("Alice".into()));
+        self.data
+            .insert("user:2".into(), StoredValue::String("Bob".into()));
+        self.data
+            .insert("user:3".into(), StoredValue::String("Charlie".into()));
+        self.data
+            .insert("user:4".into(), StoredValue::String("Diana".into()));
+        self.data
+            .insert("user:5".into(), StoredValue::String("Eve".into()));
 
         // 1 list (queue:tasks with 3 items)
         self.data.insert(
@@ -146,7 +154,8 @@ impl PlaygroundInstance {
         app_config.insert("version".into(), "0.1.0".into());
         app_config.insert("max_connections".into(), "100".into());
         app_config.insert("timeout_ms".into(), "5000".into());
-        self.data.insert("config:app".into(), StoredValue::Hash(app_config));
+        self.data
+            .insert("config:app".into(), StoredValue::Hash(app_config));
 
         // 1 set (tags:popular with 5 members)
         let mut tags = HashSet::new();
@@ -155,7 +164,8 @@ impl PlaygroundInstance {
         tags.insert("cache".into());
         tags.insert("performance".into());
         tags.insert("open-source".into());
-        self.data.insert("tags:popular".into(), StoredValue::Set(tags));
+        self.data
+            .insert("tags:popular".into(), StoredValue::Set(tags));
 
         // 1 sorted set (leaderboard with 5 scores)
         let mut leaderboard = BTreeMap::new();
@@ -164,7 +174,8 @@ impl PlaygroundInstance {
         leaderboard.insert("charlie".into(), 1800.0);
         leaderboard.insert("diana".into(), 900.0);
         leaderboard.insert("eve".into(), 2100.0);
-        self.data.insert("leaderboard".into(), StoredValue::SortedSet(leaderboard));
+        self.data
+            .insert("leaderboard".into(), StoredValue::SortedSet(leaderboard));
     }
 
     // ── Expiry helpers ───────────────────────────────────────────────────────
@@ -248,7 +259,8 @@ impl PlaygroundInstance {
         }
         match self.data.get(args[0]) {
             Some(StoredValue::String(s)) => format!("\"{s}\""),
-            Some(_) => "(error) WRONGTYPE Operation against a key holding the wrong kind of value".to_string(),
+            Some(_) => "(error) WRONGTYPE Operation against a key holding the wrong kind of value"
+                .to_string(),
             None => "(nil)".to_string(),
         }
     }
@@ -275,7 +287,10 @@ impl PlaygroundInstance {
         let keys: Vec<&String> = if pattern == "*" {
             self.data.keys().collect()
         } else {
-            self.data.keys().filter(|k| glob_match(pattern, k)).collect()
+            self.data
+                .keys()
+                .filter(|k| glob_match(pattern, k))
+                .collect()
         };
 
         if keys.is_empty() {
@@ -343,7 +358,8 @@ impl PlaygroundInstance {
                 }
                 format!("(integer) {}", l.len())
             }
-            None => "(error) WRONGTYPE Operation against a key holding the wrong kind of value".to_string(),
+            None => "(error) WRONGTYPE Operation against a key holding the wrong kind of value"
+                .to_string(),
         }
     }
 
@@ -360,7 +376,8 @@ impl PlaygroundInstance {
                 }
                 format!("(integer) {}", l.len())
             }
-            None => "(error) WRONGTYPE Operation against a key holding the wrong kind of value".to_string(),
+            None => "(error) WRONGTYPE Operation against a key holding the wrong kind of value"
+                .to_string(),
         }
     }
 
@@ -373,7 +390,8 @@ impl PlaygroundInstance {
                 Some(v) => format!("\"{v}\""),
                 None => "(nil)".to_string(),
             },
-            Some(_) => "(error) WRONGTYPE Operation against a key holding the wrong kind of value".to_string(),
+            Some(_) => "(error) WRONGTYPE Operation against a key holding the wrong kind of value"
+                .to_string(),
             None => "(nil)".to_string(),
         }
     }
@@ -387,7 +405,8 @@ impl PlaygroundInstance {
                 Some(v) => format!("\"{v}\""),
                 None => "(nil)".to_string(),
             },
-            Some(_) => "(error) WRONGTYPE Operation against a key holding the wrong kind of value".to_string(),
+            Some(_) => "(error) WRONGTYPE Operation against a key holding the wrong kind of value"
+                .to_string(),
             None => "(nil)".to_string(),
         }
     }
@@ -424,7 +443,8 @@ impl PlaygroundInstance {
                     items.join("\n")
                 }
             }
-            Some(_) => "(error) WRONGTYPE Operation against a key holding the wrong kind of value".to_string(),
+            Some(_) => "(error) WRONGTYPE Operation against a key holding the wrong kind of value"
+                .to_string(),
             None => "(empty array)".to_string(),
         }
     }
@@ -435,7 +455,8 @@ impl PlaygroundInstance {
         }
         match self.data.get(args[0]) {
             Some(StoredValue::List(l)) => format!("(integer) {}", l.len()),
-            Some(_) => "(error) WRONGTYPE Operation against a key holding the wrong kind of value".to_string(),
+            Some(_) => "(error) WRONGTYPE Operation against a key holding the wrong kind of value"
+                .to_string(),
             None => "(integer) 0".to_string(),
         }
     }
@@ -459,7 +480,8 @@ impl PlaygroundInstance {
                 }
                 format!("(integer) {added}")
             }
-            None => "(error) WRONGTYPE Operation against a key holding the wrong kind of value".to_string(),
+            None => "(error) WRONGTYPE Operation against a key holding the wrong kind of value"
+                .to_string(),
         }
     }
 
@@ -472,7 +494,8 @@ impl PlaygroundInstance {
                 Some(v) => format!("\"{v}\""),
                 None => "(nil)".to_string(),
             },
-            Some(_) => "(error) WRONGTYPE Operation against a key holding the wrong kind of value".to_string(),
+            Some(_) => "(error) WRONGTYPE Operation against a key holding the wrong kind of value"
+                .to_string(),
             None => "(nil)".to_string(),
         }
     }
@@ -499,7 +522,8 @@ impl PlaygroundInstance {
                 }
                 items.join("\n")
             }
-            Some(_) => "(error) WRONGTYPE Operation against a key holding the wrong kind of value".to_string(),
+            Some(_) => "(error) WRONGTYPE Operation against a key holding the wrong kind of value"
+                .to_string(),
             None => "(empty array)".to_string(),
         }
     }
@@ -518,7 +542,8 @@ impl PlaygroundInstance {
                 }
                 format!("(integer) {count}")
             }
-            Some(_) => "(error) WRONGTYPE Operation against a key holding the wrong kind of value".to_string(),
+            Some(_) => "(error) WRONGTYPE Operation against a key holding the wrong kind of value"
+                .to_string(),
             None => "(integer) 0".to_string(),
         }
     }
@@ -541,7 +566,8 @@ impl PlaygroundInstance {
                 }
                 format!("(integer) {added}")
             }
-            None => "(error) WRONGTYPE Operation against a key holding the wrong kind of value".to_string(),
+            None => "(error) WRONGTYPE Operation against a key holding the wrong kind of value"
+                .to_string(),
         }
     }
 
@@ -563,7 +589,8 @@ impl PlaygroundInstance {
                     .collect::<Vec<_>>()
                     .join("\n")
             }
-            Some(_) => "(error) WRONGTYPE Operation against a key holding the wrong kind of value".to_string(),
+            Some(_) => "(error) WRONGTYPE Operation against a key holding the wrong kind of value"
+                .to_string(),
             None => "(empty array)".to_string(),
         }
     }
@@ -574,7 +601,8 @@ impl PlaygroundInstance {
         }
         match self.data.get(args[0]) {
             Some(StoredValue::Set(s)) => format!("(integer) {}", s.len()),
-            Some(_) => "(error) WRONGTYPE Operation against a key holding the wrong kind of value".to_string(),
+            Some(_) => "(error) WRONGTYPE Operation against a key holding the wrong kind of value"
+                .to_string(),
             None => "(integer) 0".to_string(),
         }
     }
@@ -603,7 +631,8 @@ impl PlaygroundInstance {
                 }
                 format!("(integer) {added}")
             }
-            None => "(error) WRONGTYPE Operation against a key holding the wrong kind of value".to_string(),
+            None => "(error) WRONGTYPE Operation against a key holding the wrong kind of value"
+                .to_string(),
         }
     }
 
@@ -625,7 +654,11 @@ impl PlaygroundInstance {
             Some(StoredValue::SortedSet(z)) => {
                 // Sort by score ascending, then by member name
                 let mut entries: Vec<(&String, &f64)> = z.iter().collect();
-                entries.sort_by(|a, b| a.1.partial_cmp(b.1).unwrap_or(std::cmp::Ordering::Equal).then_with(|| a.0.cmp(b.0)));
+                entries.sort_by(|a, b| {
+                    a.1.partial_cmp(b.1)
+                        .unwrap_or(std::cmp::Ordering::Equal)
+                        .then_with(|| a.0.cmp(b.0))
+                });
 
                 let len = entries.len() as i64;
                 let s = normalize_index(start, len);
@@ -659,7 +692,8 @@ impl PlaygroundInstance {
                         .join("\n")
                 }
             }
-            Some(_) => "(error) WRONGTYPE Operation against a key holding the wrong kind of value".to_string(),
+            Some(_) => "(error) WRONGTYPE Operation against a key holding the wrong kind of value"
+                .to_string(),
             None => "(empty array)".to_string(),
         }
     }
@@ -673,7 +707,8 @@ impl PlaygroundInstance {
                 Some(score) => format!("\"{score}\""),
                 None => "(nil)".to_string(),
             },
-            Some(_) => "(error) WRONGTYPE Operation against a key holding the wrong kind of value".to_string(),
+            Some(_) => "(error) WRONGTYPE Operation against a key holding the wrong kind of value"
+                .to_string(),
             None => "(nil)".to_string(),
         }
     }
@@ -721,7 +756,8 @@ impl PlaygroundInstance {
 
     fn get_or_create_list(&mut self, key: &str) -> Option<&mut VecDeque<String>> {
         if !self.data.contains_key(key) {
-            self.data.insert(key.to_string(), StoredValue::List(VecDeque::new()));
+            self.data
+                .insert(key.to_string(), StoredValue::List(VecDeque::new()));
         }
         match self.data.get_mut(key) {
             Some(StoredValue::List(l)) => Some(l),
@@ -731,7 +767,8 @@ impl PlaygroundInstance {
 
     fn get_or_create_hash(&mut self, key: &str) -> Option<&mut HashMap<String, String>> {
         if !self.data.contains_key(key) {
-            self.data.insert(key.to_string(), StoredValue::Hash(HashMap::new()));
+            self.data
+                .insert(key.to_string(), StoredValue::Hash(HashMap::new()));
         }
         match self.data.get_mut(key) {
             Some(StoredValue::Hash(h)) => Some(h),
@@ -741,7 +778,8 @@ impl PlaygroundInstance {
 
     fn get_or_create_set(&mut self, key: &str) -> Option<&mut HashSet<String>> {
         if !self.data.contains_key(key) {
-            self.data.insert(key.to_string(), StoredValue::Set(HashSet::new()));
+            self.data
+                .insert(key.to_string(), StoredValue::Set(HashSet::new()));
         }
         match self.data.get_mut(key) {
             Some(StoredValue::Set(s)) => Some(s),
@@ -751,7 +789,8 @@ impl PlaygroundInstance {
 
     fn get_or_create_zset(&mut self, key: &str) -> Option<&mut BTreeMap<String, f64>> {
         if !self.data.contains_key(key) {
-            self.data.insert(key.to_string(), StoredValue::SortedSet(BTreeMap::new()));
+            self.data
+                .insert(key.to_string(), StoredValue::SortedSet(BTreeMap::new()));
         }
         match self.data.get_mut(key) {
             Some(StoredValue::SortedSet(z)) => Some(z),
@@ -775,7 +814,11 @@ fn normalize_index(index: i64, len: i64) -> usize {
     }
     if index < 0 {
         let adjusted = len + index;
-        if adjusted < 0 { 0 } else { adjusted as usize }
+        if adjusted < 0 {
+            0
+        } else {
+            adjusted as usize
+        }
     } else {
         index as usize
     }
@@ -916,7 +959,10 @@ mod tests {
     #[test]
     fn test_sorted_set_ops() {
         let mut pg = PlaygroundInstance::new();
-        assert_eq!(pg.execute_command("ZADD lb 100 alice 200 bob"), "(integer) 2");
+        assert_eq!(
+            pg.execute_command("ZADD lb 100 alice 200 bob"),
+            "(integer) 2"
+        );
         assert_eq!(pg.execute_command("ZSCORE lb alice"), "\"100\"");
         let range = pg.execute_command("ZRANGE lb 0 -1 WITHSCORES");
         assert!(range.contains("\"alice\""));

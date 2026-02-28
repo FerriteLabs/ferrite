@@ -110,17 +110,14 @@ fn protocol_memcached(args: &[String]) -> Frame {
                 Bytes::from("delete_commands"),
                 Frame::Integer(stats.delete_commands as i64),
             );
-            map.insert(
-                Bytes::from("hits"),
-                Frame::Integer(stats.hits as i64),
-            );
-            map.insert(
-                Bytes::from("misses"),
-                Frame::Integer(stats.misses as i64),
-            );
+            map.insert(Bytes::from("hits"), Frame::Integer(stats.hits as i64));
+            map.insert(Bytes::from("misses"), Frame::Integer(stats.misses as i64));
             Frame::Map(map)
         }
-        _ => err_frame(&format!("unknown PROTOCOL MEMCACHED subcommand '{}'", args[0])),
+        _ => err_frame(&format!(
+            "unknown PROTOCOL MEMCACHED subcommand '{}'",
+            args[0]
+        )),
     }
 }
 
@@ -183,10 +180,7 @@ fn protocol_amqp(args: &[String]) -> Frame {
             Bytes::from("exchanges"),
             Frame::Integer(stats.exchanges as i64),
         );
-        map.insert(
-            Bytes::from("queues"),
-            Frame::Integer(stats.queues as i64),
-        );
+        map.insert(Bytes::from("queues"), Frame::Integer(stats.queues as i64));
         return Frame::Map(map);
     }
 
@@ -241,10 +235,7 @@ fn protocol_amqp(args: &[String]) -> Frame {
                 Bytes::from("exchanges"),
                 Frame::Integer(stats.exchanges as i64),
             );
-            map.insert(
-                Bytes::from("queues"),
-                Frame::Integer(stats.queues as i64),
-            );
+            map.insert(Bytes::from("queues"), Frame::Integer(stats.queues as i64));
             map.insert(
                 Bytes::from("messages_published"),
                 Frame::Integer(stats.messages_published as i64),

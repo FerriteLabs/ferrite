@@ -40,10 +40,7 @@ pub fn scaling_command(subcommand: &str, args: &[String]) -> Frame {
 
 /// SCALING.PREDICT [horizon_secs] — Forecast traffic and recommend replica count.
 fn handle_predict(args: &[String]) -> Frame {
-    let horizon_secs: u64 = args
-        .first()
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(1800);
+    let horizon_secs: u64 = args.first().and_then(|s| s.parse().ok()).unwrap_or(1800);
 
     let result = get_scaler().predict(Duration::from_secs(horizon_secs));
     let mut map = HashMap::new();
@@ -234,10 +231,7 @@ fn handle_config(args: &[String]) -> Frame {
         Bytes::from_static(b"min_scale_interval_secs"),
         Frame::Integer(300),
     );
-    map.insert(
-        Bytes::from_static(b"max_scale_factor"),
-        Frame::Double(3.0),
-    );
+    map.insert(Bytes::from_static(b"max_scale_factor"), Frame::Double(3.0));
     Frame::Map(map)
 }
 

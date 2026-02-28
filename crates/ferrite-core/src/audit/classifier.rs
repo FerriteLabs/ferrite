@@ -672,10 +672,7 @@ impl DataClassifier {
         let relevant_categories: Vec<ClassCategory> = match framework.to_uppercase().as_str() {
             "GDPR" => vec![ClassCategory::PII, ClassCategory::Credentials],
             "HIPAA" => vec![ClassCategory::PHI, ClassCategory::PII],
-            "PCI" => vec![
-                ClassCategory::Financial,
-                ClassCategory::Credentials,
-            ],
+            "PCI" => vec![ClassCategory::Financial, ClassCategory::Credentials],
             "SOC2" => vec![
                 ClassCategory::PII,
                 ClassCategory::Credentials,

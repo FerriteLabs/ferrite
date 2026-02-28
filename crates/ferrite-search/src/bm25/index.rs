@@ -64,9 +64,7 @@ impl Bm25Index {
 
     /// Tokenize text into lowercase terms.
     fn tokenize(text: &str) -> Vec<String> {
-        text.split_whitespace()
-            .map(|t| t.to_lowercase())
-            .collect()
+        text.split_whitespace().map(|t| t.to_lowercase()).collect()
     }
 
     /// Add a document to the index.
@@ -128,9 +126,7 @@ impl Bm25Index {
     pub fn search(&self, query: &str, top_k: usize) -> Vec<ScoredDoc> {
         let query_terms = Self::tokenize(query);
         let total_docs = self.docs.len() as u64;
-        let total_tokens = self
-            .total_tokens
-            .load(std::sync::atomic::Ordering::Relaxed);
+        let total_tokens = self.total_tokens.load(std::sync::atomic::Ordering::Relaxed);
         let avg_doc_len = if total_docs > 0 {
             total_tokens as f64 / total_docs as f64
         } else {
@@ -144,19 +140,11 @@ impl Bm25Index {
             if let Some(postings) = self.postings.get(term) {
                 let df = postings.len() as u64;
                 for posting in postings.iter() {
-                    let doc_len = self
-                        .docs
-                        .get(&posting.doc_id)
-                        .map(|d| d.len)
-                        .unwrap_or(1);
+                    let doc_len = self.docs.get(&posting.doc_id).map(|d| d.len).unwrap_or(1);
 
-                    let term_score = self.scorer.score(
-                        posting.tf as f64,
-                        df,
-                        doc_len,
-                        avg_doc_len,
-                        total_docs,
-                    );
+                    let term_score =
+                        self.scorer
+                            .score(posting.tf as f64, df, doc_len, avg_doc_len, total_docs);
 
                     *scores.entry(posting.doc_id.clone()).or_insert(0.0) += term_score;
                 }
@@ -169,7 +157,11 @@ impl Bm25Index {
             .map(|(doc_id, score)| ScoredDoc { doc_id, score })
             .collect();
 
-        results.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+        results.sort_by(|a, b| {
+            b.score
+                .partial_cmp(&a.score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
         results.truncate(top_k);
         results
     }

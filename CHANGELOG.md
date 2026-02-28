@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-02-28
+
+*Core Hardening — see [ROADMAP.md](ROADMAP.md) for details.*
+
 ### Added
 - Delta sync protocol for edge replication, enabling bandwidth-efficient incremental updates between edge nodes and cloud hub
 - ROADMAP.md with versioned milestones and feature graduation targets
@@ -15,9 +19,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `missing_docs = "warn"` lint for `ferrite-core` public API
 - Shared test utilities module (`tests/common/`) for integration tests
 - Enhanced SAFETY comments on WASM example unsafe blocks
+- HybridLog Storage graduation from Beta to Stable
+- Replication (PSYNC2) graduation from Beta to Stable
+- Redis compatibility test suite with published results
+- Benchmark comparison report (vs Redis, Dragonfly, KeyDB)
+- First `crates.io` release
+- Configurable compaction threshold for tiered storage
+- Property tests for HybridLog mutable region
+- Unified observer tracing for storage ops
+- Redis TCL test suite compatibility commands
 
 ### Changed
 - Clarified MSRV vs contributor toolchain in README (1.80 MSRV, 1.88 dev toolchain)
+- Enforced `clippy::unwrap_used = "deny"` across the workspace
+- Increased unit test coverage for `ferrite-core` (target: >70%)
+- Reduced allocation overhead in RESP protocol parser
+- Simplified epoch-based reclamation in storage engine
+- Optimized query parser token lookahead
+- Reorganized storage tier module hierarchy
+
+### Fixed
+- Resolved race condition in cluster node discovery
+- Resolved compatibility tracker initialization race
+- Fixed edge case in RESP3 parser for nested arrays
 
 ## [0.3.0] — Planned
 
@@ -31,21 +55,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Full-Text Search graduation to Stable
 - Kubernetes Operator CRD scaffolding
 - Integration tests for extension crates (search, AI, streaming, cloud)
-
-## [0.2.0] — Planned
-
-*Target: Core Hardening — see [ROADMAP.md](ROADMAP.md) for details.*
-
-### Added
-- HybridLog Storage graduation from Beta to Stable
-- Replication (PSYNC2) graduation from Beta to Stable
-- Redis compatibility test suite with published results
-- Benchmark comparison report (vs Redis, Dragonfly, KeyDB)
-- First `crates.io` release
-
-### Changed
-- Enforced `clippy::unwrap_used = "deny"` across the workspace
-- Increased unit test coverage for `ferrite-core` (target: >70%)
 
 ## [0.1.0] - 2025-01-23
 

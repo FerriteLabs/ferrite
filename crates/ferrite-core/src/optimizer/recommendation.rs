@@ -85,14 +85,22 @@ impl fmt::Display for Action {
                 write!(f, "Set eviction batch size to {}", batch_size)
             }
             Action::EnableCompression { min_value_size } => {
-                write!(f, "Enable compression for values > {} bytes", min_value_size)
+                write!(
+                    f,
+                    "Enable compression for values > {} bytes",
+                    min_value_size
+                )
             }
             Action::DisableCompression => write!(f, "Disable compression"),
             Action::RebalanceShards { target_shards } => {
                 write!(f, "Rebalance to {} shards", target_shards)
             }
             Action::AdjustMemoryBudget { budget_bytes } => {
-                write!(f, "Adjust memory budget to {} MB", budget_bytes / (1024 * 1024))
+                write!(
+                    f,
+                    "Adjust memory budget to {} MB",
+                    budget_bytes / (1024 * 1024)
+                )
             }
             Action::CreateIndex { name, pattern } => {
                 write!(f, "Create index '{}' on pattern '{}'", name, pattern)

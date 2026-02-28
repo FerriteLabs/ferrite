@@ -7,9 +7,7 @@ use dashmap::DashMap;
 use std::sync::Arc;
 use tracing::{debug, info, warn};
 
-use super::definition::{
-    RefreshStrategy, ViewDefinition, ViewRefreshResult, ViewRow, ViewStatus,
-};
+use super::definition::{RefreshStrategy, ViewDefinition, ViewRefreshResult, ViewRow, ViewStatus};
 use super::dependency::DependencyGraph;
 use super::refresh::ViewRefresher;
 
@@ -131,8 +129,7 @@ impl ViewEngine {
 
             let is_stale = state.definition.status == ViewStatus::Stale;
             let is_lazy = state.definition.refresh_strategy == RefreshStrategy::Lazy;
-            let is_periodic =
-                ViewRefresher::needs_periodic_refresh(&state.definition);
+            let is_periodic = ViewRefresher::needs_periodic_refresh(&state.definition);
 
             (is_stale && is_lazy) || is_periodic
         };

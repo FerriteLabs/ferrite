@@ -32,9 +32,9 @@ mod server_ops;
 mod string_ops;
 #[cfg(feature = "experimental")]
 mod tenant_ops;
-mod tiering_ops;
 #[cfg(test)]
 mod tests;
+mod tiering_ops;
 
 use std::sync::Arc;
 
@@ -1476,38 +1476,24 @@ impl CommandExecutor {
 
             // Edge runtime commands
             #[cfg(feature = "cloud")]
-            Command::Edge { subcommand, args } => {
-                handlers::edge::handle_edge(&subcommand, &args)
-            }
+            Command::Edge { subcommand, args } => handlers::edge::handle_edge(&subcommand, &args),
             #[cfg(not(feature = "cloud"))]
-            Command::Edge { .. } => {
-                Frame::error("ERR edge commands require the 'cloud' feature")
-            }
+            Command::Edge { .. } => Frame::error("ERR edge commands require the 'cloud' feature"),
 
             // eBPF tracing commands
-            Command::Ebpf { subcommand, args } => {
-                handlers::ebpf::handle_ebpf(&subcommand, &args)
-            }
+            Command::Ebpf { subcommand, args } => handlers::ebpf::handle_ebpf(&subcommand, &args),
 
             // Managed cloud commands
             #[cfg(feature = "cloud")]
-            Command::Cloud { subcommand, args } => {
-                handlers::cloud::cloud(&subcommand, &args)
-            }
+            Command::Cloud { subcommand, args } => handlers::cloud::cloud(&subcommand, &args),
             #[cfg(not(feature = "cloud"))]
-            Command::Cloud { .. } => {
-                Frame::error("ERR cloud commands require the 'cloud' feature")
-            }
+            Command::Cloud { .. } => Frame::error("ERR cloud commands require the 'cloud' feature"),
 
             // Observability heatmap commands
-            Command::Observe { subcommand, args } => {
-                handlers::observe::observe(&subcommand, &args)
-            }
+            Command::Observe { subcommand, args } => handlers::observe::observe(&subcommand, &args),
 
             // Materialized view commands (standalone handler)
-            Command::View { subcommand, args } => {
-                handlers::views::view_command(&subcommand, &args)
-            }
+            Command::View { subcommand, args } => handlers::views::view_command(&subcommand, &args),
 
             // Temporal commands
             Command::History {
@@ -1574,8 +1560,8 @@ impl CommandExecutor {
             Command::Function { subcommand, args } => {
                 // Route FaaS-specific subcommands to the async handler
                 match subcommand.as_str() {
-                    "DEPLOY" | "INVOKE" | "UNDEPLOY" | "FAAS.LIST" | "FAAS.INFO"
-                    | "FAAS.LOGS" | "SCHEDULE" | "UNSCHEDULE" | "SCHEDULES" | "FAAS.STATS" => {
+                    "DEPLOY" | "INVOKE" | "UNDEPLOY" | "FAAS.LIST" | "FAAS.INFO" | "FAAS.LOGS"
+                    | "SCHEDULE" | "UNSCHEDULE" | "SCHEDULES" | "FAAS.STATS" => {
                         self.handle_faas_command(&subcommand, &args).await
                     }
                     _ => self.function(&subcommand, &args),
@@ -2178,9 +2164,7 @@ impl CommandExecutor {
             }
 
             // Workload profiler management
-            Command::AutoTune { subcommand, args } => {
-                self.handle_autotune(&subcommand, &args)
-            }
+            Command::AutoTune { subcommand, args } => self.handle_autotune(&subcommand, &args),
 
             // Hybrid vector search
             Command::VectorHybridSearch {
@@ -2191,8 +2175,16 @@ impl CommandExecutor {
                 alpha,
                 strategy,
             } => {
-                self.vector_hybrid_search(db, &index, &query_vector, &query_text, top_k, alpha, &strategy)
-                    .await
+                self.vector_hybrid_search(
+                    db,
+                    &index,
+                    &query_vector,
+                    &query_text,
+                    top_k,
+                    alpha,
+                    &strategy,
+                )
+                .await
             }
             Command::VectorRerank {
                 index,
@@ -2210,7 +2202,10 @@ impl CommandExecutor {
                 query,
                 strategy,
                 interval,
-            } => self.handle_view_create(&name, &query, &strategy, interval).await,
+            } => {
+                self.handle_view_create(&name, &query, &strategy, interval)
+                    .await
+            }
             Command::ViewDrop { name } => self.handle_view_drop(&name).await,
             Command::ViewQuery { name } => self.handle_view_query(&name).await,
             Command::ViewList => self.handle_view_list().await,
@@ -2234,9 +2229,7 @@ impl CommandExecutor {
             Command::MigrateStatus => self.handle_migrate_status().await,
             Command::MigratePause => self.handle_migrate_pause().await,
             Command::MigrateResume => self.handle_migrate_resume().await,
-            Command::MigrateVerify { sample_pct } => {
-                self.handle_migrate_verify(sample_pct).await
-            }
+            Command::MigrateVerify { sample_pct } => self.handle_migrate_verify(sample_pct).await,
             Command::MigrateCutover => self.handle_migrate_cutover().await,
             Command::MigrateRollback => self.handle_migrate_rollback().await,
 
@@ -2265,7 +2258,10 @@ impl CommandExecutor {
                 partition,
                 offset,
                 count,
-            } => self.handle_stream_fetch(&topic, partition, offset, count).await,
+            } => {
+                self.handle_stream_fetch(&topic, partition, offset, count)
+                    .await
+            }
             Command::StreamCommit {
                 group,
                 topic,
@@ -2277,9 +2273,7 @@ impl CommandExecutor {
             }
             Command::StreamTopics => self.handle_stream_topics().await,
             Command::StreamDescribe { topic } => self.handle_stream_describe(&topic).await,
-            Command::StreamGroups { topic } => {
-                self.handle_stream_groups(topic.as_deref()).await
-            }
+            Command::StreamGroups { topic } => self.handle_stream_groups(topic.as_deref()).await,
             Command::StreamOffsets { topic, partition } => {
                 self.handle_stream_offsets(&topic, partition).await
             }
@@ -2299,36 +2293,49 @@ impl CommandExecutor {
             Command::RegionStats => self.handle_region_stats().await,
 
             // Data Mesh / Federation gateway commands
-            Command::FederationAdd { id, source_type, uri, name } => {
-                self.handle_federation_add(&id, &source_type, &uri, name.as_deref()).await
+            Command::FederationAdd {
+                id,
+                source_type,
+                uri,
+                name,
+            } => {
+                self.handle_federation_add(&id, &source_type, &uri, name.as_deref())
+                    .await
             }
             Command::FederationRemove { id } => self.handle_federation_remove(&id).await,
             Command::FederationList => self.handle_federation_list().await,
             Command::FederationStatus { id } => self.handle_federation_status(id.as_deref()).await,
-            Command::FederationNamespace { namespace, source_id } => {
-                self.handle_federation_namespace(&namespace, &source_id).await
+            Command::FederationNamespace {
+                namespace,
+                source_id,
+            } => {
+                self.handle_federation_namespace(&namespace, &source_id)
+                    .await
             }
             Command::FederationNamespaces => self.handle_federation_namespaces().await,
             Command::FederationQuery { query } => self.handle_federation_query(&query).await,
-            Command::FederationContract { name, source_id, schema_json } => {
-                self.handle_federation_contract(&name, &source_id, &schema_json).await
+            Command::FederationContract {
+                name,
+                source_id,
+                schema_json,
+            } => {
+                self.handle_federation_contract(&name, &source_id, &schema_json)
+                    .await
             }
             Command::FederationContracts => self.handle_federation_contracts().await,
             Command::FederationStats => self.handle_federation_stats().await,
 
             // Unified Query Gateway commands
-            Command::Gateway { subcommand, args } => {
-                self.handle_gateway(&subcommand, &args).await
-            }
+            Command::Gateway { subcommand, args } => self.handle_gateway(&subcommand, &args).await,
 
             // Cost-Aware Intelligent Tiering budget commands
-            Command::Budget { subcommand, args } => {
-                self.handle_budget(&subcommand, &args).await
-            }
+            Command::Budget { subcommand, args } => self.handle_budget(&subcommand, &args).await,
 
             // Studio developer-experience commands
             Command::StudioSchema { db } => self.handle_studio_schema(db).await,
-            Command::StudioTemplates { name } => self.handle_studio_templates(name.as_deref()).await,
+            Command::StudioTemplates { name } => {
+                self.handle_studio_templates(name.as_deref()).await
+            }
             Command::StudioSetup { template } => self.handle_studio_setup(&template).await,
             Command::StudioCompat { redis_info } => {
                 self.handle_studio_compat(redis_info.as_deref()).await
@@ -2354,9 +2361,7 @@ impl CommandExecutor {
             }
 
             // Distributed lock commands
-            Command::Lock { subcommand, args } => {
-                handlers::locks::lock_command(&subcommand, &args)
-            }
+            Command::Lock { subcommand, args } => handlers::locks::lock_command(&subcommand, &args),
 
             // Time-indexed data versioning commands
             Command::Version { subcommand, args } => {
@@ -2420,13 +2425,9 @@ impl CommandExecutor {
 
             // Edge mesh networking commands
             #[cfg(feature = "cloud")]
-            Command::Mesh { subcommand, args } => {
-                handlers::mesh::mesh_command(&subcommand, &args)
-            }
+            Command::Mesh { subcommand, args } => handlers::mesh::mesh_command(&subcommand, &args),
             #[cfg(not(feature = "cloud"))]
-            Command::Mesh { .. } => {
-                Frame::error("ERR mesh commands require the 'cloud' feature")
-            }
+            Command::Mesh { .. } => Frame::error("ERR mesh commands require the 'cloud' feature"),
 
             // Chaos engineering commands
             Command::Chaos { subcommand, args } => {

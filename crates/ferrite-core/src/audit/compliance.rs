@@ -326,8 +326,9 @@ impl ComplianceAuditLog {
             ExportFormat::Json => serde_json::to_string_pretty(&*entries)
                 .map_err(|e| AuditError::ExportError(e.to_string())),
             ExportFormat::Csv => {
-                let mut out =
-                    String::from("id,timestamp,event_type,user,client_addr,command,key,result,db,hash\n");
+                let mut out = String::from(
+                    "id,timestamp,event_type,user,client_addr,command,key,result,db,hash\n",
+                );
                 for e in entries.iter() {
                     let result_str = match &e.result {
                         AuditResult::Success => "success".to_string(),
@@ -413,8 +414,8 @@ impl ComplianceAuditLog {
 
     /// Remove entries older than retention_days.
     pub fn prune_expired(&self) -> usize {
-        let cutoff = now_millis()
-            .saturating_sub(self.config.retention_days as u64 * 24 * 60 * 60 * 1000);
+        let cutoff =
+            now_millis().saturating_sub(self.config.retention_days as u64 * 24 * 60 * 60 * 1000);
         let mut entries = self.entries.write();
         let before = entries.len();
         entries.retain(|e| e.timestamp >= cutoff);
@@ -529,10 +530,7 @@ impl GdprHandler {
     pub fn right_to_deletion(&self, subject_id: &str) -> DeletionResult {
         let start = SystemTime::now();
         let mut data = self.subject_data.write();
-        let found = data
-            .get(subject_id)
-            .map(|d| d.len() as u64)
-            .unwrap_or(0);
+        let found = data.get(subject_id).map(|d| d.len() as u64).unwrap_or(0);
         data.remove(subject_id);
 
         // Also remove consents
@@ -552,10 +550,7 @@ impl GdprHandler {
         let data = self.subject_data.read();
         match data.get(subject_id) {
             Some(entries) => {
-                let total_bytes: u64 = entries
-                    .values()
-                    .map(|v| v.to_string().len() as u64)
-                    .sum();
+                let total_bytes: u64 = entries.values().map(|v| v.to_string().len() as u64).sum();
                 DataExportResult {
                     data: entries.clone(),
                     keys_exported: entries.len() as u64,
@@ -798,7 +793,10 @@ mod tests {
         let policy = RetentionPolicy::new(Duration::from_secs(86400 * 30));
         policy.set_key_pattern_ttl("session:*", Duration::from_secs(86400 * 7));
 
-        assert_eq!(policy.get_ttl("session:abc"), Duration::from_secs(86400 * 7));
+        assert_eq!(
+            policy.get_ttl("session:abc"),
+            Duration::from_secs(86400 * 7)
+        );
         assert_eq!(policy.get_ttl("user:123"), Duration::from_secs(86400 * 30));
 
         assert_eq!(
@@ -862,15 +860,25 @@ mod tests {
             ..Default::default()
         });
         for i in 0..5 {
-            log.record(make_entry("admin", &format!("CMD{}", i), AuditEventType::Write));
+            log.record(make_entry(
+                "admin",
+                &format!("CMD{}", i),
+                AuditEventType::Write,
+            ));
         }
         assert_eq!(log.count(), 3);
     }
 
     #[test]
     fn test_audit_event_type_parse() {
-        assert_eq!(AuditEventType::from_str_loose("write"), Some(AuditEventType::Write));
-        assert_eq!(AuditEventType::from_str_loose("READ"), Some(AuditEventType::Read));
+        assert_eq!(
+            AuditEventType::from_str_loose("write"),
+            Some(AuditEventType::Write)
+        );
+        assert_eq!(
+            AuditEventType::from_str_loose("READ"),
+            Some(AuditEventType::Read)
+        );
         assert_eq!(AuditEventType::from_str_loose("unknown"), None);
     }
 }

@@ -101,7 +101,10 @@ impl GraphQLEngine {
         } else if query.starts_with('{') || query.starts_with("query") {
             self.execute_query(query, &request.variables)
         } else {
-            GraphQLResponse::error(format!("Unsupported operation: {}", &query[..query.len().min(50)]))
+            GraphQLResponse::error(format!(
+                "Unsupported operation: {}",
+                &query[..query.len().min(50)]
+            ))
         }
     }
 
@@ -452,9 +455,7 @@ fn read_identifier(chars: &mut std::iter::Peekable<std::str::Chars>) -> String {
     ident
 }
 
-fn parse_arguments(
-    chars: &mut std::iter::Peekable<std::str::Chars>,
-) -> HashMap<String, String> {
+fn parse_arguments(chars: &mut std::iter::Peekable<std::str::Chars>) -> HashMap<String, String> {
     let mut args = HashMap::new();
     if chars.peek() != Some(&'(') {
         return args;

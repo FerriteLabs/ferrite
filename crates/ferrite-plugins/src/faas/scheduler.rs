@@ -67,10 +67,7 @@ impl FunctionScheduler {
 
     /// List all schedule entries.
     pub fn list(&self) -> Vec<ScheduleEntry> {
-        self.schedules
-            .iter()
-            .map(|e| e.value().clone())
-            .collect()
+        self.schedules.iter().map(|e| e.value().clone()).collect()
     }
 
     /// Return the next N upcoming runs across all schedules.
@@ -92,8 +89,7 @@ impl FunctionScheduler {
             .schedules
             .get_mut(name)
             .ok_or_else(|| SchedulerError::NotFound(name.to_string()))?;
-        let interval =
-            parse_interval(&entry.cron_expr).unwrap_or(3600);
+        let interval = parse_interval(&entry.cron_expr).unwrap_or(3600);
         let now = now_epoch_secs();
         entry.last_run = now;
         entry.next_run = now + interval;

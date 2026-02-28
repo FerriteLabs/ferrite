@@ -327,12 +327,12 @@
 //! 4. **Create views for dashboards**: Pre-compute expensive aggregations
 //! 5. **Monitor query stats**: Track slow queries and optimize
 
-/// Embedded analytics engine for SQL-like aggregations over cached data.
-pub mod analytics;
 /// AI-powered query advisor with index and rewrite recommendations.
 pub mod advisor;
 /// AI-driven query optimizer with workload analysis.
 pub mod ai_optimizer;
+/// Embedded analytics engine for SQL-like aggregations over cached data.
+pub mod analytics;
 /// Abstract syntax tree definitions for FerriteQL.
 pub mod ast;
 /// Cross-model data source registry for querying across data models.

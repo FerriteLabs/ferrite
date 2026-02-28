@@ -223,13 +223,13 @@ impl PredictiveScaler {
         let samples = self.samples.read();
         let sample_count = samples.len();
 
-        let (predicted_ops, predicted_memory, confidence) = if !state.initialized || sample_count < 2
-        {
-            (0.0, 0.0, 0.0)
-        } else {
-            let conf = (sample_count as f64 / 100.0).min(0.95);
-            (state.smoothed_ops, state.smoothed_memory, conf)
-        };
+        let (predicted_ops, predicted_memory, confidence) =
+            if !state.initialized || sample_count < 2 {
+                (0.0, 0.0, 0.0)
+            } else {
+                let conf = (sample_count as f64 / 100.0).min(0.95);
+                (state.smoothed_ops, state.smoothed_memory, conf)
+            };
 
         // Simple replica recommendation: 1 replica per 10k ops/s, clamped
         let raw_replicas = (predicted_ops / 10_000.0).ceil().max(1.0);
@@ -284,14 +284,8 @@ impl PredictiveScaler {
             }
         }
 
-        let max_avg = hour_avgs
-            .iter()
-            .copied()
-            .fold(f64::NEG_INFINITY, f64::max);
-        let min_avg = hour_avgs
-            .iter()
-            .copied()
-            .fold(f64::INFINITY, f64::min);
+        let max_avg = hour_avgs.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+        let min_avg = hour_avgs.iter().copied().fold(f64::INFINITY, f64::min);
 
         if max_avg <= 0.0 {
             return Some(TrafficPattern::Steady);

@@ -57,8 +57,8 @@ impl Default for BridgeConfig {
         Self {
             sample_interval_secs: 30,
             register_default_rules: true,
-            get_p99_slo_us: 1_000,   // 1ms P99 SLO
-            set_p99_slo_us: 5_000,   // 5ms P99 SLO
+            get_p99_slo_us: 1_000,      // 1ms P99 SLO
+            set_p99_slo_us: 5_000,      // 5ms P99 SLO
             error_rate_threshold: 0.05, // 5% error rate
             memory_warn_ratio: 0.80,
             memory_critical_ratio: 0.95,
@@ -142,11 +142,7 @@ impl MetricsBridge {
         });
 
         // OPS anomaly (Z-score based)
-        detector.add_rule(AlertRule::anomaly(
-            "ops_per_sec",
-            3.0,
-            AlertSeverity::Info,
-        ));
+        detector.add_rule(AlertRule::anomaly("ops_per_sec", 3.0, AlertSeverity::Info));
 
         // Latency P99 SLOs
         detector.add_rule(AlertRule::latency_p99(
@@ -178,8 +174,7 @@ impl MetricsBridge {
         let snapshot = self.registry.get_snapshot();
 
         // Feed core metrics into detector
-        self.detector
-            .observe("ops_per_sec", snapshot.ops_per_sec);
+        self.detector.observe("ops_per_sec", snapshot.ops_per_sec);
         self.detector
             .observe("connected_clients", snapshot.connected_clients as f64);
         self.detector
@@ -201,11 +196,14 @@ impl MetricsBridge {
         }
 
         // Replication lag
-        self.detector
-            .observe("replication_lag_ms", snapshot.replication.replication_lag_ms as f64);
+        self.detector.observe(
+            "replication_lag_ms",
+            snapshot.replication.replication_lag_ms as f64,
+        );
 
         // Keyspace hit rate
-        self.detector.observe("hit_rate", snapshot.keyspace.hit_rate);
+        self.detector
+            .observe("hit_rate", snapshot.keyspace.hit_rate);
 
         // Per-command latency P99s
         let command_stats = self.registry.get_command_stats();
@@ -257,7 +255,11 @@ mod tests {
         let _bridge = MetricsBridge::new(registry, detector.clone(), BridgeConfig::default());
 
         let rules = detector.list_rules();
-        assert!(rules.len() >= 7, "should register at least 7 default rules, got {}", rules.len());
+        assert!(
+            rules.len() >= 7,
+            "should register at least 7 default rules, got {}",
+            rules.len()
+        );
 
         let rule_names: Vec<&str> = rules.iter().map(|r| r.name.as_str()).collect();
         assert!(rule_names.contains(&"error_rate_spike"));

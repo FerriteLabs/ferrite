@@ -119,18 +119,28 @@ impl LatencyTracker {
         let events = self.events.read();
         match events.get(event_name) {
             Some(samples) if !samples.is_empty() => {
-                let max_latency = samples.iter().map(|s| s.latency_ms).max().unwrap_or(1).max(1);
+                let max_latency = samples
+                    .iter()
+                    .map(|s| s.latency_ms)
+                    .max()
+                    .unwrap_or(1)
+                    .max(1);
                 let graph_height = 10u64;
 
                 let mut lines: Vec<String> = Vec::new();
-                lines.push(format!("{} - high {max_latency} ms, low {} ms (all time high {max_latency} ms)",
+                lines.push(format!(
+                    "{} - high {max_latency} ms, low {} ms (all time high {max_latency} ms)",
                     event_name,
                     samples.iter().map(|s| s.latency_ms).min().unwrap_or(0),
                 ));
 
                 // Build columns
                 let num_cols = samples.len().min(60);
-                let start = if samples.len() > 60 { samples.len() - 60 } else { 0 };
+                let start = if samples.len() > 60 {
+                    samples.len() - 60
+                } else {
+                    0
+                };
                 let display_samples = &samples[start..];
 
                 for row in (1..=graph_height).rev() {

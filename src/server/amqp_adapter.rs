@@ -236,10 +236,7 @@ impl AmqpAdapter {
         let name = queue.name.clone();
         self.queues.write().insert(name.clone(), queue);
         // Initialize message buffer for this queue
-        self.messages
-            .write()
-            .entry(name)
-            .or_insert_with(Vec::new);
+        self.messages.write().entry(name).or_insert_with(Vec::new);
         Ok(())
     }
 
@@ -338,18 +335,19 @@ impl AmqpAdapter {
         }
 
         let mut messages = self.messages.write();
-        let msg = messages
-            .get_mut(queue)
-            .and_then(|msgs| if msgs.is_empty() { None } else { Some(msgs.remove(0)) });
+        let msg = messages.get_mut(queue).and_then(|msgs| {
+            if msgs.is_empty() {
+                None
+            } else {
+                Some(msgs.remove(0))
+            }
+        });
 
         if msg.is_some() {
             self.messages_delivered.fetch_add(1, Ordering::Relaxed);
             // Update queue message count
             if let Some(q) = self.queues.write().get_mut(queue) {
-                q.messages = messages
-                    .get(queue)
-                    .map(|v| v.len() as u64)
-                    .unwrap_or(0);
+                q.messages = messages.get(queue).map(|v| v.len() as u64).unwrap_or(0);
             }
         }
 
@@ -577,12 +575,8 @@ mod tests {
                 consumers: 0,
             })
             .expect("declare q2");
-        adapter
-            .bind_queue("q1", "fanout_ex", "")
-            .expect("bind q1");
-        adapter
-            .bind_queue("q2", "fanout_ex", "")
-            .expect("bind q2");
+        adapter.bind_queue("q1", "fanout_ex", "").expect("bind q1");
+        adapter.bind_queue("q2", "fanout_ex", "").expect("bind q2");
 
         adapter
             .publish("fanout_ex", "", b"broadcast", MessageProperties::default())

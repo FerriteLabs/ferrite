@@ -194,17 +194,17 @@ impl UsageMeter {
         let usage = self.usage.read();
         let acc = usage.get(instance_id);
 
-        let (compute_hours, memory_gb_hours, storage_gb, operations, network_egress_gb) =
-            match acc {
-                Some(a) => (
-                    a.compute_hours,
-                    a.memory_gb_hours,
-                    a.storage_gb,
-                    a.operations,
-                    a.network_egress_bytes as f64 / (1024.0 * 1024.0 * 1024.0),
-                ),
-                None => (0.0, 0.0, 0.0, 0, 0.0),
-            };
+        let (compute_hours, memory_gb_hours, storage_gb, operations, network_egress_gb) = match acc
+        {
+            Some(a) => (
+                a.compute_hours,
+                a.memory_gb_hours,
+                a.storage_gb,
+                a.operations,
+                a.network_egress_bytes as f64 / (1024.0 * 1024.0 * 1024.0),
+            ),
+            None => (0.0, 0.0, 0.0, 0, 0.0),
+        };
 
         let total_cost = (compute_hours * self.pricing.compute_per_vcpu_hour)
             + (memory_gb_hours * self.pricing.memory_per_gb_hour)
@@ -231,13 +231,13 @@ impl UsageMeter {
         let memory_gb = instance.instance_type.memory_gb();
 
         let compute_cost = vcpus as f64 * hours_per_month * self.pricing.compute_per_vcpu_hour;
-        let memory_cost =
-            memory_gb as f64 * hours_per_month * self.pricing.memory_per_gb_hour;
+        let memory_cost = memory_gb as f64 * hours_per_month * self.pricing.memory_per_gb_hour;
         let storage_cost = 0.0; // Depends on actual usage
         let operations_cost = 0.0; // Depends on actual usage
         let network_cost = 0.0; // Depends on actual usage
 
-        let total_monthly = compute_cost + memory_cost + storage_cost + operations_cost + network_cost;
+        let total_monthly =
+            compute_cost + memory_cost + storage_cost + operations_cost + network_cost;
 
         CostEstimate {
             compute_cost,

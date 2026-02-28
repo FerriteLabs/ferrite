@@ -1121,7 +1121,8 @@ impl RuntimeChaosEngine {
         let before = faults.len();
         faults.retain(|f| f.expires_at.map_or(true, |exp| now <= exp));
         let removed = before - faults.len();
-        self.total_healed.fetch_add(removed as u64, Ordering::Relaxed);
+        self.total_healed
+            .fetch_add(removed as u64, Ordering::Relaxed);
         removed
     }
 
@@ -1157,7 +1158,10 @@ impl RuntimeChaosEngine {
 
     fn effect_for(&self, ft: &RuntimeFaultType) -> FaultEffect {
         match ft {
-            RuntimeFaultType::Latency { delay_ms, jitter_ms } => {
+            RuntimeFaultType::Latency {
+                delay_ms,
+                jitter_ms,
+            } => {
                 let total = *delay_ms + jitter_ms / 2;
                 FaultEffect::AddLatency(Duration::from_millis(total))
             }
@@ -1391,8 +1395,12 @@ mod runtime_tests {
                 ..Default::default()
             })
             .expect("inject");
-        assert!(engine.should_apply("GET", Some("user:123"), None, 0).is_some());
-        assert!(engine.should_apply("GET", Some("session:abc"), None, 0).is_none());
+        assert!(engine
+            .should_apply("GET", Some("user:123"), None, 0)
+            .is_some());
+        assert!(engine
+            .should_apply("GET", Some("session:abc"), None, 0)
+            .is_none());
     }
 
     #[test]

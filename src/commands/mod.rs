@@ -2,13 +2,15 @@
 //!
 //! This module implements Redis command parsing and execution.
 
+/// Extended ACL commands (LOG, CAT, GENPASS, DRYRUN)
+pub mod acl_commands;
 mod bitmap;
 /// Blocking list commands
 pub mod blocking;
-/// Extended ACL commands (LOG, CAT, GENPASS, DRYRUN)
-pub mod acl_commands;
 /// Extended CLIENT commands (INFO, NO-EVICT, NO-TOUCH)
 pub mod client_commands;
+/// Extended CONFIG / COMMAND sub-commands
+pub mod config_commands;
 mod executor;
 mod geo;
 /// Command handlers organized by category
@@ -35,8 +37,6 @@ pub mod sorted_sets;
 mod streams;
 /// Extended Streams commands (XINFO dispatcher, XAUTOCLAIM, XPENDING extended, XCLAIM extended)
 pub mod streams_extended;
-/// Extended CONFIG / COMMAND sub-commands
-pub mod config_commands;
 mod strings;
 
 pub use blocking::{

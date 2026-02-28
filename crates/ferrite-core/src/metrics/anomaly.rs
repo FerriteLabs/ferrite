@@ -596,7 +596,11 @@ impl AnomalyDetector {
     pub fn get_alerts(&self, min_severity: Option<AlertSeverity>) -> Vec<Alert> {
         let alerts = self.alerts.read();
         match min_severity {
-            Some(sev) => alerts.iter().filter(|a| a.severity >= sev).cloned().collect(),
+            Some(sev) => alerts
+                .iter()
+                .filter(|a| a.severity >= sev)
+                .cloned()
+                .collect(),
             None => alerts.clone(),
         }
     }

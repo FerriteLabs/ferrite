@@ -34,10 +34,10 @@ pub mod cutover;
 pub mod executor;
 pub mod live;
 pub mod live_migration;
-pub mod planner;
-pub mod progress;
 /// Migration report generation.
 pub mod migration_report;
+pub mod planner;
+pub mod progress;
 /// Redis RDB file parser for snapshot-based migration.
 pub mod rdb_parser;
 /// Redis RDB snapshot import via SCAN.
@@ -52,8 +52,8 @@ pub use cluster_migration::{
     ClusterMigrationState, MigrationCheckpoint, SlotMigrationPhase,
 };
 pub use cutover::{
-    CutoverConfig, CutoverError, CutoverOrchestrator, CutoverResult, CutoverState,
-    CutoverSummary, PreCheckResult, VerificationResult,
+    CutoverConfig, CutoverError, CutoverOrchestrator, CutoverResult, CutoverState, CutoverSummary,
+    PreCheckResult, VerificationResult,
 };
 pub use executor::{MigrationExecutor, MigrationProgress, MigrationResult};
 pub use planner::{MigrationPlan, MigrationPlanner, MigrationStep};

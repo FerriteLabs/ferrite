@@ -119,10 +119,8 @@ impl FerritGrpcService {
     /// Create a new gRPC service instance.
     pub fn new() -> Self {
         let methods = GrpcServiceDefinition::methods();
-        let method_map: HashMap<String, GrpcMethod> = methods
-            .into_iter()
-            .map(|m| (m.name.clone(), m))
-            .collect();
+        let method_map: HashMap<String, GrpcMethod> =
+            methods.into_iter().map(|m| (m.name.clone(), m)).collect();
         Self { method_map }
     }
 
@@ -285,7 +283,9 @@ mod tests {
         let methods = GrpcServiceDefinition::methods();
         assert_eq!(methods.len(), 6);
         assert!(methods.iter().any(|m| m.name == "Get"));
-        assert!(methods.iter().any(|m| m.name == "Subscribe" && m.is_streaming));
+        assert!(methods
+            .iter()
+            .any(|m| m.name == "Subscribe" && m.is_streaming));
     }
 
     #[test]
@@ -299,10 +299,8 @@ mod tests {
     #[test]
     fn test_handle_set() {
         let service = FerritGrpcService::new();
-        let resp = service.handle_request(
-            "Set",
-            &serde_json::json!({"key": "foo", "value": "bar"}),
-        );
+        let resp =
+            service.handle_request("Set", &serde_json::json!({"key": "foo", "value": "bar"}));
         assert_eq!(resp.status, 0);
     }
 
@@ -333,10 +331,7 @@ mod tests {
     #[test]
     fn test_handle_execute() {
         let service = FerritGrpcService::new();
-        let resp = service.handle_request(
-            "Execute",
-            &serde_json::json!({"command": "PING"}),
-        );
+        let resp = service.handle_request("Execute", &serde_json::json!({"command": "PING"}));
         assert_eq!(resp.status, 0);
     }
 }

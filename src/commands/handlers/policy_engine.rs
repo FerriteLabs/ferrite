@@ -49,7 +49,11 @@ fn handle_create(args: &[String]) -> Frame {
     let name = args[0].clone();
     let action = match PolicyAction::from_str_loose(&args[1]) {
         Some(a) => a,
-        None => return err_frame("invalid action; use ALLOW, DENY, ALLOW_WITH_AUDIT, or DENY_WITH_WARNING"),
+        None => {
+            return err_frame(
+                "invalid action; use ALLOW, DENY, ALLOW_WITH_AUDIT, or DENY_WITH_WARNING",
+            )
+        }
     };
 
     let mut scope = EffectScope::default();

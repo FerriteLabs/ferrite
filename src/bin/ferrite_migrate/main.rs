@@ -883,7 +883,10 @@ async fn cmd_replicate(source: &str, password: Option<&str>) -> anyhow::Result<(
     let stats = stream.stats();
     println!("{}", "Stream Stats".bold().underline());
     println!("  Commands received: {}", stats.commands_received);
-    println!("  Bytes received:    {}", format_bytes(stats.bytes_received));
+    println!(
+        "  Bytes received:    {}",
+        format_bytes(stats.bytes_received)
+    );
     println!("  Lag:               {} bytes", stats.lag_bytes);
     println!();
 
@@ -905,11 +908,7 @@ async fn cmd_replicate(source: &str, password: Option<&str>) -> anyhow::Result<(
 
 // ── Cutover ──────────────────────────────────────────────────────────
 
-async fn cmd_cutover(
-    _source: &str,
-    verify: bool,
-    drain_timeout: Duration,
-) -> anyhow::Result<()> {
+async fn cmd_cutover(_source: &str, verify: bool, drain_timeout: Duration) -> anyhow::Result<()> {
     println!("{} Preparing zero-downtime cutover...", "→".cyan().bold());
     println!();
 
@@ -1211,7 +1210,11 @@ async fn import_rdb(
     for db in &rdb_data.databases {
         // SELECT database
         if db.db_number > 0 {
-            let cmd = format!("*2\r\n$6\r\nSELECT\r\n${}\r\n{}\r\n", db.db_number.to_string().len(), db.db_number);
+            let cmd = format!(
+                "*2\r\n$6\r\nSELECT\r\n${}\r\n{}\r\n",
+                db.db_number.to_string().len(),
+                db.db_number
+            );
             stream.write_all(cmd.as_bytes()).await?;
             let mut buf = [0u8; 256];
             let _ = stream.read(&mut buf).await?;
@@ -1230,9 +1233,7 @@ async fn import_rdb(
 
             // Build RESP command for each value type
             let cmd = match &entry.value {
-                RdbValue::String(val) => {
-                    build_resp_cmd(&["SET", &key_str], Some(&[val.as_ref()]))
-                }
+                RdbValue::String(val) => build_resp_cmd(&["SET", &key_str], Some(&[val.as_ref()])),
                 RdbValue::List(items) => {
                     if items.is_empty() {
                         skipped += 1;
@@ -1277,7 +1278,14 @@ async fn import_rdb(
                     for group in groups {
                         let last_id = format!("{}-{}", group.last_id.0, group.last_id.1);
                         let xcreate = build_resp_cmd(
-                            &["XGROUP", "CREATE", &key_str, &group.name, &last_id, "MKSTREAM"],
+                            &[
+                                "XGROUP",
+                                "CREATE",
+                                &key_str,
+                                &group.name,
+                                &last_id,
+                                "MKSTREAM",
+                            ],
                             None,
                         );
                         let _ = stream.write_all(xcreate.as_bytes()).await;
@@ -1287,7 +1295,13 @@ async fn import_rdb(
                     imported += 1;
                     // Print progress periodically
                     if imported % 1000 == 0 {
-                        print!("\r  {} Imported {} keys ({} skipped, {} errors)", "→".cyan(), imported, skipped, errors);
+                        print!(
+                            "\r  {} Imported {} keys ({} skipped, {} errors)",
+                            "→".cyan(),
+                            imported,
+                            skipped,
+                            errors
+                        );
                     }
                     continue;
                 }
@@ -1330,10 +1344,7 @@ async fn import_rdb(
                     .unwrap_or(0);
                 if expire_ms > now_ms {
                     let ttl_ms = expire_ms - now_ms;
-                    let pexpire = build_resp_cmd(
-                        &["PEXPIRE", &key_str, &ttl_ms.to_string()],
-                        None,
-                    );
+                    let pexpire = build_resp_cmd(&["PEXPIRE", &key_str, &ttl_ms.to_string()], None);
                     let _ = stream.write_all(pexpire.as_bytes()).await;
                     let mut buf = [0u8; 256];
                     let _ = stream.read(&mut buf).await;
@@ -1356,10 +1367,18 @@ async fn import_rdb(
     println!();
     println!();
     println!("{}", "Import Summary".bold().underline());
-    println!("  {} Keys imported: {}", "✓".green(), imported.to_string().green().bold());
+    println!(
+        "  {} Keys imported: {}",
+        "✓".green(),
+        imported.to_string().green().bold()
+    );
     println!("  {} Keys skipped:  {}", "ℹ".blue(), skipped);
     if errors > 0 {
-        println!("  {} Errors:        {}", "✗".red(), errors.to_string().red().bold());
+        println!(
+            "  {} Errors:        {}",
+            "✗".red(),
+            errors.to_string().red().bold()
+        );
     }
     println!(
         "  {} Total time:    {:.2}s (parse: {:.2}s, replay: {:.2}s)",
@@ -1404,9 +1423,9 @@ async fn import_aof(
     println!("  {} Replaying AOF commands to {}...", "→".cyan(), target);
 
     let target_addr = parse_target_addr(target)?;
-    let mut stream = TcpStream::connect(&target_addr).await.map_err(|e| {
-        anyhow::anyhow!("Failed to connect to target {}: {}", target_addr, e)
-    })?;
+    let mut stream = TcpStream::connect(&target_addr)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to connect to target {}: {}", target_addr, e))?;
 
     let aof_data = std::fs::read(path)?;
     let mut pos = 0;
@@ -1454,7 +1473,12 @@ async fn import_aof(
         }
 
         if commands_sent % 1000 == 0 && commands_sent > 0 {
-            print!("\r  {} Sent {} commands ({} errors)", "→".cyan(), commands_sent, errors);
+            print!(
+                "\r  {} Sent {} commands ({} errors)",
+                "→".cyan(),
+                commands_sent,
+                errors
+            );
         }
     }
 
@@ -1493,9 +1517,9 @@ async fn import_json(
     println!("  {} Importing JSON data to {}...", "→".cyan(), target);
 
     let target_addr = parse_target_addr(target)?;
-    let mut stream = TcpStream::connect(&target_addr).await.map_err(|e| {
-        anyhow::anyhow!("Failed to connect to target {}: {}", target_addr, e)
-    })?;
+    let mut stream = TcpStream::connect(&target_addr)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to connect to target {}: {}", target_addr, e))?;
 
     let json_data = std::fs::read_to_string(path)?;
     let entries: Vec<serde_json::Value> = serde_json::from_str(&json_data)
@@ -1538,8 +1562,7 @@ async fn import_json(
         // Apply TTL if present
         if let Some(ttl) = entry.get("ttl").and_then(|v| v.as_u64()) {
             if ttl > 0 {
-                let expire_cmd =
-                    build_resp_cmd(&["PEXPIRE", key, &ttl.to_string()], None);
+                let expire_cmd = build_resp_cmd(&["PEXPIRE", key, &ttl.to_string()], None);
                 let _ = stream.write_all(expire_cmd.as_bytes()).await;
                 let mut buf2 = [0u8; 256];
                 let _ = stream.read(&mut buf2).await;
@@ -1590,7 +1613,14 @@ fn build_resp_cmd(args: &[&str], extra_binary: Option<&[&[u8]]>) -> String {
 /// Build RESP command for list-type operations (RPUSH, SADD).
 fn build_resp_list_cmd(cmd_name: &str, key: &str, items: &[bytes::Bytes]) -> String {
     let total = 2 + items.len();
-    let mut cmd = format!("*{}\r\n${}\r\n{}\r\n${}\r\n{}\r\n", total, cmd_name.len(), cmd_name, key.len(), key);
+    let mut cmd = format!(
+        "*{}\r\n${}\r\n{}\r\n${}\r\n{}\r\n",
+        total,
+        cmd_name.len(),
+        cmd_name,
+        key.len(),
+        key
+    );
     for item in items {
         let s = String::from_utf8_lossy(item);
         cmd.push_str(&format!("${}\r\n{}\r\n", s.len(), s));
@@ -1599,13 +1629,30 @@ fn build_resp_list_cmd(cmd_name: &str, key: &str, items: &[bytes::Bytes]) -> Str
 }
 
 /// Build RESP HSET command from field-value pairs.
-fn build_resp_hash_cmd(cmd_name: &str, key: &str, fields: &[(bytes::Bytes, bytes::Bytes)]) -> String {
+fn build_resp_hash_cmd(
+    cmd_name: &str,
+    key: &str,
+    fields: &[(bytes::Bytes, bytes::Bytes)],
+) -> String {
     let total = 2 + fields.len() * 2;
-    let mut cmd = format!("*{}\r\n${}\r\n{}\r\n${}\r\n{}\r\n", total, cmd_name.len(), cmd_name, key.len(), key);
+    let mut cmd = format!(
+        "*{}\r\n${}\r\n{}\r\n${}\r\n{}\r\n",
+        total,
+        cmd_name.len(),
+        cmd_name,
+        key.len(),
+        key
+    );
     for (field, value) in fields {
         let f = String::from_utf8_lossy(field);
         let v = String::from_utf8_lossy(value);
-        cmd.push_str(&format!("${}\r\n{}\r\n${}\r\n{}\r\n", f.len(), f, v.len(), v));
+        cmd.push_str(&format!(
+            "${}\r\n{}\r\n${}\r\n{}\r\n",
+            f.len(),
+            f,
+            v.len(),
+            v
+        ));
     }
     cmd
 }
@@ -1617,7 +1664,13 @@ fn build_resp_zadd_cmd(key: &str, members: &[(f64, bytes::Bytes)]) -> String {
     for (score, member) in members {
         let score_str = score.to_string();
         let m = String::from_utf8_lossy(member);
-        cmd.push_str(&format!("${}\r\n{}\r\n${}\r\n{}\r\n", score_str.len(), score_str, m.len(), m));
+        cmd.push_str(&format!(
+            "${}\r\n{}\r\n${}\r\n{}\r\n",
+            score_str.len(),
+            score_str,
+            m.len(),
+            m
+        ));
     }
     cmd
 }
@@ -1625,11 +1678,24 @@ fn build_resp_zadd_cmd(key: &str, members: &[(f64, bytes::Bytes)]) -> String {
 /// Build RESP XADD command for stream entries.
 fn build_resp_xadd_cmd(key: &str, id: &str, fields: &[(bytes::Bytes, bytes::Bytes)]) -> String {
     let total = 3 + fields.len() * 2;
-    let mut cmd = format!("*{}\r\n$4\r\nXADD\r\n${}\r\n{}\r\n${}\r\n{}\r\n", total, key.len(), key, id.len(), id);
+    let mut cmd = format!(
+        "*{}\r\n$4\r\nXADD\r\n${}\r\n{}\r\n${}\r\n{}\r\n",
+        total,
+        key.len(),
+        key,
+        id.len(),
+        id
+    );
     for (field, value) in fields {
         let f = String::from_utf8_lossy(field);
         let v = String::from_utf8_lossy(value);
-        cmd.push_str(&format!("${}\r\n{}\r\n${}\r\n{}\r\n", f.len(), f, v.len(), v));
+        cmd.push_str(&format!(
+            "${}\r\n{}\r\n${}\r\n{}\r\n",
+            f.len(),
+            f,
+            v.len(),
+            v
+        ));
     }
     cmd
 }

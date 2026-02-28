@@ -449,10 +449,7 @@ impl EdgeMeshManager {
         let mut region_map: HashMap<String, Vec<String>> = HashMap::new();
         for p in &peers {
             let region = p.region.clone().unwrap_or_else(|| "default".to_string());
-            region_map
-                .entry(region)
-                .or_default()
-                .push(p.id.clone());
+            region_map.entry(region).or_default().push(p.id.clone());
         }
         let clusters = region_map
             .into_iter()

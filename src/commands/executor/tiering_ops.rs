@@ -77,45 +77,24 @@ impl CommandExecutor {
                 map.insert(Bytes::from_static(b"key"), Frame::bulk(key_str));
 
                 match decision {
-                    ferrite_core::tiering::auto_tier::TierDecision::Promote {
-                        target,
-                        reason,
-                    } => {
-                        map.insert(
-                            Bytes::from_static(b"action"),
-                            Frame::bulk("promote"),
-                        );
+                    ferrite_core::tiering::auto_tier::TierDecision::Promote { target, reason } => {
+                        map.insert(Bytes::from_static(b"action"), Frame::bulk("promote"));
                         map.insert(
                             Bytes::from_static(b"target_tier"),
                             Frame::bulk(target.name()),
                         );
-                        map.insert(
-                            Bytes::from_static(b"reason"),
-                            Frame::bulk(reason),
-                        );
+                        map.insert(Bytes::from_static(b"reason"), Frame::bulk(reason));
                     }
-                    ferrite_core::tiering::auto_tier::TierDecision::Demote {
-                        target,
-                        reason,
-                    } => {
-                        map.insert(
-                            Bytes::from_static(b"action"),
-                            Frame::bulk("demote"),
-                        );
+                    ferrite_core::tiering::auto_tier::TierDecision::Demote { target, reason } => {
+                        map.insert(Bytes::from_static(b"action"), Frame::bulk("demote"));
                         map.insert(
                             Bytes::from_static(b"target_tier"),
                             Frame::bulk(target.name()),
                         );
-                        map.insert(
-                            Bytes::from_static(b"reason"),
-                            Frame::bulk(reason),
-                        );
+                        map.insert(Bytes::from_static(b"reason"), Frame::bulk(reason));
                     }
                     ferrite_core::tiering::auto_tier::TierDecision::Stay => {
-                        map.insert(
-                            Bytes::from_static(b"action"),
-                            Frame::bulk("stay"),
-                        );
+                        map.insert(Bytes::from_static(b"action"), Frame::bulk("stay"));
                     }
                 }
 
@@ -131,9 +110,7 @@ impl CommandExecutor {
         let total_data_gb = match args.first().and_then(|s| s.parse::<f64>().ok()) {
             Some(v) => v,
             None => {
-                return Frame::error(
-                    "ERR TIERING COMPARE-REDIS requires <total_data_gb> argument",
-                );
+                return Frame::error("ERR TIERING COMPARE-REDIS requires <total_data_gb> argument");
             }
         };
         let ops_per_sec = args
@@ -169,18 +146,9 @@ impl CommandExecutor {
         if args.is_empty() || args[0].to_uppercase() == "GET" {
             // Return current auto-tier config defaults
             let mut map = HashMap::new();
-            map.insert(
-                Bytes::from_static(b"enabled"),
-                Frame::bulk("true"),
-            );
-            map.insert(
-                Bytes::from_static(b"aggressiveness"),
-                Frame::Double(0.5),
-            );
-            map.insert(
-                Bytes::from_static(b"cost_weight"),
-                Frame::Double(0.5),
-            );
+            map.insert(Bytes::from_static(b"enabled"), Frame::bulk("true"));
+            map.insert(Bytes::from_static(b"aggressiveness"), Frame::Double(0.5));
+            map.insert(Bytes::from_static(b"cost_weight"), Frame::Double(0.5));
             return Frame::Map(map);
         }
 

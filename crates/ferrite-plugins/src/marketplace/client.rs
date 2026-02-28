@@ -193,7 +193,8 @@ impl MarketplaceClient {
 
         #[cfg(not(feature = "marketplace"))]
         Err(MarketplaceError::RegistryError(
-            "download requires the 'marketplace' feature (compile with --features marketplace)".to_string(),
+            "download requires the 'marketplace' feature (compile with --features marketplace)"
+                .to_string(),
         ))
     }
 

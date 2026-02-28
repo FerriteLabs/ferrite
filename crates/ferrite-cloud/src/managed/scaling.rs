@@ -199,7 +199,8 @@ impl AutoScaler {
         if cpu_ratio < self.config.scale_down_threshold
             && memory_ratio < self.config.scale_down_threshold
         {
-            let new_replicas = (metrics.current_replicas.saturating_sub(1)).max(self.config.min_replicas);
+            let new_replicas =
+                (metrics.current_replicas.saturating_sub(1)).max(self.config.min_replicas);
             if new_replicas < metrics.current_replicas {
                 let reason = format!(
                     "low utilization: cpu={:.1}%, memory={:.1}%",
@@ -246,7 +247,10 @@ impl AutoScaler {
 
         match &decision {
             ScalingDecision::NoChange => Ok(()),
-            ScalingDecision::ScaleUp { to_replicas, reason } => {
+            ScalingDecision::ScaleUp {
+                to_replicas,
+                reason,
+            } => {
                 if *to_replicas > self.config.max_replicas {
                     return Err(ScalingError::MaxReplicasReached(self.config.max_replicas));
                 }
@@ -261,7 +265,10 @@ impl AutoScaler {
                 *self.last_scale_time.write() = Some(now);
                 Ok(())
             }
-            ScalingDecision::ScaleDown { to_replicas, reason } => {
+            ScalingDecision::ScaleDown {
+                to_replicas,
+                reason,
+            } => {
                 if *to_replicas < self.config.min_replicas {
                     return Err(ScalingError::MinReplicasReached(self.config.min_replicas));
                 }

@@ -167,9 +167,7 @@ impl MigrationReportGenerator {
         let url = source
             .map(|s| s.url())
             .unwrap_or_else(|| "unknown".to_string());
-        let version = source
-            .map(|s| s.version.as_str())
-            .unwrap_or("unknown");
+        let version = source.map(|s| s.version.as_str()).unwrap_or("unknown");
         let duration = self
             .started_at
             .map(|s| s.elapsed())

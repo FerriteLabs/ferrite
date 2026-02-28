@@ -30,7 +30,9 @@ pub fn xinfo(store: &Arc<Store>, db: u8, args: &[Bytes]) -> Frame {
             }
             let key = &args[1];
             let full = args.len() > 2
-                && args[2..].iter().any(|a| a.to_ascii_uppercase() == b"FULL"[..]);
+                && args[2..]
+                    .iter()
+                    .any(|a| a.to_ascii_uppercase() == b"FULL"[..]);
             let count = parse_count_option(&args[2..]);
             xinfo_stream_full(store, db, key, full, count)
         }
@@ -42,15 +44,13 @@ pub fn xinfo(store: &Arc<Store>, db: u8, args: &[Bytes]) -> Frame {
         }
         b"CONSUMERS" => {
             if args.len() < 3 {
-                return Frame::error(
-                    "ERR wrong number of arguments for 'xinfo|consumers' command",
-                );
+                return Frame::error("ERR wrong number of arguments for 'xinfo|consumers' command");
             }
             xinfo_consumers(store, db, &args[1], &args[2])
         }
-        _ => Frame::error(
-            "ERR unknown subcommand or wrong number of arguments for 'xinfo' command",
-        ),
+        _ => {
+            Frame::error("ERR unknown subcommand or wrong number of arguments for 'xinfo' command")
+        }
     }
 }
 
@@ -262,7 +262,11 @@ pub fn xautoclaim(store: &Arc<Store>, db: u8, args: &[Bytes]) -> Frame {
             let now = now_ms();
             let start = match parse_stream_id(start_id_str) {
                 Some(id) => id,
-                None => return Frame::error("ERR Invalid stream ID specified as stream command argument"),
+                None => {
+                    return Frame::error(
+                        "ERR Invalid stream ID specified as stream command argument",
+                    )
+                }
             };
 
             // Collect entry existence and field data before mutable borrow
@@ -426,7 +430,9 @@ pub fn xpending_extended(store: &Arc<Store>, db: u8, args: &[Bytes]) -> Frame {
     } else {
         match StreamEntryId::parse(start_str) {
             Some(id) => id,
-            None => return Frame::error("ERR Invalid stream ID specified as stream command argument"),
+            None => {
+                return Frame::error("ERR Invalid stream ID specified as stream command argument")
+            }
         }
     };
 
@@ -435,7 +441,9 @@ pub fn xpending_extended(store: &Arc<Store>, db: u8, args: &[Bytes]) -> Frame {
     } else {
         match StreamEntryId::parse(end_str) {
             Some(id) => id,
-            None => return Frame::error("ERR Invalid stream ID specified as stream command argument"),
+            None => {
+                return Frame::error("ERR Invalid stream ID specified as stream command argument")
+            }
         }
     };
 
@@ -568,9 +576,7 @@ pub fn xclaim_extended(store: &Arc<Store>, db: u8, args: &[Bytes]) -> Frame {
                 s.entries.keys().cloned().collect();
             let entry_fields: HashMap<StreamEntryId, Vec<(Bytes, Bytes)>> = if !justid {
                 ids.iter()
-                    .filter_map(|id| {
-                        s.entries.get(id).map(|fields| (id.clone(), fields.clone()))
-                    })
+                    .filter_map(|id| s.entries.get(id).map(|fields| (id.clone(), fields.clone())))
                     .collect()
             } else {
                 HashMap::new()

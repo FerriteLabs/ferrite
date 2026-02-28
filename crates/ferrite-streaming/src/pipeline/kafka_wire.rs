@@ -191,9 +191,8 @@ pub fn decode_string(buf: &mut &[u8]) -> Result<String, KafkaWireError> {
         )));
     }
     let bytes = &buf[..len];
-    let s = String::from_utf8(bytes.to_vec()).map_err(|e| {
-        KafkaWireError::ProtocolError(format!("invalid UTF-8 in string: {e}"))
-    })?;
+    let s = String::from_utf8(bytes.to_vec())
+        .map_err(|e| KafkaWireError::ProtocolError(format!("invalid UTF-8 in string: {e}")))?;
     buf.advance(len);
     Ok(s)
 }
@@ -257,12 +256,7 @@ pub fn encode_metadata_request(topics: &[&str]) -> BytesMut {
 /// Encode a Fetch request body (API key 1, version 0).
 ///
 /// Requests data from a single topic-partition starting at `offset`.
-pub fn encode_fetch_request(
-    topic: &str,
-    partition: i32,
-    offset: i64,
-    max_bytes: i32,
-) -> BytesMut {
+pub fn encode_fetch_request(topic: &str, partition: i32, offset: i64, max_bytes: i32) -> BytesMut {
     let mut buf = BytesMut::new();
     // ReplicaId — consumers use -1
     buf.put_i32(-1);
@@ -712,9 +706,9 @@ impl KafkaWireClient {
 
     /// Get a mutable reference to the active stream, or return an error.
     fn stream_mut(&mut self) -> Result<&mut TcpStream, KafkaWireError> {
-        self.stream.as_mut().ok_or_else(|| {
-            KafkaWireError::ConnectionFailed("connection closed".to_string())
-        })
+        self.stream
+            .as_mut()
+            .ok_or_else(|| KafkaWireError::ConnectionFailed("connection closed".to_string()))
     }
 
     /// Frame and send a request to the broker.
@@ -944,10 +938,7 @@ mod tests {
             ..KafkaWireConfig::default()
         };
         let result = KafkaWireClient::connect(&config).await;
-        assert!(matches!(
-            result,
-            Err(KafkaWireError::ConnectionFailed(_))
-        ));
+        assert!(matches!(result, Err(KafkaWireError::ConnectionFailed(_))));
     }
 
     #[tokio::test]

@@ -143,10 +143,7 @@ fn audit_verify() -> Frame {
         Frame::Integer(result.chain_end as i64),
     );
     if let Some(invalid) = result.first_invalid {
-        map.insert(
-            Bytes::from("first_invalid"),
-            Frame::Integer(invalid as i64),
-        );
+        map.insert(Bytes::from("first_invalid"), Frame::Integer(invalid as i64));
     }
 
     Frame::Map(map)
@@ -239,11 +236,7 @@ fn audit_gdpr_export(args: &[String]) -> Frame {
 
 /// AUDIT.REPORT [SOC2|HIPAA|GDPR]
 fn audit_report(args: &[String]) -> Frame {
-    let framework = if args.is_empty() {
-        "SOC2"
-    } else {
-        &args[0]
-    };
+    let framework = if args.is_empty() { "SOC2" } else { &args[0] };
 
     let log = get_audit_log();
     let policy = get_retention_policy();
@@ -313,9 +306,7 @@ fn audit_entry_to_frame(entry: ComplianceAuditEntry) -> Frame {
         Frame::Bulk(Some(Bytes::from("command"))),
         Frame::Bulk(Some(Bytes::from(entry.command))),
         Frame::Bulk(Some(Bytes::from("key"))),
-        Frame::Bulk(Some(Bytes::from(
-            entry.key.unwrap_or_default(),
-        ))),
+        Frame::Bulk(Some(Bytes::from(entry.key.unwrap_or_default()))),
         Frame::Bulk(Some(Bytes::from("result"))),
         Frame::Bulk(Some(Bytes::from(result_str))),
         Frame::Bulk(Some(Bytes::from("db"))),

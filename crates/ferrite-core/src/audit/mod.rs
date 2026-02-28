@@ -28,11 +28,11 @@
 //! max_files = 10
 //! ```
 
-mod logger;
 pub mod classifier;
 pub mod compliance;
 pub mod contracts;
 pub mod lineage;
+mod logger;
 
 pub use compliance::{
     AuditConfig, AuditError, AuditEventType, AuditFilter, AuditResult, ChecklistItem,

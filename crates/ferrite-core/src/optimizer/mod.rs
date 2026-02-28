@@ -39,7 +39,5 @@ pub mod tiering;
 pub use auto_tuner::{AppliedOptimization, AutoTuner, AutoTunerConfig, AutoTunerStatus};
 pub use optimizer::AdaptiveOptimizer;
 pub use profiler::{CommandKind, WorkloadProfiler, WorkloadSnapshot};
-pub use recommendation::{
-    Action, OptimizationPlan, Recommendation, RecommendationPriority,
-};
+pub use recommendation::{Action, OptimizationPlan, Recommendation, RecommendationPriority};
 pub use tiering::{TierMove, TierRecommendation, TierThresholds, TuningReport, WorkloadReport};

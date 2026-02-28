@@ -577,30 +577,18 @@ total_cluster_links_buffer_limit_exceeded:0";
                     continue;
                 }
                 links.push(Frame::Map(std::collections::HashMap::from([
-                    (
-                        Bytes::from_static(b"direction"),
-                        Frame::bulk("to"),
-                    ),
+                    (Bytes::from_static(b"direction"), Frame::bulk("to")),
                     (
                         Bytes::from_static(b"node"),
                         Frame::bulk(node.node_id.clone()),
                     ),
-                    (
-                        Bytes::from_static(b"create-time"),
-                        Frame::Integer(0),
-                    ),
-                    (
-                        Bytes::from_static(b"events"),
-                        Frame::bulk("rw"),
-                    ),
+                    (Bytes::from_static(b"create-time"), Frame::Integer(0)),
+                    (Bytes::from_static(b"events"), Frame::bulk("rw")),
                     (
                         Bytes::from_static(b"send-buffer-allocated"),
                         Frame::Integer(0),
                     ),
-                    (
-                        Bytes::from_static(b"send-buffer-used"),
-                        Frame::Integer(0),
-                    ),
+                    (Bytes::from_static(b"send-buffer-used"), Frame::Integer(0)),
                 ])));
             }
             Frame::array(links)

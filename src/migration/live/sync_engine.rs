@@ -279,38 +279,30 @@ mod tests {
 
     #[tokio::test]
     async fn test_engine_new() {
-        let engine = MigrationEngine::new(
-            "redis://localhost:6379".into(),
-            MigrationConfig::default(),
-        );
+        let engine =
+            MigrationEngine::new("redis://localhost:6379".into(), MigrationConfig::default());
         let status = engine.get_status().await;
         assert_eq!(status.status, MigrationStatus::Pending);
     }
 
     #[tokio::test]
     async fn test_pause_requires_running() {
-        let engine = MigrationEngine::new(
-            "redis://localhost:6379".into(),
-            MigrationConfig::default(),
-        );
+        let engine =
+            MigrationEngine::new("redis://localhost:6379".into(), MigrationConfig::default());
         assert!(engine.pause().await.is_err());
     }
 
     #[tokio::test]
     async fn test_resume_requires_paused() {
-        let engine = MigrationEngine::new(
-            "redis://localhost:6379".into(),
-            MigrationConfig::default(),
-        );
+        let engine =
+            MigrationEngine::new("redis://localhost:6379".into(), MigrationConfig::default());
         assert!(engine.resume().await.is_err());
     }
 
     #[tokio::test]
     async fn test_rollback_pending() {
-        let engine = MigrationEngine::new(
-            "redis://localhost:6379".into(),
-            MigrationConfig::default(),
-        );
+        let engine =
+            MigrationEngine::new("redis://localhost:6379".into(), MigrationConfig::default());
         assert!(engine.rollback().await.is_ok());
         let s = engine.get_status().await;
         assert_eq!(s.status, MigrationStatus::RolledBack);
@@ -318,10 +310,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_cutover_requires_running() {
-        let engine = MigrationEngine::new(
-            "redis://localhost:6379".into(),
-            MigrationConfig::default(),
-        );
+        let engine =
+            MigrationEngine::new("redis://localhost:6379".into(), MigrationConfig::default());
         assert!(engine.cutover().await.is_err());
     }
 

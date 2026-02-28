@@ -26,9 +26,10 @@ pub fn check_slot_redirect(
 fn redirect_frame(result: RedirectResult) -> Option<Frame> {
     match result {
         RedirectResult::Ok => None,
-        RedirectResult::Moved { slot, addr } => {
-            Some(Frame::Error(Bytes::from(format!("MOVED {} {}", slot, addr))))
-        }
+        RedirectResult::Moved { slot, addr } => Some(Frame::Error(Bytes::from(format!(
+            "MOVED {} {}",
+            slot, addr
+        )))),
         RedirectResult::Ask { slot, addr } => {
             Some(Frame::Error(Bytes::from(format!("ASK {} {}", slot, addr))))
         }

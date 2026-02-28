@@ -110,9 +110,7 @@ impl RedisConnector {
         // and perform RESP handshake. For now we validate the URI format
         // and return a logical connector.
         if uri.is_empty() {
-            return Err(ConnectorError::Connection(
-                "empty URI provided".into(),
-            ));
+            return Err(ConnectorError::Connection("empty URI provided".into()));
         }
         Ok(Self {
             uri: uri.to_string(),

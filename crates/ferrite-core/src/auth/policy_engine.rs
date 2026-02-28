@@ -175,9 +175,7 @@ impl ConditionField {
             "KEYCLASSIFICATION" | "KEY_CLASSIFICATION" | "CLASSIFICATION" => {
                 Some(Self::KeyClassification)
             }
-            "DATASENSITIVITY" | "DATA_SENSITIVITY" | "SENSITIVITY" => {
-                Some(Self::DataSensitivity)
-            }
+            "DATASENSITIVITY" | "DATA_SENSITIVITY" | "SENSITIVITY" => Some(Self::DataSensitivity),
             "COMMANDCATEGORY" | "COMMAND_CATEGORY" | "CATEGORY" => Some(Self::CommandCategory),
             "KEYAGE" | "KEY_AGE" | "AGE" => Some(Self::KeyAge),
             "VALUESIZE" | "VALUE_SIZE" | "SIZE" => Some(Self::ValueSize),
@@ -558,19 +556,15 @@ impl PolicyEngine {
 /// Check whether the evaluation context falls within the policy's scope.
 fn scope_matches(scope: &EffectScope, ctx: &EvaluationContext) -> bool {
     // Empty list = matches everything.
-    let cmd_ok = scope.commands.is_empty()
-        || scope
-            .commands
-            .iter()
-            .any(|p| glob_match(p, &ctx.command));
+    let cmd_ok =
+        scope.commands.is_empty() || scope.commands.iter().any(|p| glob_match(p, &ctx.command));
     let key_ok = scope.key_patterns.is_empty()
         || ctx
             .key
             .as_ref()
             .map(|k| scope.key_patterns.iter().any(|p| glob_match(p, k)))
             .unwrap_or(true);
-    let user_ok =
-        scope.users.is_empty() || scope.users.iter().any(|u| glob_match(u, &ctx.user));
+    let user_ok = scope.users.is_empty() || scope.users.iter().any(|u| glob_match(u, &ctx.user));
     let tenant_ok = scope.tenants.is_empty()
         || ctx
             .tenant
@@ -656,10 +650,8 @@ fn apply_operator(
         ConditionOp::Between => {
             if let serde_json::Value::Array(arr) = cond_val {
                 if arr.len() == 2 {
-                    let gte_min =
-                        compare_numbers(field_val, &arr[0]).map_or(false, |o| o >= 0);
-                    let lte_max =
-                        compare_numbers(field_val, &arr[1]).map_or(false, |o| o <= 0);
+                    let gte_min = compare_numbers(field_val, &arr[0]).map_or(false, |o| o >= 0);
+                    let lte_max = compare_numbers(field_val, &arr[1]).map_or(false, |o| o <= 0);
                     return gte_min && lte_max;
                 }
             }
@@ -716,7 +708,10 @@ fn json_to_f64(v: &serde_json::Value) -> Option<f64> {
 
 /// Simple glob matching supporting `*` and `?`.
 fn glob_match(pattern: &str, text: &str) -> bool {
-    glob_match_impl(&pattern.chars().collect::<Vec<_>>(), &text.chars().collect::<Vec<_>>())
+    glob_match_impl(
+        &pattern.chars().collect::<Vec<_>>(),
+        &text.chars().collect::<Vec<_>>(),
+    )
 }
 
 fn glob_match_impl(pattern: &[char], text: &[char]) -> bool {

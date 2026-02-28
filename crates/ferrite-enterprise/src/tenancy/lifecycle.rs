@@ -236,9 +236,7 @@ impl TenantLifecycleManager {
         &self,
         request: CreateTenantRequest,
     ) -> Result<TenantRecord, LifecycleError> {
-        let id = request
-            .id
-            .unwrap_or_else(|| Uuid::new_v4().to_string());
+        let id = request.id.unwrap_or_else(|| Uuid::new_v4().to_string());
 
         let mut tenants = self.tenants.write();
 
@@ -248,9 +246,9 @@ impl TenantLifecycleManager {
 
         let now = current_timestamp_ms();
 
-        let quota = request.quota_override.unwrap_or_else(|| {
-            default_quota_for_tier(&request.tier)
-        });
+        let quota = request
+            .quota_override
+            .unwrap_or_else(|| default_quota_for_tier(&request.tier));
 
         let record = TenantRecord {
             id: id.clone(),
@@ -269,11 +267,7 @@ impl TenantLifecycleManager {
     }
 
     /// Suspend an active tenant.
-    pub fn suspend_tenant(
-        &self,
-        tenant_id: &str,
-        reason: &str,
-    ) -> Result<(), LifecycleError> {
+    pub fn suspend_tenant(&self, tenant_id: &str, reason: &str) -> Result<(), LifecycleError> {
         let mut tenants = self.tenants.write();
         let record = tenants
             .get_mut(tenant_id)
@@ -308,11 +302,7 @@ impl TenantLifecycleManager {
     ///
     /// * `force = false` — soft delete: transitions through `Deleting → Archived`.
     /// * `force = true` — immediate removal from the map.
-    pub fn delete_tenant(
-        &self,
-        tenant_id: &str,
-        force: bool,
-    ) -> Result<(), LifecycleError> {
+    pub fn delete_tenant(&self, tenant_id: &str, force: bool) -> Result<(), LifecycleError> {
         let mut tenants = self.tenants.write();
 
         if force {
@@ -361,11 +351,7 @@ impl TenantLifecycleManager {
     }
 
     /// Update the quota configuration for a tenant.
-    pub fn update_quota(
-        &self,
-        tenant_id: &str,
-        quota: QuotaConfig,
-    ) -> Result<(), LifecycleError> {
+    pub fn update_quota(&self, tenant_id: &str, quota: QuotaConfig) -> Result<(), LifecycleError> {
         let mut tenants = self.tenants.write();
         let record = tenants
             .get_mut(tenant_id)
@@ -463,9 +449,7 @@ mod tests {
     #[test]
     fn test_create_tenant() {
         let mgr = TenantLifecycleManager::new();
-        let record = mgr
-            .create_tenant(req("acme", TenantTier::Pro))
-            .unwrap();
+        let record = mgr.create_tenant(req("acme", TenantTier::Pro)).unwrap();
         assert_eq!(record.id, "acme");
         assert_eq!(record.state, LifecycleState::Active);
     }

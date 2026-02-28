@@ -403,7 +403,9 @@ impl ServerlessRuntime {
         self.active_executions.fetch_sub(1, Ordering::Relaxed);
 
         state.invocations.fetch_add(1, Ordering::Relaxed);
-        state.total_duration_ms.fetch_add(duration_ms, Ordering::Relaxed);
+        state
+            .total_duration_ms
+            .fetch_add(duration_ms, Ordering::Relaxed);
         *state.last_invoked.write() = Some(now_ms());
 
         let result = FunctionResult {
@@ -517,9 +519,7 @@ impl ServerlessRuntime {
         let mut fns = self.functions.write();
         if let Some(s) = fns.get_mut(name) {
             let def = &mut Arc::get_mut(s)
-                .ok_or_else(|| {
-                    FunctionError::RuntimeError("concurrent access".to_string())
-                })?
+                .ok_or_else(|| FunctionError::RuntimeError("concurrent access".to_string()))?
                 .definition;
             def.enabled = true;
             def.updated_at = now_ms();
@@ -538,9 +538,7 @@ impl ServerlessRuntime {
         let mut fns = self.functions.write();
         if let Some(s) = fns.get_mut(name) {
             let def = &mut Arc::get_mut(s)
-                .ok_or_else(|| {
-                    FunctionError::RuntimeError("concurrent access".to_string())
-                })?
+                .ok_or_else(|| FunctionError::RuntimeError("concurrent access".to_string()))?
                 .definition;
             def.enabled = false;
             def.updated_at = now_ms();

@@ -12,9 +12,7 @@ use std::sync::OnceLock;
 use bytes::Bytes;
 
 use crate::protocol::Frame;
-use ferrite_plugins::marketplace::registry::{
-    ExtensionRegistry, RegistryConfig,
-};
+use ferrite_plugins::marketplace::registry::{ExtensionRegistry, RegistryConfig};
 
 use super::err_frame;
 
@@ -164,10 +162,7 @@ fn handle_list() -> Frame {
                 Bytes::from_static(b"version"),
                 Frame::Bulk(Some(Bytes::from(ext.manifest.version.clone()))),
             );
-            map.insert(
-                Bytes::from_static(b"enabled"),
-                Frame::Boolean(ext.enabled),
-            );
+            map.insert(Bytes::from_static(b"enabled"), Frame::Boolean(ext.enabled));
             map.insert(
                 Bytes::from_static(b"invocations"),
                 Frame::Integer(ext.invocations as i64),
@@ -250,10 +245,7 @@ fn handle_info(args: &[String]) -> Frame {
                 Bytes::from_static(b"downloads"),
                 Frame::Integer(info.downloads as i64),
             );
-            map.insert(
-                Bytes::from_static(b"rating"),
-                Frame::Double(info.rating),
-            );
+            map.insert(Bytes::from_static(b"rating"), Frame::Double(info.rating));
             Frame::Map(map)
         }
         None => err_frame(&format!("extension '{}' not found", name)),
@@ -292,10 +284,7 @@ fn handle_verify(args: &[String]) -> Frame {
         .iter()
         .map(|i| Frame::Bulk(Some(Bytes::from(i.clone()))))
         .collect();
-    map.insert(
-        Bytes::from_static(b"issues"),
-        Frame::Array(Some(issues)),
-    );
+    map.insert(Bytes::from_static(b"issues"), Frame::Array(Some(issues)));
     Frame::Map(map)
 }
 
@@ -348,6 +337,8 @@ fn handle_help() -> Frame {
         "MARKETPLACE.HELP",
     ];
     Frame::Array(Some(
-        help.iter().map(|s| Frame::Bulk(Some(Bytes::from(*s)))).collect(),
+        help.iter()
+            .map(|s| Frame::Bulk(Some(Bytes::from(*s))))
+            .collect(),
     ))
 }

@@ -208,8 +208,7 @@ impl ActiveActiveReplicator {
                     resolution: None,
                 };
 
-                let resolution =
-                    ConflictResolver::resolve(&conflict, &self.conflict_strategy);
+                let resolution = ConflictResolver::resolve(&conflict, &self.conflict_strategy);
 
                 // Log the conflict
                 {
@@ -314,10 +313,18 @@ mod tests {
     #[test]
     fn test_add_remove_region() {
         let r = ActiveActiveReplicator::with_defaults("us-east".to_string());
-        assert!(r.add_region("eu-west".to_string(), "EU West".to_string(), "10.0.2.1:6379".to_string()).is_ok());
+        assert!(r
+            .add_region(
+                "eu-west".to_string(),
+                "EU West".to_string(),
+                "10.0.2.1:6379".to_string()
+            )
+            .is_ok());
         assert_eq!(r.list_regions().len(), 1);
 
-        assert!(r.add_region("eu-west".to_string(), "dup".to_string(), "x".to_string()).is_err());
+        assert!(r
+            .add_region("eu-west".to_string(), "dup".to_string(), "x".to_string())
+            .is_err());
 
         assert!(r.remove_region("eu-west").is_ok());
         assert!(r.list_regions().is_empty());
@@ -341,7 +348,9 @@ mod tests {
         let mut remote_clock = VectorClock::new();
         remote_clock.increment("eu-west");
 
-        let res = r.receive_update("key1", b"remote-val", &remote_clock).unwrap();
+        let res = r
+            .receive_update("key1", b"remote-val", &remote_clock)
+            .unwrap();
         assert_eq!(res.winner, ConflictWinner::Remote);
     }
 
@@ -355,9 +364,14 @@ mod tests {
         let mut remote_clock = VectorClock::new();
         remote_clock.increment("eu-west");
 
-        let res = r.receive_update("key1", b"remote-val", &remote_clock).unwrap();
+        let res = r
+            .receive_update("key1", b"remote-val", &remote_clock)
+            .unwrap();
         // LWW is default — resolution should exist
-        assert!(matches!(res.winner, ConflictWinner::Local | ConflictWinner::Remote));
+        assert!(matches!(
+            res.winner,
+            ConflictWinner::Local | ConflictWinner::Remote
+        ));
 
         assert_eq!(r.get_conflicts(10).len(), 1);
         assert_eq!(r.stats().conflicts_detected, 1);
@@ -366,7 +380,12 @@ mod tests {
     #[test]
     fn test_replicate_to() {
         let r = ActiveActiveReplicator::with_defaults("us-east".to_string());
-        r.add_region("eu-west".to_string(), "EU West".to_string(), "10.0.2.1:6379".to_string()).unwrap();
+        r.add_region(
+            "eu-west".to_string(),
+            "EU West".to_string(),
+            "10.0.2.1:6379".to_string(),
+        )
+        .unwrap();
 
         let clock = VectorClock::new();
         assert!(r.replicate_to("eu-west", "key1", b"val", &clock).is_ok());

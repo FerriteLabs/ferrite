@@ -342,10 +342,7 @@ impl RdbParser {
     }
 
     /// Parse a database section (after the SELECTDB opcode has been consumed).
-    pub fn parse_database_section(
-        &self,
-        data: &mut &[u8],
-    ) -> Result<DatabaseSection> {
+    pub fn parse_database_section(&self, data: &mut &[u8]) -> Result<DatabaseSection> {
         let (db_number, _) = self.decode_length(data)?;
         let mut resize_db = None;
         let mut entries = Vec::new();
@@ -431,11 +428,7 @@ impl RdbParser {
     }
 
     /// Parse a single key-value entry given the value-type byte.
-    pub fn parse_entry(
-        &self,
-        data: &mut &[u8],
-        value_type: u8,
-    ) -> Result<RdbEntry> {
+    pub fn parse_entry(&self, data: &mut &[u8], value_type: u8) -> Result<RdbEntry> {
         let key = self.decode_string(data)?;
         let value = self.read_value(data, value_type)?;
         Ok(RdbEntry {
@@ -592,8 +585,7 @@ impl RdbParser {
             _ => {
                 let buf = read_bytes(data, len as usize)?;
                 let s = String::from_utf8_lossy(&buf);
-                s.parse::<f64>()
-                    .map_err(|_| RdbParseError::InvalidEncoding)
+                s.parse::<f64>().map_err(|_| RdbParseError::InvalidEncoding)
             }
         }
     }
@@ -705,8 +697,7 @@ pub struct RdbParserV1 {
 impl RdbParserV1 {
     /// Create a parser from a file path.
     pub fn new(path: &Path) -> Result<Self> {
-        let data =
-            std::fs::read(path).map_err(|e| RdbParseError::InvalidType(e.kind() as u8))?;
+        let data = std::fs::read(path).map_err(|e| RdbParseError::InvalidType(e.kind() as u8))?;
         Self::from_bytes(&data)
     }
 
@@ -1275,7 +1266,7 @@ mod tests {
 
         let mut rdb_bytes = Vec::new();
         rdb_bytes.push(0xC3); // Special encoding: LZF
-        // compressed_len = 6
+                              // compressed_len = 6
         rdb_bytes.push(0x06);
         // uncompressed_len = 5
         rdb_bytes.push(0x05);

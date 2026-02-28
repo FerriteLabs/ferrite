@@ -560,9 +560,7 @@ impl ExtensionRegistry {
         let manifest = {
             let cat = self.catalog.read();
             cat.iter()
-                .find(|m| {
-                    m.name == name && version.map_or(true, |v| m.version == v)
-                })
+                .find(|m| m.name == name && version.map_or(true, |v| m.version == v))
                 .cloned()
                 .ok_or_else(|| ExtRegistryError::NotFound(name.into()))?
         };

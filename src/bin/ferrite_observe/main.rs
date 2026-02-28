@@ -12,7 +12,11 @@ use clap::{Parser, Subcommand};
 /// ferrite-observe — Zero-overhead observability CLI for Ferrite
 #[derive(Parser, Debug)]
 #[command(name = "ferrite-observe")]
-#[command(author, version, about = "Real-time observability for a running Ferrite instance")]
+#[command(
+    author,
+    version,
+    about = "Real-time observability for a running Ferrite instance"
+)]
 struct Args {
     /// Host of the Ferrite metrics endpoint
     #[arg(long, default_value = "127.0.0.1")]
@@ -63,14 +67,54 @@ struct MockHotKey {
 
 fn mock_hot_keys() -> Vec<MockHotKey> {
     vec![
-        MockHotKey { key: "user:session:1234", ops_per_sec: 15_432.0, size: "256B", tier: "Memory" },
-        MockHotKey { key: "cache:product:99", ops_per_sec: 8_291.0, size: "1.2KB", tier: "Memory" },
-        MockHotKey { key: "queue:events", ops_per_sec: 5_104.0, size: "64B", tier: "Memory" },
-        MockHotKey { key: "rate:api:10.0.1.5", ops_per_sec: 3_820.0, size: "32B", tier: "Memory" },
-        MockHotKey { key: "lock:order:5678", ops_per_sec: 2_500.0, size: "16B", tier: "Memory" },
-        MockHotKey { key: "cache:user:profile:42", ops_per_sec: 1_900.0, size: "4.1KB", tier: "ReadOnly" },
-        MockHotKey { key: "ts:metrics:cpu", ops_per_sec: 1_200.0, size: "512B", tier: "ReadOnly" },
-        MockHotKey { key: "geo:fleet:truck99", ops_per_sec: 800.0, size: "128B", tier: "Disk" },
+        MockHotKey {
+            key: "user:session:1234",
+            ops_per_sec: 15_432.0,
+            size: "256B",
+            tier: "Memory",
+        },
+        MockHotKey {
+            key: "cache:product:99",
+            ops_per_sec: 8_291.0,
+            size: "1.2KB",
+            tier: "Memory",
+        },
+        MockHotKey {
+            key: "queue:events",
+            ops_per_sec: 5_104.0,
+            size: "64B",
+            tier: "Memory",
+        },
+        MockHotKey {
+            key: "rate:api:10.0.1.5",
+            ops_per_sec: 3_820.0,
+            size: "32B",
+            tier: "Memory",
+        },
+        MockHotKey {
+            key: "lock:order:5678",
+            ops_per_sec: 2_500.0,
+            size: "16B",
+            tier: "Memory",
+        },
+        MockHotKey {
+            key: "cache:user:profile:42",
+            ops_per_sec: 1_900.0,
+            size: "4.1KB",
+            tier: "ReadOnly",
+        },
+        MockHotKey {
+            key: "ts:metrics:cpu",
+            ops_per_sec: 1_200.0,
+            size: "512B",
+            tier: "ReadOnly",
+        },
+        MockHotKey {
+            key: "geo:fleet:truck99",
+            ops_per_sec: 800.0,
+            size: "128B",
+            tier: "Disk",
+        },
     ]
 }
 
@@ -86,11 +130,51 @@ struct MockLatency {
 
 fn mock_latencies() -> Vec<MockLatency> {
     vec![
-        MockLatency { command: "GET", p50: "0.1µs", p90: "0.3µs", p99: "1.2µs", p999: "15µs", max: "230µs", count: "1.2M" },
-        MockLatency { command: "SET", p50: "0.2µs", p90: "0.5µs", p99: "2.1µs", p999: "25µs", max: "450µs", count: "800K" },
-        MockLatency { command: "DEL", p50: "0.1µs", p90: "0.4µs", p99: "1.8µs", p999: "20µs", max: "310µs", count: "120K" },
-        MockLatency { command: "HGET", p50: "0.2µs", p90: "0.6µs", p99: "2.5µs", p999: "30µs", max: "520µs", count: "450K" },
-        MockLatency { command: "LPUSH", p50: "0.3µs", p90: "0.8µs", p99: "3.0µs", p999: "40µs", max: "600µs", count: "200K" },
+        MockLatency {
+            command: "GET",
+            p50: "0.1µs",
+            p90: "0.3µs",
+            p99: "1.2µs",
+            p999: "15µs",
+            max: "230µs",
+            count: "1.2M",
+        },
+        MockLatency {
+            command: "SET",
+            p50: "0.2µs",
+            p90: "0.5µs",
+            p99: "2.1µs",
+            p999: "25µs",
+            max: "450µs",
+            count: "800K",
+        },
+        MockLatency {
+            command: "DEL",
+            p50: "0.1µs",
+            p90: "0.4µs",
+            p99: "1.8µs",
+            p999: "20µs",
+            max: "310µs",
+            count: "120K",
+        },
+        MockLatency {
+            command: "HGET",
+            p50: "0.2µs",
+            p90: "0.6µs",
+            p99: "2.5µs",
+            p999: "30µs",
+            max: "520µs",
+            count: "450K",
+        },
+        MockLatency {
+            command: "LPUSH",
+            p50: "0.3µs",
+            p90: "0.8µs",
+            p99: "3.0µs",
+            p999: "40µs",
+            max: "600µs",
+            count: "200K",
+        },
     ]
 }
 
@@ -103,13 +187,48 @@ struct MockSyscall {
 
 fn mock_syscalls() -> Vec<MockSyscall> {
     vec![
-        MockSyscall { name: "read", count: 2_450_000, avg_ns: 120, max_ns: 45_000 },
-        MockSyscall { name: "write", count: 1_800_000, avg_ns: 150, max_ns: 62_000 },
-        MockSyscall { name: "epoll_wait", count: 980_000, avg_ns: 3_200, max_ns: 1_200_000 },
-        MockSyscall { name: "io_uring_enter", count: 750_000, avg_ns: 85, max_ns: 28_000 },
-        MockSyscall { name: "mmap", count: 12_400, avg_ns: 4_500, max_ns: 2_800_000 },
-        MockSyscall { name: "munmap", count: 8_200, avg_ns: 3_100, max_ns: 1_500_000 },
-        MockSyscall { name: "fsync", count: 4_500, avg_ns: 180_000, max_ns: 15_000_000 },
+        MockSyscall {
+            name: "read",
+            count: 2_450_000,
+            avg_ns: 120,
+            max_ns: 45_000,
+        },
+        MockSyscall {
+            name: "write",
+            count: 1_800_000,
+            avg_ns: 150,
+            max_ns: 62_000,
+        },
+        MockSyscall {
+            name: "epoll_wait",
+            count: 980_000,
+            avg_ns: 3_200,
+            max_ns: 1_200_000,
+        },
+        MockSyscall {
+            name: "io_uring_enter",
+            count: 750_000,
+            avg_ns: 85,
+            max_ns: 28_000,
+        },
+        MockSyscall {
+            name: "mmap",
+            count: 12_400,
+            avg_ns: 4_500,
+            max_ns: 2_800_000,
+        },
+        MockSyscall {
+            name: "munmap",
+            count: 8_200,
+            avg_ns: 3_100,
+            max_ns: 1_500_000,
+        },
+        MockSyscall {
+            name: "fsync",
+            count: 4_500,
+            avg_ns: 180_000,
+            max_ns: 15_000_000,
+        },
     ]
 }
 
@@ -227,9 +346,7 @@ fn display_heatmap(rows: usize, host: &str, port: u16) {
     }
 
     println!();
-    println!(
-        "Legend: ' '=0%  ░=1-25%  ▒=26-50%  ▓=51-75%  █=76-100%  (relative to max)"
-    );
+    println!("Legend: ' '=0%  ░=1-25%  ▒=26-50%  ▓=51-75%  █=76-100%  (relative to max)");
 }
 
 fn display_syscalls(host: &str, port: u16) {

@@ -67,10 +67,16 @@ impl std::fmt::Debug for RdbImportConfig {
         f.debug_struct("RdbImportConfig")
             .field("source_host", &self.source_host)
             .field("source_port", &self.source_port)
-            .field("source_password", &self.source_password.as_ref().map(|_| "***"))
+            .field(
+                "source_password",
+                &self.source_password.as_ref().map(|_| "***"),
+            )
             .field("target_db", &self.target_db)
             .field("batch_size", &self.batch_size)
-            .field("progress_callback", &self.progress_callback.as_ref().map(|_| "<callback>"))
+            .field(
+                "progress_callback",
+                &self.progress_callback.as_ref().map(|_| "<callback>"),
+            )
             .finish()
     }
 }
@@ -226,13 +232,12 @@ impl RdbImporter {
             .map_err(|e| ImportError::ConnectionFailed(e.to_string()))?;
         let info_str = String::from_utf8_lossy(&info_buf[..n]);
 
-        let redis_version = parse_info_field(&info_str, "redis_version")
-            .unwrap_or_else(|| "unknown".to_string());
+        let redis_version =
+            parse_info_field(&info_str, "redis_version").unwrap_or_else(|| "unknown".to_string());
         let memory_used = parse_info_field(&info_str, "used_memory")
             .and_then(|v| v.parse::<u64>().ok())
             .unwrap_or(0);
-        let role =
-            parse_info_field(&info_str, "role").unwrap_or_else(|| "unknown".to_string());
+        let role = parse_info_field(&info_str, "role").unwrap_or_else(|| "unknown".to_string());
 
         // DBSIZE command
         let dbsize_cmd = "*1\r\n$6\r\nDBSIZE\r\n";
@@ -327,11 +332,7 @@ impl RdbImporter {
 
             for key in &keys {
                 // GET each key
-                let get_cmd = format!(
-                    "*2\r\n$3\r\nGET\r\n${}\r\n{}\r\n",
-                    key.len(),
-                    key
-                );
+                let get_cmd = format!("*2\r\n$3\r\nGET\r\n${}\r\n{}\r\n", key.len(), key);
                 if let Err(e) = stream.write_all(get_cmd.as_bytes()).await {
                     errors.push(format!("GET {}: {}", key, e));
                     keys_skipped += 1;

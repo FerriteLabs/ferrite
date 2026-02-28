@@ -6,16 +6,16 @@
 pub mod amqp_adapter;
 pub mod cluster_redirect;
 mod connection;
-/// gRPC service definition and handler
-pub mod grpc_service;
-/// Memcached text/binary protocol support
-pub mod memcached_protocol;
 /// Native connection pooler and multiplexer
 pub mod connection_pool;
+/// gRPC service definition and handler
+pub mod grpc_service;
 mod handler;
 pub mod http_gateway;
 pub mod http_gateway_integration;
 mod listener;
+/// Memcached text/binary protocol support
+pub mod memcached_protocol;
 /// Transparent Redis proxy with connection pooling
 pub mod proxy;
 /// Zero-config smart proxy with Ferrite capability injection

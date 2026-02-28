@@ -60,26 +60,32 @@ impl ReciprocalRankFusion {
 
         for (rank, result) in dense_results.iter().enumerate() {
             let rrf_score = 1.0 / (k_f64 + (rank + 1) as f64);
-            let entry = scores.entry(result.doc_id.clone()).or_insert((0.0, None, None));
+            let entry = scores
+                .entry(result.doc_id.clone())
+                .or_insert((0.0, None, None));
             entry.0 += rrf_score;
             entry.1 = Some(rank + 1);
         }
 
         for (rank, result) in sparse_results.iter().enumerate() {
             let rrf_score = 1.0 / (k_f64 + (rank + 1) as f64);
-            let entry = scores.entry(result.doc_id.clone()).or_insert((0.0, None, None));
+            let entry = scores
+                .entry(result.doc_id.clone())
+                .or_insert((0.0, None, None));
             entry.0 += rrf_score;
             entry.2 = Some(rank + 1);
         }
 
         let mut results: Vec<FusedResult> = scores
             .into_iter()
-            .map(|(doc_id, (fused_score, dense_rank, sparse_rank))| FusedResult {
-                doc_id,
-                fused_score,
-                dense_rank,
-                sparse_rank,
-            })
+            .map(
+                |(doc_id, (fused_score, dense_rank, sparse_rank))| FusedResult {
+                    doc_id,
+                    fused_score,
+                    dense_rank,
+                    sparse_rank,
+                },
+            )
             .collect();
 
         results.sort_by(|a, b| {

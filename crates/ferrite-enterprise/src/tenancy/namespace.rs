@@ -20,7 +20,9 @@ const TENANT_SEP: char = ':';
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum TenantIsolationError {
     /// Attempted to access a key belonging to another tenant
-    #[error("cross-tenant access denied: tenant '{requesting}' cannot access keys of tenant '{target}'")]
+    #[error(
+        "cross-tenant access denied: tenant '{requesting}' cannot access keys of tenant '{target}'"
+    )]
     CrossTenantAccess {
         /// The tenant that made the request
         requesting: String,
@@ -248,8 +250,7 @@ impl CrossTenantGuard {
 
         for key in keys {
             if !key.starts_with(prefix_bytes) {
-                let target = extract_tenant_id(key)
-                    .unwrap_or_else(|| "<unknown>".to_string());
+                let target = extract_tenant_id(key).unwrap_or_else(|| "<unknown>".to_string());
                 return Err(TenantIsolationError::CrossTenantAccess {
                     requesting: tenant_id.to_string(),
                     target,
@@ -264,10 +265,7 @@ impl CrossTenantGuard {
     ///
     /// Semantically identical to [`validate_multi_key_op`](Self::validate_multi_key_op)
     /// but kept as a separate entry point for auditing purposes.
-    pub fn validate_script(
-        tenant_id: &str,
-        keys: &[&[u8]],
-    ) -> Result<(), TenantIsolationError> {
+    pub fn validate_script(tenant_id: &str, keys: &[&[u8]]) -> Result<(), TenantIsolationError> {
         Self::validate_multi_key_op(tenant_id, keys)
     }
 }
@@ -387,7 +385,10 @@ mod tests {
         let k2 = NamespaceManager::scope_key("other", b"b");
         let keys: Vec<&[u8]> = vec![&k1, &k2];
         let err = CrossTenantGuard::validate_multi_key_op("acme", &keys).unwrap_err();
-        assert!(matches!(err, TenantIsolationError::CrossTenantAccess { .. }));
+        assert!(matches!(
+            err,
+            TenantIsolationError::CrossTenantAccess { .. }
+        ));
     }
 
     #[test]

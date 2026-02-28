@@ -172,7 +172,9 @@ impl SchemaVisualizer {
 
     fn key_matches_pattern(key: &str, pattern: &str) -> bool {
         if let Some(prefix) = pattern.strip_suffix(":*") {
-            key.starts_with(prefix) && key.len() > prefix.len() && key.as_bytes()[prefix.len()] == b':'
+            key.starts_with(prefix)
+                && key.len() > prefix.len()
+                && key.as_bytes()[prefix.len()] == b':'
         } else {
             key == pattern
         }

@@ -32,7 +32,8 @@ fn command_database() -> Vec<CommandHelp> {
         CommandHelp {
             name: "GET".to_string(),
             syntax: "GET key".to_string(),
-            description: "Get the value of a key. Returns nil if the key does not exist.".to_string(),
+            description: "Get the value of a key. Returns nil if the key does not exist."
+                .to_string(),
             examples: vec!["GET mykey".to_string()],
             complexity: "O(1)".to_string(),
             since_version: "1.0.0".to_string(),
@@ -40,7 +41,8 @@ fn command_database() -> Vec<CommandHelp> {
         CommandHelp {
             name: "SET".to_string(),
             syntax: "SET key value [EX seconds] [PX milliseconds] [NX|XX] [GET]".to_string(),
-            description: "Set the string value of a key with optional expiration and conditions.".to_string(),
+            description: "Set the string value of a key with optional expiration and conditions."
+                .to_string(),
             examples: vec![
                 "SET mykey myvalue".to_string(),
                 "SET mykey myvalue EX 60".to_string(),
@@ -110,8 +112,11 @@ fn command_database() -> Vec<CommandHelp> {
         },
         CommandHelp {
             name: "ZADD".to_string(),
-            syntax: "ZADD key [NX|XX] [GT|LT] [CH] [INCR] score member [score member ...]".to_string(),
-            description: "Add members to a sorted set with scores, or update scores of existing members.".to_string(),
+            syntax: "ZADD key [NX|XX] [GT|LT] [CH] [INCR] score member [score member ...]"
+                .to_string(),
+            description:
+                "Add members to a sorted set with scores, or update scores of existing members."
+                    .to_string(),
             examples: vec![
                 "ZADD leaderboard 100 alice 200 bob".to_string(),
                 "ZADD leaderboard GT 150 alice".to_string(),
@@ -150,19 +155,17 @@ fn command_database() -> Vec<CommandHelp> {
             name: "VECTOR.SEARCH".to_string(),
             syntax: "VECTOR.SEARCH index query_vector KNN k [FILTER expr]".to_string(),
             description: "Perform vector similarity search on an index.".to_string(),
-            examples: vec![
-                "VECTOR.SEARCH idx <vector> KNN 10".to_string(),
-            ],
+            examples: vec!["VECTOR.SEARCH idx <vector> KNN 10".to_string()],
             complexity: "O(N·log(k))".to_string(),
             since_version: "1.0.0".to_string(),
         },
         CommandHelp {
             name: "FT.CREATE".to_string(),
-            syntax: "FT.CREATE index [ON HASH|JSON] [PREFIX count prefix ...] SCHEMA field type ...".to_string(),
+            syntax:
+                "FT.CREATE index [ON HASH|JSON] [PREFIX count prefix ...] SCHEMA field type ..."
+                    .to_string(),
             description: "Create a search index for full-text and vector search.".to_string(),
-            examples: vec![
-                "FT.CREATE idx ON HASH SCHEMA title TEXT content TEXT".to_string(),
-            ],
+            examples: vec!["FT.CREATE idx ON HASH SCHEMA title TEXT content TEXT".to_string()],
             complexity: "O(1)".to_string(),
             since_version: "1.0.0".to_string(),
         },
@@ -179,7 +182,8 @@ fn command_database() -> Vec<CommandHelp> {
         },
         CommandHelp {
             name: "TS.ADD".to_string(),
-            syntax: "TS.ADD key timestamp value [RETENTION ms] [LABELS label value ...]".to_string(),
+            syntax: "TS.ADD key timestamp value [RETENTION ms] [LABELS label value ...]"
+                .to_string(),
             description: "Append a sample to a time series.".to_string(),
             examples: vec![
                 "TS.ADD sensor:temp * 22.5".to_string(),
@@ -190,11 +194,10 @@ fn command_database() -> Vec<CommandHelp> {
         },
         CommandHelp {
             name: "TS.RANGE".to_string(),
-            syntax: "TS.RANGE key fromTimestamp toTimestamp [AGGREGATION type timeBucket]".to_string(),
+            syntax: "TS.RANGE key fromTimestamp toTimestamp [AGGREGATION type timeBucket]"
+                .to_string(),
             description: "Query a range of samples from a time series.".to_string(),
-            examples: vec![
-                "TS.RANGE sensor:temp - + AGGREGATION avg 3600000".to_string(),
-            ],
+            examples: vec!["TS.RANGE sensor:temp - + AGGREGATION avg 3600000".to_string()],
             complexity: "O(N)".to_string(),
             since_version: "1.0.0".to_string(),
         },
@@ -261,7 +264,11 @@ impl QueryBuilder {
             });
         }
 
-        if ctx.contains("score") || ctx.contains("rank") || ctx.contains("leaderboard") || ctx.contains("sorted") {
+        if ctx.contains("score")
+            || ctx.contains("rank")
+            || ctx.contains("leaderboard")
+            || ctx.contains("sorted")
+        {
             suggestions.push(QuerySuggestion {
                 query: "ZREVRANGE leaderboard 0 9 WITHSCORES".to_string(),
                 description: "Get top 10 from leaderboard".to_string(),
@@ -287,7 +294,11 @@ impl QueryBuilder {
             });
         }
 
-        if ctx.contains("time") || ctx.contains("series") || ctx.contains("sensor") || ctx.contains("iot") {
+        if ctx.contains("time")
+            || ctx.contains("series")
+            || ctx.contains("sensor")
+            || ctx.contains("iot")
+        {
             suggestions.push(QuerySuggestion {
                 query: "TS.RANGE sensor:temp - + AGGREGATION avg 3600000".to_string(),
                 description: "Hourly average of sensor readings".to_string(),
@@ -411,7 +422,11 @@ mod tests {
     #[test]
     fn test_command_database_size() {
         let db = command_database();
-        assert!(db.len() >= 20, "Expected at least 20 commands, got {}", db.len());
+        assert!(
+            db.len() >= 20,
+            "Expected at least 20 commands, got {}",
+            db.len()
+        );
     }
 
     #[test]

@@ -139,16 +139,25 @@ mod tests {
 
     #[test]
     fn test_budget_status_on_track() {
-        assert_eq!(BudgetStatus::from_spend(50_00, 100_00, 80), BudgetStatus::OnTrack);
+        assert_eq!(
+            BudgetStatus::from_spend(50_00, 100_00, 80),
+            BudgetStatus::OnTrack
+        );
     }
 
     #[test]
     fn test_budget_status_warning() {
-        assert_eq!(BudgetStatus::from_spend(85_00, 100_00, 80), BudgetStatus::Warning);
+        assert_eq!(
+            BudgetStatus::from_spend(85_00, 100_00, 80),
+            BudgetStatus::Warning
+        );
     }
 
     #[test]
     fn test_budget_status_over_budget() {
-        assert_eq!(BudgetStatus::from_spend(110_00, 100_00, 80), BudgetStatus::OverBudget);
+        assert_eq!(
+            BudgetStatus::from_spend(110_00, 100_00, 80),
+            BudgetStatus::OverBudget
+        );
     }
 }

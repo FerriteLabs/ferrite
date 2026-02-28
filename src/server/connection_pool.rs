@@ -319,10 +319,7 @@ impl ConnectionPool {
     }
 
     /// Pop an idle connection from a queue, skipping stale entries.
-    fn try_get_idle(
-        &self,
-        queue: &Mutex<VecDeque<PooledConnection>>,
-    ) -> Option<PooledConnection> {
+    fn try_get_idle(&self, queue: &Mutex<VecDeque<PooledConnection>>) -> Option<PooledConnection> {
         let config = self.config.read();
         let mut q = queue.lock();
         while let Some(conn) = q.pop_front() {
@@ -363,23 +360,80 @@ impl ReadWriteSplitter {
     pub fn classify_command(cmd: &str) -> CommandType {
         match cmd.to_uppercase().as_str() {
             // Read commands
-            "GET" | "MGET" | "EXISTS" | "TYPE" | "TTL" | "PTTL" | "KEYS" | "SCAN" | "SCARD"
-            | "SMEMBERS" | "SRANDMEMBER" | "SISMEMBER" | "LLEN" | "LRANGE" | "LINDEX"
-            | "LPOS" | "HGET" | "HMGET" | "HGETALL" | "HLEN" | "HKEYS" | "HVALS" | "HEXISTS"
-            | "ZRANGE" | "ZSCORE" | "ZCARD" | "ZRANK" | "ZREVRANK" | "ZCOUNT" | "ZLEXCOUNT"
-            | "ZRANGEBYSCORE" | "ZRANGEBYLEX" | "ZREVRANGE" | "ZREVRANGEBYSCORE"
-            | "ZREVRANGEBYLEX" | "ZMSCORE" | "STRLEN" | "GETRANGE" | "SUBSTR" | "RANDOMKEY"
-            | "OBJECT" | "DUMP" | "XLEN" | "XRANGE" | "XREVRANGE" | "XINFO" | "XPENDING"
-            | "BITCOUNT" | "BITPOS" | "GETBIT" | "PFCOUNT" | "GEODIST" | "GEOHASH"
-            | "GEOPOS" | "GEORADIUS_RO" | "GEORADIUSBYMEMBER_RO" | "GEOSEARCH" | "SORT_RO"
-            | "TOUCH" | "HSCAN" | "SSCAN" | "ZSCAN" | "OBJECT ENCODING"
-            | "OBJECT REFCOUNT" | "OBJECT IDLETIME" | "OBJECT FREQ" | "OBJECT HELP"
-            | "SINTERCARD" | "HRANDFIELD" => CommandType::Read,
+            "GET"
+            | "MGET"
+            | "EXISTS"
+            | "TYPE"
+            | "TTL"
+            | "PTTL"
+            | "KEYS"
+            | "SCAN"
+            | "SCARD"
+            | "SMEMBERS"
+            | "SRANDMEMBER"
+            | "SISMEMBER"
+            | "LLEN"
+            | "LRANGE"
+            | "LINDEX"
+            | "LPOS"
+            | "HGET"
+            | "HMGET"
+            | "HGETALL"
+            | "HLEN"
+            | "HKEYS"
+            | "HVALS"
+            | "HEXISTS"
+            | "ZRANGE"
+            | "ZSCORE"
+            | "ZCARD"
+            | "ZRANK"
+            | "ZREVRANK"
+            | "ZCOUNT"
+            | "ZLEXCOUNT"
+            | "ZRANGEBYSCORE"
+            | "ZRANGEBYLEX"
+            | "ZREVRANGE"
+            | "ZREVRANGEBYSCORE"
+            | "ZREVRANGEBYLEX"
+            | "ZMSCORE"
+            | "STRLEN"
+            | "GETRANGE"
+            | "SUBSTR"
+            | "RANDOMKEY"
+            | "OBJECT"
+            | "DUMP"
+            | "XLEN"
+            | "XRANGE"
+            | "XREVRANGE"
+            | "XINFO"
+            | "XPENDING"
+            | "BITCOUNT"
+            | "BITPOS"
+            | "GETBIT"
+            | "PFCOUNT"
+            | "GEODIST"
+            | "GEOHASH"
+            | "GEOPOS"
+            | "GEORADIUS_RO"
+            | "GEORADIUSBYMEMBER_RO"
+            | "GEOSEARCH"
+            | "SORT_RO"
+            | "TOUCH"
+            | "HSCAN"
+            | "SSCAN"
+            | "ZSCAN"
+            | "OBJECT ENCODING"
+            | "OBJECT REFCOUNT"
+            | "OBJECT IDLETIME"
+            | "OBJECT FREQ"
+            | "OBJECT HELP"
+            | "SINTERCARD"
+            | "HRANDFIELD" => CommandType::Read,
 
             // Admin commands
             "INFO" | "DBSIZE" | "PING" | "ECHO" | "TIME" | "CONFIG" | "COMMAND" | "CLIENT"
-            | "SLOWLOG" | "LATENCY" | "MEMORY" | "DEBUG" | "ACL" | "CLUSTER" | "WAIT"
-            | "HELLO" | "RESET" | "QUIT" | "AUTH" | "SELECT" | "SWAPDB" => CommandType::Admin,
+            | "SLOWLOG" | "LATENCY" | "MEMORY" | "DEBUG" | "ACL" | "CLUSTER" | "WAIT" | "HELLO"
+            | "RESET" | "QUIT" | "AUTH" | "SELECT" | "SWAPDB" => CommandType::Admin,
 
             // Everything else is a write
             _ => CommandType::Write,
@@ -458,8 +512,7 @@ mod tests {
             ReadWriteSplitter::classify_command("SCAN"),
             CommandType::Read
         );
-        assert!(ReadWriteSplitter::classify_command("HGETALL")
-            .is_read_only());
+        assert!(ReadWriteSplitter::classify_command("HGETALL").is_read_only());
     }
 
     #[test]
@@ -488,8 +541,7 @@ mod tests {
             ReadWriteSplitter::classify_command("INFO"),
             CommandType::Admin
         );
-        assert!(ReadWriteSplitter::classify_command("DBSIZE")
-            .is_read_only());
+        assert!(ReadWriteSplitter::classify_command("DBSIZE").is_read_only());
     }
 
     #[test]

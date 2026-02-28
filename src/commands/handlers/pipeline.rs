@@ -21,15 +21,15 @@ use super::{err_frame, ok_frame};
 static PIPELINE_MANAGER: OnceLock<ComposablePipelineManager> = OnceLock::new();
 
 /// In-progress pipeline definitions being built step-by-step.
-static PIPELINE_BUILDERS: OnceLock<parking_lot::RwLock<HashMap<String, ComposablePipelineDefinition>>> =
-    OnceLock::new();
+static PIPELINE_BUILDERS: OnceLock<
+    parking_lot::RwLock<HashMap<String, ComposablePipelineDefinition>>,
+> = OnceLock::new();
 
 fn get_manager() -> &'static ComposablePipelineManager {
     PIPELINE_MANAGER.get_or_init(ComposablePipelineManager::new)
 }
 
-fn get_builders(
-) -> &'static parking_lot::RwLock<HashMap<String, ComposablePipelineDefinition>> {
+fn get_builders() -> &'static parking_lot::RwLock<HashMap<String, ComposablePipelineDefinition>> {
     PIPELINE_BUILDERS.get_or_init(|| parking_lot::RwLock::new(HashMap::new()))
 }
 
@@ -249,7 +249,12 @@ fn handle_link(args: &[String]) -> Frame {
     let mut builders = get_builders().write();
     let def = match builders.get_mut(pipeline_name.as_str()) {
         Some(d) => d,
-        None => return err_frame(&format!("pipeline '{}' not found in builder", pipeline_name)),
+        None => {
+            return err_frame(&format!(
+                "pipeline '{}' not found in builder",
+                pipeline_name
+            ))
+        }
     };
 
     let stage = match def.stages.iter_mut().find(|s| s.name == *from_stage) {

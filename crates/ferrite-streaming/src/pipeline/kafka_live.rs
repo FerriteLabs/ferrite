@@ -10,8 +10,8 @@ use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
 use super::kafka_wire::{
-    FetchRecord, FetchResponse, KafkaWireClient, KafkaWireConfig, KafkaWireError,
-    MetadataResponse, PartitionMetadata,
+    FetchRecord, FetchResponse, KafkaWireClient, KafkaWireConfig, KafkaWireError, MetadataResponse,
+    PartitionMetadata,
 };
 
 // ---------------------------------------------------------------------------
@@ -126,10 +126,7 @@ impl LiveKafkaConsumer {
     ///
     /// Iterates over all assigned partitions and fetches up to
     /// `max_poll_records` records total.
-    pub async fn poll(
-        &mut self,
-        timeout: Duration,
-    ) -> Result<Vec<FetchRecord>, KafkaWireError> {
+    pub async fn poll(&mut self, timeout: Duration) -> Result<Vec<FetchRecord>, KafkaWireError> {
         if self.closed {
             return Err(KafkaWireError::ConnectionFailed(
                 "consumer is closed".to_string(),
@@ -160,8 +157,7 @@ impl LiveKafkaConsumer {
 
             let fetch_result = tokio::time::timeout(
                 timeout,
-                self.client
-                    .fetch_messages(&topic, *pid, offset, max_bytes),
+                self.client.fetch_messages(&topic, *pid, offset, max_bytes),
             )
             .await;
 
@@ -274,10 +270,7 @@ mod tests {
         };
 
         let result = LiveKafkaConsumer::new(config).await;
-        assert!(matches!(
-            result,
-            Err(KafkaWireError::ConnectionFailed(_))
-        ));
+        assert!(matches!(result, Err(KafkaWireError::ConnectionFailed(_))));
     }
 
     #[tokio::test]

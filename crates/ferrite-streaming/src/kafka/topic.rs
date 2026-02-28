@@ -70,9 +70,9 @@ pub struct TopicConfig {
 impl Default for TopicConfig {
     fn default() -> Self {
         Self {
-            max_message_bytes: 1_048_576, // 1 MB
+            max_message_bytes: 1_048_576,          // 1 MB
             retention_ms: 7 * 24 * 60 * 60 * 1000, // 7 days
-            retention_bytes: -1,          // unlimited
+            retention_bytes: -1,                   // unlimited
             cleanup_policy: CleanupPolicy::default(),
             compression: CompressionType::default(),
         }

@@ -31,14 +31,7 @@ impl Bm25Scorer {
     /// - `doc_len`: length of the document (in tokens)
     /// - `avg_doc_len`: average document length across the corpus
     /// - `total_docs`: total number of documents in the corpus
-    pub fn score(
-        &self,
-        tf: f64,
-        df: u64,
-        doc_len: u64,
-        avg_doc_len: f64,
-        total_docs: u64,
-    ) -> f64 {
+    pub fn score(&self, tf: f64, df: u64, doc_len: u64, avg_doc_len: f64, total_docs: u64) -> f64 {
         if total_docs == 0 || df == 0 {
             return 0.0;
         }

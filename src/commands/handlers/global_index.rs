@@ -47,9 +47,7 @@ fn handle_create(args: &[String]) -> Frame {
     // GIDX.CREATE <name> ON <pattern> SCHEMA <field> <type> [<field> <type> ...]
     //             [TYPE <index_type>] [CLUSTER <id> <endpoint> <role>]
     if args.len() < 5 {
-        return err_frame(
-            "Usage: GIDX.CREATE <name> ON <pattern> SCHEMA <field> <type> ...",
-        );
+        return err_frame("Usage: GIDX.CREATE <name> ON <pattern> SCHEMA <field> <type> ...");
     }
 
     let name = args[0].clone();
@@ -131,8 +129,7 @@ fn handle_search(args: &[String]) -> Frame {
 
     match get_manager().search(index, query, limit) {
         Ok(result) => {
-            let json =
-                serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string());
+            let json = serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string());
             Frame::Bulk(Some(bytes::Bytes::from(json)))
         }
         Err(e) => err_frame(&e.to_string()),
@@ -161,8 +158,7 @@ fn handle_search_vector(args: &[String]) -> Frame {
 
     match get_manager().search_vector(index, &vector, top_k) {
         Ok(result) => {
-            let json =
-                serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string());
+            let json = serde_json::to_string(&result).unwrap_or_else(|_| "{}".to_string());
             Frame::Bulk(Some(bytes::Bytes::from(json)))
         }
         Err(e) => err_frame(&e.to_string()),
@@ -212,8 +208,7 @@ fn handle_status(args: &[String]) -> Frame {
     }
     match get_manager().replication_status(&args[0]) {
         Some(status) => {
-            let json =
-                serde_json::to_string(&status).unwrap_or_else(|_| "{}".to_string());
+            let json = serde_json::to_string(&status).unwrap_or_else(|_| "{}".to_string());
             Frame::Bulk(Some(bytes::Bytes::from(json)))
         }
         None => err_frame(&format!("index not found: {}", args[0])),
@@ -222,15 +217,13 @@ fn handle_status(args: &[String]) -> Frame {
 
 fn handle_list() -> Frame {
     let indexes = get_manager().list_indexes();
-    let json =
-        serde_json::to_string(&indexes).unwrap_or_else(|_| "[]".to_string());
+    let json = serde_json::to_string(&indexes).unwrap_or_else(|_| "[]".to_string());
     Frame::Bulk(Some(bytes::Bytes::from(json)))
 }
 
 fn handle_stats() -> Frame {
     let stats = get_manager().stats();
-    let json =
-        serde_json::to_string(&stats).unwrap_or_else(|_| "{}".to_string());
+    let json = serde_json::to_string(&stats).unwrap_or_else(|_| "{}".to_string());
     Frame::Bulk(Some(bytes::Bytes::from(json)))
 }
 

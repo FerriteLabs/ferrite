@@ -183,9 +183,9 @@ impl AutoTierEngine {
         let now = Instant::now();
         let mut stats = self.key_stats.write();
 
-        let entry = stats.entry(key.to_vec()).or_insert_with(|| {
-            KeyAccessStats::new(key.to_vec(), StorageTier::Memory, size_bytes)
-        });
+        let entry = stats
+            .entry(key.to_vec())
+            .or_insert_with(|| KeyAccessStats::new(key.to_vec(), StorageTier::Memory, size_bytes));
 
         if is_write {
             entry.total_writes += 1;
@@ -201,7 +201,9 @@ impl AutoTierEngine {
         // Keep recent access history bounded (last 1000 entries)
         entry.recent_accesses.push((now, is_write));
         if entry.recent_accesses.len() > 1000 {
-            entry.recent_accesses.drain(0..entry.recent_accesses.len() - 1000);
+            entry
+                .recent_accesses
+                .drain(0..entry.recent_accesses.len() - 1000);
         }
     }
 
@@ -222,7 +224,8 @@ impl AutoTierEngine {
         // High frequency + above promotion threshold → promote
         if freq >= self.config.promotion_threshold as f64 * (1.0 + self.config.aggressiveness) {
             if let Some(target) = self.next_hotter_tier(stats.current_tier) {
-                let latency_impact = self.tier_latency(target) - self.tier_latency(stats.current_tier);
+                let latency_impact =
+                    self.tier_latency(target) - self.tier_latency(stats.current_tier);
                 if latency_impact.abs() <= self.config.max_latency_impact_ms {
                     return TierDecision::Promote {
                         target,
@@ -252,7 +255,8 @@ impl AutoTierEngine {
         // Idle beyond threshold → demote
         if idle >= self.config.demotion_idle_threshold {
             if let Some(target) = self.next_colder_tier(stats.current_tier) {
-                let latency_impact = self.tier_latency(target) - self.tier_latency(stats.current_tier);
+                let latency_impact =
+                    self.tier_latency(target) - self.tier_latency(stats.current_tier);
                 if latency_impact <= self.config.max_latency_impact_ms {
                     return TierDecision::Demote {
                         target,

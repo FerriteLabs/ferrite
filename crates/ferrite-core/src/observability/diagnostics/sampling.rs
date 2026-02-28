@@ -150,11 +150,7 @@ impl AdaptiveSampler {
 
         let mean = inner.sum / n as f64;
         let variance = (inner.sum_sq / n as f64) - (mean * mean);
-        let stddev = if variance > 0.0 {
-            variance.sqrt()
-        } else {
-            0.0
-        };
+        let stddev = if variance > 0.0 { variance.sqrt() } else { 0.0 };
 
         if stddev < f64::EPSILON {
             inner.state = SamplingState::Normal;
@@ -170,8 +166,7 @@ impl AdaptiveSampler {
         } else if z_score > inner.anomaly_threshold {
             inner.state = SamplingState::Elevated;
             // Interpolate between base and anomaly rate
-            let factor =
-                (z_score - inner.anomaly_threshold) / (inner.anomaly_threshold * 0.5);
+            let factor = (z_score - inner.anomaly_threshold) / (inner.anomaly_threshold * 0.5);
             inner.current_rate =
                 self.base_rate + (self.anomaly_rate - self.base_rate) * factor.clamp(0.0, 1.0);
         } else {

@@ -29,10 +29,10 @@
 //! ```
 
 mod access;
-/// Autonomous auto-tiering engine with access tracking and cost optimization.
-pub mod auto_tier;
 /// Automated tiering advisor with budget and SLA-aware recommendations.
 pub mod advisor;
+/// Autonomous auto-tiering engine with access tracking and cost optimization.
+pub mod auto_tier;
 pub mod backend;
 pub mod compression;
 mod config;

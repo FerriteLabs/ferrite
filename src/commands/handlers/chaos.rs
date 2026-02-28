@@ -61,7 +61,10 @@ fn handle_inject(args: &[String]) -> Frame {
             let delay_ms: u64 = rest.first().and_then(|s| s.parse().ok()).unwrap_or(100);
             let jitter_ms = parse_opt_kv(rest, "JITTER").unwrap_or(0);
             (
-                RuntimeFaultType::Latency { delay_ms, jitter_ms },
+                RuntimeFaultType::Latency {
+                    delay_ms,
+                    jitter_ms,
+                },
                 FaultTarget::All,
                 None,
                 1.0_f64,
@@ -157,10 +160,7 @@ fn handle_heal(args: &[String]) -> Frame {
         Some("ALL") => {
             let count = engine.heal_all();
             let mut map = HashMap::new();
-            map.insert(
-                Bytes::from_static(b"healed"),
-                Frame::Integer(count as i64),
-            );
+            map.insert(Bytes::from_static(b"healed"), Frame::Integer(count as i64));
             Frame::Map(map)
         }
         Some(id_str) => match id_str.parse::<u64>() {
@@ -303,7 +303,9 @@ fn handle_help() -> Frame {
         "CHAOS.HELP",
     ];
     Frame::Array(Some(
-        help.iter().map(|s| Frame::Bulk(Some(Bytes::from(*s)))).collect(),
+        help.iter()
+            .map(|s| Frame::Bulk(Some(Bytes::from(*s))))
+            .collect(),
     ))
 }
 

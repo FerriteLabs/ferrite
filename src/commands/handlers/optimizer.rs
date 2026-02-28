@@ -193,10 +193,7 @@ fn handle_config(args: &[String]) -> Frame {
             Bytes::from_static(b"max_recommendations"),
             Frame::Integer(10),
         );
-        map.insert(
-            Bytes::from_static(b"min_confidence"),
-            Frame::Double(0.7),
-        );
+        map.insert(Bytes::from_static(b"min_confidence"), Frame::Double(0.7));
         map.insert(
             Bytes::from_static(b"auto_apply"),
             Frame::Bulk(Some(Bytes::from("false"))),

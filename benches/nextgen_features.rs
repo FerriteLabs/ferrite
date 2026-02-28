@@ -321,11 +321,7 @@ fn bench_gossip(c: &mut Criterion) {
         let gossip = GossipProtocol::new("node-1".to_string(), GossipConfig::default());
         let mut i = 0u64;
         b.iter(|| {
-            gossip.record_local_mutation(
-                &format!("key:{}", i),
-                CrdtType::GCounter,
-                vec![0u8; 32],
-            );
+            gossip.record_local_mutation(&format!("key:{}", i), CrdtType::GCounter, vec![0u8; 32]);
             i += 1;
         });
     });
@@ -334,11 +330,7 @@ fn bench_gossip(c: &mut Criterion) {
         let gossip = GossipProtocol::new("node-1".to_string(), GossipConfig::default());
         gossip.add_peer("peer-1", "127.0.0.1:7001");
         for i in 0..1_000u64 {
-            gossip.record_local_mutation(
-                &format!("key:{}", i),
-                CrdtType::GCounter,
-                vec![0u8; 32],
-            );
+            gossip.record_local_mutation(&format!("key:{}", i), CrdtType::GCounter, vec![0u8; 32]);
         }
         b.iter(|| {
             let result = gossip.prepare_gossip_message(black_box("peer-1"));

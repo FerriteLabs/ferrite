@@ -454,7 +454,9 @@ impl CommandExecutor {
                 Frame::bulk("SUBOPTIMAL [LIMIT n] -- Get keys not in optimal tier."),
                 Frame::bulk("SAVINGS -- Compute current vs optimal cost report."),
                 Frame::bulk("RECOMMEND [LIMIT n] -- Get tier change recommendations."),
-                Frame::bulk("COMPARE-REDIS <total_data_gb> [ops_per_sec] -- Compare costs with Redis."),
+                Frame::bulk(
+                    "COMPARE-REDIS <total_data_gb> [ops_per_sec] -- Compare costs with Redis.",
+                ),
                 Frame::bulk("AUTO [GET|SET <field> <value>] -- Manage auto-tiering config."),
             ]),
             "SAVINGS" => self.tiering_savings(),
@@ -1781,9 +1783,7 @@ impl CommandExecutor {
             FusionStrategy::Linear => {
                 LinearCombination::fuse(&dense_results, &sparse_results, alpha, top_k)
             }
-            FusionStrategy::DenseOnly => {
-                ReciprocalRankFusion::fuse(&dense_results, &[], 60, top_k)
-            }
+            FusionStrategy::DenseOnly => ReciprocalRankFusion::fuse(&dense_results, &[], 60, top_k),
             FusionStrategy::SparseOnly => {
                 ReciprocalRankFusion::fuse(&[], &sparse_results, 60, top_k)
             }
@@ -3021,9 +3021,7 @@ impl CommandExecutor {
     // Adaptive Query Optimizer commands
 
     pub(super) async fn ferrite_advisor(&self, subcommand: &str, args: &[String]) -> Frame {
-        use ferrite_core::optimizer::{
-            AutoTuner, AutoTunerConfig, WorkloadProfiler,
-        };
+        use ferrite_core::optimizer::{AutoTuner, AutoTunerConfig, WorkloadProfiler};
 
         // Create instances for demonstration — in production these would be shared state.
         let profiler = WorkloadProfiler::new();
@@ -3312,8 +3310,7 @@ impl CommandExecutor {
                     );
                 }
                 let name = String::from_utf8_lossy(&args[0]).to_string();
-                let fn_args: Vec<Vec<u8>> =
-                    args[1..].iter().map(|a| a.to_vec()).collect();
+                let fn_args: Vec<Vec<u8>> = args[1..].iter().map(|a| a.to_vec()).collect();
                 match registry.invoke(&name, &fn_args).await {
                     Ok(result) => Frame::array(vec![
                         Frame::bulk("output"),
@@ -3545,10 +3542,7 @@ impl CommandExecutor {
                 let items: Vec<Frame> = rows
                     .iter()
                     .flat_map(|row| {
-                        vec![
-                            Frame::bulk(row.key.clone()),
-                            Frame::bulk(row.value.clone()),
-                        ]
+                        vec![Frame::bulk(row.key.clone()), Frame::bulk(row.value.clone())]
                     })
                     .collect();
                 Frame::Array(Some(items))
@@ -3618,10 +3612,7 @@ impl CommandExecutor {
                 items.push(Frame::bulk(view.query));
                 items.push(Frame::bulk("source_patterns"));
                 items.push(Frame::Array(Some(
-                    view.source_patterns
-                        .into_iter()
-                        .map(Frame::bulk)
-                        .collect(),
+                    view.source_patterns.into_iter().map(Frame::bulk).collect(),
                 )));
                 items.push(Frame::bulk("strategy"));
                 items.push(Frame::bulk(format!("{:?}", view.refresh_strategy)));
@@ -3701,7 +3692,10 @@ impl CommandExecutor {
                 items.push(Frame::bulk("full_recomputes"));
                 items.push(Frame::Integer(stats.full_recomputes as i64));
                 items.push(Frame::bulk("avg_refresh_ms"));
-                items.push(Frame::bulk(Bytes::from(format!("{:.2}", stats.avg_refresh_ms))));
+                items.push(Frame::bulk(Bytes::from(format!(
+                    "{:.2}",
+                    stats.avg_refresh_ms
+                ))));
                 items.push(Frame::bulk("pending_changes"));
                 items.push(Frame::Integer(stats.pending_changes as i64));
                 items.push(Frame::bulk("staleness_ms"));
@@ -4006,12 +4000,7 @@ impl CommandExecutor {
     // ── Multi-region active-active handlers ───────────────────────────
 
     #[cfg(feature = "experimental")]
-    pub(super) async fn handle_region_add(
-        &self,
-        id: &str,
-        name: &str,
-        endpoint: &str,
-    ) -> Frame {
+    pub(super) async fn handle_region_add(&self, id: &str, name: &str, endpoint: &str) -> Frame {
         let replicator = active_active_replicator();
         match replicator.add_region(id.to_string(), name.to_string(), endpoint.to_string()) {
             Ok(()) => Frame::simple("OK"),
@@ -4020,12 +4009,7 @@ impl CommandExecutor {
     }
 
     #[cfg(not(feature = "experimental"))]
-    pub(super) async fn handle_region_add(
-        &self,
-        _id: &str,
-        _name: &str,
-        _endpoint: &str,
-    ) -> Frame {
+    pub(super) async fn handle_region_add(&self, _id: &str, _name: &str, _endpoint: &str) -> Frame {
         Frame::error("ERR REGION commands require the 'experimental' feature")
     }
 
@@ -4161,12 +4145,10 @@ impl CommandExecutor {
         match strategy {
             Some(s) => {
                 match ferrite_enterprise::active_active::ConflictStrategy::from_str_loose(s) {
-                    Some(_strat) => {
-                        Frame::simple(format!("OK (strategy would be set to: {s})"))
-                    }
-                    None => Frame::error(
-                        format!("ERR Unknown strategy '{s}'. Use: lww, highest-region-id, merge"),
-                    ),
+                    Some(_strat) => Frame::simple(format!("OK (strategy would be set to: {s})")),
+                    None => Frame::error(format!(
+                        "ERR Unknown strategy '{s}'. Use: lww, highest-region-id, merge"
+                    )),
                 }
             }
             None => {
@@ -4219,14 +4201,11 @@ impl CommandExecutor {
         static HOTKEY_DETECTOR: OnceLock<HotKeyDetector> = OnceLock::new();
         static BOTTLENECK: OnceLock<BottleneckAnalyzer> = OnceLock::new();
 
-        let slow_analyzer =
-            SLOW_ANALYZER.get_or_init(|| SlowQueryAnalyzer::new(1024, 10_000));
-        let sampler =
-            SAMPLER.get_or_init(|| AdaptiveSampler::new(0.01, 1.0, 2.5));
+        let slow_analyzer = SLOW_ANALYZER.get_or_init(|| SlowQueryAnalyzer::new(1024, 10_000));
+        let sampler = SAMPLER.get_or_init(|| AdaptiveSampler::new(0.01, 1.0, 2.5));
         let hotkey_detector =
             HOTKEY_DETECTOR.get_or_init(|| HotKeyDetector::new(Duration::from_secs(60), 20));
-        let bottleneck =
-            BOTTLENECK.get_or_init(|| BottleneckAnalyzer::new(1_000));
+        let bottleneck = BOTTLENECK.get_or_init(|| BottleneckAnalyzer::new(1_000));
 
         match subcommand.to_uppercase().as_str() {
             "SLOWLOG" => {
@@ -4782,7 +4761,10 @@ impl CommandExecutor {
                     Frame::bulk(tpl.documentation.as_str()),
                     Frame::bulk("setup_commands"),
                     Frame::array(
-                        tpl.setup_commands.iter().map(|c| Frame::bulk(c.as_str())).collect(),
+                        tpl.setup_commands
+                            .iter()
+                            .map(|c| Frame::bulk(c.as_str()))
+                            .collect(),
                     ),
                 ]),
                 None => Frame::error("ERR template not found"),
@@ -4807,9 +4789,7 @@ impl CommandExecutor {
     pub(super) async fn handle_studio_setup(&self, template: &str) -> Frame {
         let registry = ferrite_studio::devtools::TemplateRegistry::new();
         match registry.setup_commands(template) {
-            Some(cmds) => Frame::array(
-                cmds.iter().map(|c| Frame::bulk(c.as_str())).collect(),
-            ),
+            Some(cmds) => Frame::array(cmds.iter().map(|c| Frame::bulk(c.as_str())).collect()),
             None => Frame::error("ERR template not found"),
         }
     }
@@ -4849,7 +4829,13 @@ impl CommandExecutor {
             Frame::bulk("incompatible_commands"),
             Frame::array(incompatible),
             Frame::bulk("warnings"),
-            Frame::array(report.warnings.iter().map(|w| Frame::bulk(w.as_str())).collect()),
+            Frame::array(
+                report
+                    .warnings
+                    .iter()
+                    .map(|w| Frame::bulk(w.as_str()))
+                    .collect(),
+            ),
             Frame::bulk("recommendations"),
             Frame::array(
                 report
@@ -4883,7 +4869,12 @@ impl CommandExecutor {
                 Frame::bulk("since"),
                 Frame::bulk(help.since_version.as_str()),
                 Frame::bulk("examples"),
-                Frame::array(help.examples.iter().map(|e| Frame::bulk(e.as_str())).collect()),
+                Frame::array(
+                    help.examples
+                        .iter()
+                        .map(|e| Frame::bulk(e.as_str()))
+                        .collect(),
+                ),
             ]),
             None => Frame::error("ERR unknown command"),
         }
@@ -4932,7 +4923,11 @@ impl CommandExecutor {
                     Frame::bulk("cors_enabled"),
                     Frame::bulk(if config.cors_enabled { "true" } else { "false" }),
                     Frame::bulk("auth_required"),
-                    Frame::bulk(if config.auth_required { "true" } else { "false" }),
+                    Frame::bulk(if config.auth_required {
+                        "true"
+                    } else {
+                        "false"
+                    }),
                 ]))
             }
             "ENDPOINTS" => {
@@ -5059,7 +5054,10 @@ impl CommandExecutor {
                 ]))
             }
             "REPORT" => {
-                let namespace = args.first().map(|s| s.to_string()).unwrap_or_else(|| "default".to_string());
+                let namespace = args
+                    .first()
+                    .map(|s| s.to_string())
+                    .unwrap_or_else(|| "default".to_string());
                 Frame::Array(Some(vec![
                     Frame::bulk("namespace"),
                     Frame::bulk(namespace),
@@ -5084,7 +5082,10 @@ impl CommandExecutor {
                 ]))
             }
             "STATUS" => {
-                let namespace = args.first().map(|s| s.to_string()).unwrap_or_else(|| "default".to_string());
+                let namespace = args
+                    .first()
+                    .map(|s| s.to_string())
+                    .unwrap_or_else(|| "default".to_string());
                 Frame::Array(Some(vec![
                     Frame::bulk("namespace"),
                     Frame::bulk(namespace),
@@ -5147,9 +5148,7 @@ impl CommandExecutor {
                     items.push(Frame::Double(report.memory_usage_fraction));
                     Frame::Array(Some(items))
                 } else {
-                    Frame::error(
-                        "ERR profiler is not active. Run AUTOTUNE ENABLE first",
-                    )
+                    Frame::error("ERR profiler is not active. Run AUTOTUNE ENABLE first")
                 }
             }
             "ENABLE" => {

@@ -149,9 +149,7 @@ pub enum ClusterNodeRole {
 #[derive(Debug, Clone)]
 pub enum UpstreamTopology {
     /// Single standalone Redis/Ferrite instance.
-    Standalone {
-        addr: SocketAddr,
-    },
+    Standalone { addr: SocketAddr },
     /// Redis Sentinel deployment.
     Sentinel {
         master: SocketAddr,
@@ -159,16 +157,18 @@ pub enum UpstreamTopology {
         replicas: Vec<SocketAddr>,
     },
     /// Redis Cluster deployment.
-    Cluster {
-        nodes: Vec<ClusterNodeInfo>,
-    },
+    Cluster { nodes: Vec<ClusterNodeInfo> },
 }
 
 impl std::fmt::Display for UpstreamTopology {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Standalone { addr } => write!(f, "standalone({})", addr),
-            Self::Sentinel { master, sentinels, replicas } => {
+            Self::Sentinel {
+                master,
+                sentinels,
+                replicas,
+            } => {
                 write!(
                     f,
                     "sentinel(master={}, sentinels={}, replicas={})",
@@ -428,8 +428,8 @@ impl SmartProxy {
         // Observe & forward: write commands for heatmap tracking
         if features.enable_observability {
             match cmd {
-                "SET" | "DEL" | "HSET" | "HDEL" | "LPUSH" | "RPUSH" | "LPOP" | "RPOP"
-                | "SADD" | "SREM" | "ZADD" | "ZREM" | "SETEX" | "PSETEX" | "MSET" => {
+                "SET" | "DEL" | "HSET" | "HDEL" | "LPUSH" | "RPUSH" | "LPOP" | "RPOP" | "SADD"
+                | "SREM" | "ZADD" | "ZREM" | "SETEX" | "PSETEX" | "MSET" => {
                     return InterceptAction::Observe;
                 }
                 _ => {}

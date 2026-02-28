@@ -748,6 +748,9 @@ mod tests {
 
         let big_data = vec![0u8; 100]; // 100 bytes > 10 byte limit
         let result = marketplace.install_with_data("big-plugin", "1.0.0", Some(&big_data));
-        assert!(matches!(result, Err(MarketplaceError::PluginTooLarge { .. })));
+        assert!(matches!(
+            result,
+            Err(MarketplaceError::PluginTooLarge { .. })
+        ));
     }
 }

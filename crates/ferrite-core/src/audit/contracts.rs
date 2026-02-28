@@ -443,7 +443,9 @@ impl ContractRegistry {
         self.total_validations.fetch_add(1, Ordering::Relaxed);
 
         let contracts = self.contracts.read();
-        let entry = contracts.iter().find(|e| glob_match(&e.contract.key_pattern, key));
+        let entry = contracts
+            .iter()
+            .find(|e| glob_match(&e.contract.key_pattern, key));
 
         let entry = match entry {
             Some(e) => e,
@@ -473,11 +475,7 @@ impl ContractRegistry {
             if value.len() as u64 > max {
                 errors.push(ValidationError {
                     field: "<value>".to_string(),
-                    message: format!(
-                        "value size {} exceeds maximum {}",
-                        value.len(),
-                        max
-                    ),
+                    message: format!("value size {} exceeds maximum {}", value.len(), max),
                     constraint: "max_size_bytes".to_string(),
                 });
             }
@@ -485,7 +483,10 @@ impl ContractRegistry {
 
         // For JSON schema type, parse and validate fields.
         if contract.schema.schema_type == SchemaType::Json {
-            match std::str::from_utf8(value).ok().and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok()) {
+            match std::str::from_utf8(value)
+                .ok()
+                .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+            {
                 Some(json_val) => {
                     validate_json_schema(&contract.schema, &json_val, &mut errors, &mut warnings);
                 }
@@ -552,7 +553,13 @@ impl ContractRegistry {
         }
         // Detect field additions.
         for new_field in &new_schema.fields {
-            if !entry.contract.schema.fields.iter().any(|f| f.name == new_field.name) {
+            if !entry
+                .contract
+                .schema
+                .fields
+                .iter()
+                .any(|f| f.name == new_field.name)
+            {
                 let msg = format!("added field '{}'", new_field.name);
                 if new_field.required {
                     is_breaking = true;
@@ -564,7 +571,13 @@ impl ContractRegistry {
         }
         // Detect type changes.
         for new_field in &new_schema.fields {
-            if let Some(old_field) = entry.contract.schema.fields.iter().find(|f| f.name == new_field.name) {
+            if let Some(old_field) = entry
+                .contract
+                .schema
+                .fields
+                .iter()
+                .find(|f| f.name == new_field.name)
+            {
                 if old_field.field_type != new_field.field_type {
                     changes.push(format!(
                         "field '{}' type changed from {} to {}",
@@ -749,7 +762,12 @@ fn validate_json_schema(
             }
             // Apply constraints.
             for constraint in &field_def.constraints {
-                validate_constraint(&field_def.name, field_val, &constraint.constraint_type, errors);
+                validate_constraint(
+                    &field_def.name,
+                    field_val,
+                    &constraint.constraint_type,
+                    errors,
+                );
             }
         } else if field_def.required {
             errors.push(ValidationError {
@@ -852,7 +870,10 @@ fn validate_constraint(
 
 /// Simple glob matching supporting `*` and `?`.
 fn glob_match(pattern: &str, text: &str) -> bool {
-    glob_match_impl(&pattern.chars().collect::<Vec<_>>(), &text.chars().collect::<Vec<_>>())
+    glob_match_impl(
+        &pattern.chars().collect::<Vec<_>>(),
+        &text.chars().collect::<Vec<_>>(),
+    )
 }
 
 fn glob_match_impl(pattern: &[char], text: &[char]) -> bool {
@@ -978,10 +999,17 @@ mod tests {
     fn test_find_contract_by_key() {
         let reg = ContractRegistry::new(ContractConfig::default());
         reg.register(make_contract("users", "user:*")).unwrap();
-        reg.register(make_contract("sessions", "session:*")).unwrap();
+        reg.register(make_contract("sessions", "session:*"))
+            .unwrap();
 
-        assert_eq!(reg.find_contract("user:123").map(|c| c.name), Some("users".to_string()));
-        assert_eq!(reg.find_contract("session:abc").map(|c| c.name), Some("sessions".to_string()));
+        assert_eq!(
+            reg.find_contract("user:123").map(|c| c.name),
+            Some("users".to_string())
+        );
+        assert_eq!(
+            reg.find_contract("session:abc").map(|c| c.name),
+            Some("sessions".to_string())
+        );
         assert!(reg.find_contract("other:key").is_none());
     }
 
@@ -1061,7 +1089,9 @@ mod tests {
         ];
         new_schema.required_fields = vec!["name".to_string(), "email".to_string()];
 
-        let result = reg.evolve("users", new_schema, "added email, removed age").unwrap();
+        let result = reg
+            .evolve("users", new_schema, "added email, removed age")
+            .unwrap();
         assert_eq!(result.old_version, 1);
         assert_eq!(result.new_version, 2);
         assert!(result.is_breaking);

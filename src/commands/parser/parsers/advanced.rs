@@ -1511,9 +1511,7 @@ pub(crate) fn parse_federation_status(args: &[Frame]) -> Result<Command> {
 /// FEDERATION.NAMESPACE namespace source_id
 pub(crate) fn parse_federation_namespace(args: &[Frame]) -> Result<Command> {
     if args.len() < 2 {
-        return Err(FerriteError::WrongArity(
-            "FEDERATION.NAMESPACE".to_string(),
-        ));
+        return Err(FerriteError::WrongArity("FEDERATION.NAMESPACE".to_string()));
     }
     let namespace = get_string(&args[0])?;
     let source_id = get_string(&args[1])?;
@@ -1535,9 +1533,7 @@ pub(crate) fn parse_federation_query(args: &[Frame]) -> Result<Command> {
 /// FEDERATION.CONTRACT name source_id schema_json
 pub(crate) fn parse_federation_contract(args: &[Frame]) -> Result<Command> {
     if args.len() < 3 {
-        return Err(FerriteError::WrongArity(
-            "FEDERATION.CONTRACT".to_string(),
-        ));
+        return Err(FerriteError::WrongArity("FEDERATION.CONTRACT".to_string()));
     }
     let name = get_string(&args[0])?;
     let source_id = get_string(&args[1])?;

@@ -11,8 +11,8 @@ use bytes::Bytes;
 
 use crate::protocol::Frame;
 use ferrite_ai::agent_memory::store::{
-    AgentMemoryConfig, AgentMemoryStats, MemoryError, PersistentAgentMemoryStore,
-    StoreMemoryEntry, StoreMemoryType,
+    AgentMemoryConfig, AgentMemoryStats, MemoryError, PersistentAgentMemoryStore, StoreMemoryEntry,
+    StoreMemoryType,
 };
 
 use super::err_frame;

@@ -378,10 +378,7 @@ mod tests {
 
     #[test]
     fn test_install_error_display() {
-        let err = InstallError::TooLarge {
-            size: 100,
-            max: 50,
-        };
+        let err = InstallError::TooLarge { size: 100, max: 50 };
         assert!(err.to_string().contains("100"));
         assert!(err.to_string().contains("50"));
     }

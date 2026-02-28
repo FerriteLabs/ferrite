@@ -65,7 +65,11 @@ fn handle_define(args: &[String]) -> Frame {
                 Err(_) => return err_frame("invalid vector dimension"),
             }
         }
-        _ => return err_frame("invalid value_type (NUMERIC|CATEGORICAL|BOOLEAN|TEXT|TIMESTAMP|VECTOR(n))"),
+        _ => {
+            return err_frame(
+                "invalid value_type (NUMERIC|CATEGORICAL|BOOLEAN|TEXT|TIMESTAMP|VECTOR(n))",
+            )
+        }
     };
 
     let freshness_sla_secs: u64 = if args.len() > 4 {

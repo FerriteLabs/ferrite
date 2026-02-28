@@ -10,10 +10,10 @@ use bytes::Bytes;
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
+use ferrite_enterprise::tenancy::quota_resource::QuotaConfig;
 use ferrite_enterprise::tenancy::{
     CreateTenantRequest, LifecycleState, TenantLifecycleManager, TenantTier,
 };
-use ferrite_enterprise::tenancy::quota_resource::QuotaConfig;
 
 /// Global tenant lifecycle manager instance (lazily initialized).
 fn tenant_manager() -> &'static TenantLifecycleManager {
@@ -82,10 +82,7 @@ impl CommandExecutor {
                     tier = match parse_tier(&args[i + 1]) {
                         Some(t) => t,
                         None => {
-                            return Frame::error(format!(
-                                "ERR Unknown tier '{}'",
-                                args[i + 1]
-                            ));
+                            return Frame::error(format!("ERR Unknown tier '{}'", args[i + 1]));
                         }
                     };
                     i += 2;
@@ -111,10 +108,7 @@ impl CommandExecutor {
                         "max_connections" => q.max_connections = value as u32,
                         "max_ops_per_second" => q.max_ops_per_second = value,
                         _ => {
-                            return Frame::error(format!(
-                                "ERR Unknown quota field '{}'",
-                                field
-                            ));
+                            return Frame::error(format!("ERR Unknown quota field '{}'", field));
                         }
                     }
                     i += 3;
@@ -137,10 +131,7 @@ impl CommandExecutor {
         match mgr.create_tenant(request) {
             Ok(record) => {
                 let mut map = HashMap::new();
-                map.insert(
-                    Bytes::from_static(b"id"),
-                    Frame::bulk(record.id.as_str()),
-                );
+                map.insert(Bytes::from_static(b"id"), Frame::bulk(record.id.as_str()));
                 map.insert(
                     Bytes::from_static(b"name"),
                     Frame::bulk(record.name.as_str()),
@@ -203,22 +194,13 @@ impl CommandExecutor {
             .iter()
             .map(|r| {
                 let mut map = HashMap::new();
-                map.insert(
-                    Bytes::from_static(b"id"),
-                    Frame::bulk(r.id.as_str()),
-                );
-                map.insert(
-                    Bytes::from_static(b"name"),
-                    Frame::bulk(r.name.as_str()),
-                );
+                map.insert(Bytes::from_static(b"id"), Frame::bulk(r.id.as_str()));
+                map.insert(Bytes::from_static(b"name"), Frame::bulk(r.name.as_str()));
                 map.insert(
                     Bytes::from_static(b"state"),
                     Frame::bulk(r.state.to_string()),
                 );
-                map.insert(
-                    Bytes::from_static(b"tier"),
-                    Frame::bulk(tier_name(&r.tier)),
-                );
+                map.insert(Bytes::from_static(b"tier"), Frame::bulk(tier_name(&r.tier)));
                 Frame::Map(map)
             })
             .collect();
@@ -252,10 +234,7 @@ impl CommandExecutor {
         match mgr.get_tenant(tenant_id) {
             Some(record) => {
                 let mut map = HashMap::new();
-                map.insert(
-                    Bytes::from_static(b"id"),
-                    Frame::bulk(record.id.as_str()),
-                );
+                map.insert(Bytes::from_static(b"id"), Frame::bulk(record.id.as_str()));
                 map.insert(
                     Bytes::from_static(b"name"),
                     Frame::bulk(record.name.as_str()),
@@ -381,9 +360,7 @@ impl CommandExecutor {
                         );
                         map.insert(
                             Bytes::from_static(b"max_bandwidth_bytes_per_sec"),
-                            Frame::Integer(
-                                record.quota.max_bandwidth_bytes_per_sec as i64,
-                            ),
+                            Frame::Integer(record.quota.max_bandwidth_bytes_per_sec as i64),
                         );
                         Frame::Map(map)
                     }
@@ -392,18 +369,13 @@ impl CommandExecutor {
             }
             Some("SET") => {
                 if args.len() < 4 {
-                    return Frame::error(
-                        "ERR TENANT QUOTA SET requires <field> <value>",
-                    );
+                    return Frame::error("ERR TENANT QUOTA SET requires <field> <value>");
                 }
                 let field = args[2].to_lowercase();
                 let value = match args[3].parse::<u64>() {
                     Ok(v) => v,
                     Err(_) => {
-                        return Frame::error(format!(
-                            "ERR Invalid quota value '{}'",
-                            args[3]
-                        ));
+                        return Frame::error(format!("ERR Invalid quota value '{}'", args[3]));
                     }
                 };
 
@@ -437,9 +409,7 @@ impl CommandExecutor {
                             Err(e) => Frame::error(format!("ERR {}", e)),
                         }
                     }
-                    None => {
-                        Frame::error(format!("ERR tenant not found: {}", tenant_id))
-                    }
+                    None => Frame::error(format!("ERR tenant not found: {}", tenant_id)),
                 }
             }
             Some(other) => Frame::error(format!(

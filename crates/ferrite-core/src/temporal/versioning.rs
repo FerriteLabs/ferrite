@@ -258,10 +258,7 @@ impl VersionManager {
 
         // Compute parent and insert version, then enforce max versions.
         {
-            let branch_data = inner
-                .data
-                .entry(branch.to_string())
-                .or_default();
+            let branch_data = inner.data.entry(branch.to_string()).or_default();
 
             let key_versions = branch_data.entry(key.to_string()).or_default();
             let parent = key_versions.values().next_back().map(|v| v.id);
@@ -341,14 +338,7 @@ impl VersionManager {
             .data
             .get(&current)
             .and_then(|bd| bd.get(key))
-            .map(|versions| {
-                versions
-                    .values()
-                    .rev()
-                    .take(limit)
-                    .cloned()
-                    .collect()
-            })
+            .map(|versions| versions.values().rev().take(limit).cloned().collect())
             .unwrap_or_default()
     }
 
@@ -376,11 +366,7 @@ impl VersionManager {
     }
 
     /// Create a new branch forked from `from_branch`.
-    pub fn create_branch(
-        &self,
-        name: &str,
-        from_branch: &str,
-    ) -> Result<Branch, VersionError> {
+    pub fn create_branch(&self, name: &str, from_branch: &str) -> Result<Branch, VersionError> {
         let mut inner = self.inner.write();
 
         if inner.branches.contains_key(name) {
@@ -402,11 +388,7 @@ impl VersionManager {
         };
 
         // Copy existing data from the source branch.
-        let source_data = inner
-            .data
-            .get(from_branch)
-            .cloned()
-            .unwrap_or_default();
+        let source_data = inner.data.get(from_branch).cloned().unwrap_or_default();
 
         inner.branches.insert(name.to_string(), branch.clone());
         inner.data.insert(name.to_string(), source_data);
@@ -449,11 +431,7 @@ impl VersionManager {
     }
 
     /// Merge `source` branch into `target` branch.
-    pub fn merge(
-        &self,
-        source: &str,
-        target: &str,
-    ) -> Result<MergeResult, VersionError> {
+    pub fn merge(&self, source: &str, target: &str) -> Result<MergeResult, VersionError> {
         let mut inner = self.inner.write();
 
         if !inner.branches.contains_key(source) {
@@ -543,7 +521,8 @@ impl VersionManager {
 
         // Verify version exists somewhere.
         let found = inner.data.values().any(|bd| {
-            bd.values().any(|versions| versions.contains_key(&version_id))
+            bd.values()
+                .any(|versions| versions.contains_key(&version_id))
         });
         if !found {
             return Err(VersionError::VersionNotFound(version_id));
@@ -571,11 +550,7 @@ impl VersionManager {
         let mut inner = self.inner.write();
         let current = inner.current_branch.clone();
 
-        let versions = match inner
-            .data
-            .get_mut(&current)
-            .and_then(|bd| bd.get_mut(key))
-        {
+        let versions = match inner.data.get_mut(&current).and_then(|bd| bd.get_mut(key)) {
             Some(v) => v,
             None => return 0,
         };
@@ -668,7 +643,8 @@ mod tests {
     #[test]
     fn test_branch_isolation() {
         let mgr = default_manager();
-        mgr.write("k", b"main_v", "main", "alice").expect("write main");
+        mgr.write("k", b"main_v", "main", "alice")
+            .expect("write main");
         mgr.create_branch("dev", "main").expect("branch");
         mgr.write("k", b"dev_v", "dev", "bob").expect("write dev");
 
@@ -709,9 +685,11 @@ mod tests {
     #[test]
     fn test_merge_no_conflict() {
         let mgr = default_manager();
-        mgr.write("shared", b"base", "main", "alice").expect("write shared");
+        mgr.write("shared", b"base", "main", "alice")
+            .expect("write shared");
         mgr.create_branch("feature", "main").expect("branch");
-        mgr.write("new_key", b"new_val", "feature", "bob").expect("write new");
+        mgr.write("new_key", b"new_val", "feature", "bob")
+            .expect("write new");
 
         let result = mgr.merge("feature", "main").expect("merge");
         assert_eq!(result.merged_keys, 1);
@@ -724,10 +702,13 @@ mod tests {
     #[test]
     fn test_merge_with_conflict() {
         let mgr = default_manager();
-        mgr.write("k", b"base", "main", "alice").expect("write base");
+        mgr.write("k", b"base", "main", "alice")
+            .expect("write base");
         mgr.create_branch("feature", "main").expect("branch");
-        mgr.write("k", b"feature_change", "feature", "bob").expect("write feature");
-        mgr.write("k", b"main_change", "main", "alice").expect("write main");
+        mgr.write("k", b"feature_change", "feature", "bob")
+            .expect("write feature");
+        mgr.write("k", b"main_change", "main", "alice")
+            .expect("write main");
 
         let result = mgr.merge("feature", "main");
         assert!(matches!(result, Err(VersionError::MergeConflicts(_))));
@@ -819,6 +800,9 @@ mod tests {
         // Read at the first version's id (used as timestamp proxy in BTreeMap).
         let found = mgr.read_at("k", v1);
         assert!(found.is_some());
-        assert_eq!(found.as_ref().map(|v| v.value.clone()), Some(b"early".to_vec()));
+        assert_eq!(
+            found.as_ref().map(|v| v.value.clone()),
+            Some(b"early".to_vec())
+        );
     }
 }

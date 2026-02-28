@@ -224,7 +224,10 @@ impl ClusterStateManager {
 
     /// Return a snapshot of all known nodes.
     pub fn all_nodes(&self) -> Vec<ClusterNodeInfo> {
-        self.nodes.iter().map(|entry| entry.value().clone()).collect()
+        self.nodes
+            .iter()
+            .map(|entry| entry.value().clone())
+            .collect()
     }
 
     /// Determine whether a key should be processed locally, or redirected.

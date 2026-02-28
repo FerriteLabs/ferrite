@@ -845,11 +845,17 @@ mod tests {
         assert!(mgr.start_pipeline("lc").is_ok());
         let info = mgr.get_pipeline("lc");
         assert!(info.is_some());
-        assert_eq!(info.as_ref().map(|i| i.state), Some(ComposablePipelineState::Running));
+        assert_eq!(
+            info.as_ref().map(|i| i.state),
+            Some(ComposablePipelineState::Running)
+        );
 
         assert!(mgr.stop_pipeline("lc").is_ok());
         let info = mgr.get_pipeline("lc");
-        assert_eq!(info.as_ref().map(|i| i.state), Some(ComposablePipelineState::Stopped));
+        assert_eq!(
+            info.as_ref().map(|i| i.state),
+            Some(ComposablePipelineState::Stopped)
+        );
     }
 
     #[test]

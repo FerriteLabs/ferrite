@@ -544,7 +544,9 @@ impl DistributedLockManager {
             let mut path: Vec<TxId> = Vec::new();
             if self.dfs_find_cycle(&graph, start, &mut visited, &mut path) {
                 // Extract the cycle from path.
-                if let Some(cycle_start_pos) = path.iter().position(|t| *t == *path.last().unwrap())
+                if let Some(cycle_start_pos) = path
+                    .last()
+                    .and_then(|last| path.iter().position(|t| t == last))
                 {
                     let cycle_txns: Vec<TxId> = path[cycle_start_pos..path.len() - 1].to_vec();
                     let mut resources: Vec<String> = Vec::new();
@@ -589,7 +591,10 @@ impl DistributedLockManager {
         // workloads this would use transaction start-time metadata; here we
         // pick the last entry in the cycle which, by convention in the
         // detection algorithm, is the youngest.
-        let victim = *cycle.transactions.last().unwrap();
+        let victim = *cycle
+            .transactions
+            .last()
+            .expect("non-empty cycle guaranteed by check above");
 
         // Remove victim from all wait queues and notify with Deadlock.
         for mut entry_ref in self.locks.iter_mut() {

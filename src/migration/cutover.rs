@@ -157,7 +157,11 @@ impl CutoverOrchestrator {
     ///
     /// Validates that replication lag is within the configured threshold
     /// and that source/target data are consistent.
-    pub fn pre_check(&self, lag_bytes: u64, data_consistent: bool) -> Result<PreCheckResult, CutoverError> {
+    pub fn pre_check(
+        &self,
+        lag_bytes: u64,
+        data_consistent: bool,
+    ) -> Result<PreCheckResult, CutoverError> {
         let mut warnings = Vec::new();
 
         if lag_bytes > self.config.max_lag_ms {
@@ -202,7 +206,9 @@ impl CutoverOrchestrator {
         active_connections: u64,
         final_offset: u64,
     ) -> Result<CutoverResult, CutoverError> {
-        let summary = self.execute(current_lag_ms, total_keys, active_connections).await?;
+        let summary = self
+            .execute(current_lag_ms, total_keys, active_connections)
+            .await?;
 
         Ok(CutoverResult {
             success: summary.state == CutoverState::Completed,

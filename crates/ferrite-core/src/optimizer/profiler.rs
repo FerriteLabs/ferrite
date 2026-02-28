@@ -172,12 +172,7 @@ impl WorkloadProfiler {
     }
 
     /// Record a key access with optional value size.
-    pub fn record_key_access(
-        &self,
-        key: &str,
-        kind: CommandKind,
-        value_size: Option<usize>,
-    ) {
+    pub fn record_key_access(&self, key: &str, kind: CommandKind, value_size: Option<usize>) {
         let now_ms = self.start.elapsed().as_millis() as u64;
         let stats = self
             .key_stats
@@ -197,8 +192,7 @@ impl WorkloadProfiler {
         s.access_count.fetch_add(1, Ordering::Relaxed);
 
         if let Some(sz) = value_size {
-            s.total_value_bytes
-                .fetch_add(sz as u64, Ordering::Relaxed);
+            s.total_value_bytes.fetch_add(sz as u64, Ordering::Relaxed);
             self.total_value_bytes
                 .fetch_add(sz as u64, Ordering::Relaxed);
             self.value_observations.fetch_add(1, Ordering::Relaxed);

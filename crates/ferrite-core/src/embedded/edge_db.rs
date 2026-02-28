@@ -203,7 +203,8 @@ impl Database {
     pub fn set(&self, key: &str, value: &str) -> Result<(), DatabaseError> {
         self.check_open()?;
         self.tick();
-        self.data.insert(key.to_string(), StoredValue::String(value.to_string()));
+        self.data
+            .insert(key.to_string(), StoredValue::String(value.to_string()));
         self.expiries.remove(key);
         Ok(())
     }
@@ -212,7 +213,8 @@ impl Database {
     pub fn set_ex(&self, key: &str, value: &str, ttl_secs: u64) -> Result<(), DatabaseError> {
         self.check_open()?;
         self.tick();
-        self.data.insert(key.to_string(), StoredValue::String(value.to_string()));
+        self.data
+            .insert(key.to_string(), StoredValue::String(value.to_string()));
         let deadline = Instant::now() + std::time::Duration::from_secs(ttl_secs);
         self.expiries.insert(key.to_string(), deadline);
         Ok(())
@@ -235,7 +237,9 @@ impl Database {
     /// Return all keys matching a glob-style pattern (`*` and `?` supported).
     pub fn keys(&self, pattern: &str) -> Vec<String> {
         // Evict expired keys first
-        let expired: Vec<String> = self.expiries.iter()
+        let expired: Vec<String> = self
+            .expiries
+            .iter()
             .filter(|e| Instant::now() >= *e.value())
             .map(|e| e.key().clone())
             .collect();
@@ -270,7 +274,8 @@ impl Database {
         let new_val = current
             .checked_add(1)
             .ok_or_else(|| DatabaseError::WriteFailed("increment would overflow".into()))?;
-        self.data.insert(key.to_string(), StoredValue::String(new_val.to_string()));
+        self.data
+            .insert(key.to_string(), StoredValue::String(new_val.to_string()));
         Ok(new_val)
     }
 
@@ -659,7 +664,11 @@ fn normalize_index(index: i64, len: i64) -> usize {
     }
     if index < 0 {
         let adjusted = len + index;
-        if adjusted < 0 { 0 } else { adjusted as usize }
+        if adjusted < 0 {
+            0
+        } else {
+            adjusted as usize
+        }
     } else {
         index as usize
     }

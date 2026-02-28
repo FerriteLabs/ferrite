@@ -295,15 +295,15 @@ impl MemcachedTextParser {
         }
 
         let key = parts[1].to_string();
-        let flags = parts[2].parse::<u32>().map_err(|_| {
-            MemcachedError::InvalidArguments("invalid flags value".to_string())
-        })?;
-        let exptime = parts[3].parse::<u32>().map_err(|_| {
-            MemcachedError::InvalidArguments("invalid exptime value".to_string())
-        })?;
-        let bytes = parts[4].parse::<usize>().map_err(|_| {
-            MemcachedError::InvalidArguments("invalid bytes value".to_string())
-        })?;
+        let flags = parts[2]
+            .parse::<u32>()
+            .map_err(|_| MemcachedError::InvalidArguments("invalid flags value".to_string()))?;
+        let exptime = parts[3]
+            .parse::<u32>()
+            .map_err(|_| MemcachedError::InvalidArguments("invalid exptime value".to_string()))?;
+        let bytes = parts[4]
+            .parse::<usize>()
+            .map_err(|_| MemcachedError::InvalidArguments("invalid bytes value".to_string()))?;
 
         // Value data would be read from subsequent bytes in a real implementation
         Ok(MemcachedCommand::Set {
@@ -369,10 +369,7 @@ pub fn stats_to_map(stats: &MemcachedStats) -> HashMap<String, String> {
     );
     map.insert("hits".to_string(), stats.hits.to_string());
     map.insert("misses".to_string(), stats.misses.to_string());
-    map.insert(
-        "current_items".to_string(),
-        stats.current_items.to_string(),
-    );
+    map.insert("current_items".to_string(), stats.current_items.to_string());
     map.insert("bytes_stored".to_string(), stats.bytes_stored.to_string());
     map
 }
@@ -387,8 +384,7 @@ mod tests {
 
     #[test]
     fn test_parse_get() {
-        let cmd = MemcachedTextParser::parse_command(b"get key1 key2\r\n")
-            .expect("should parse");
+        let cmd = MemcachedTextParser::parse_command(b"get key1 key2\r\n").expect("should parse");
         assert_eq!(
             cmd,
             MemcachedCommand::Get {
@@ -399,8 +395,8 @@ mod tests {
 
     #[test]
     fn test_parse_set() {
-        let cmd = MemcachedTextParser::parse_command(b"set mykey 0 3600 5\r\n")
-            .expect("should parse");
+        let cmd =
+            MemcachedTextParser::parse_command(b"set mykey 0 3600 5\r\n").expect("should parse");
         match cmd {
             MemcachedCommand::Set {
                 key,
@@ -420,8 +416,7 @@ mod tests {
 
     #[test]
     fn test_parse_delete() {
-        let cmd = MemcachedTextParser::parse_command(b"delete foo\r\n")
-            .expect("should parse");
+        let cmd = MemcachedTextParser::parse_command(b"delete foo\r\n").expect("should parse");
         assert_eq!(
             cmd,
             MemcachedCommand::Delete {
@@ -432,8 +427,7 @@ mod tests {
 
     #[test]
     fn test_parse_incr() {
-        let cmd = MemcachedTextParser::parse_command(b"incr counter 10\r\n")
-            .expect("should parse");
+        let cmd = MemcachedTextParser::parse_command(b"incr counter 10\r\n").expect("should parse");
         assert_eq!(
             cmd,
             MemcachedCommand::Incr {
@@ -445,35 +439,26 @@ mod tests {
 
     #[test]
     fn test_parse_stats() {
-        let cmd = MemcachedTextParser::parse_command(b"stats\r\n")
-            .expect("should parse");
+        let cmd = MemcachedTextParser::parse_command(b"stats\r\n").expect("should parse");
         assert_eq!(cmd, MemcachedCommand::Stats);
     }
 
     #[test]
     fn test_parse_version() {
-        let cmd = MemcachedTextParser::parse_command(b"version\r\n")
-            .expect("should parse");
+        let cmd = MemcachedTextParser::parse_command(b"version\r\n").expect("should parse");
         assert_eq!(cmd, MemcachedCommand::Version);
     }
 
     #[test]
     fn test_parse_quit() {
-        let cmd = MemcachedTextParser::parse_command(b"quit\r\n")
-            .expect("should parse");
+        let cmd = MemcachedTextParser::parse_command(b"quit\r\n").expect("should parse");
         assert_eq!(cmd, MemcachedCommand::Quit);
     }
 
     #[test]
     fn test_parse_flush_all() {
-        let cmd = MemcachedTextParser::parse_command(b"flush_all 30\r\n")
-            .expect("should parse");
-        assert_eq!(
-            cmd,
-            MemcachedCommand::FlushAll {
-                delay: Some(30)
-            }
-        );
+        let cmd = MemcachedTextParser::parse_command(b"flush_all 30\r\n").expect("should parse");
+        assert_eq!(cmd, MemcachedCommand::FlushAll { delay: Some(30) });
     }
 
     #[test]

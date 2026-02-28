@@ -315,10 +315,7 @@ fn federate_health(args: &[String]) -> Frame {
     match get_engine().source_health(&args[0]) {
         Some(h) => {
             let mut map = std::collections::HashMap::new();
-            map.insert(
-                Bytes::from("name"),
-                Frame::Bulk(Some(Bytes::from(h.name))),
-            );
+            map.insert(Bytes::from("name"), Frame::Bulk(Some(Bytes::from(h.name))));
             map.insert(Bytes::from("reachable"), Frame::Boolean(h.reachable));
             map.insert(
                 Bytes::from("latency_ms"),

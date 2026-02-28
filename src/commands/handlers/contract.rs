@@ -167,17 +167,17 @@ fn handle_validate(args: &[String]) -> Frame {
         .iter()
         .map(|e| Frame::bulk(format!("{}: {}", e.field, e.message)))
         .collect();
-    let warning_frames: Vec<Frame> = result.warnings.iter().map(|w| Frame::bulk(w.clone())).collect();
+    let warning_frames: Vec<Frame> = result
+        .warnings
+        .iter()
+        .map(|w| Frame::bulk(w.clone()))
+        .collect();
 
     Frame::array(vec![
         Frame::bulk("valid"),
         Frame::bulk(if result.valid { "true" } else { "false" }),
         Frame::bulk("contract"),
-        Frame::bulk(
-            result
-                .contract_name
-                .unwrap_or_else(|| "(none)".to_string()),
-        ),
+        Frame::bulk(result.contract_name.unwrap_or_else(|| "(none)".to_string())),
         Frame::bulk("errors"),
         Frame::array(error_frames),
         Frame::bulk("warnings"),

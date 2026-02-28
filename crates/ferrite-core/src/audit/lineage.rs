@@ -504,7 +504,9 @@ impl LineageGraph {
 
     /// Prune edges older than the given duration. Returns the number pruned.
     pub fn prune_old(&self, older_than: Duration) -> usize {
-        let cutoff = self.current_timestamp().saturating_sub(older_than.as_secs());
+        let cutoff = self
+            .current_timestamp()
+            .saturating_sub(older_than.as_secs());
         let mut edges = self.edges.write();
         let before = edges.len();
         edges.retain(|e| e.timestamp >= cutoff);

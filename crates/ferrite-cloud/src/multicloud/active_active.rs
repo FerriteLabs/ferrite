@@ -345,7 +345,10 @@ impl ActiveActiveManager {
     /// Get current synchronization status.
     pub fn sync_status(&self) -> SyncStatus {
         let peers = self.peers.read();
-        let connected = peers.values().filter(|p| p.state == PeerState::Connected).count();
+        let connected = peers
+            .values()
+            .filter(|p| p.state == PeerState::Connected)
+            .count();
         let pending = self.pending_queue.read().len() as u64;
         let max_lag = peers.values().map(|p| p.latency_ms).max().unwrap_or(0);
         let last_sync: HashMap<String, u64> = self

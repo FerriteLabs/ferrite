@@ -26,11 +26,11 @@ use std::collections::HashMap;
 use std::sync::OnceLock;
 
 use crate::protocol::Frame;
+use ferrite_ai::rag::chunking;
 use ferrite_ai::rag::{
     ChunkingStrategy, Document, DocumentId, EmbeddingProviderType, RagConfig, RagPipeline,
     SearchFilter,
 };
-use ferrite_ai::rag::chunking;
 
 use super::{err_frame, ok_frame, HandlerContext};
 
@@ -557,8 +557,7 @@ pub fn rag_chunk(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
                 if i + 1 >= args.len() {
                     return err_frame("STRATEGY requires a value");
                 }
-                strategy_override =
-                    Some(String::from_utf8_lossy(&args[i + 1]).to_uppercase());
+                strategy_override = Some(String::from_utf8_lossy(&args[i + 1]).to_uppercase());
                 i += 2;
             }
             "SIZE" => {
@@ -650,10 +649,7 @@ pub fn rag_chunk(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
         }
     };
 
-    let chunk_frames: Vec<Frame> = text_chunks
-        .into_iter()
-        .map(Frame::bulk)
-        .collect();
+    let chunk_frames: Vec<Frame> = text_chunks.into_iter().map(Frame::bulk).collect();
 
     Frame::array(vec![
         Frame::bulk(format!("strategy: {}", strategy_label)),

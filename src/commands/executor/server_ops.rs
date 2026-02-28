@@ -1468,9 +1468,8 @@ impl CommandExecutor {
         use std::sync::OnceLock;
 
         static MARKETPLACE: OnceLock<Marketplace> = OnceLock::new();
-        let mp = MARKETPLACE.get_or_init(|| {
-            Marketplace::with_builtin_catalog(MarketplaceConfig::default())
-        });
+        let mp = MARKETPLACE
+            .get_or_init(|| Marketplace::with_builtin_catalog(MarketplaceConfig::default()));
 
         match subcommand {
             "INSTALL" => {
@@ -1573,9 +1572,7 @@ impl CommandExecutor {
                                 .collect(),
                         )));
                         items.push(Frame::bulk("installed_at"));
-                        items.push(Frame::bulk(Bytes::from(
-                            plugin.installed_at.to_rfc3339(),
-                        )));
+                        items.push(Frame::bulk(Bytes::from(plugin.installed_at.to_rfc3339())));
                         Frame::Array(Some(items))
                     }
                     None => Frame::null(),
