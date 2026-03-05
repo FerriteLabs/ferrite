@@ -17,7 +17,7 @@
 //! │       ▼              ▼              ▼              ▼        │
 //! │  Model Mgmt    Auto-Batching   ONNX/TFLite    Dedup/TTL    │
 //! └─────────────────────────────────────────────────────────────┘
-//! ```
+//! ```ignore
 //!
 //! # Features
 //!

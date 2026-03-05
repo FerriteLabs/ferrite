@@ -1129,7 +1129,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite"
-version = "0.1.0"
+version = "0.3.0-dev"
 dependencies = [
  "anyhow",
  "argon2",
@@ -1211,7 +1211,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-ai"
-version = "0.1.0"
+version = "0.3.0-dev"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1240,7 +1240,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-cloud"
-version = "0.1.0"
+version = "0.3.0-dev"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1266,7 +1266,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-core"
-version = "0.1.0"
+version = "0.3.0-dev"
 dependencies = [
  "anyhow",
  "argon2",
@@ -1326,7 +1326,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-document"
-version = "0.1.0"
+version = "0.3.0-dev"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1350,7 +1350,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-enterprise"
-version = "0.1.0"
+version = "0.3.0-dev"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1374,7 +1374,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-graph"
-version = "0.1.0"
+version = "0.3.0-dev"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1397,7 +1397,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-k8s"
-version = "0.1.0"
+version = "0.3.0-dev"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1420,7 +1420,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-plugins"
-version = "0.1.0"
+version = "0.3.0-dev"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1448,7 +1448,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-search"
-version = "0.1.0"
+version = "0.3.0-dev"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1472,7 +1472,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-streaming"
-version = "0.1.0"
+version = "0.3.0-dev"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1500,7 +1500,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-studio"
-version = "0.1.0"
+version = "0.3.0-dev"
 dependencies = [
  "anyhow",
  "argon2",
@@ -1526,7 +1526,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-timeseries"
-version = "0.1.0"
+version = "0.3.0-dev"
 dependencies = [
  "anyhow",
  "async-trait",

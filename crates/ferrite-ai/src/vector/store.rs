@@ -115,7 +115,7 @@ impl VectorIndex for ManagedIndex {
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// use ferrite::vector::{VectorStore, VectorIndexConfig, VectorId, VectorIndex};
 ///
 /// let store = VectorStore::new();

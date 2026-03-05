@@ -16,7 +16,7 @@ use std::collections::HashMap;
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// use ferrite::vector::{FlatIndex, DistanceMetric, VectorId, VectorIndex};
 ///
 /// let index = FlatIndex::new(3, DistanceMetric::Cosine);

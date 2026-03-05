@@ -18,7 +18,7 @@
 //! │  Persistence   Sliding/Fixed   tiktoken/    Auto-Summarize │
 //! │                    Window       approx                      │
 //! └─────────────────────────────────────────────────────────────┘
-//! ```
+//! ```ignore
 //!
 //! # Features
 //!

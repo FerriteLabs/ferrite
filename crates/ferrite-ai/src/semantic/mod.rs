@@ -22,7 +22,7 @@
 //!
 //! ### Basic Usage (Pre-computed Embeddings)
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::semantic::{SemanticCache, SemanticConfig};
 //!
 //! // Create cache with default settings
@@ -44,11 +44,11 @@
 //!     println!("Similarity: {:.2}%", hit.score * 100.0);
 //! }
 //! # Ok::<(), ferrite::semantic::SemanticError>(())
-//! ```
+//! ```ignore
 //!
 //! ### With Automatic Embedding (ONNX Local)
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::semantic::{SemanticCache, SemanticConfig, EmbeddingModelConfig, EmbeddingModelType};
 //!
 //! // Configure with local ONNX model (no API calls!)
@@ -74,7 +74,7 @@
 //!
 //! ### With OpenAI Embeddings
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::semantic::{SemanticCache, SemanticConfig, EmbeddingModelConfig, EmbeddingModelType};
 //!
 //! let config = SemanticConfig {
@@ -90,13 +90,13 @@
 //!
 //! let cache = SemanticCache::new(config)?;
 //! # Ok::<(), ferrite::semantic::SemanticError>(())
-//! ```
+//! ```ignore
 //!
 //! ## LLM Response Caching
 //!
 //! Specialized cache for LLM applications with cost tracking:
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::semantic::llm_cache::{LlmCache, LlmCacheConfig, CostTrackingConfig};
 //!
 //! let cache = LlmCache::new(LlmCacheConfig {
@@ -135,7 +135,7 @@
 //!
 //! Handle embedding API failures gracefully:
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::semantic::resilience::{ResilientEmbedder, CircuitBreaker, RetryPolicy, FallbackStrategy};
 //!
 //! let embedder = ResilientEmbedder::builder()

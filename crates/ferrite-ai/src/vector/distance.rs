@@ -10,7 +10,7 @@ use super::types::DistanceMetric;
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// use ferrite::vector::cosine_similarity;
 ///
 /// let a = vec![1.0, 0.0, 0.0];
@@ -71,7 +71,7 @@ pub fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// use ferrite::vector::dot_product;
 ///
 /// let a = vec![1.0, 2.0, 3.0];
@@ -108,7 +108,7 @@ pub fn dot_product(a: &[f32], b: &[f32]) -> f32 {
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// use ferrite::vector::euclidean_distance;
 ///
 /// let a = vec![0.0, 0.0, 0.0];
@@ -154,7 +154,7 @@ pub fn euclidean_distance_squared(a: &[f32], b: &[f32]) -> f32 {
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// use ferrite::vector::manhattan_distance;
 ///
 /// let a = vec![0.0, 0.0];

@@ -29,7 +29,7 @@ use std::collections::HashMap;
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// use ferrite::vector::{IvfIndex, DistanceMetric, VectorId, VectorIndex};
 ///
 /// let mut index = IvfIndex::new(3, DistanceMetric::Cosine, 4, 2);

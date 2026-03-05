@@ -17,7 +17,7 @@
 //! │       ▼              ▼              ▼              ▼        │
 //! │  Similarity    Relationships   Entity Graph   Rich Context │
 //! └─────────────────────────────────────────────────────────────┘
-//! ```
+//! ```ignore
 //!
 //! # Features
 //!

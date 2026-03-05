@@ -7,6 +7,22 @@
 //! - Concurrent write conflicts
 //! - Resource exhaustion / stress
 //! - Clock and timing edge cases
+//!
+//! ## Running Ignored Tests
+//!
+//! Several tests are marked `#[ignore]` because they require a running Ferrite
+//! server or are long-running stress tests. To run them:
+//!
+//! ```bash
+//! # Run all ignored chaos tests (requires Ferrite server on default port)
+//! cargo test --test chaos_tests --release -- --ignored
+//!
+//! # Run a specific ignored test
+//! cargo test --test chaos_tests --release -- --ignored test_concurrent_write_conflicts_stress
+//! ```
+//!
+//! For the full Jepsen-style distributed testing environment, see
+//! `tests/jepsen/docker-compose.jepsen.yml`.
 
 use bytes::Bytes;
 use std::net::SocketAddr;

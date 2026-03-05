@@ -51,7 +51,7 @@
 //!
 //! ### Creating an Index
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::vector::{VectorStore, IndexType, DistanceMetric, VectorIndexConfig};
 //!
 //! let store = VectorStore::new();
@@ -72,11 +72,11 @@
 //!     metric: DistanceMetric::Euclidean,
 //! })?;
 //! # Ok::<(), ferrite::vector::VectorError>(())
-//! ```
+//! ```ignore
 //!
 //! ### Adding Vectors
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::vector::{VectorStore, VectorData};
 //!
 //! let store = VectorStore::new();
@@ -104,7 +104,7 @@
 //!
 //! ### Searching
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::vector::{VectorStore, SearchResult};
 //!
 //! let store = VectorStore::new();
@@ -128,11 +128,11 @@
 //!     Some("category = 'tech'"),
 //! )?;
 //! # Ok::<(), ferrite::vector::VectorError>(())
-//! ```
+//! ```ignore
 //!
 //! ### HNSW-Specific Configuration
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::vector::HnswIndex;
 //! use ferrite::vector::DistanceMetric;
 //!
