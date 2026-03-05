@@ -1,0 +1,324 @@
+# Feature Maturity Data — Machine-Readable Source of Truth
+#
+# This TOML file is the canonical source for feature maturity levels.
+# The markdown FEATURE_MATURITY.md is generated from this data.
+# Run: scripts/generate-feature-maturity.sh
+
+# ── Tier 1: Stable (✅) ──────────────────────────────────────────────────────
+
+[[features]]
+name = "Core Redis Commands"
+description = "GET, SET, DEL, EXPIRE, TTL, KEYS, SCAN, etc."
+tier = "stable"
+enable = "Default build"
+crate = "ferrite"
+graduated = "0.1.0"
+
+[[features]]
+name = "String Operations"
+description = "INCR, DECR, APPEND, STRLEN, GETRANGE, SETRANGE"
+tier = "stable"
+enable = "Default build"
+crate = "ferrite"
+graduated = "0.1.0"
+
+[[features]]
+name = "List Operations"
+description = "LPUSH, RPUSH, LPOP, RPOP, LRANGE, LLEN, etc."
+tier = "stable"
+enable = "Default build"
+crate = "ferrite"
+graduated = "0.1.0"
+
+[[features]]
+name = "Hash Operations"
+description = "HSET, HGET, HMSET, HMGET, HDEL, HGETALL, etc."
+tier = "stable"
+enable = "Default build"
+crate = "ferrite"
+graduated = "0.1.0"
+
+[[features]]
+name = "Set Operations"
+description = "SADD, SREM, SMEMBERS, SISMEMBER, SUNION, etc."
+tier = "stable"
+enable = "Default build"
+crate = "ferrite"
+graduated = "0.1.0"
+
+[[features]]
+name = "Sorted Set Operations"
+description = "ZADD, ZREM, ZSCORE, ZRANGE, ZRANGEBYSCORE, etc."
+tier = "stable"
+enable = "Default build"
+crate = "ferrite"
+graduated = "0.1.0"
+
+[[features]]
+name = "HyperLogLog"
+description = "PFADD, PFCOUNT, PFMERGE"
+tier = "stable"
+enable = "Default build"
+crate = "ferrite"
+graduated = "0.1.0"
+
+[[features]]
+name = "Pub/Sub"
+description = "SUBSCRIBE, UNSUBSCRIBE, PSUBSCRIBE, PUBLISH"
+tier = "stable"
+enable = "Default build"
+crate = "ferrite"
+graduated = "0.1.0"
+
+[[features]]
+name = "Transactions"
+description = "MULTI, EXEC, DISCARD, WATCH"
+tier = "stable"
+enable = "Default build"
+crate = "ferrite"
+graduated = "0.1.0"
+
+[[features]]
+name = "Lua Scripting"
+description = "EVAL, EVALSHA, SCRIPT"
+tier = "stable"
+enable = "--features scripting"
+crate = "ferrite"
+graduated = "0.1.0"
+
+[[features]]
+name = "RESP2/RESP3 Protocol"
+description = "Full wire compatibility"
+tier = "stable"
+enable = "Default build"
+crate = "ferrite-core"
+graduated = "0.1.0"
+
+[[features]]
+name = "AOF Persistence"
+description = "Write-ahead logging"
+tier = "stable"
+enable = "persistence.aof_enabled = true"
+crate = "ferrite-core"
+graduated = "0.1.0"
+
+[[features]]
+name = "Prometheus Metrics"
+description = "/metrics endpoint"
+tier = "stable"
+enable = "metrics.enabled = true"
+crate = "ferrite-core"
+graduated = "0.1.0"
+
+[[features]]
+name = "Embedded Mode"
+description = "Library usage without server"
+tier = "stable"
+enable = "Use as dependency"
+crate = "ferrite-core"
+graduated = "0.1.0"
+
+[[features]]
+name = "TLS"
+description = "TLS 1.2/1.3 connections"
+tier = "stable"
+enable = "--features tls (default)"
+crate = "ferrite"
+graduated = "0.1.0"
+
+[[features]]
+name = "ACLs"
+description = "Fine-grained access control"
+tier = "stable"
+enable = "auth.enabled = true"
+crate = "ferrite-core"
+graduated = "0.1.0"
+
+[[features]]
+name = "HybridLog Storage"
+description = "Three-tier storage engine"
+tier = "stable"
+enable = "storage.backend = \"hybridlog\""
+crate = "ferrite-core"
+graduated = "0.2.0"
+
+[[features]]
+name = "Replication"
+description = "Primary-replica sync with PSYNC2"
+tier = "stable"
+enable = "Config-driven"
+crate = "ferrite"
+graduated = "0.2.0"
+
+[[features]]
+name = "Geo Commands"
+description = "GEOADD, GEODIST, GEOSEARCH, GEOSEARCHSTORE"
+tier = "stable"
+enable = "Default build"
+crate = "ferrite"
+graduated = "0.1.0"
+
+[[features]]
+name = "Bitmap/Bitfield"
+description = "BITFIELD, BITFIELD_RO with overflow control"
+tier = "stable"
+enable = "Default build"
+crate = "ferrite"
+graduated = "0.1.0"
+
+[[features]]
+name = "Stream Operations"
+description = "XADD, XREAD, XREADGROUP, XAUTOCLAIM, etc."
+tier = "stable"
+enable = "Default build"
+crate = "ferrite"
+graduated = "0.1.0"
+
+# ── Tier 2: Beta (🧪) ────────────────────────────────────────────────────────
+
+[[features]]
+name = "Vector Search"
+description = "HNSW/IVF/Flat indexes"
+tier = "beta"
+enable = "Default build"
+crate = "ferrite-ai"
+target_graduation = "0.3.0"
+
+[[features]]
+name = "CDC / Event Streaming"
+description = "Change data capture"
+tier = "beta"
+enable = "Default build"
+crate = "ferrite-streaming"
+target_graduation = "0.3.0"
+
+[[features]]
+name = "CRDTs"
+description = "Conflict-free replicated types"
+tier = "beta"
+enable = "Default build"
+crate = "ferrite-plugins"
+
+[[features]]
+name = "Cluster Mode"
+description = "Hash slot sharding"
+tier = "beta"
+enable = "cluster.enabled = true"
+crate = "ferrite-core"
+target_graduation = "0.3.0"
+
+[[features]]
+name = "OpenTelemetry"
+description = "Distributed tracing"
+tier = "beta"
+enable = "--features otel"
+crate = "ferrite-core"
+target_graduation = "0.3.0"
+
+[[features]]
+name = "TUI Dashboard"
+description = "Terminal monitoring UI"
+tier = "beta"
+enable = "--features tui"
+crate = "ferrite"
+
+[[features]]
+name = "io_uring I/O"
+description = "Linux async I/O"
+tier = "beta"
+enable = "--features io-uring (Linux 5.11+)"
+crate = "ferrite-core"
+
+[[features]]
+name = "Full-Text Search"
+description = "Faceted search with highlighting"
+tier = "beta"
+enable = "Default build"
+crate = "ferrite-search"
+target_graduation = "0.3.0"
+
+[[features]]
+name = "Time Series"
+description = "Time-series ingestion/query"
+tier = "beta"
+enable = "Default build"
+crate = "ferrite-timeseries"
+
+# ── Tier 3: Experimental (🔬) ────────────────────────────────────────────────
+
+[[features]]
+name = "FerriteQL"
+description = "SQL-like query language"
+tier = "experimental"
+enable = "Default build"
+crate = "ferrite-core"
+
+[[features]]
+name = "Time-Travel Queries"
+description = "GET key AS OF -1h"
+tier = "experimental"
+enable = "Default build"
+crate = "ferrite-core"
+
+[[features]]
+name = "Semantic Caching"
+description = "Cache by meaning"
+tier = "experimental"
+enable = "Default build"
+crate = "ferrite-ai"
+
+[[features]]
+name = "Programmable Triggers"
+description = "Event-driven functions"
+tier = "experimental"
+enable = "Default build"
+crate = "ferrite-core"
+
+[[features]]
+name = "WASM User Functions"
+description = "Custom WASM modules"
+tier = "experimental"
+enable = "--features wasm"
+crate = "ferrite-plugins"
+
+[[features]]
+name = "ONNX Embeddings"
+description = "Local ML inference"
+tier = "experimental"
+enable = "--features onnx"
+crate = "ferrite-ai"
+
+[[features]]
+name = "Multi-Tenancy"
+description = "Tenant isolation"
+tier = "experimental"
+enable = "--features experimental"
+crate = "ferrite-enterprise"
+
+[[features]]
+name = "Kubernetes Operator"
+description = "CRD-based management"
+tier = "experimental"
+enable = "--features experimental"
+crate = "ferrite-k8s"
+
+[[features]]
+name = "Ferrite Studio"
+description = "Web management UI"
+tier = "experimental"
+enable = "--features experimental"
+crate = "ferrite-studio"
+
+[[features]]
+name = "Document Store"
+description = "MongoDB-compatible JSON"
+tier = "experimental"
+enable = "--features experimental"
+crate = "ferrite-document"
+
+[[features]]
+name = "Graph Database"
+description = "Property graphs"
+tier = "experimental"
+enable = "--features experimental"
+crate = "ferrite-graph"

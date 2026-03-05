@@ -1,0 +1,123 @@
+# Jepsen-Style Distributed Testing Environment
+#
+# Three Ferrite nodes + toxiproxy for fault injection + test runner.
+#
+# Usage:
+#   docker compose -f docker-compose.jepsen.yml up -d
+#   docker compose -f docker-compose.jepsen.yml exec runner cargo test --test jepsen_integration --release
+#
+# Architecture:
+#   [test-runner] → [toxiproxy] → [ferrite-1 (primary)]
+#                                → [ferrite-2 (replica)]
+#                                → [ferrite-3 (replica)]
+#
+# Fault injection via toxiproxy API (port 8474):
+#   - Network partitions: disable/enable proxy
+#   - Latency injection: add latency toxic
+#   - Packet loss: add bandwidth toxic
+
+services:
+  # ── Ferrite Node 1 (Primary) ──────────────────────────────────────────────
+  ferrite-1:
+    image: ferritelabs/ferrite:latest
+    hostname: ferrite-1
+    command: ["ferrite", "--port", "6379", "--bind", "0.0.0.0"]
+    ports:
+      - "6379:6379"
+    networks:
+      jepsen-net:
+        ipv4_address: 172.28.0.10
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "PING"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+  # ── Ferrite Node 2 (Replica) ──────────────────────────────────────────────
+  ferrite-2:
+    image: ferritelabs/ferrite:latest
+    hostname: ferrite-2
+    command: ["ferrite", "--port", "6379", "--bind", "0.0.0.0"]
+    ports:
+      - "6380:6379"
+    networks:
+      jepsen-net:
+        ipv4_address: 172.28.0.11
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "PING"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+  # ── Ferrite Node 3 (Replica) ──────────────────────────────────────────────
+  ferrite-3:
+    image: ferritelabs/ferrite:latest
+    hostname: ferrite-3
+    command: ["ferrite", "--port", "6379", "--bind", "0.0.0.0"]
+    ports:
+      - "6381:6379"
+    networks:
+      jepsen-net:
+        ipv4_address: 172.28.0.12
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "PING"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+  # ── Toxiproxy (Fault Injection) ───────────────────────────────────────────
+  toxiproxy:
+    image: ghcr.io/shopify/toxiproxy:2.9.0
+    hostname: toxiproxy
+    ports:
+      - "8474:8474"   # Toxiproxy API
+      - "16379:16379"  # Proxy → ferrite-1
+      - "16380:16380"  # Proxy → ferrite-2
+      - "16381:16381"  # Proxy → ferrite-3
+    networks:
+      jepsen-net:
+        ipv4_address: 172.28.0.20
+    depends_on:
+      ferrite-1:
+        condition: service_healthy
+      ferrite-2:
+        condition: service_healthy
+      ferrite-3:
+        condition: service_healthy
+
+  # ── Toxiproxy Initialization ──────────────────────────────────────────────
+  toxiproxy-init:
+    image: curlimages/curl:8.5.0
+    depends_on:
+      - toxiproxy
+    networks:
+      - jepsen-net
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        sleep 2
+        echo "Configuring toxiproxy proxies..."
+        curl -s -X POST http://toxiproxy:8474/proxies -d '{
+          "name": "ferrite-1",
+          "listen": "0.0.0.0:16379",
+          "upstream": "ferrite-1:6379"
+        }' && echo " -> ferrite-1 proxy created"
+        curl -s -X POST http://toxiproxy:8474/proxies -d '{
+          "name": "ferrite-2",
+          "listen": "0.0.0.0:16380",
+          "upstream": "ferrite-2:6379"
+        }' && echo " -> ferrite-2 proxy created"
+        curl -s -X POST http://toxiproxy:8474/proxies -d '{
+          "name": "ferrite-3",
+          "listen": "0.0.0.0:16381",
+          "upstream": "ferrite-3:6379"
+        }' && echo " -> ferrite-3 proxy created"
+        echo "Toxiproxy ready."
+
+networks:
+  jepsen-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
