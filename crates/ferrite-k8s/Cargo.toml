@@ -13,7 +13,6 @@ keywords = ["kubernetes", "operator", "k8s", "cloud-native", "ferrite"]
 categories = ["database"]
 
 [lib]
-doctest = false
 
 [lints]
 workspace = true

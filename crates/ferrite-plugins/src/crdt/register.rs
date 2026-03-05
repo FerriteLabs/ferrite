@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// use ferrite::crdt::{LwwRegister, HybridTimestamp, SiteId};
 ///
 /// let site = SiteId::new(1);
@@ -110,7 +110,7 @@ impl<T: Eq> Eq for LwwRegister<T> {}
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// use ferrite::crdt::{MvRegister, VectorClock, SiteId};
 ///
 /// let site1 = SiteId::new(1);

@@ -11,7 +11,7 @@ use std::collections::HashMap;
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// use ferrite::crdt::{GCounter, SiteId};
 ///
 /// let site1 = SiteId::new(1);
@@ -89,7 +89,7 @@ impl Eq for GCounter {}
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// use ferrite::crdt::{PNCounter, SiteId};
 ///
 /// let site = SiteId::new(1);

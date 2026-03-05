@@ -17,7 +17,7 @@
 //! │       ▼              ▼              ▼              ▼        │
 //! │  Path Parsing   Credentials    CRUD Ops      Ferrite KV    │
 //! └─────────────────────────────────────────────────────────────┘
-//! ```
+//! ```ignore
 //!
 //! # Features
 //!

@@ -27,13 +27,13 @@
 //!               │   Kafka   │              │  Webhook  │              │    S3     │
 //!               │   Sink    │              │   Sink    │              │   Sink    │
 //!               └───────────┘              └───────────┘              └───────────┘
-//! ```
+//! ```ignore
 //!
 //! ## Quick Start
 //!
 //! ### Subscribe to Changes
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::cdc::{CdcEngine, SubscribeOptions, OutputFormat, DeliveryMode};
 //!
 //! #[tokio::main]
@@ -59,7 +59,7 @@
 //!
 //! ### Configure Kafka Sink
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::cdc::{SinkManager, SinkConfig, SinkType, KafkaSinkConfig};
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
@@ -81,11 +81,11 @@
 //! }).await?;
 //! # Ok(())
 //! # }
-//! ```
+//! ```ignore
 //!
 //! ### Configure HTTP Webhook
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::cdc::{SinkManager, SinkConfig, SinkType, HttpSinkConfig};
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {

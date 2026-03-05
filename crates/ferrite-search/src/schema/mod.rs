@@ -21,7 +21,7 @@
 //!
 //! ### Define a Schema
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::schema::{Schema, SchemaField, FieldType, SchemaRegistry};
 //!
 //! // Create a schema for user documents
@@ -37,11 +37,11 @@
 //! // Register the schema
 //! let registry = SchemaRegistry::new();
 //! registry.register(user_schema)?;
-//! ```
+//! ```ignore
 //!
 //! ### Evolve a Schema
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::schema::{SchemaEvolution, EvolutionStrategy, FieldChange};
 //!
 //! // Define schema evolution from v1 to v2
@@ -58,7 +58,7 @@
 //!
 //! ### Automatic Schema Inference
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::schema::SchemaInferrer;
 //!
 //! // Infer schema from existing data

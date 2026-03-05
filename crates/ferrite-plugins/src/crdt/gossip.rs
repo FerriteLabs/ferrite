@@ -21,7 +21,7 @@
 //!
 //! # Example
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite_plugins::crdt::gossip::{GossipProtocol, GossipConfig};
 //! use ferrite_plugins::crdt::CrdtType;
 //!

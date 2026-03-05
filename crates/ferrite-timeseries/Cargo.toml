@@ -12,7 +12,6 @@ keywords = ["timeseries", "metrics", "downsampling", "iot", "ferrite"]
 categories = ["database"]
 
 [lib]
-doctest = false
 
 [lints]
 workspace = true

@@ -12,7 +12,6 @@ keywords = ["plugin", "wasm", "crdt", "extensible", "ferrite"]
 categories = ["database", "wasm"]
 
 [lib]
-doctest = false
 
 [lints]
 workspace = true

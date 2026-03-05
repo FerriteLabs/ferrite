@@ -19,11 +19,11 @@
 //! │  │Resolver  ││    │  │Resolver  ││    │  │Resolver  ││
 //! │  └──────────┘│    │  └──────────┘│    │  └──────────┘│
 //! └──────────────┘     └──────────────┘     └──────────────┘
-//! ```
+//! ```ignore
 //!
 //! # Example
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::crdt::geo_replication::{GeoReplicator, GeoConfig, RegionInfo, ConflictPolicy};
 //!
 //! let config = GeoConfig {

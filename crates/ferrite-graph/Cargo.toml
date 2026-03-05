@@ -12,7 +12,6 @@ keywords = ["graph", "database", "traversal", "cypher", "ferrite"]
 categories = ["database", "data-structures"]
 
 [lib]
-doctest = false
 
 [lints]
 workspace = true

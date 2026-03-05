@@ -47,7 +47,7 @@
 //!
 //! ### PNCounter (Positive-Negative Counter)
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::crdt::{PNCounter, SiteId};
 //!
 //! // Each datacenter has a unique site ID
@@ -69,11 +69,11 @@
 //! // Merge again (idempotent - no change)
 //! counter_us.merge(&counter_eu);
 //! assert_eq!(counter_us.value(), 75);
-//! ```
+//! ```ignore
 //!
 //! ### LwwRegister (Last-Writer-Wins Register)
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::crdt::{LwwRegister, HybridTimestamp};
 //!
 //! // User updates profile from two devices
@@ -93,7 +93,7 @@
 //!
 //! ### OrSet (Observed-Remove Set)
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::crdt::{OrSet, SiteId};
 //!
 //! let site1 = SiteId::new(1);
@@ -119,11 +119,11 @@
 //! tags1.remove("database", site1);
 //! tags1.merge(&tags2);  // site2's "database" still exists
 //! assert!(tags1.contains("database"));  // Re-added by site2
-//! ```
+//! ```ignore
 //!
 //! ### OrMap (Observed-Remove Map)
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::crdt::{OrMap, SiteId, CrdtValue};
 //!
 //! let site1 = SiteId::new(1);
@@ -163,13 +163,13 @@
 //!
 //! # Sync state between sites
 //! CRDT.SYNC inventory:item123 <encoded_state>
-//! ```
+//! ```ignore
 //!
 //! ## Hybrid Logical Clocks
 //!
 //! Ferrite uses Hybrid Logical Clocks (HLC) for causality tracking:
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::crdt::{HybridClock, HybridTimestamp};
 //!
 //! // Each node maintains a hybrid clock

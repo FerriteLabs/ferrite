@@ -18,7 +18,7 @@
 //!
 //! ## Quick Start
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::routing::{QueryRouter, RoutingStrategy, QueryHint};
 //!
 //! let router = QueryRouter::new(config);

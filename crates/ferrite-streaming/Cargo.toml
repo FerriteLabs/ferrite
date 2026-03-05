@@ -12,7 +12,6 @@ keywords = ["streaming", "cdc", "events", "pipeline", "ferrite"]
 categories = ["database", "asynchronous"]
 
 [lib]
-doctest = false
 
 [lints]
 workspace = true

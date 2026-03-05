@@ -13,7 +13,6 @@ keywords = ["multi-tenancy", "governance", "enterprise", "audit", "ferrite"]
 categories = ["database"]
 
 [lib]
-doctest = false
 
 [lints]
 workspace = true

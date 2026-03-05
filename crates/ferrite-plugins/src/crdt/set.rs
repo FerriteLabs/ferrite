@@ -15,7 +15,7 @@ use std::hash::Hash;
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// use ferrite::crdt::{OrSet, SiteId};
 /// use bytes::Bytes;
 ///
@@ -139,7 +139,7 @@ impl<T: Hash + Eq + Clone> Eq for OrSet<T> {}
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// use ferrite::crdt::{LwwElementSet, HybridTimestamp, SiteId};
 /// use bytes::Bytes;
 ///

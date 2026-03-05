@@ -12,7 +12,6 @@ keywords = ["cloud", "s3", "storage", "serverless", "ferrite"]
 categories = ["database", "filesystem"]
 
 [lib]
-doctest = false
 
 [lints]
 workspace = true

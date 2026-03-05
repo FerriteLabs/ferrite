@@ -22,7 +22,7 @@
 //!
 //! # Example
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite_plugins::crdt::region_coordinator::{
 //!     RegionCoordinator, RegionConfig, RegionInfo, RemoteRegion,
 //!     ConflictPolicy, ConnectionStatus,

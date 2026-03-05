@@ -13,7 +13,6 @@ keywords = ["dashboard", "ui", "playground", "management", "ferrite"]
 categories = ["database", "web-programming"]
 
 [lib]
-doctest = false
 
 [lints]
 workspace = true

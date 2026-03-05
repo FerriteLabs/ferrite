@@ -27,7 +27,7 @@
 //!
 //! ### Creating a Graph
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::graph::{Graph, PropertyValue};
 //!
 //! let graph = Graph::new();
@@ -69,11 +69,11 @@
 //!     graph.edge_count()
 //! );
 //! # Ok::<(), ferrite::graph::GraphError>(())
-//! ```
+//! ```ignore
 //!
 //! ### Graph Traversals
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::graph::Graph;
 //!
 //! let graph = Graph::new();
@@ -102,7 +102,7 @@
 //!
 //! ### Pattern Matching
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::graph::{Graph, Pattern, PatternMatcher};
 //!
 //! let graph = Graph::new();
@@ -130,11 +130,11 @@
 //!         c.properties.get("name").expect("name property missing")
 //!     );
 //! }
-//! ```
+//! ```ignore
 //!
 //! ### Graph Algorithms
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::graph::Graph;
 //!
 //! let graph = Graph::new();
@@ -200,11 +200,11 @@
 //!
 //! # Graph statistics
 //! GRAPH.INFO mygraph
-//! ```
+//! ```ignore
 //!
 //! ## Property Indexes
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::graph::{Graph, PropertyValue};
 //!
 //! let graph = Graph::new();
@@ -228,7 +228,7 @@
 //!
 //! FerriteGraph supports a Cypher-like query language:
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::graph::Graph;
 //!
 //! let graph = Graph::new();

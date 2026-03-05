@@ -12,7 +12,6 @@ keywords = ["search", "full-text", "indexing", "query", "ferrite"]
 categories = ["database", "text-processing"]
 
 [lib]
-doctest = false
 
 [lints]
 workspace = true

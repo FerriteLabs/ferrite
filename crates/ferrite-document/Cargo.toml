@@ -12,7 +12,6 @@ keywords = ["document", "json", "nosql", "query", "ferrite"]
 categories = ["database", "data-structures"]
 
 [lib]
-doctest = false
 
 [lints]
 workspace = true

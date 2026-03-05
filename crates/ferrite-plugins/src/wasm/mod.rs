@@ -32,13 +32,13 @@
 //! │  │   ferrite_get()  ferrite_set()  ferrite_hget()  ...      │   │
 //! │  └──────────────────────────────────────────────────────────┘   │
 //! └─────────────────────────────────────────────────────────────────┘
-//! ```
+//! ```ignore
 //!
 //! ## Quick Start
 //!
 //! ### Loading a WASM Function
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::wasm::{FunctionRegistry, FunctionMetadata, FunctionPermissions, ResourceLimits};
 //!
 //! # fn example() -> Result<(), Box<dyn std::error::Error>> {
@@ -73,7 +73,7 @@
 //!
 //! ### Calling a WASM Function
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::wasm::{FunctionRegistry, WasmValue};
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
@@ -190,11 +190,11 @@
 //!
 //! # Get execution stats
 //! FUNCTION.STATS myfunction
-//! ```
+//! ```ignore
 //!
 //! ## Security Model
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::wasm::{FunctionPermissions, SecurityConfig, DefaultPermissionLevel};
 //!
 //! // Minimal permissions for a validation function
@@ -215,7 +215,7 @@
 //!
 //! ## Resource Limits
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::wasm::ResourceLimits;
 //!
 //! let limits = ResourceLimits {
@@ -228,13 +228,13 @@
 //! // - Simple ops (add, load): 1 fuel
 //! // - Memory ops: 1-10 fuel
 //! // - Host calls: 100-1000 fuel
-//! ```
+//! ```ignore
 //!
 //! ## Instance Pooling
 //!
 //! Pre-warm instances for low latency:
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::wasm::{WasmConfig, PoolConfig};
 //!
 //! let config = WasmConfig {

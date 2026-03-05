@@ -19,7 +19,7 @@
 //!    │ Node A  │    │  Node B   │    │  Node C    │
 //!    │ us-east │    │  eu-west  │    │  ap-south  │
 //!    └─────────┘    └───────────┘    └────────────┘
-//! ```
+//! ```ignore
 //!
 //! # Example
 //!

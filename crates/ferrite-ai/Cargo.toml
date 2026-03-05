@@ -12,7 +12,6 @@ keywords = ["vector", "embeddings", "rag", "semantic", "ferrite"]
 categories = ["database", "science"]
 
 [lib]
-doctest = false
 
 [lints]
 workspace = true

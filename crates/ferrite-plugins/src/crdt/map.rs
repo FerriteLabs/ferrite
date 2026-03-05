@@ -14,7 +14,7 @@ use std::collections::{HashMap, HashSet};
 ///
 /// # Example
 ///
-/// ```
+/// ```ignore
 /// use ferrite::crdt::{OrMap, SiteId, HybridTimestamp};
 /// use bytes::Bytes;
 ///
