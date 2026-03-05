@@ -9,17 +9,17 @@ For the live feature status of every capability, see [Feature Maturity](docs/FEA
 
 ## Release Timeline
 
-### v0.2.0 — Core Hardening
+### v0.2.0 — Core Hardening *(Released 2026-02-28)*
 
 Focus: production-readiness of the foundational feature set.
 
-- [ ] Enforce `clippy::unwrap_used = "deny"` across the workspace (eliminate ~1,300 production unwraps)
-- [ ] Increase unit test coverage for `ferrite-core` (target: >70%)
-- [ ] Graduate **HybridLog Storage** from 🧪 Beta → ✅ Stable
-- [ ] Graduate **Replication** (primary-replica with PSYNC2) from 🧪 Beta → ✅ Stable
-- [ ] Publish Redis compatibility percentage from TCL test suite
-- [ ] First `crates.io` release (`cargo install ferrite`)
-- [ ] Publish benchmark comparison report (vs Redis, Dragonfly, KeyDB)
+- [x] Enforce `clippy::unwrap_used = "deny"` across the workspace
+- [x] Increase unit test coverage for `ferrite-core` (target: >70%)
+- [x] Graduate **HybridLog Storage** from 🧪 Beta → ✅ Stable
+- [x] Graduate **Replication** (primary-replica with PSYNC2) from 🧪 Beta → ✅ Stable
+- [x] Publish Redis compatibility percentage from TCL test suite (~92%)
+- [x] First `crates.io` release (`cargo install ferrite`)
+- [x] Publish benchmark comparison report (vs Redis, Dragonfly, KeyDB)
 
 ### v0.3.0 — Enterprise & Observability
 

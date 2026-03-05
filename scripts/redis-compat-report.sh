@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# redis-compat-report.sh — Live integration compatibility report
+#
 # Generate a Markdown Redis-compatibility report for Ferrite
 #
 # Starts a Ferrite server, tests individual Redis commands across every major

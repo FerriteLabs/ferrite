@@ -40,7 +40,6 @@ More test coverage and real-world benchmarks help everyone. See `cargo test` and
 |---------|------|
 | **GitHub Discussions** | [FerriteLabs/ferrite/discussions](https://github.com/FerriteLabs/ferrite/discussions) |
 | **GitHub Issues** | [FerriteLabs/ferrite/issues](https://github.com/FerriteLabs/ferrite/issues) |
-| **Discord** | _Coming soon — watch this space!_ |
 
 For security vulnerabilities, please email **security@ferritelabs.dev** instead of opening a public issue.
 

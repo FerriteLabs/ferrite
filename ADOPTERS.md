@@ -21,7 +21,7 @@ Please include:
 
 | Organization | Use Case | Since |
 |-------------|----------|-------|
-| | | |
+| *Be the first!* | [Add your org →](https://github.com/ferritelabs/ferrite/edit/main/ADOPTERS.md) | |
 
 ## Evaluation / Development
 
@@ -29,6 +29,7 @@ Please include:
 
 | Organization | Use Case | Since |
 |-------------|----------|-------|
+| *Be the first!* | [Add your org →](https://github.com/ferritelabs/ferrite/edit/main/ADOPTERS.md) | |
 | | | |
 
 ## Personal / Open Source Projects

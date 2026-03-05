@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- 5 new Grafana dashboards: Memory Tiers, Query Performance, Cluster & Replication, CDC & Streaming, Vector Search & AI
+- 7 new Prometheus alert rules: vector index stalled, CDC consumer lag, tier promotion spike, disk I/O latency, memory fragmentation, split-brain detection, backup overdue
+- 6 operational runbooks: high-memory, high-latency, replication-lag, cluster-failure, backup-failure, disk-full
+- Grafana provisioning configs for auto-loading dashboards and datasources
+- CI/CD workflows for Rust SDK (crates.io) and Node.js SDK (npm)
+- SDK integration test harness with Docker Compose and cross-language test runner
+- Docker Hub publishing support in release workflow with smoke testing
+- Tiered storage benchmark script for hot/warm/cold tier performance measurement
+- Persistence impact benchmark script (AOF-always vs AOF-everysec vs no-persist)
+- Hardware attestation script for benchmark reproducibility
+- Zipfian and batch-ops scenarios in benchmark harness
+- LangChain integration guide with LLM caching, vector store, and RAG pipeline examples
+- LlamaIndex integration guide with vector store and query engine examples
+- "Ferrite for AI" landing page on documentation site
+- Redis-to-Ferrite migration playbook (8-phase operational guide)
+- Redis Cluster migration guide for existing cluster deployments
+- Jepsen Docker test environment with toxiproxy fault injection
+- DEVELOPMENT.md with local dev workflow, debugging tips, and test guidance
+- Local fuzzing guide in CONTRIBUTING.md
+- CI pipeline documentation for contributors
+
+### Changed
+- Redis compatibility documentation updated from ~72% to ~92% (corrected 40+ stale entries)
+- REDIS_COMPAT.md summary updated to reflect actual implementation status
+- README.md badge updated from 72% to 92% compatibility
+- Configuration reference enhanced with hot-reload and restart-required matrix
+- Error reference enhanced with complete FerriteError→RESP mapping (27 variants)
+- Monitoring docs updated with dashboard descriptions and alert rule summaries
+- HybridLog internals docs updated with Mermaid architecture diagram
+- Added experimental/beta feature banners to 11 documentation pages
+- Homebrew formula: fixed broken depends_on line, enabled Linux x86_64 bottle, cleaned TODOs
+- Benchmark docker-compose: pinned Redis image to 7.4.2-alpine
+- Clarified duplicate compat scripts with descriptive headers
+
+### Fixed
+- Homebrew formula broken `depends_on` line (concatenated with comment)
+- COMMUNITY.md removed dead Discord "Coming soon" placeholder
+- SECURITY.md replaced vague email guidance with explicit security@ferritelabs.dev
+
 ## [0.2.0] - 2026-02-28
 
 *Core Hardening — see [ROADMAP.md](ROADMAP.md) for details.*
@@ -88,7 +128,6 @@ Initial release targeting feature parity with Redis core functionality.
 - TLS 1.2/1.3 support for encrypted connections
 - Secure password hashing with Argon2
 
-[Unreleased]: https://github.com/ferritelabs/ferrite/compare/v0.1.0...HEAD
-[0.3.0]: https://github.com/ferritelabs/ferrite/milestone/3
-[0.2.0]: https://github.com/ferritelabs/ferrite/milestone/2
+[Unreleased]: https://github.com/ferritelabs/ferrite/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/ferritelabs/ferrite/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ferritelabs/ferrite/releases/tag/v0.1.0

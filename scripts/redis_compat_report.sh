@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# redis_compat_report.sh — Unit-test-based compatibility report
+#
 # Parse Rust test output from the Redis compatibility test suite and generate
 # a Markdown compatibility report with pass/fail/skip percentages.
 #

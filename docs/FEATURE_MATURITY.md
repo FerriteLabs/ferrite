@@ -26,6 +26,11 @@ Production-ready features with comprehensive tests and stable APIs.
 | Embedded Mode | Library usage without server | Use as dependency |
 | TLS | TLS 1.2/1.3 connections | `--features tls` (default) |
 | ACLs | Fine-grained access control | `auth.enabled = true` |
+| HybridLog Storage | Three-tier storage engine (graduated v0.2.0) | `storage.backend = "hybridlog"` |
+| Replication | Primary-replica sync with PSYNC2 (graduated v0.2.0) | Config-driven |
+| Geo Commands | GEOADD, GEODIST, GEOSEARCH, GEOSEARCHSTORE | Default build |
+| Bitmap/Bitfield | BITFIELD, BITFIELD_RO with overflow control | Default build |
+| Stream Operations | XADD, XREAD, XREADGROUP, XAUTOCLAIM, etc. | Default build |
 
 ## Tier 2: Beta (🧪)
 
@@ -33,12 +38,10 @@ Feature-complete but still undergoing testing. APIs may change.
 
 | Feature | Description | How to Enable |
 |---------|-------------|---------------|
-| HybridLog Storage | Three-tier storage engine | `storage.backend = "hybridlog"` |
 | Vector Search | HNSW/IVF/Flat indexes | Default build |
 | CDC / Event Streaming | Change data capture | Default build |
 | CRDTs | Conflict-free replicated types | Default build |
 | Cluster Mode | Hash slot sharding | `cluster.enabled = true` |
-| Replication | Primary-replica sync | Config-driven |
 | OpenTelemetry | Distributed tracing | `--features otel` |
 | TUI Dashboard | Terminal monitoring UI | `--features tui` |
 | io_uring I/O | Linux async I/O | `--features io-uring` (Linux 5.11+) |
@@ -69,7 +72,7 @@ Each maturity tier maps to specific Cargo feature flags in the top-level `Cargo.
 
 | Cargo Feature | Included Crates / Capabilities | Tier |
 |---------------|-------------------------------|------|
-| *(default)* | `scripting`, `tls`, `cloud`, `crypto`, `cli` | Tier 1 |
+| *(default)* | `tls`, `cli` | Tier 1 |
 | `scripting` | Lua scripting (`mlua`) | Tier 1 |
 | `tls` | TLS support (`rustls`, `tokio-rustls`) | Tier 1 |
 | `cloud` | `ferrite-cloud`, cloud storage backends | Tier 2 |

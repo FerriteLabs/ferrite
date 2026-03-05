@@ -38,6 +38,23 @@ jobs:
         run: cargo clippy --workspace --all-targets --all-features -- -D warnings
         timeout-minutes: 15
 
+  chaos-tests:
+    name: Chaos & Stress Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: nightly-chaos
+
+      - name: Run ignored chaos tests (stress + server tests)
+        run: cargo test --test chaos_tests --release -- --ignored
+        timeout-minutes: 20
+
   msrv-check:
     name: MSRV Verification
     runs-on: ubuntu-latest
@@ -54,3 +71,60 @@ jobs:
       - name: Check MSRV
         run: cargo check --workspace
         timeout-minutes: 15
+
+  mutation-testing:
+    name: Mutation Testing (ferrite-core)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: nightly-mutants
+
+      - name: Install cargo-mutants
+        run: cargo install cargo-mutants --locked
+
+      - name: Run mutation testing on ferrite-core
+        run: |
+          cargo mutants \
+            --package ferrite-core \
+            --timeout 120 \
+            --jobs 4 \
+            --output mutants-output \
+            -- --lib
+        timeout-minutes: 60
+
+      - name: Upload mutation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-report
+          path: mutants-output/
+          retention-days: 14
+
+      - name: Report mutation score
+        if: always()
+        run: |
+          if [ -f mutants-output/outcomes.json ]; then
+            echo "## Mutation Testing Results" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            python3 -c "
+          import json
+          with open('mutants-output/outcomes.json') as f:
+              data = json.load(f)
+          total = len(data.get('outcomes', []))
+          caught = sum(1 for o in data.get('outcomes', []) if o.get('scenario', {}).get('mutant_outcome') in ['CaughtMutant', 'Timeout'])
+          missed = sum(1 for o in data.get('outcomes', []) if o.get('scenario', {}).get('mutant_outcome') == 'MissedMutant')
+          score = (caught / total * 100) if total > 0 else 0
+          print(f'| Metric | Value |')
+          print(f'|--------|-------|')
+          print(f'| Total mutants | {total} |')
+          print(f'| Caught | {caught} |')
+          print(f'| Missed | {missed} |')
+          print(f'| **Score** | **{score:.1f}%** |')
+          " >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || echo "Could not parse outcomes.json"
+          fi

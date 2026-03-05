@@ -13,7 +13,7 @@ A high-performance, tiered-storage key-value store designed as a drop-in Redis r
 [![MSRV](https://img.shields.io/crates/msrv/ferrite?label=MSRV)](https://crates.io/crates/ferrite)
 [![Rust](https://img.shields.io/badge/rust-1.80%2B-orange)](https://www.rust-lang.org/)
 [![codecov](https://codecov.io/gh/ferritelabs/ferrite/branch/main/graph/badge.svg)](https://codecov.io/gh/ferritelabs/ferrite)
-[![Redis Compat](https://img.shields.io/badge/Redis%20Compat-72%25-yellow)](docs/REDIS_COMPAT.md)
+[![Redis Compat](https://img.shields.io/badge/Redis%20Compat-92%25-brightgreen)](docs/REDIS_COMPAT.md)
 
 ## Quick Start (60 seconds)
 
@@ -85,7 +85,7 @@ The rest of this README dives deeper into features, architecture, and operations
 
 These features are **stable and tested** — you can use them right now:
 
-- **Full Redis Protocol**: Wire-compatible RESP2/RESP3 ([~72% Redis test suite passing](docs/REDIS_COMPAT.md)). Connect with `redis-cli`, `redis-py`, `redis-rs`, or any Redis client
+- **Full Redis Protocol**: Wire-compatible RESP2/RESP3 ([~92% Redis test suite passing](docs/REDIS_COMPAT.md)). Connect with `redis-cli`, `redis-py`, `redis-rs`, or any Redis client
 - **All Core Data Types**: Strings, Lists, Hashes, Sets, Sorted Sets, HyperLogLog
 - **Key Operations**: DEL, EXISTS, EXPIRE, TTL, PTTL, KEYS, SCAN, TYPE, RENAME
 - **Pub/Sub**: SUBSCRIBE, UNSUBSCRIBE, PSUBSCRIBE, PUBLISH
@@ -869,7 +869,7 @@ cargo build --release --all-features
 | Document | Description |
 |----------|-------------|
 | [BENCHMARKS.md](docs/BENCHMARKS.md) | Performance benchmarks and competitive comparison |
-| [REDIS_COMPATIBILITY.md](docs/REDIS_COMPATIBILITY.md) | Redis command compatibility matrix (~72% passing) |
+| [REDIS_COMPATIBILITY.md](docs/REDIS_COMPATIBILITY.md) | Redis command compatibility matrix (~92% passing) |
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Technical deep-dive into Ferrite's internals |
 | [DEPLOYMENT.md](docs/DEPLOYMENT.md) | Deployment guide for various environments |
 | [OPERATIONS.md](docs/OPERATIONS.md) | Production operations guide |

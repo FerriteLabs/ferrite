@@ -38,9 +38,9 @@ Instead, please use one of these secure channels:
    - Fill out the private disclosure form
 
 2. **Email** (Alternative):
-   - **Email**: Open a private security advisory via GitHub (preferred method)
-   - For urgent matters, contact the maintainer through GitHub profile
+   - Send to **security@ferritelabs.dev**
    - Include "SECURITY" in the subject line
+   - Encrypt sensitive details with our [PGP key](../../security) if available
 
 ### What to Include
 

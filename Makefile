@@ -119,6 +119,12 @@ check: fmt-check lint test ## Run all checks (fmt, clippy, tests)
 	@$(CARGO) check --all-features
 	@echo "$(GREEN)$(BOLD)All checks passed!$(NC)"
 
+mutants: ## Run mutation testing on ferrite-core (requires cargo-mutants)
+	@echo "$(BLUE)$(BOLD)Running mutation testing on ferrite-core...$(NC)"
+	@command -v cargo-mutants >/dev/null 2>&1 || (echo "Install: cargo install cargo-mutants" && exit 1)
+	@$(CARGO) mutants --package ferrite-core --timeout 120 --jobs 4 -- --lib
+	@echo "$(GREEN)Mutation testing complete! See mutants.out/ for results.$(NC)"
+
 ##@ Documentation Targets
 
 docs: ## Generate and open documentation
@@ -309,6 +315,17 @@ coverage: ## Generate code coverage report
 	@echo "$(BLUE)$(BOLD)Generating coverage report...$(NC)"
 	@$(CARGO) llvm-cov --all-features --html
 	@echo "$(GREEN)Coverage report generated at target/llvm-cov/html/index.html$(NC)"
+
+coverage-check: ## Verify coverage meets minimum threshold (50%)
+	@echo "$(BLUE)$(BOLD)Checking coverage threshold...$(NC)"
+	@COVERAGE=$$($(CARGO) llvm-cov --all-features 2>&1 | grep -oE '[0-9]+\.[0-9]+%' | tail -1 | tr -d '%') && \
+	echo "Coverage: $${COVERAGE}%" && \
+	if [ $$(echo "$${COVERAGE} < 50" | bc -l 2>/dev/null || echo "0") = "1" ]; then \
+		echo "$(RED)Coverage $${COVERAGE}% is below 50% threshold$(NC)"; \
+		exit 1; \
+	else \
+		echo "$(GREEN)Coverage meets threshold$(NC)"; \
+	fi
 
 coverage-install: ## Install coverage tool
 	@echo "$(BLUE)$(BOLD)Installing cargo-llvm-cov...$(NC)"

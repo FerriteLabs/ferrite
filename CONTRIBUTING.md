@@ -227,6 +227,9 @@ cargo build    # Everything just works
 
 ### Development Workflow
 
+> **Detailed guide**: See [DEVELOPMENT.md](DEVELOPMENT.md) for comprehensive testing,
+> debugging, fuzzing, benchmarking, and CI documentation.
+
 ```bash
 # Create a feature branch
 git checkout -b feature/my-feature-name
@@ -249,11 +252,14 @@ cargo fmt --check
 # Run linter
 cargo clippy --all-targets --all-features -- -D warnings
 
-# Run all checks at once
-make check  # if Makefile exists
+# Run all checks at once (recommended before pushing)
+make check
 
 # Run benchmarks (when working on performance)
 cargo bench
+
+# Run fuzz tests (see DEVELOPMENT.md for details)
+cargo +nightly fuzz run fuzz_resp_parser -- -max_total_time=60
 
 # Generate and view documentation
 cargo doc --open
