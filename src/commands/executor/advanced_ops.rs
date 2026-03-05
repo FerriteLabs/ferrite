@@ -2817,7 +2817,7 @@ impl CommandExecutor {
             "DELETERULE" => timeseries::ts_deleterule(&ctx, args),
             "QUERYINDEX" => timeseries::ts_queryindex(&ctx, args),
             "ALTER" => timeseries::ts_alter(&ctx, args),
-            _ => Frame::error(format!("ERR unknown command 'TS.{}'", subcommand)),
+            _ => Frame::error(format!("ERR unknown command 'TS.{}'. Try: CREATE, ADD, MADD, GET, RANGE, MRANGE, INFO, DEL, CREATERULE, DELETERULE, QUERYINDEX, ALTER", subcommand)),
         }
     }
 
@@ -2861,7 +2861,7 @@ impl CommandExecutor {
             "DROPINDEX" => document::doc_dropindex(&ctx, args),
             "LISTCOLLECTIONS" => document::doc_listcollections(&ctx, args),
             "STATS" => document::doc_stats(&ctx, args),
-            _ => Frame::error(format!("ERR unknown command 'DOC.{}'", subcommand)),
+            _ => Frame::error(format!("ERR unknown command 'DOC.{}'. Try: CREATE, DROP, INSERT, INSERTMANY, FIND, FINDONE, UPDATE, DELETE, COUNT, DISTINCT, AGGREGATE, CREATEINDEX, DROPINDEX, LISTCOLLECTIONS, STATS", subcommand)),
         }
     }
 
@@ -2914,7 +2914,7 @@ impl CommandExecutor {
             "PAGERANK" => graph::graph_pagerank(&ctx, args),
             "LIST" => graph::graph_list(&ctx, args),
             "INFO" => graph::graph_info(&ctx, args),
-            _ => Frame::error(format!("ERR unknown command 'GRAPH.{}'", subcommand)),
+            _ => Frame::error(format!("ERR unknown command 'GRAPH.{}'. Try: CREATE, DELETE, QUERY, ADDNODE, ADDEDGE, GETNODE, GETEDGE, DELETENODE, DELETEEDGE, NEIGHBORS, SHORTESTPATH, PAGERANK, LIST, INFO", subcommand)),
         }
     }
 
@@ -2966,7 +2966,7 @@ impl CommandExecutor {
             "INFO" => rag::rag_info(&ctx, args),
             "STATS" => rag::rag_stats(&ctx, args),
             "CLEAR" => rag::rag_clear(&ctx, args),
-            _ => Frame::error(format!("ERR unknown command 'RAG.{}'", subcommand)),
+            _ => Frame::error(format!("ERR unknown command 'RAG.{}'. Try: CREATE, DELETE, INGEST, INGESTBATCH, RETRIEVE, CONTEXT, SEARCH, CHUNK, EMBED, LIST, INFO, STATS, CLEAR", subcommand)),
         }
     }
 
@@ -4876,7 +4876,7 @@ impl CommandExecutor {
                         .collect(),
                 ),
             ]),
-            None => Frame::error("ERR unknown command"),
+            None => Frame::error("ERR unknown command. Use COMMAND DOCS <command> for help"),
         }
     }
 
