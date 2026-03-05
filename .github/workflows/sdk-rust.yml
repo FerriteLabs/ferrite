@@ -1,0 +1,67 @@
+name: Rust SDK
+
+on:
+  push:
+    branches: [main]
+    paths: ['sdk/ferrite-rs/**', 'sdk/rust/**']
+  pull_request:
+    paths: ['sdk/ferrite-rs/**', 'sdk/rust/**']
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: sdk/ferrite-rs
+
+jobs:
+  check:
+    name: Check & Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust: [stable, nightly]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: rustfmt, clippy
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            sdk/ferrite-rs/target
+          key: sdk-rust-${{ matrix.rust }}-${{ hashFiles('sdk/ferrite-rs/Cargo.lock') }}
+
+      - name: Format check
+        run: cargo fmt --all --check
+
+      - name: Clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Build
+        run: cargo build
+
+      - name: Test
+        run: cargo test
+
+  publish:
+    name: Publish to crates.io
+    needs: check
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Dry run
+        run: cargo publish --dry-run
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+      - name: Publish
+        if: contains(github.event.head_commit.message, '[publish-sdk]')
+        run: cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
