@@ -1,4 +1,3 @@
-#![forbid(unsafe_code)]
 //! Vector clock implementation for causal ordering across regions.
 
 use std::collections::BTreeMap;

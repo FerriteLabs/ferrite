@@ -1,7 +1,5 @@
 //! Data Mesh Gateway — central registry for sources, namespaces and schemas.
 
-#![forbid(unsafe_code)]
-
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use chrono::Utc;

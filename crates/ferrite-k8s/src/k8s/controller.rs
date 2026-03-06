@@ -3,7 +3,7 @@
 //! Implements controllers for managing FerriteCluster, FerriteBackup, and FerriteRestore resources.
 
 use super::crd::*;
-use super::reconciler::{ReconcileAction, ReconcileContext, ReconcileResult, Reconciler};
+use super::reconciler::{ReconcileAction, ReconcileContext, ReconcileResult};
 use super::resources::ResourceManager;
 use super::*;
 use parking_lot::RwLock;
@@ -14,6 +14,7 @@ use std::time::Duration;
 /// Controller for FerriteCluster resources
 pub struct ClusterController {
     /// Resource manager
+    #[allow(dead_code)]
     resource_manager: Arc<ResourceManager>,
     /// Cluster cache
     clusters: RwLock<HashMap<String, FerriteCluster>>,
@@ -786,6 +787,7 @@ pub struct BackupController {
     resource_manager: Arc<ResourceManager>,
     /// Backup cache
     backups: RwLock<HashMap<String, FerriteBackup>>,
+    #[allow(dead_code)]
     /// Controller configuration
     config: ControllerConfig,
 }
@@ -934,6 +936,7 @@ pub struct RestoreController {
     /// Resource manager
     resource_manager: Arc<ResourceManager>,
     /// Restore cache
+    #[allow(dead_code)]
     restores: RwLock<HashMap<String, FerriteRestore>>,
     /// Controller configuration
     config: ControllerConfig,

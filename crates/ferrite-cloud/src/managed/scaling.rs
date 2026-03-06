@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 //! Auto-scaling engine for managed Ferrite Cloud
 //!
 //! Evaluates instance metrics and makes scaling decisions to maintain

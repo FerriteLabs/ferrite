@@ -3,7 +3,6 @@
 //! Automatic peer-to-peer mesh for edge Ferrite instances with
 //! mDNS discovery, NAT traversal, encrypted tunnels, and
 //! bandwidth-aware CRDT sync.
-#![allow(dead_code)]
 
 use std::collections::{BinaryHeap, HashMap};
 use std::net::SocketAddr;

@@ -368,6 +368,7 @@ pub struct NodeEndpoint {
 /// The main deployment SDK
 pub struct DeploySDK {
     provider: CloudProviderType,
+    #[allow(dead_code)]
     region: String,
 }
 

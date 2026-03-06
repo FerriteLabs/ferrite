@@ -1,4 +1,3 @@
-#![forbid(unsafe_code)]
 //! Conflict detection and resolution for multi-region active-active replication.
 
 use chrono::{DateTime, Utc};

@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 //! Usage-based billing for managed Ferrite Cloud
 //!
 //! Tracks resource consumption and calculates costs for managed

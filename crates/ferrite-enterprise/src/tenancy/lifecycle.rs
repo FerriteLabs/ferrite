@@ -2,7 +2,6 @@
 //!
 //! Create, suspend, resume, delete tenants with full state machine.
 
-#![allow(dead_code)]
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

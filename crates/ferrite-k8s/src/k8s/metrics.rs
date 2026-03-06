@@ -280,6 +280,7 @@ impl ClusterMetrics {
     }
 
     /// Update ready status
+    #[allow(dead_code)]
     pub fn set_ready(&self, ready: bool) {
         self.is_ready
             .store(if ready { 1 } else { 0 }, Ordering::Release);
@@ -348,6 +349,7 @@ impl HistogramData {
 /// Alerts configuration
 #[derive(Debug, Clone)]
 pub struct AlertConfig {
+    #[allow(dead_code)]
     /// Enable alerting
     pub enabled: bool,
     /// Alert on reconciliation failures
@@ -371,6 +373,7 @@ impl Default for AlertConfig {
         }
     }
 }
+    #[allow(dead_code)]
 
 /// Check alerts and return any that are firing
 pub fn check_alerts(metrics: &OperatorMetrics, config: &AlertConfig) -> Vec<Alert> {
@@ -418,6 +421,7 @@ pub fn check_alerts(metrics: &OperatorMetrics, config: &AlertConfig) -> Vec<Aler
 
     alerts
 }
+    #[allow(dead_code)]
 
 /// Alert
 #[derive(Debug, Clone)]
@@ -430,6 +434,7 @@ pub struct Alert {
     pub message: String,
 }
 
+    #[allow(dead_code)]
 /// Alert severity
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AlertSeverity {

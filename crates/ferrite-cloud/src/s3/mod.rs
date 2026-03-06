@@ -40,7 +40,6 @@
 //! server.start("0.0.0.0:9000").await?;
 //! ```
 
-#![allow(dead_code)]
 mod auth;
 mod bucket;
 mod object;
@@ -360,7 +359,7 @@ impl S3Server {
         match buckets.get_mut(bucket) {
             Some(b) => match b.upload_part(key, upload_id, part_number, data) {
                 Ok(etag) => S3Response::upload_part(&etag),
-                Err(e) => S3Response::error(S3ErrorCode::NoSuchUpload, &e),
+                Err(e) => S3Response::error(S3ErrorCode::NoSuchUpload, &e.to_string()),
             },
             None => S3Response::error(S3ErrorCode::NoSuchBucket, "Bucket not found"),
         }
@@ -377,7 +376,7 @@ impl S3Server {
         match buckets.get_mut(bucket) {
             Some(b) => match b.complete_multipart(key, upload_id, parts) {
                 Ok(etag) => S3Response::complete_multipart(&etag),
-                Err(e) => S3Response::error(S3ErrorCode::NoSuchUpload, &e),
+                Err(e) => S3Response::error(S3ErrorCode::NoSuchUpload, &e.to_string()),
             },
             None => S3Response::error(S3ErrorCode::NoSuchBucket, "Bucket not found"),
         }

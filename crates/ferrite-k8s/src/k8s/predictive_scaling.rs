@@ -644,7 +644,7 @@ impl PredictiveScaler {
     }
 
     /// Estimate the current replica count from average per-replica ops rate.
-    fn estimate_current_replicas(&self, state: &ScalerState) -> u32 {
+    fn estimate_current_replicas(&self, _state: &ScalerState) -> u32 {
         // Without direct K8s API access, fall back to min_replicas as baseline.
         self.config.min_replicas.max(1)
     }

@@ -1,7 +1,5 @@
 //! Data source abstraction for the Data Mesh Gateway.
 
-#![forbid(unsafe_code)]
-
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 

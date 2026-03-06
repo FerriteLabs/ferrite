@@ -1,7 +1,6 @@
 //! Predictive Auto-Scaling
 //!
 //! ML model that forecasts traffic spikes and pre-scales cluster capacity.
-#![allow(dead_code)]
 
 use std::collections::VecDeque;
 use std::time::{Duration, Instant};

@@ -1,5 +1,3 @@
-#![forbid(unsafe_code)]
-#![warn(missing_docs)]
 //! # ferrite-k8s
 //!
 //! Kubernetes operator and integration for Ferrite.
@@ -10,5 +8,8 @@
 //! # Modules
 //!
 //! - [`k8s`] — Kubernetes operator, CRD definitions, and reconciliation
+
+#![forbid(unsafe_code)]
+#![allow(missing_docs)] // Extension crate under active development; docs added progressively
 
 pub mod k8s;

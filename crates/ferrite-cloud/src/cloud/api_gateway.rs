@@ -219,7 +219,9 @@ impl RateLimiter {
 /// REST-like gateway for managing Ferrite Cloud instances.
 pub struct ApiGateway {
     provisioning: Arc<ProvisioningService>,
+    #[allow(dead_code)]
     metering: Arc<MeteringService>,
+    #[allow(dead_code)]
     billing: Arc<BillingService>,
     api_keys: DashMap<String, ApiKeyInfo>,
     rate_limiter: RateLimiter,

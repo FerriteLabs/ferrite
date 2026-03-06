@@ -8,6 +8,21 @@ use serde::{Deserialize, Serialize};
 
 use super::object::{MultipartUpload, ObjectMetadata, S3Object};
 
+/// Errors from S3 bucket operations.
+#[derive(Debug, Clone, thiserror::Error)]
+pub enum BucketError {
+    /// The referenced multipart upload does not exist.
+    #[error("no such upload")]
+    NoSuchUpload,
+
+    /// A part number or ETag did not match during multipart completion.
+    #[error("invalid part {part_number} or etag mismatch")]
+    InvalidPart {
+        /// The part number that failed validation.
+        part_number: u32,
+    },
+}
+
 /// Bucket configuration
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct BucketConfig {
@@ -156,7 +171,7 @@ impl Bucket {
         upload_id: &str,
         part_number: u32,
         data: Vec<u8>,
-    ) -> Result<String, String> {
+    ) -> Result<String, BucketError> {
         let multipart_key = format!("{}:{}", key, upload_id);
         let mut uploads = self.multipart_uploads.write();
 
@@ -166,7 +181,7 @@ impl Bucket {
                 upload.add_part(part_number, data, &etag);
                 Ok(etag)
             }
-            None => Err("No such upload".to_string()),
+            None => Err(BucketError::NoSuchUpload),
         }
     }
 
@@ -176,7 +191,7 @@ impl Bucket {
         key: &str,
         upload_id: &str,
         parts: &[(u32, String)],
-    ) -> Result<String, String> {
+    ) -> Result<String, BucketError> {
         let multipart_key = format!("{}:{}", key, upload_id);
         let mut uploads = self.multipart_uploads.write();
 
@@ -185,7 +200,7 @@ impl Bucket {
                 // Verify all parts
                 for (part_num, etag) in parts {
                     if !upload.has_part(*part_num, etag) {
-                        return Err(format!("Invalid part {} or etag mismatch", part_num));
+                        return Err(BucketError::InvalidPart { part_number: *part_num });
                     }
                 }
 
@@ -196,7 +211,7 @@ impl Bucket {
                 let final_etag = self.put_object(key, data, HashMap::new());
                 Ok(final_etag)
             }
-            None => Err("No such upload".to_string()),
+            None => Err(BucketError::NoSuchUpload),
         }
     }
 

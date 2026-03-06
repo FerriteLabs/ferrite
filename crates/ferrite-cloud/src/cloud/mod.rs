@@ -30,7 +30,6 @@
 //! let instance = svc.provision(spec).await?;
 //! ```
 
-#![allow(dead_code)]
 pub mod api_gateway;
 pub mod billing;
 pub mod control_plane;

@@ -62,7 +62,6 @@
 //!     replicas: 3
 //! ```
 
-#![allow(dead_code)]
 /// Backup and restore manager for K8s-deployed clusters.
 pub mod backup;
 pub mod conditions;

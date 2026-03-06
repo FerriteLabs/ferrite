@@ -1,4 +1,3 @@
-#![forbid(unsafe_code)]
 //! Region management for multi-region active-active replication.
 
 use chrono::{DateTime, Utc};

@@ -114,6 +114,7 @@ impl ReconcileResult {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ClusterReconcileState {
     /// Initial state
+    #[allow(dead_code)]
     Initial,
     /// Creating ConfigMap
     CreatingConfigMap,
@@ -140,6 +141,7 @@ pub enum ClusterReconcileState {
 }
 
 impl ClusterReconcileState {
+    #[allow(dead_code)]
     /// Get next state based on current state and conditions
     pub fn next(&self, cluster: &FerriteCluster) -> Self {
         match self {
@@ -263,6 +265,7 @@ impl ReconcileContext {
     }
 }
 
+    #[allow(dead_code)]
 /// Event type for reconciliation
 #[derive(Debug, Clone)]
 pub enum ReconcileEvent {
@@ -276,6 +279,7 @@ pub enum ReconcileEvent {
     Timer,
     /// Child resource changed
     ChildChanged { kind: String, name: String },
+    #[allow(dead_code)]
 }
 
 /// Queue for reconciliation requests
@@ -284,6 +288,7 @@ pub struct ReconcileQueue<T> {
     items: std::collections::VecDeque<(T, ReconcileEvent)>,
     /// Maximum queue size
     max_size: usize,
+    #[allow(dead_code)]
 }
 
 impl<T> ReconcileQueue<T> {

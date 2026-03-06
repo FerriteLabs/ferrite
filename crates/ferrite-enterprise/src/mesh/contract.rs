@@ -1,7 +1,5 @@
 //! Data contracts for the Data Mesh Gateway.
 
-#![forbid(unsafe_code)]
-
 use chrono::{DateTime, Utc};
 use dashmap::DashMap;
 use serde::{Deserialize, Serialize};

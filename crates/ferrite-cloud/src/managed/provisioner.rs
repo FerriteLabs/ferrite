@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 //! Instance provisioning for managed Ferrite Cloud
 //!
 //! Handles the lifecycle of managed Ferrite instances including

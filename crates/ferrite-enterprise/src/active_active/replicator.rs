@@ -1,4 +1,3 @@
-#![forbid(unsafe_code)]
 //! Cross-region replication engine for active-active deployments.
 
 use chrono::Utc;

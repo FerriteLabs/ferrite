@@ -89,6 +89,7 @@ pub enum DeploymentStatus {
 
 /// Control plane managing all Ferrite Cloud deployments
 pub struct ControlPlane {
+    #[allow(dead_code)]
     config: CloudConfig,
     provisioning: Arc<ProvisioningService>,
     tenants: Arc<TenantManager>,

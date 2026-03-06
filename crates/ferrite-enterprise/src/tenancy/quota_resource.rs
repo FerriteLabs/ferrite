@@ -3,7 +3,6 @@
 //! Provides memory limits, connection caps, ops/sec throttling,
 //! and storage quotas with configurable burst allowances.
 
-#![allow(dead_code)]
 
 use serde::{Deserialize, Serialize};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -167,6 +166,7 @@ pub struct QuotaUsageReport {
 /// A simple token-bucket rate limiter with burst support.
 struct TokenBucket {
     /// Base capacity (tokens per second)
+    #[allow(dead_code)]
     capacity: u64,
     /// Burst capacity = capacity × burst_multiplier
     burst_capacity: u64,

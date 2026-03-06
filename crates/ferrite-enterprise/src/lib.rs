@@ -1,7 +1,3 @@
-// Extension crate under active development — using targeted dead_code annotations
-// #![allow(dead_code)] -- removed, using targeted annotations
-#![forbid(unsafe_code)]
-#![warn(missing_docs)]
 //! # ferrite-enterprise
 //!
 //! Enterprise features — multi-tenancy, governance, audit, and federation.
@@ -18,6 +14,9 @@
 //! - [`policy`] — Policy engine and enforcement
 //! - [`proxy`] — Intelligent routing proxy
 //! - [`mesh`] — Service mesh integration
+
+#![forbid(unsafe_code)]
+#![allow(missing_docs)] // Enterprise crate under active development; docs added progressively
 
 pub mod active_active;
 pub mod federation;

@@ -2,7 +2,6 @@
 //!
 //! CRDT-based multi-region replication with automatic conflict resolution
 //! across AWS, GCP, and Azure regions.
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
@@ -233,9 +232,13 @@ pub enum ReplicationError {
 
 #[derive(Debug, Clone)]
 struct PendingWrite {
+    #[allow(dead_code)]
     key: String,
+    #[allow(dead_code)]
     value: Vec<u8>,
+    #[allow(dead_code)]
     timestamp: u64,
+    #[allow(dead_code)]
     vector_clock: VectorClock,
 }
 
@@ -419,7 +422,7 @@ impl ActiveActiveManager {
     /// Resolve a conflict between a local and remote entry.
     pub fn resolve_conflict(
         &self,
-        key: &str,
+        _key: &str,
         local: &ConflictEntry,
         remote: &ConflictEntry,
     ) -> ResolveResult {

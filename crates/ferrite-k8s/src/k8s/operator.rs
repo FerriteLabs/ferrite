@@ -14,6 +14,7 @@ pub struct Operator {
     /// Operator configuration
     config: OperatorConfig,
     /// Resource manager
+    #[allow(dead_code)]
     resource_manager: Arc<ResourceManager>,
     /// Cluster controller
     cluster_controller: ClusterController,

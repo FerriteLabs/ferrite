@@ -138,7 +138,7 @@ pub fn classify_command(command: &str) -> CommandClass {
 
         // Multi-key commands
         "SUNION" | "SINTER" | "SDIFF" | "SUNIONSTORE" | "SINTERSTORE" | "SDIFFSTORE"
-        | "RPOPLPUSH" | "LMOVE" | "SMOVE" | "SORT" | "OBJECT" => CommandClass::MultiKey,
+        | "RPOPLPUSH" | "LMOVE" | "SORT" | "OBJECT" => CommandClass::MultiKey,
 
         // Pub/Sub
         "SUBSCRIBE" | "UNSUBSCRIBE" | "PSUBSCRIBE" | "PUNSUBSCRIBE" | "PUBLISH" => {

@@ -449,6 +449,7 @@ impl Default for ResourceManager {
 #[derive(Debug, Clone)]
 pub struct ServiceInfo {
     /// Name
+    #[allow(dead_code)]
     pub name: String,
     /// Service type
     pub service_type: String,
@@ -459,6 +460,7 @@ pub struct ServiceInfo {
 /// ConfigMap info
 #[derive(Debug, Clone)]
 pub struct ConfigMapInfo {
+    #[allow(dead_code)]
     /// Name
     pub name: String,
     /// Data
@@ -467,6 +469,7 @@ pub struct ConfigMapInfo {
 
 /// PVC info
 #[derive(Debug, Clone)]
+    #[allow(dead_code)]
 pub struct PvcInfo {
     /// Name
     pub name: String,
@@ -488,6 +491,7 @@ pub struct PodInfo {
 }
 
 /// Job info
+    #[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct JobInfo {
     /// Name
@@ -496,6 +500,7 @@ pub struct JobInfo {
     pub status: JobStatus,
 }
 
+    #[allow(dead_code)]
 /// PodDisruptionBudget info
 #[derive(Debug, Clone)]
 pub struct PdbInfo {
@@ -506,6 +511,7 @@ pub struct PdbInfo {
     /// Max unavailable
     pub max_unavailable: Option<String>,
 }
+    #[allow(dead_code)]
 
 /// ServiceMonitor info
 #[derive(Debug, Clone)]
@@ -514,6 +520,7 @@ pub struct ServiceMonitorInfo {
     pub name: String,
     /// Number of endpoints
     pub endpoints: usize,
+    #[allow(dead_code)]
 }
 
 /// CronJob info

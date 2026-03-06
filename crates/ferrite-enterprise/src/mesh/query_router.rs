@@ -1,7 +1,5 @@
 //! Cross-source query routing for the Data Mesh Gateway.
 
-#![forbid(unsafe_code)]
-
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
