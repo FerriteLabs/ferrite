@@ -979,26 +979,67 @@ fn generate_go_sdk(
     // --- client code ---
     let mut cc = String::new();
     cc.push_str(&format!(
-        r#"// {name}Client provides typed access to {raw_name} records.
+        r#"import (
+	"context"
+	"encoding/json"
+	"fmt"
+
+	"github.com/redis/go-redis/v9"
+)
+
+// {name}Client provides typed access to {raw_name} records.
 type {name}Client struct {{
+	rdb    *redis.Client
 	prefix string
 }}
 
-// New{name}Client creates a new client with the given key prefix.
-func New{name}Client(prefix string) *{name}Client {{
-	return &{name}Client{{prefix: prefix}}
+// New{name}Client creates a new client connected to the given Ferrite/Redis address.
+func New{name}Client(addr, prefix string) *{name}Client {{
+	rdb := redis.NewClient(&redis.Options{{Addr: addr}})
+	return &{name}Client{{rdb: rdb, prefix: prefix}}
+}}
+
+// key builds the full Redis key for the given id.
+func (c *{name}Client) key(id string) string {{
+	return fmt.Sprintf("%s:%s", c.prefix, id)
 }}
 
 // Get retrieves a {raw_name} by id.
-func (c *{name}Client) Get(id string) (*{name}, error) {{
-	// TODO: implement with go-redis
-	return nil, nil
+func (c *{name}Client) Get(ctx context.Context, id string) (*{name}, error) {{
+	data, err := c.rdb.Get(ctx, c.key(id)).Bytes()
+	if err != nil {{
+		return nil, err
+	}}
+	var result {name}
+	if err := json.Unmarshal(data, &result); err != nil {{
+		return nil, fmt.Errorf("failed to decode {raw_name}: %w", err)
+	}}
+	return &result, nil
 }}
 
 // Set stores a {raw_name} by id.
-func (c *{name}Client) Set(id string, data *{name}) error {{
-	// TODO: implement with go-redis
-	return nil
+func (c *{name}Client) Set(ctx context.Context, id string, data *{name}) error {{
+	b, err := json.Marshal(data)
+	if err != nil {{
+		return fmt.Errorf("failed to encode {raw_name}: %w", err)
+	}}
+	return c.rdb.Set(ctx, c.key(id), b, 0).Err()
+}}
+
+// Delete removes a {raw_name} by id.
+func (c *{name}Client) Delete(ctx context.Context, id string) error {{
+	return c.rdb.Del(ctx, c.key(id)).Err()
+}}
+
+// Exists checks if a {raw_name} exists by id.
+func (c *{name}Client) Exists(ctx context.Context, id string) (bool, error) {{
+	n, err := c.rdb.Exists(ctx, c.key(id)).Result()
+	return n > 0, err
+}}
+
+// Close shuts down the underlying Redis connection.
+func (c *{name}Client) Close() error {{
+	return c.rdb.Close()
 }}
 "#,
         name = name_pascal,

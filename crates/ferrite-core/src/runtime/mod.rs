@@ -16,8 +16,14 @@ pub mod slowlog;
 pub mod subscription;
 /// WATCH registry for optimistic locking
 pub mod watch;
+/// Client-side caching via server-assisted key invalidation
+pub mod tracking;
+/// Redis-compatible keyspace notifications
+pub mod keyspace_notify;
 
 pub use clients::{ClientInfo, ClientRegistry, PauseMode, SharedClientRegistry};
+pub use keyspace_notify::{KeyspaceNotifier, SharedKeyspaceNotifier};
 pub use slowlog::{SharedSlowLog, SlowLog, SlowLogEntry};
 pub use subscription::{SharedSubscriptionManager, SubscriptionManager};
+pub use tracking::{SharedTrackingTable, TrackingMode, TrackingTable};
 pub use watch::{ConnectionId, SharedWatchRegistry, WatchHandle, WatchRegistry};

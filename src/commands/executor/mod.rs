@@ -643,6 +643,8 @@ pub struct CommandExecutor {
     client_registry: SharedClientRegistry,
     /// Cluster state manager for Redis Cluster protocol compatibility
     cluster_state: Option<Arc<ClusterStateManager>>,
+    /// Tracking table for client-side caching invalidation
+    tracking_table: Option<crate::runtime::SharedTrackingTable>,
 }
 
 impl CommandExecutor {
@@ -669,6 +671,7 @@ impl CommandExecutor {
             slowlog: Arc::new(SlowLog::default()),
             client_registry: Arc::new(ClientRegistry::new()),
             cluster_state: None,
+            tracking_table: None,
         }
     }
 
@@ -696,6 +699,7 @@ impl CommandExecutor {
             slowlog: Arc::new(SlowLog::default()),
             client_registry: Arc::new(ClientRegistry::new()),
             cluster_state: None,
+            tracking_table: None,
         }
     }
 
@@ -726,6 +730,7 @@ impl CommandExecutor {
             slowlog,
             client_registry,
             cluster_state: None,
+            tracking_table: None,
         }
     }
 
@@ -736,6 +741,21 @@ impl CommandExecutor {
     /// scan the store for keys in the requested slot.
     pub fn set_cluster_state(&mut self, cluster_state: Arc<ClusterStateManager>) {
         self.cluster_state = Some(cluster_state);
+    }
+
+    /// Set the tracking table for client-side caching support.
+    pub fn set_tracking_table(&mut self, tracking_table: crate::runtime::SharedTrackingTable) {
+        self.tracking_table = Some(tracking_table);
+    }
+
+    /// Get the tracking table, if configured.
+    pub fn tracking_table(&self) -> Option<&crate::runtime::SharedTrackingTable> {
+        self.tracking_table.as_ref()
+    }
+
+    /// Get the current client ID (falls back to 0 if no clients registered)
+    fn current_client_id(&self) -> u64 {
+        (self.client_registry.count() as u64).max(1)
     }
 
     /// Get the cluster state manager, if configured.
@@ -2141,6 +2161,16 @@ impl CommandExecutor {
             // Graph database commands
             Command::Graph { subcommand, args } => {
                 self.handle_graph_command(db, &subcommand, &args).await
+            }
+
+            // RedisJSON compatibility commands
+            Command::Json { subcommand, args } => {
+                self.handle_json_command(db, &subcommand, &args)
+            }
+
+            // Bloom filter commands
+            Command::BloomFilter { subcommand, args } => {
+                self.handle_bloom_command(db, &subcommand, &args)
             }
 
             // RAG pipeline commands

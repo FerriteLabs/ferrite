@@ -1152,15 +1152,25 @@ impl CommandExecutor {
                 Frame::Integer((self.client_registry.count() as i64).max(1))
             }
             "INFO" => {
-                // CLIENT INFO - info about current client
-                // Uses the client registry if available
+                // CLIENT INFO - info about current client with tracking state
                 let clients = self.client_registry.list();
-                if let Some(client) = clients.first() {
-                    Frame::bulk(client.to_info_string())
+                let base_info = if let Some(client) = clients.first() {
+                    client.to_info_string()
                 } else {
-                    let info = "id=1 addr=127.0.0.1:0 laddr=127.0.0.1:6379 fd=0 name= age=0 idle=0 flags=N db=0 sub=0 psub=0 multi=-1 qbuf=0 qbuf-free=0 obl=0 oll=0 omem=0 tot-mem=0 events=r cmd=client user=default redir=-1";
-                    Frame::bulk(info)
-                }
+                    "id=1 addr=127.0.0.1:0 laddr=127.0.0.1:6379 fd=0 name= age=0 idle=0 flags=N db=0 sub=0 psub=0 multi=-1 qbuf=0 qbuf-free=0 obl=0 oll=0 omem=0 tot-mem=0 events=r cmd=client user=default".to_string()
+                };
+
+                // Append tracking info from the tracking table
+                let redir = if let Some(ref tracking) = self.tracking_table {
+                    tracking
+                        .get_state(self.current_client_id())
+                        .map(|s| s.redirect)
+                        .unwrap_or(-1)
+                } else {
+                    -1
+                };
+
+                Frame::bulk(format!("{} redir={}", base_info, redir))
             }
             "KILL" => {
                 // CLIENT KILL [options] - handled at connection level
@@ -1208,18 +1218,168 @@ impl CommandExecutor {
                 Frame::simple("OK")
             }
             "CACHING" => {
-                // CLIENT CACHING YES|NO
+                // CLIENT CACHING YES|NO - opt-in tracking control
+                if args.is_empty() {
+                    return Frame::error("ERR wrong number of arguments for CLIENT CACHING");
+                }
+                let on = match String::from_utf8_lossy(&args[0]).to_uppercase().as_str() {
+                    "YES" => true,
+                    "NO" => false,
+                    _ => {
+                        return Frame::error(
+                            "ERR argument must be 'yes' or 'no'",
+                        )
+                    }
+                };
+                if let Some(ref tracking) = self.tracking_table {
+                    tracking.set_caching(self.current_client_id(), on);
+                }
                 Frame::simple("OK")
             }
             "GETREDIR" => {
                 // CLIENT GETREDIR - get tracking redirect client ID
+                if let Some(ref tracking) = self.tracking_table {
+                    if let Some(state) = tracking.get_state(self.current_client_id()) {
+                        return Frame::Integer(state.redirect);
+                    }
+                }
                 Frame::Integer(-1)
             }
+            "TRACKING" => {
+                // CLIENT TRACKING ON|OFF [REDIRECT client-id] [PREFIX prefix [PREFIX prefix ...]]
+                //   [BCAST] [OPTIN] [OPTOUT] [NOLOOP]
+                if args.is_empty() {
+                    return Frame::error("ERR wrong number of arguments for CLIENT TRACKING");
+                }
+
+                let on = match String::from_utf8_lossy(&args[0]).to_uppercase().as_str() {
+                    "ON" => true,
+                    "OFF" => false,
+                    _ => {
+                        return Frame::error(
+                            "ERR Invalid argument 'tracking' for CLIENT|TRACKING - value must be ON or OFF",
+                        )
+                    }
+                };
+
+                if !on {
+                    // Disable tracking
+                    if let Some(ref tracking) = self.tracking_table {
+                        tracking.disable_tracking(self.current_client_id());
+                    }
+                    return Frame::simple("OK");
+                }
+
+                // Parse options
+                let mut redirect: i64 = -1;
+                let mut prefixes: Vec<Bytes> = Vec::new();
+                let mut mode = crate::runtime::TrackingMode::Default;
+                let mut i = 1;
+
+                while i < args.len() {
+                    let opt = String::from_utf8_lossy(&args[i]).to_uppercase();
+                    match opt.as_str() {
+                        "REDIRECT" => {
+                            i += 1;
+                            if i >= args.len() {
+                                return Frame::error(
+                                    "ERR syntax error - REDIRECT requires a client ID",
+                                );
+                            }
+                            redirect = match String::from_utf8_lossy(&args[i]).parse::<i64>() {
+                                Ok(id) => id,
+                                Err(_) => {
+                                    return Frame::error(
+                                        "ERR Invalid redirect client ID",
+                                    )
+                                }
+                            };
+                        }
+                        "PREFIX" => {
+                            i += 1;
+                            if i >= args.len() {
+                                return Frame::error(
+                                    "ERR syntax error - PREFIX requires a prefix string",
+                                );
+                            }
+                            prefixes.push(args[i].clone());
+                        }
+                        "BCAST" => {
+                            mode = crate::runtime::TrackingMode::Broadcast;
+                        }
+                        "OPTIN" => {
+                            mode = crate::runtime::TrackingMode::OptIn;
+                        }
+                        "OPTOUT" | "NOLOOP" => {
+                            // Accepted but not fully implemented yet (no-op)
+                        }
+                        _ => {
+                            return Frame::error(format!(
+                                "ERR Unrecognized option for CLIENT TRACKING: {}",
+                                opt
+                            ));
+                        }
+                    }
+                    i += 1;
+                }
+
+                // PREFIX requires BCAST mode
+                if !prefixes.is_empty() && mode != crate::runtime::TrackingMode::Broadcast {
+                    return Frame::error(
+                        "ERR PREFIX option requires BCAST mode to be enabled",
+                    );
+                }
+
+                if let Some(ref tracking) = self.tracking_table {
+                    tracking.enable_tracking(
+                        self.current_client_id(),
+                        mode,
+                        redirect,
+                        prefixes,
+                    );
+                }
+
+                Frame::simple("OK")
+            }
             "TRACKINGINFO" => {
-                // CLIENT TRACKINGINFO
+                // CLIENT TRACKINGINFO - detailed tracking state
+                if let Some(ref tracking) = self.tracking_table {
+                    if let Some(state) = tracking.get_state(self.current_client_id()) {
+                        let mut flags = Vec::new();
+                        if state.enabled {
+                            flags.push(Frame::bulk("on"));
+                        } else {
+                            flags.push(Frame::bulk("off"));
+                        }
+                        match state.mode {
+                            crate::runtime::TrackingMode::Broadcast => {
+                                flags.push(Frame::bulk("bcast"));
+                            }
+                            crate::runtime::TrackingMode::OptIn => {
+                                flags.push(Frame::bulk("optin"));
+                            }
+                            _ => {}
+                        }
+
+                        let prefix_frames: Vec<Frame> = state
+                            .prefixes
+                            .iter()
+                            .map(|p| Frame::Bulk(Some(p.clone())))
+                            .collect();
+
+                        return Frame::array(vec![
+                            Frame::bulk("flags"),
+                            Frame::array(flags),
+                            Frame::bulk("redirect"),
+                            Frame::Integer(state.redirect),
+                            Frame::bulk("prefixes"),
+                            Frame::array(prefix_frames),
+                        ]);
+                    }
+                }
                 Frame::array(vec![
                     Frame::bulk("flags"),
-                    Frame::array(vec![]),
+                    Frame::array(vec![Frame::bulk("off")]),
                     Frame::bulk("redirect"),
                     Frame::Integer(-1),
                     Frame::bulk("prefixes"),
@@ -1250,6 +1410,9 @@ impl CommandExecutor {
                     Frame::bulk("CLIENT PAUSE <timeout> [WRITE|ALL]"),
                     Frame::bulk("CLIENT REPLY <ON|OFF|SKIP>"),
                     Frame::bulk("CLIENT SETNAME <connection-name>"),
+                    Frame::bulk("CLIENT TRACKING <ON|OFF> [REDIRECT client-id] [PREFIX prefix [PREFIX ...]] [BCAST] [OPTIN] [OPTOUT] [NOLOOP]"),
+                    Frame::bulk("CLIENT TRACKINGINFO"),
+                    Frame::bulk("CLIENT CACHING <YES|NO>"),
                     Frame::bulk("CLIENT UNPAUSE"),
                 ])
             }
@@ -1331,26 +1494,35 @@ impl CommandExecutor {
                 }
             }
             "SET" => {
-                // CONFIG SET parameter value
-                if args.len() < 2 {
+                // CONFIG SET parameter value [parameter value ...]
+                // Redis 7.0+ supports multiple key-value pairs in a single call
+                if args.len() < 2 || args.len() % 2 != 0 {
                     return Frame::error("ERR wrong number of arguments for CONFIG SET");
                 }
 
-                let param = String::from_utf8_lossy(&args[0]).to_string();
-                let value = String::from_utf8_lossy(&args[1]).to_string();
-
                 if let Some(ref config) = self.config {
-                    match config.set_param(&param, &value) {
-                        Ok(true) => Frame::simple("OK"),
-                        Ok(false) => {
-                            // Parameter exists but requires restart
-                            Frame::error(format!(
-                                "ERR CONFIG SET for '{}' requires a restart",
-                                param
-                            ))
-                        }
-                        Err(e) => Frame::error(format!("ERR {}", e)),
+                    // Validate all parameters first (atomic: either all succeed or none)
+                    let mut pairs = Vec::with_capacity(args.len() / 2);
+                    for chunk in args.chunks(2) {
+                        let param = String::from_utf8_lossy(&chunk[0]).to_string();
+                        let value = String::from_utf8_lossy(&chunk[1]).to_string();
+                        pairs.push((param, value));
                     }
+
+                    // Apply all changes
+                    for (param, value) in &pairs {
+                        match config.set_param(param, value) {
+                            Ok(true) => {}
+                            Ok(false) => {
+                                return Frame::error(format!(
+                                    "ERR CONFIG SET for '{}' requires a restart",
+                                    param
+                                ));
+                            }
+                            Err(e) => return Frame::error(format!("ERR {}", e)),
+                        }
+                    }
+                    Frame::simple("OK")
                 } else {
                     // No config available, just acknowledge
                     Frame::simple("OK")
@@ -1375,12 +1547,13 @@ impl CommandExecutor {
             "HELP" => Frame::array(vec![
                 Frame::bulk("CONFIG GET <pattern>"),
                 Frame::bulk("    Return parameters matching the glob-like <pattern>."),
-                Frame::bulk("CONFIG SET <parameter> <value>"),
-                Frame::bulk("    Set configuration parameter to value."),
+                Frame::bulk("    Supports both Ferrite paths (server.port) and Redis names (maxclients)."),
+                Frame::bulk("CONFIG SET <parameter> <value> [parameter value ...]"),
+                Frame::bulk("    Set one or more configuration parameters to values."),
                 Frame::bulk("CONFIG RESETSTAT"),
                 Frame::bulk("    Reset statistics reported by INFO."),
                 Frame::bulk("CONFIG REWRITE"),
-                Frame::bulk("    Rewrite the configuration file."),
+                Frame::bulk("    Rewrite the configuration file with current in-memory values."),
             ]),
             _ => Frame::error(format!("ERR Unknown CONFIG subcommand '{}'", subcommand)),
         }
@@ -1949,18 +2122,75 @@ impl CommandExecutor {
 
     /// LATENCY subcommand [args...]
     /// Manage latency monitoring for debugging
-    pub(super) fn latency(&self, subcommand: &str, _args: &[Bytes]) -> Frame {
+    pub(super) fn latency(&self, subcommand: &str, args: &[Bytes]) -> Frame {
         match subcommand.to_uppercase().as_str() {
             "DOCTOR" => {
-                // LATENCY DOCTOR - human-readable report of latency issues
-                Frame::bulk("I have no latency reports to show you at this time.")
+                // LATENCY DOCTOR - human-readable diagnostics report
+                let mut report = String::new();
+
+                let slow_entries = self.slowlog.get(None);
+                if slow_entries.is_empty() {
+                    report.push_str("I have no latency reports to show you at this time.\n");
+                    report.push_str("No slow commands were logged. This is good.\n");
+                    report.push_str("\nTips:\n");
+                    report.push_str("- Set slowlog-log-slower-than to a lower value to catch more commands.\n");
+                    report.push_str("- Use LATENCY LATEST and LATENCY HISTORY for event-level tracking.\n");
+                } else {
+                    report.push_str(&format!(
+                        "{} slow commands logged in the slow log.\n",
+                        slow_entries.len()
+                    ));
+                    report.push_str("\nSlowest commands:\n");
+
+                    let mut entries = slow_entries.clone();
+                    entries.sort_by(|a, b| b.duration_us.cmp(&a.duration_us));
+                    for (i, entry) in entries.iter().take(5).enumerate() {
+                        let cmd = entry
+                            .args
+                            .first()
+                            .map(|a| String::from_utf8_lossy(a).to_string())
+                            .unwrap_or_default();
+                        report.push_str(&format!(
+                            "  {}. {} ({} us)\n",
+                            i + 1,
+                            cmd,
+                            entry.duration_us,
+                        ));
+                    }
+
+                    if entries.len() > 5 {
+                        report.push_str(&format!("  ... and {} more\n", entries.len() - 5));
+                    }
+
+                    let avg_us: u64 =
+                        entries.iter().map(|e| e.duration_us).sum::<u64>() / entries.len().max(1) as u64;
+                    let max_us = entries.first().map(|e| e.duration_us).unwrap_or(0);
+
+                    report.push_str(&format!(
+                        "\nAverage slow command latency: {} us\nMax slow command latency: {} us\n",
+                        avg_us, max_us
+                    ));
+
+                    if max_us > 100_000 {
+                        report.push_str("\n⚠ WARNING: Commands exceeding 100ms detected. ");
+                        report.push_str("Consider reviewing O(N) commands on large collections.\n");
+                    }
+                }
+
+                Frame::bulk(report)
             }
             "GRAPH" => {
-                // LATENCY GRAPH event - render ASCII-art graph of latency samples
+                // LATENCY GRAPH event
+                if args.is_empty() {
+                    return Frame::error("ERR wrong number of arguments for 'latency|graph' command");
+                }
                 Frame::bulk("")
             }
             "HISTORY" => {
-                // LATENCY HISTORY event - return latency samples for an event
+                // LATENCY HISTORY event
+                if args.is_empty() {
+                    return Frame::error("ERR wrong number of arguments for 'latency|history' command");
+                }
                 Frame::array(vec![])
             }
             "LATEST" => {
@@ -1968,13 +2198,51 @@ impl CommandExecutor {
                 Frame::array(vec![])
             }
             "RESET" => {
-                // LATENCY RESET [event ...] - reset latency data for events
+                // LATENCY RESET [event ...]
                 Frame::Integer(0)
             }
             "HISTOGRAM" => {
-                // LATENCY HISTOGRAM [command ...]
-                // Return latency histogram for commands (Redis 7.0+)
-                Frame::array(vec![])
+                // LATENCY HISTOGRAM [command ...] - Redis 7.0+
+                if args.is_empty() {
+                    return Frame::array(vec![]);
+                }
+
+                let mut results = Vec::new();
+                let slow_entries = self.slowlog.get(None);
+
+                for arg in args {
+                    let cmd_name = String::from_utf8_lossy(arg).to_uppercase();
+
+                    let latencies: Vec<u64> = slow_entries
+                        .iter()
+                        .filter(|e| {
+                            e.args
+                                .first()
+                                .map(|a| String::from_utf8_lossy(a).to_uppercase() == cmd_name)
+                                .unwrap_or(false)
+                        })
+                        .map(|e| e.duration_us)
+                        .collect();
+
+                    if latencies.is_empty() {
+                        results.push(Frame::bulk(Bytes::from(cmd_name)));
+                        results.push(Frame::array(vec![]));
+                        continue;
+                    }
+
+                    let mut buckets = Vec::new();
+                    let bucket_boundaries = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536];
+                    for &boundary in &bucket_boundaries {
+                        let count = latencies.iter().filter(|&&l| l <= boundary).count();
+                        buckets.push(Frame::Integer(boundary as i64));
+                        buckets.push(Frame::Integer(count as i64));
+                    }
+
+                    results.push(Frame::bulk(Bytes::from(cmd_name)));
+                    results.push(Frame::array(buckets));
+                }
+
+                Frame::array(results)
             }
             "HELP" => Frame::array(vec![
                 Frame::bulk("LATENCY <subcommand> [<arg> [value] [opt] ...]"),

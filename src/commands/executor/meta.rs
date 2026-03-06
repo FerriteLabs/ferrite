@@ -1778,6 +1778,37 @@ impl Command {
                 permission: Permission::Write,
             },
 
+            // RedisJSON compatibility commands
+            Command::Json { subcommand, args } => CommandMeta {
+                name: Box::leak(format!("JSON.{}", subcommand).into_boxed_str()),
+                category: "json",
+                keys: if args.is_empty() {
+                    vec![]
+                } else {
+                    vec![args[0].clone()]
+                },
+                permission: match subcommand.as_str() {
+                    "GET" | "MGET" | "TYPE" | "STRLEN" | "OBJLEN" | "OBJKEYS"
+                    | "ARRLEN" | "ARRINDEX" | "RESP" | "DEBUG" => Permission::Read,
+                    _ => Permission::Write,
+                },
+            },
+
+            // Bloom filter commands
+            Command::BloomFilter { subcommand, args } => CommandMeta {
+                name: Box::leak(format!("BF.{}", subcommand).into_boxed_str()),
+                category: "bloom",
+                keys: if args.is_empty() {
+                    vec![]
+                } else {
+                    vec![args[0].clone()]
+                },
+                permission: match subcommand.as_str() {
+                    "EXISTS" | "MEXISTS" | "INFO" | "SCANDUMP" => Permission::Read,
+                    _ => Permission::Write,
+                },
+            },
+
             // RAG pipeline commands
             Command::Rag { subcommand, .. } => CommandMeta {
                 name: Box::leak(format!("RAG.{}", subcommand).into_boxed_str()),

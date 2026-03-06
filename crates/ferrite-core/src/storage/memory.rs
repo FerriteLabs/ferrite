@@ -302,6 +302,115 @@ impl Database {
     pub fn clear(&self) {
         self.data.clear();
     }
+
+    /// Evict keys according to the given policy until `target_bytes` are freed.
+    ///
+    /// Uses Redis-compatible sampling: picks `sample_size` random keys and
+    /// evicts the best candidate among them, repeating until the target is met
+    /// or no more eligible keys exist.
+    ///
+    /// Returns the number of keys evicted and approximate bytes freed.
+    pub fn evict(
+        &self,
+        policy: crate::storage::memory_manager::EvictionPolicy,
+        target_bytes: u64,
+        sample_size: usize,
+    ) -> (usize, u64) {
+        use crate::storage::memory_manager::EvictionPolicy;
+        use std::time::SystemTime;
+
+        let sample_size = sample_size.max(5);
+        let mut evicted_count = 0usize;
+        let mut freed_bytes = 0u64;
+
+        // Estimate bytes per entry (rough approximation)
+        const AVG_ENTRY_OVERHEAD: u64 = 128;
+
+        while freed_bytes < target_bytes {
+            // Collect a random sample of keys
+            let sample: Vec<(Bytes, u64, u64, Option<SystemTime>)> = self
+                .data
+                .iter()
+                .take(sample_size)
+                .map(|entry| {
+                    let key = entry.key().clone();
+                    let access = entry.last_access.load(std::sync::atomic::Ordering::Relaxed);
+                    let freq = entry.access_count.load(std::sync::atomic::Ordering::Relaxed);
+                    let expires = entry.expires_at;
+                    (key, access, freq, expires)
+                })
+                .collect();
+
+            if sample.is_empty() {
+                break;
+            }
+
+            // Pick the best eviction candidate based on policy
+            let victim = match policy {
+                EvictionPolicy::AllKeysLru => {
+                    // Evict the key with the oldest last_access
+                    sample.iter().min_by_key(|(_, access, _, _)| *access)
+                }
+                EvictionPolicy::VolatileLru => {
+                    // Evict the volatile key with the oldest last_access
+                    let volatile: Vec<_> =
+                        sample.iter().filter(|(_, _, _, exp)| exp.is_some()).collect();
+                    if volatile.is_empty() {
+                        break; // No volatile keys available
+                    }
+                    volatile.iter().min_by_key(|(_, access, _, _)| *access).copied()
+                }
+                EvictionPolicy::AllKeysLfu => {
+                    // Evict the key with the lowest access_count
+                    sample.iter().min_by_key(|(_, _, freq, _)| *freq)
+                }
+                EvictionPolicy::VolatileLfu => {
+                    let volatile: Vec<_> =
+                        sample.iter().filter(|(_, _, _, exp)| exp.is_some()).collect();
+                    if volatile.is_empty() {
+                        break;
+                    }
+                    volatile.iter().min_by_key(|(_, _, freq, _)| *freq).copied()
+                }
+                EvictionPolicy::AllKeysRandom => sample.first(),
+                EvictionPolicy::VolatileRandom => {
+                    let volatile: Vec<_> =
+                        sample.iter().filter(|(_, _, _, exp)| exp.is_some()).collect();
+                    if volatile.is_empty() {
+                        break;
+                    }
+                    volatile.first().copied()
+                }
+                EvictionPolicy::VolatileTtl => {
+                    // Evict the volatile key with the nearest TTL
+                    let volatile: Vec<_> =
+                        sample.iter().filter(|(_, _, _, exp)| exp.is_some()).collect();
+                    if volatile.is_empty() {
+                        break;
+                    }
+                    volatile
+                        .iter()
+                        .min_by_key(|(_, _, _, exp)| exp.unwrap())
+                        .copied()
+                }
+                EvictionPolicy::NoEviction => {
+                    break; // Should not evict
+                }
+            };
+
+            match victim {
+                Some((key, _, _, _)) => {
+                    if self.data.remove(key).is_some() {
+                        evicted_count += 1;
+                        freed_bytes += AVG_ENTRY_OVERHEAD;
+                    }
+                }
+                None => break,
+            }
+        }
+
+        (evicted_count, freed_bytes)
+    }
 }
 
 impl Default for Database {
@@ -448,6 +557,64 @@ impl Store {
                 for log in logs {
                     log.reset_stats();
                 }
+            }
+        }
+    }
+
+    /// Perform eviction across all databases when memory pressure is detected.
+    ///
+    /// Called by the server's background task when `MemoryManager::should_evict()`
+    /// returns an `EvictionRequest`. Distributes the eviction target proportionally
+    /// across databases based on their key counts.
+    ///
+    /// Returns the total number of keys evicted and approximate bytes freed.
+    pub fn evict_keys(
+        &self,
+        policy: crate::storage::memory_manager::EvictionPolicy,
+        target_bytes: u64,
+    ) -> (usize, u64) {
+        use crate::storage::memory_manager::EvictionPolicy;
+
+        if policy == EvictionPolicy::NoEviction || target_bytes == 0 {
+            return (0, 0);
+        }
+
+        const SAMPLE_SIZE: usize = 10; // Redis default: 5; we sample 10 for better accuracy
+
+        match &self.backend {
+            StorageBackend::Memory(databases) => {
+                // Count total keys to distribute eviction proportionally
+                let total_keys: u64 = databases
+                    .iter()
+                    .map(|db| db.read().len() as u64)
+                    .sum();
+
+                if total_keys == 0 {
+                    return (0, 0);
+                }
+
+                let mut total_evicted = 0usize;
+                let mut total_freed = 0u64;
+
+                for db in databases {
+                    let db_guard = db.read();
+                    let db_keys = db_guard.len() as u64;
+                    if db_keys == 0 {
+                        continue;
+                    }
+
+                    // Proportional target for this database
+                    let db_target = (target_bytes * db_keys / total_keys).max(1);
+                    let (evicted, freed) = db_guard.evict(policy, db_target, SAMPLE_SIZE);
+                    total_evicted += evicted;
+                    total_freed += freed;
+                }
+
+                (total_evicted, total_freed)
+            }
+            StorageBackend::HybridLog(_) => {
+                // HybridLog handles memory pressure through tier migration
+                (0, 0)
             }
         }
     }

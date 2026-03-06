@@ -1425,6 +1425,24 @@ pub enum Command {
         args: Vec<Bytes>,
     },
 
+    // RedisJSON compatibility commands
+    /// JSON.* commands - RedisJSON-compatible operations backed by the document store
+    Json {
+        /// Subcommand (GET, SET, DEL, MGET, TYPE, etc.)
+        subcommand: String,
+        /// Raw arguments
+        args: Vec<Bytes>,
+    },
+
+    // Bloom filter commands
+    /// BF.* commands - RedisBloom-compatible probabilistic data structure operations
+    BloomFilter {
+        /// Subcommand (ADD, EXISTS, MADD, MEXISTS, RESERVE, INFO, etc.)
+        subcommand: String,
+        /// Raw arguments
+        args: Vec<Bytes>,
+    },
+
     // RAG pipeline commands
     /// RAG.* commands - generic handler for RAG operations
     Rag {
@@ -2206,6 +2224,28 @@ impl Command {
 
             // Graph database commands
             cmd if cmd.starts_with("GRAPH.") => parsers::advanced::parse_graph_command(cmd, args),
+
+            // RedisJSON compatibility commands
+            cmd if cmd.starts_with("JSON.") => {
+                let sub = cmd.strip_prefix("JSON.").unwrap_or(cmd);
+                let parsed_args: Vec<Bytes> =
+                    args.iter().filter_map(|f| parsers::get_bytes(f).ok()).collect();
+                Ok(Command::Json {
+                    subcommand: sub.to_string(),
+                    args: parsed_args,
+                })
+            }
+
+            // Bloom filter commands
+            cmd if cmd.starts_with("BF.") => {
+                let sub = cmd.strip_prefix("BF.").unwrap_or(cmd);
+                let parsed_args: Vec<Bytes> =
+                    args.iter().filter_map(|f| parsers::get_bytes(f).ok()).collect();
+                Ok(Command::BloomFilter {
+                    subcommand: sub.to_string(),
+                    args: parsed_args,
+                })
+            }
 
             // RAG pipeline commands
             cmd if cmd.starts_with("RAG.") => parsers::advanced::parse_rag_command(cmd, args),

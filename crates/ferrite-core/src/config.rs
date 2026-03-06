@@ -119,6 +119,16 @@ pub enum ConfigKey {
     StorageMaxKeySize,
     /// Storage max value size (`storage.max_value_size`).
     StorageMaxValueSize,
+    /// Eviction policy when max memory reached (`storage.eviction_policy`).
+    StorageEvictionPolicy,
+    /// Slowlog threshold in microseconds (`server.slowlog_log_slower_than`).
+    ServerSlowlogLogSlowerThan,
+    /// Maximum slowlog entries (`server.slowlog_max_len`).
+    ServerSlowlogMaxLen,
+    /// Server tick rate in Hz (`server.hz`).
+    ServerHz,
+    /// Keyspace notification events (`server.notify_keyspace_events`).
+    ServerNotifyKeyspaceEvents,
 }
 
 impl ConfigKey {
@@ -155,44 +165,95 @@ impl ConfigKey {
             ConfigKey::ServerProtoMaxNestingDepth => "server.proto_max_nesting_depth",
             ConfigKey::StorageMaxKeySize => "storage.max_key_size",
             ConfigKey::StorageMaxValueSize => "storage.max_value_size",
+            ConfigKey::StorageEvictionPolicy => "storage.eviction_policy",
+            ConfigKey::ServerSlowlogLogSlowerThan => "server.slowlog_log_slower_than",
+            ConfigKey::ServerSlowlogMaxLen => "server.slowlog_max_len",
+            ConfigKey::ServerHz => "server.hz",
+            ConfigKey::ServerNotifyKeyspaceEvents => "server.notify_keyspace_events",
         }
     }
 
     /// Parse a dotted config path string into a `ConfigKey`, if valid.
+    ///
+    /// Accepts both Ferrite-native dotted paths (e.g., `"server.port"`) and
+    /// Redis-compatible parameter names (e.g., `"maxclients"`, `"maxmemory"`).
     pub fn parse_str(path: &str) -> Option<Self> {
         Some(match path {
-            "server.bind" => ConfigKey::ServerBind,
-            "server.port" => ConfigKey::ServerPort,
-            "server.max_connections" => ConfigKey::ServerMaxConnections,
-            "server.tcp_keepalive" => ConfigKey::ServerTcpKeepalive,
-            "server.timeout" => ConfigKey::ServerTimeout,
-            "logging.level" => ConfigKey::LoggingLevel,
+            // Ferrite-native dotted paths
+            "server.bind" | "bind" => ConfigKey::ServerBind,
+            "server.port" | "port" => ConfigKey::ServerPort,
+            "server.max_connections" | "maxclients" => ConfigKey::ServerMaxConnections,
+            "server.tcp_keepalive" | "tcp-keepalive" => ConfigKey::ServerTcpKeepalive,
+            "server.timeout" | "timeout" => ConfigKey::ServerTimeout,
+            "logging.level" | "loglevel" => ConfigKey::LoggingLevel,
             "logging.format" => ConfigKey::LoggingFormat,
             "storage.backend" => ConfigKey::StorageBackend,
-            "storage.databases" => ConfigKey::StorageDatabases,
-            "storage.max_memory" => ConfigKey::StorageMaxMemory,
-            "persistence.aof_enabled" => ConfigKey::PersistenceAofEnabled,
-            "persistence.aof_sync" => ConfigKey::PersistenceAofSync,
+            "storage.databases" | "databases" => ConfigKey::StorageDatabases,
+            "storage.max_memory" | "maxmemory" => ConfigKey::StorageMaxMemory,
+            "persistence.aof_enabled" | "appendonly" => ConfigKey::PersistenceAofEnabled,
+            "persistence.aof_sync" | "appendfsync" => ConfigKey::PersistenceAofSync,
             "persistence.checkpoint_enabled" => ConfigKey::PersistenceCheckpointEnabled,
             "metrics.enabled" => ConfigKey::MetricsEnabled,
             "metrics.bind" => ConfigKey::MetricsBind,
             "metrics.port" => ConfigKey::MetricsPort,
-            "tls.enabled" => ConfigKey::TlsEnabled,
-            "tls.port" => ConfigKey::TlsPort,
-            "tls.cert_file" => ConfigKey::TlsCertFile,
-            "tls.key_file" => ConfigKey::TlsKeyFile,
+            "tls.enabled" | "tls-auth-clients" => ConfigKey::TlsEnabled,
+            "tls.port" | "tls-port" => ConfigKey::TlsPort,
+            "tls.cert_file" | "tls-cert-file" => ConfigKey::TlsCertFile,
+            "tls.key_file" | "tls-key-file" => ConfigKey::TlsKeyFile,
             "audit.enabled" => ConfigKey::AuditEnabled,
             "encryption.enabled" => ConfigKey::EncryptionEnabled,
             "encryption.algorithm" => ConfigKey::EncryptionAlgorithm,
             "encryption.key_file" => ConfigKey::EncryptionKeyFile,
-            "cluster.enabled" => ConfigKey::ClusterEnabled,
-            "server.proto_max_bulk_len" => ConfigKey::ServerProtoMaxBulkLen,
-            "server.proto_max_multi_bulk_len" => ConfigKey::ServerProtoMaxMultiBulkLen,
+            "cluster.enabled" | "cluster-enabled" => ConfigKey::ClusterEnabled,
+            "server.proto_max_bulk_len" | "proto-max-bulk-len" => ConfigKey::ServerProtoMaxBulkLen,
+            "server.proto_max_multi_bulk_len" | "proto-max-multi-bulk-len" => {
+                ConfigKey::ServerProtoMaxMultiBulkLen
+            }
             "server.proto_max_nesting_depth" => ConfigKey::ServerProtoMaxNestingDepth,
             "storage.max_key_size" => ConfigKey::StorageMaxKeySize,
             "storage.max_value_size" => ConfigKey::StorageMaxValueSize,
+            "storage.eviction_policy" | "maxmemory-policy" => ConfigKey::StorageEvictionPolicy,
+            "server.slowlog_log_slower_than" | "slowlog-log-slower-than" => {
+                ConfigKey::ServerSlowlogLogSlowerThan
+            }
+            "server.slowlog_max_len" | "slowlog-max-len" => ConfigKey::ServerSlowlogMaxLen,
+            "server.hz" | "hz" => ConfigKey::ServerHz,
+            "server.notify_keyspace_events" | "notify-keyspace-events" => {
+                ConfigKey::ServerNotifyKeyspaceEvents
+            }
             _ => return None,
         })
+    }
+
+    /// Return the Redis-compatible alias for this key, if one exists.
+    ///
+    /// These aliases allow clients using standard Redis config names
+    /// (e.g., `maxmemory`, `maxclients`) to interact with Ferrite seamlessly.
+    pub fn redis_alias(&self) -> Option<&'static str> {
+        match self {
+            ConfigKey::ServerBind => Some("bind"),
+            ConfigKey::ServerPort => Some("port"),
+            ConfigKey::ServerMaxConnections => Some("maxclients"),
+            ConfigKey::ServerTcpKeepalive => Some("tcp-keepalive"),
+            ConfigKey::ServerTimeout => Some("timeout"),
+            ConfigKey::LoggingLevel => Some("loglevel"),
+            ConfigKey::StorageDatabases => Some("databases"),
+            ConfigKey::StorageMaxMemory => Some("maxmemory"),
+            ConfigKey::PersistenceAofEnabled => Some("appendonly"),
+            ConfigKey::PersistenceAofSync => Some("appendfsync"),
+            ConfigKey::TlsPort => Some("tls-port"),
+            ConfigKey::TlsCertFile => Some("tls-cert-file"),
+            ConfigKey::TlsKeyFile => Some("tls-key-file"),
+            ConfigKey::ClusterEnabled => Some("cluster-enabled"),
+            ConfigKey::ServerProtoMaxBulkLen => Some("proto-max-bulk-len"),
+            ConfigKey::ServerProtoMaxMultiBulkLen => Some("proto-max-multi-bulk-len"),
+            ConfigKey::StorageEvictionPolicy => Some("maxmemory-policy"),
+            ConfigKey::ServerSlowlogLogSlowerThan => Some("slowlog-log-slower-than"),
+            ConfigKey::ServerSlowlogMaxLen => Some("slowlog-max-len"),
+            ConfigKey::ServerHz => Some("hz"),
+            ConfigKey::ServerNotifyKeyspaceEvents => Some("notify-keyspace-events"),
+            _ => None,
+        }
     }
 
     /// Return `true` if changing this key requires a server restart to take effect.
@@ -247,6 +308,11 @@ impl ConfigKey {
             ConfigKey::ServerProtoMaxNestingDepth,
             ConfigKey::StorageMaxKeySize,
             ConfigKey::StorageMaxValueSize,
+            ConfigKey::StorageEvictionPolicy,
+            ConfigKey::ServerSlowlogLogSlowerThan,
+            ConfigKey::ServerSlowlogMaxLen,
+            ConfigKey::ServerHz,
+            ConfigKey::ServerNotifyKeyspaceEvents,
         ]
     }
 }
@@ -559,6 +625,55 @@ impl Config {
                 self.encryption.algorithm = algo;
                 Ok(true)
             }
+            ConfigKey::StorageEvictionPolicy => {
+                let policy = EvictionPolicy::from_redis_str(value).ok_or_else(|| {
+                    FerriteError::Config(format!(
+                        "Invalid eviction policy: {}. Expected: noeviction, allkeys-lru, volatile-lru, allkeys-random, volatile-random, volatile-ttl, allkeys-lfu, volatile-lfu",
+                        value
+                    ))
+                })?;
+                self.storage.eviction_policy = policy;
+                Ok(true)
+            }
+            ConfigKey::ServerSlowlogLogSlowerThan => {
+                let threshold = value.parse::<i64>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid integer value: {}", value))
+                })?;
+                self.server.slowlog_log_slower_than = threshold;
+                Ok(true)
+            }
+            ConfigKey::ServerSlowlogMaxLen => {
+                let max_len = value.parse::<usize>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid integer value: {}", value))
+                })?;
+                self.server.slowlog_max_len = max_len;
+                Ok(true)
+            }
+            ConfigKey::ServerHz => {
+                let hz = value.parse::<u32>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid integer value: {}", value))
+                })?;
+                if !(1..=500).contains(&hz) {
+                    return Err(FerriteError::Config(
+                        "hz must be between 1 and 500".to_string(),
+                    ));
+                }
+                self.server.hz = hz;
+                Ok(true)
+            }
+            ConfigKey::ServerNotifyKeyspaceEvents => {
+                // Validate the flag string
+                if !value.is_empty() {
+                    crate::runtime::KeyspaceNotifier::parse_flags(value).ok_or_else(|| {
+                        FerriteError::Config(format!(
+                            "Invalid notify-keyspace-events value: {}. Valid flags: K E g $ l s h z x e t m A",
+                            value
+                        ))
+                    })?;
+                }
+                self.server.notify_keyspace_events = value.to_string();
+                Ok(true)
+            }
             _ => Ok(false),
         }
     }
@@ -651,7 +766,11 @@ impl SharedConfig {
         self.inner.write().set_param(path, value)
     }
 
-    /// List all known config parameters with their current values
+    /// List all known config parameters with their current values.
+    ///
+    /// Matches against both Ferrite-native dotted paths and Redis-compatible
+    /// aliases. When a Redis alias matches, the result uses the alias as the
+    /// key name so that Redis-compatible clients receive expected names.
     pub fn list_params(&self, pattern: &str) -> Vec<(String, String)> {
         let mut results = Vec::new();
 
@@ -666,12 +785,26 @@ impl SharedConfig {
             name == pattern
         };
         for key in ConfigKey::all() {
-            let name = key.as_str();
-            if !matches(name) {
-                continue;
-            }
-            if let Some(value) = self.get_param(name) {
-                results.push((name.to_string(), value));
+            let native_name = key.as_str();
+            let redis_alias = key.redis_alias();
+
+            // Check if either the native name or Redis alias matches
+            let matched_name = if matches(native_name) {
+                Some(native_name.to_string())
+            } else if let Some(alias) = redis_alias {
+                if matches(alias) {
+                    Some(alias.to_string())
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
+
+            if let Some(name) = matched_name {
+                if let Some(value) = self.get_param(native_name) {
+                    results.push((name, value));
+                }
             }
         }
 
@@ -718,6 +851,18 @@ pub struct ServerConfig {
 
     /// Maximum nesting depth for RESP frames (0 = default 64)
     pub proto_max_nesting_depth: usize,
+
+    /// Slowlog threshold in microseconds (commands slower than this are logged, -1 to disable)
+    pub slowlog_log_slower_than: i64,
+
+    /// Maximum number of slowlog entries
+    pub slowlog_max_len: usize,
+
+    /// Server tick rate in Hz (background operations frequency)
+    pub hz: u32,
+
+    /// Keyspace notification events configuration string (empty = disabled)
+    pub notify_keyspace_events: String,
 }
 
 impl Default for ServerConfig {
@@ -732,6 +877,10 @@ impl Default for ServerConfig {
             proto_max_bulk_len: 512 * 1024 * 1024, // 512MB (Redis default)
             proto_max_multi_bulk_len: 1_048_576,   // 1M elements
             proto_max_nesting_depth: 64,
+            slowlog_log_slower_than: 10000, // 10ms in microseconds (Redis default)
+            slowlog_max_len: 128,           // Redis default
+            hz: 10,                         // Redis default
+            notify_keyspace_events: String::new(), // Disabled by default
         }
     }
 }
@@ -763,6 +912,75 @@ pub enum StorageBackendType {
     HybridLog,
 }
 
+/// Memory eviction policy (Redis-compatible naming)
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "kebab-case")]
+pub enum EvictionPolicy {
+    /// Don't evict, return errors when memory limit is reached
+    #[default]
+    NoEviction,
+    /// Remove the least recently used keys from all keys
+    AllkeysLru,
+    /// Remove the least recently used keys from keys with an expire set
+    VolatileLru,
+    /// Remove random keys from all keys
+    AllkeysRandom,
+    /// Remove random keys from keys with an expire set
+    VolatileRandom,
+    /// Remove the keys with the nearest expiry time
+    VolatileTtl,
+    /// Remove the least frequently used keys from all keys
+    AllkeysLfu,
+    /// Remove the least frequently used keys from keys with an expire set
+    VolatileLfu,
+}
+
+impl EvictionPolicy {
+    /// Parse from Redis-compatible string representation
+    pub fn from_redis_str(s: &str) -> Option<Self> {
+        match s.to_lowercase().as_str() {
+            "noeviction" | "no-eviction" => Some(Self::NoEviction),
+            "allkeys-lru" => Some(Self::AllkeysLru),
+            "volatile-lru" => Some(Self::VolatileLru),
+            "allkeys-random" => Some(Self::AllkeysRandom),
+            "volatile-random" => Some(Self::VolatileRandom),
+            "volatile-ttl" => Some(Self::VolatileTtl),
+            "allkeys-lfu" => Some(Self::AllkeysLfu),
+            "volatile-lfu" => Some(Self::VolatileLfu),
+            _ => None,
+        }
+    }
+
+    /// Return the Redis-compatible string representation
+    pub fn as_redis_str(&self) -> &'static str {
+        match self {
+            Self::NoEviction => "noeviction",
+            Self::AllkeysLru => "allkeys-lru",
+            Self::VolatileLru => "volatile-lru",
+            Self::AllkeysRandom => "allkeys-random",
+            Self::VolatileRandom => "volatile-random",
+            Self::VolatileTtl => "volatile-ttl",
+            Self::AllkeysLfu => "allkeys-lfu",
+            Self::VolatileLfu => "volatile-lfu",
+        }
+    }
+}
+
+impl From<EvictionPolicy> for crate::storage::memory_manager::EvictionPolicy {
+    fn from(policy: EvictionPolicy) -> Self {
+        match policy {
+            EvictionPolicy::NoEviction => Self::NoEviction,
+            EvictionPolicy::AllkeysLru => Self::AllKeysLru,
+            EvictionPolicy::VolatileLru => Self::VolatileLru,
+            EvictionPolicy::AllkeysRandom => Self::AllKeysRandom,
+            EvictionPolicy::VolatileRandom => Self::VolatileRandom,
+            EvictionPolicy::VolatileTtl => Self::VolatileTtl,
+            EvictionPolicy::AllkeysLfu => Self::AllKeysLfu,
+            EvictionPolicy::VolatileLfu => Self::VolatileLfu,
+        }
+    }
+}
+
 /// Storage configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
@@ -784,6 +1002,9 @@ pub struct StorageConfig {
 
     /// Maximum value size in bytes
     pub max_value_size: usize,
+
+    /// Eviction policy when max memory is reached
+    pub eviction_policy: EvictionPolicy,
 
     /// HybridLog mutable region size (bytes)
     pub hybridlog_mutable_size: usize,
@@ -816,6 +1037,7 @@ impl Default for StorageConfig {
             data_dir: PathBuf::from("./data"),
             max_key_size: 512 * 1024 * 1024, // 512MB (Redis default)
             max_value_size: 512 * 1024 * 1024, // 512MB (Redis default)
+            eviction_policy: EvictionPolicy::NoEviction,
             hybridlog_mutable_size: 64 * 1024 * 1024, // 64MB
             hybridlog_readonly_size: 256 * 1024 * 1024, // 256MB
             hybridlog_auto_tiering: true,

@@ -1,0 +1,311 @@
+name: Competitive Benchmarks
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Every Monday at 04:00 UTC
+    - cron: '0 4 * * 1'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  CARGO_TERM_COLOR: always
+  FERRITE_PORT: 6390
+  REDIS_PORT: 6391
+  CLIENTS: 50
+  REQUESTS: 100000
+  DATA_SIZE: 256
+
+concurrency:
+  group: competitive-bench-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  competitive-benchmark:
+    name: Ferrite vs Redis
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout ferrite
+        uses: actions/checkout@v4
+        with:
+          path: ferrite
+
+      - name: Checkout ferrite-bench
+        uses: actions/checkout@v4
+        with:
+          repository: ferritelabs/ferrite-bench
+          path: ferrite-bench
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ferrite -> target
+          shared-key: competitive-bench
+
+      - name: Build ferrite (release)
+        working-directory: ferrite
+        run: cargo build --release
+
+      - name: Install redis-server and redis-tools
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq redis-server redis-tools
+
+      - name: Prepare results directory
+        run: mkdir -p results
+
+      - name: Benchmark Ferrite
+        run: |
+          set -euo pipefail
+
+          echo "::group::Starting Ferrite server on port ${FERRITE_PORT}"
+          ./ferrite/target/release/ferrite --bind "127.0.0.1:${FERRITE_PORT}" &
+          FERRITE_PID=$!
+          echo "Ferrite PID: ${FERRITE_PID}"
+
+          # Wait for ferrite to accept connections
+          for i in $(seq 1 30); do
+            if redis-cli -p "${FERRITE_PORT}" PING 2>/dev/null | grep -q PONG; then
+              echo "Ferrite ready after ${i}s"
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "::error::Ferrite failed to start within 30s"
+              kill "${FERRITE_PID}" 2>/dev/null || true
+              exit 1
+            fi
+            sleep 1
+          done
+          echo "::endgroup::"
+
+          COMMANDS=("SET" "GET" "INCR" "LPUSH" "RPUSH" "SADD" "HSET" "PING")
+
+          for CMD in "${COMMANDS[@]}"; do
+            echo "::group::Benchmarking Ferrite — ${CMD}"
+            redis-benchmark \
+              -h 127.0.0.1 \
+              -p "${FERRITE_PORT}" \
+              -c "${CLIENTS}" \
+              -n "${REQUESTS}" \
+              -d "${DATA_SIZE}" \
+              -t "${CMD}" \
+              --csv \
+              2>&1 | tee "results/ferrite_${CMD}.csv"
+            echo "::endgroup::"
+          done
+
+          kill "${FERRITE_PID}" 2>/dev/null || true
+          wait "${FERRITE_PID}" 2>/dev/null || true
+          echo "Ferrite server stopped"
+
+      - name: Benchmark Redis
+        run: |
+          set -euo pipefail
+
+          echo "::group::Starting Redis server on port ${REDIS_PORT}"
+          redis-server --port "${REDIS_PORT}" --daemonize yes --loglevel warning
+          for i in $(seq 1 15); do
+            if redis-cli -p "${REDIS_PORT}" PING 2>/dev/null | grep -q PONG; then
+              echo "Redis ready after ${i}s"
+              break
+            fi
+            if [ "$i" -eq 15 ]; then
+              echo "::error::Redis failed to start within 15s"
+              exit 1
+            fi
+            sleep 1
+          done
+          echo "::endgroup::"
+
+          COMMANDS=("SET" "GET" "INCR" "LPUSH" "RPUSH" "SADD" "HSET" "PING")
+
+          for CMD in "${COMMANDS[@]}"; do
+            echo "::group::Benchmarking Redis — ${CMD}"
+            redis-benchmark \
+              -h 127.0.0.1 \
+              -p "${REDIS_PORT}" \
+              -c "${CLIENTS}" \
+              -n "${REQUESTS}" \
+              -d "${DATA_SIZE}" \
+              -t "${CMD}" \
+              --csv \
+              2>&1 | tee "results/redis_${CMD}.csv"
+            echo "::endgroup::"
+          done
+
+          redis-cli -p "${REDIS_PORT}" SHUTDOWN NOSAVE 2>/dev/null || true
+          echo "Redis server stopped"
+
+      - name: Generate comparison report
+        run: |
+          set -euo pipefail
+
+          REPORT="results/benchmark-report.md"
+          TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+          cat > "${REPORT}" <<'HEADER'
+          # ⚡ Competitive Benchmark Report — Ferrite vs Redis
+
+          > **⚠️ Disclaimer:** These benchmarks are self-reported and environment-dependent.
+          > Results were collected on GitHub Actions runners (`ubuntu-latest`) and may not
+          > reflect production performance. Hardware, OS tuning, network conditions, and
+          > co-tenant workloads on shared runners can all affect results. Always validate
+          > with your own workload on representative infrastructure.
+
+          HEADER
+
+          # Strip leading whitespace from heredoc
+          sed -i 's/^          //' "${REPORT}"
+
+          cat >> "${REPORT}" <<EOF
+          **Date:** ${TIMESTAMP}
+          **Runner:** \`ubuntu-latest\`
+          **Clients:** ${CLIENTS} | **Requests:** ${REQUESTS} | **Data size:** ${DATA_SIZE}B
+
+          ## Results
+
+          | Command | Ferrite (ops/sec) | Redis (ops/sec) | Δ (%) | Winner |
+          |---------|------------------:|----------------:|------:|--------|
+          EOF
+
+          COMMANDS=("SET" "GET" "INCR" "LPUSH" "RPUSH" "SADD" "HSET" "PING")
+          CSV_DETAIL="results/comparison.csv"
+          echo "command,ferrite_ops_sec,redis_ops_sec,delta_pct,winner" > "${CSV_DETAIL}"
+
+          for CMD in "${COMMANDS[@]}"; do
+            # redis-benchmark --csv outputs: "TEST","rps","avg_latency_ms","min_latency_ms","p50_latency_ms","p95_latency_ms","p99_latency_ms","max_latency_ms"
+            # The second line contains the values
+            FERRITE_OPS="0"
+            REDIS_OPS="0"
+
+            if [ -f "results/ferrite_${CMD}.csv" ]; then
+              FERRITE_OPS=$(tail -n 1 "results/ferrite_${CMD}.csv" | cut -d',' -f2 | tr -d '"' | tr -d ' ' || echo "0")
+            fi
+            if [ -f "results/redis_${CMD}.csv" ]; then
+              REDIS_OPS=$(tail -n 1 "results/redis_${CMD}.csv" | cut -d',' -f2 | tr -d '"' | tr -d ' ' || echo "0")
+            fi
+
+            # Sanitize: default to 0 if empty
+            FERRITE_OPS="${FERRITE_OPS:-0}"
+            REDIS_OPS="${REDIS_OPS:-0}"
+
+            # Compute delta percentage
+            if [ "$(echo "${REDIS_OPS}" | awk '{print ($1 > 0)}')" = "1" ]; then
+              DELTA=$(awk "BEGIN {printf \"%.1f\", ((${FERRITE_OPS} - ${REDIS_OPS}) / ${REDIS_OPS}) * 100}")
+            else
+              DELTA="N/A"
+            fi
+
+            # Determine winner
+            if [ "${DELTA}" = "N/A" ]; then
+              WINNER="—"
+            elif [ "$(echo "${DELTA}" | awk '{print ($1 > 0)}')" = "1" ]; then
+              WINNER="🟢 Ferrite"
+            elif [ "$(echo "${DELTA}" | awk '{print ($1 < 0)}')" = "1" ]; then
+              WINNER="🔴 Redis"
+            else
+              WINNER="🟡 Tie"
+            fi
+
+            # Format ops/sec with thousands separator
+            FERRITE_FMT=$(printf "%'.0f" "${FERRITE_OPS}" 2>/dev/null || echo "${FERRITE_OPS}")
+            REDIS_FMT=$(printf "%'.0f" "${REDIS_OPS}" 2>/dev/null || echo "${REDIS_OPS}")
+
+            echo "| ${CMD} | ${FERRITE_FMT} | ${REDIS_FMT} | ${DELTA}% | ${WINNER} |" >> "${REPORT}"
+            echo "${CMD},${FERRITE_OPS},${REDIS_OPS},${DELTA},${WINNER}" >> "${CSV_DETAIL}"
+          done
+
+          # Latency detail section
+          cat >> "${REPORT}" <<'EOF'
+
+          ## Latency Percentiles (ms)
+
+          | Command | Server | p50 | p99 |
+          |---------|--------|----:|----:|
+          EOF
+
+          for CMD in "${COMMANDS[@]}"; do
+            for SERVER in ferrite redis; do
+              FILE="results/${SERVER}_${CMD}.csv"
+              if [ -f "${FILE}" ]; then
+                # Columns: test,rps,avg,min,p50,p95,p99,max
+                LINE=$(tail -n 1 "${FILE}")
+                P50=$(echo "${LINE}" | cut -d',' -f5 | tr -d '"' | tr -d ' ')
+                P99=$(echo "${LINE}" | cut -d',' -f7 | tr -d '"' | tr -d ' ')
+                P50="${P50:-N/A}"
+                P99="${P99:-N/A}"
+                LABEL=$(echo "${SERVER}" | sed 's/^f/F/;s/^r/R/')
+                echo "| ${CMD} | ${LABEL} | ${P50} | ${P99} |" >> "${REPORT}"
+              fi
+            done
+          done
+
+          cat >> "${REPORT}" <<'EOF'
+
+          ---
+
+          <details>
+          <summary>Benchmark configuration</summary>
+
+          - **Tool:** `redis-benchmark` (from `redis-tools`)
+          - **Protocol:** RESP2
+          - **Pipeline:** 1 (no pipelining)
+          - **Key pattern:** default (`key:__rand_int__`)
+          - **Runner CPUs:** GitHub Actions `ubuntu-latest` (≥4 cores)
+          - **No CPU pinning or OS tuning applied**
+
+          </details>
+          EOF
+
+          echo ""
+          echo "=== Report Preview ==="
+          cat "${REPORT}"
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: competitive-benchmark-results
+          path: results/
+          retention-days: 90
+
+      - name: Comment on PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('results/benchmark-report.md', 'utf8');
+            const marker = '<!-- competitive-benchmark-results -->';
+            const body = `${marker}\n${report}`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.find(c => c.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
