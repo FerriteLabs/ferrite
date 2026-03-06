@@ -2,11 +2,11 @@
 # =============================================================================
 # Ferrite Release Script
 # =============================================================================
-# Bumps version to 0.2.0, creates git tag, and optionally pushes.
+# Bumps version, creates git tag, and optionally pushes.
 #
 # Usage:
-#   ./scripts/release.sh 0.2.0           # Bump, tag, push
-#   ./scripts/release.sh 0.2.0 --dry-run # Preview only
+#   ./scripts/release.sh 0.3.0           # Bump, tag, push
+#   ./scripts/release.sh 0.3.0 --dry-run # Preview only
 #
 # Prerequisites:
 #   - Clean git working tree (commit all changes first)

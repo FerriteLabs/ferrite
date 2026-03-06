@@ -2,7 +2,6 @@
 //!
 //! Connects as a Redis replica to receive real-time mutations
 //! for zero-downtime migration cutover.
-#![allow(dead_code)]
 
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Instant;

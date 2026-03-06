@@ -1,7 +1,6 @@
 //! AI Agent memory command handlers
 //!
 //! AGENT.REMEMBER, AGENT.RECALL, AGENT.FORGET, AGENT.CHECKPOINT, AGENT.STATS
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::sync::OnceLock;
@@ -11,7 +10,7 @@ use bytes::Bytes;
 
 use crate::protocol::Frame;
 use ferrite_ai::agent_memory::store::{
-    AgentMemoryConfig, AgentMemoryStats, MemoryError, PersistentAgentMemoryStore, StoreMemoryEntry,
+    AgentMemoryConfig, PersistentAgentMemoryStore, StoreMemoryEntry,
     StoreMemoryType,
 };
 

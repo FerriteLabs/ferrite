@@ -1,7 +1,6 @@
 //! Managed cloud service command handlers
 //!
 //! CLOUD.* commands for managing Ferrite Cloud instances.
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::sync::OnceLock;

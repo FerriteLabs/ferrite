@@ -1217,7 +1217,8 @@ async fn import_rdb(
             );
             stream.write_all(cmd.as_bytes()).await?;
             let mut buf = [0u8; 256];
-            let _ = stream.read(&mut buf).await?;
+            // Consume the SELECT response
+            stream.read(&mut buf).await?;
         }
 
         for entry in &db.entries {
@@ -1272,7 +1273,9 @@ async fn import_rdb(
                             continue;
                         }
                         let mut buf = [0u8; 256];
-                        let _ = stream.read(&mut buf).await;
+                        if let Err(e) = stream.read(&mut buf).await {
+                            eprintln!("  {} Failed to read XADD response for {}: {}", "⚠".yellow(), key_str, e);
+                        }
                     }
                     // Create consumer groups
                     for group in groups {
@@ -1288,9 +1291,14 @@ async fn import_rdb(
                             ],
                             None,
                         );
-                        let _ = stream.write_all(xcreate.as_bytes()).await;
+                        if let Err(e) = stream.write_all(xcreate.as_bytes()).await {
+                            eprintln!("  {} Failed to create consumer group {}: {}", "⚠".yellow(), group.name, e);
+                            errors += 1;
+                        }
                         let mut buf = [0u8; 256];
-                        let _ = stream.read(&mut buf).await;
+                        if let Err(e) = stream.read(&mut buf).await {
+                            eprintln!("  {} Failed to read XGROUP response: {}", "⚠".yellow(), e);
+                        }
                     }
                     imported += 1;
                     // Print progress periodically
@@ -1345,9 +1353,13 @@ async fn import_rdb(
                 if expire_ms > now_ms {
                     let ttl_ms = expire_ms - now_ms;
                     let pexpire = build_resp_cmd(&["PEXPIRE", &key_str, &ttl_ms.to_string()], None);
-                    let _ = stream.write_all(pexpire.as_bytes()).await;
+                    if let Err(e) = stream.write_all(pexpire.as_bytes()).await {
+                        eprintln!("  {} Failed to set TTL on {}: {}", "⚠".yellow(), key_str, e);
+                    }
                     let mut buf = [0u8; 256];
-                    let _ = stream.read(&mut buf).await;
+                    if let Err(e) = stream.read(&mut buf).await {
+                        eprintln!("  {} Failed to read PEXPIRE response for {}: {}", "⚠".yellow(), key_str, e);
+                    }
                 }
             }
 
@@ -1392,7 +1404,9 @@ async fn import_rdb(
         println!();
         println!("{}", "Verification".bold().underline());
         let dbsize_cmd = build_resp_cmd(&["DBSIZE"], None);
-        let _ = stream.write_all(dbsize_cmd.as_bytes()).await;
+        if let Err(e) = stream.write_all(dbsize_cmd.as_bytes()).await {
+            eprintln!("  {} Failed to send DBSIZE: {}", "⚠".yellow(), e);
+        }
         let mut buf = [0u8; 256];
         match stream.read(&mut buf).await {
             Ok(n) if n > 0 => {
@@ -1452,7 +1466,10 @@ async fn import_aof(
                     match stream.write_all(cmd).await {
                         Ok(()) => {
                             let mut buf = [0u8; 256];
-                            let _ = stream.read(&mut buf).await;
+                            if let Err(e) = stream.read(&mut buf).await {
+                                eprintln!("  {} AOF replay read error: {}", "⚠".yellow(), e);
+                                errors += 1;
+                            }
                             commands_sent += 1;
                         }
                         Err(_) => errors += 1,
@@ -1492,7 +1509,9 @@ async fn import_aof(
 
     if verify {
         let dbsize_cmd = build_resp_cmd(&["DBSIZE"], None);
-        let _ = stream.write_all(dbsize_cmd.as_bytes()).await;
+        if let Err(e) = stream.write_all(dbsize_cmd.as_bytes()).await {
+            eprintln!("  {} Failed to send DBSIZE: {}", "⚠".yellow(), e);
+        }
         let mut buf = [0u8; 256];
         if let Ok(n) = stream.read(&mut buf).await {
             let response = String::from_utf8_lossy(&buf[..n]);
@@ -1534,6 +1553,7 @@ async fn import_json(
 
     let mut imported: u64 = 0;
     let mut skipped: u64 = 0;
+    let mut errors: u64 = 0;
 
     for entry in &entries {
         let key = entry
@@ -1554,32 +1574,45 @@ async fn import_json(
             .unwrap_or_default();
 
         let cmd = build_resp_cmd(&["SET", key, value], None);
-        let _ = stream.write_all(cmd.as_bytes()).await;
+        if let Err(e) = stream.write_all(cmd.as_bytes()).await {
+            eprintln!("  {} Failed to SET key {}: {}", "⚠".yellow(), key, e);
+            errors += 1;
+            continue;
+        }
         let mut buf = [0u8; 256];
-        let _ = stream.read(&mut buf).await;
+        if let Err(e) = stream.read(&mut buf).await {
+            eprintln!("  {} Failed to read SET response for {}: {}", "⚠".yellow(), key, e);
+        }
         imported += 1;
 
         // Apply TTL if present
         if let Some(ttl) = entry.get("ttl").and_then(|v| v.as_u64()) {
             if ttl > 0 {
                 let expire_cmd = build_resp_cmd(&["PEXPIRE", key, &ttl.to_string()], None);
-                let _ = stream.write_all(expire_cmd.as_bytes()).await;
+                if let Err(e) = stream.write_all(expire_cmd.as_bytes()).await {
+                    eprintln!("  {} Failed to set TTL on {}: {}", "⚠".yellow(), key, e);
+                }
                 let mut buf2 = [0u8; 256];
-                let _ = stream.read(&mut buf2).await;
+                if let Err(e) = stream.read(&mut buf2).await {
+                    eprintln!("  {} Failed to read PEXPIRE response: {}", "⚠".yellow(), e);
+                }
             }
         }
     }
 
     println!(
-        "  {} JSON import complete: {} keys imported, {} skipped",
+        "  {} JSON import complete: {} keys imported, {} skipped, {} errors",
         "✓".green(),
         imported.to_string().green().bold(),
-        skipped
+        skipped,
+        errors
     );
 
     if verify {
         let dbsize_cmd = build_resp_cmd(&["DBSIZE"], None);
-        let _ = stream.write_all(dbsize_cmd.as_bytes()).await;
+        if let Err(e) = stream.write_all(dbsize_cmd.as_bytes()).await {
+            eprintln!("  {} Failed to send DBSIZE: {}", "⚠".yellow(), e);
+        }
         let mut buf = [0u8; 256];
         if let Ok(n) = stream.read(&mut buf).await {
             let response = String::from_utf8_lossy(&buf[..n]);

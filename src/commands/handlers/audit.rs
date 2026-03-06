@@ -2,7 +2,6 @@
 //!
 //! AUDIT.LOG, AUDIT.VERIFY, AUDIT.EXPORT, AUDIT.RETENTION, AUDIT.GDPR.*,
 //! AUDIT.REPORT, AUDIT.STATS, AUDIT.HELP
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::sync::OnceLock;

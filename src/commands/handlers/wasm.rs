@@ -39,13 +39,24 @@ static UDF_REGISTRY: OnceLock<crate::wasm::UdfRegistry> = OnceLock::new();
 /// Returns `None` if the wasmtime engine fails to initialize.
 #[cfg(feature = "wasm")]
 pub fn get_udf_registry() -> Option<&'static crate::wasm::UdfRegistry> {
-    Some(UDF_REGISTRY.get_or_init(|| {
-        use std::sync::Arc;
-        let runtime = Arc::new(
-            crate::wasm::WasmRuntime::with_defaults().expect("failed to initialize WASM runtime"),
-        );
-        crate::wasm::UdfRegistry::new(runtime)
-    }))
+    // Try to get the already-initialized registry first.
+    if let Some(reg) = UDF_REGISTRY.get() {
+        return Some(reg);
+    }
+    // First-time initialization: try to create the WASM runtime.
+    use std::sync::Arc;
+    match crate::wasm::WasmRuntime::with_defaults() {
+        Ok(runtime) => {
+            let registry = crate::wasm::UdfRegistry::new(Arc::new(runtime));
+            // Another thread may have initialized it in the meantime.
+            let _ = UDF_REGISTRY.set(registry);
+            UDF_REGISTRY.get()
+        }
+        Err(e) => {
+            tracing::error!("WASM runtime initialization failed: {e}");
+            None
+        }
+    }
 }
 
 /// Convert a WASM `ExecutionResult` to a protocol `Frame`.

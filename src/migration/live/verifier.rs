@@ -1,7 +1,6 @@
 //! Migration verifier — compares keys between source and target to
 //! ensure consistency after a sync.
 
-#![forbid(unsafe_code)]
 
 use serde::{Deserialize, Serialize};
 

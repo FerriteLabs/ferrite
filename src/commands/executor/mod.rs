@@ -645,6 +645,10 @@ pub struct CommandExecutor {
     cluster_state: Option<Arc<ClusterStateManager>>,
     /// Tracking table for client-side caching invalidation
     tracking_table: Option<crate::runtime::SharedTrackingTable>,
+    /// Server shutdown signal sender
+    shutdown_tx: Option<tokio::sync::broadcast::Sender<()>>,
+    /// Shared replication state for role management
+    replication_state: Option<crate::replication::SharedReplicationState>,
 }
 
 impl CommandExecutor {
@@ -672,6 +676,8 @@ impl CommandExecutor {
             client_registry: Arc::new(ClientRegistry::new()),
             cluster_state: None,
             tracking_table: None,
+            shutdown_tx: None,
+            replication_state: None,
         }
     }
 
@@ -700,6 +706,8 @@ impl CommandExecutor {
             client_registry: Arc::new(ClientRegistry::new()),
             cluster_state: None,
             tracking_table: None,
+            shutdown_tx: None,
+            replication_state: None,
         }
     }
 
@@ -731,6 +739,8 @@ impl CommandExecutor {
             client_registry,
             cluster_state: None,
             tracking_table: None,
+            shutdown_tx: None,
+            replication_state: None,
         }
     }
 
@@ -746,6 +756,16 @@ impl CommandExecutor {
     /// Set the tracking table for client-side caching support.
     pub fn set_tracking_table(&mut self, tracking_table: crate::runtime::SharedTrackingTable) {
         self.tracking_table = Some(tracking_table);
+    }
+
+    /// Set the server shutdown signal sender.
+    pub fn set_shutdown_tx(&mut self, tx: tokio::sync::broadcast::Sender<()>) {
+        self.shutdown_tx = Some(tx);
+    }
+
+    /// Set the shared replication state.
+    pub fn set_replication_state(&mut self, state: crate::replication::SharedReplicationState) {
+        self.replication_state = Some(state);
     }
 
     /// Get the tracking table, if configured.
@@ -1409,7 +1429,7 @@ impl CommandExecutor {
             Command::Config { subcommand, args } => self.config(&subcommand, args),
             Command::Monitor => self.monitor(),
             Command::Reset => self.reset(),
-            Command::Role => self.role(),
+            Command::Role => self.role().await,
             Command::Module { subcommand, args } => self.module(&subcommand, &args),
             Command::Plugin { subcommand, args } => self.plugin(&subcommand, &args),
             Command::BgSave { schedule } => self.bgsave(schedule),
@@ -1463,7 +1483,7 @@ impl CommandExecutor {
 
             // Replication commands
             Command::ReplicaOf { host, port } | Command::SlaveOf { host, port } => {
-                self.replicaof(host, port)
+                self.replicaof(host, port).await
             }
             Command::ReplConf { options } => self.replconf(&options),
             Command::Psync {
@@ -2143,9 +2163,8 @@ impl CommandExecutor {
                 data,
                 replace,
             } => self.restore(db, &key, ttl, &data, replace),
-            Command::Sort { key, options: _ } => {
-                // Basic SORT implementation - just return the list/set/sorted set elements
-                self.sort(db, &key)
+            Command::Sort { key, options } => {
+                self.sort(db, &key, &options)
             }
 
             // Time-Series commands

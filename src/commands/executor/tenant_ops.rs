@@ -2,7 +2,6 @@
 //!
 //! Wires TENANT.* commands to the ferrite-enterprise tenancy module.
 
-#![allow(dead_code)]
 
 use crate::commands::executor::CommandExecutor;
 use crate::protocol::Frame;

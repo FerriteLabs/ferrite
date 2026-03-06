@@ -2,7 +2,6 @@
 //!
 //! GIDX.CREATE, GIDX.DROP, GIDX.SEARCH, GIDX.SEARCH.VECTOR,
 //! GIDX.INDEX, GIDX.DELETE, GIDX.STATUS, GIDX.LIST, GIDX.STATS, GIDX.HELP
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::sync::OnceLock;

@@ -163,6 +163,12 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
+      - name: Checkout ferrite-ops (Dockerfile)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/ferrite-ops
+          path: ../ferrite-ops
+
       # QEMU enables building images for non-native architectures
       - name: Set up QEMU for multi-arch builds
         uses: docker/setup-qemu-action@v3

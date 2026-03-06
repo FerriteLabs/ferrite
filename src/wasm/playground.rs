@@ -2,7 +2,6 @@
 //!
 //! Compiles Ferrite to WebAssembly for browser-based interactive use.
 //! Provides a JavaScript-friendly API for executing Redis commands.
-#![allow(dead_code)]
 
 use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 use std::time::Instant;
@@ -513,7 +512,7 @@ impl PlaygroundInstance {
                 let mut idx = 1;
                 // Sort for deterministic output
                 let mut pairs: Vec<_> = h.iter().collect();
-                pairs.sort_by_key(|(k, _)| k.clone());
+                pairs.sort_by_key(|(k, _)| (*k).clone());
                 for (k, v) in pairs {
                     items.push(format!("{idx}) \"{k}\""));
                     idx += 1;

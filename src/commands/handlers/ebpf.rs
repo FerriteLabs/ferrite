@@ -36,7 +36,7 @@ fn ebpf_status() -> Frame {
     let available = manager.is_available();
     let stats = manager.get_stats();
 
-    let mut fields = vec![
+    let fields = vec![
         Frame::bulk("supported"),
         Frame::bulk(if available { "true" } else { "false" }),
         Frame::bulk("os"),
@@ -120,7 +120,7 @@ fn ebpf_stats() -> Frame {
     let manager = EbpfManager::new(EbpfConfig::default());
     let stats = manager.get_stats();
 
-    let mut fields = vec![
+    let fields = vec![
         Frame::bulk("probes_attached"),
         Frame::integer(stats.probes_attached as i64),
         Frame::bulk("events_captured"),

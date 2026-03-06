@@ -1,5 +1,9 @@
 //! Server, connection, and administrative command helper methods on CommandExecutor.
 
+use std::sync::atomic::{AtomicU64, Ordering as AtomicOrdering};
+use std::sync::OnceLock;
+use std::time::{Instant, SystemTime, UNIX_EPOCH};
+
 use bytes::Bytes;
 
 use crate::auth::Permission;
@@ -12,6 +16,29 @@ use crate::commands::keys;
 use crate::commands::parser::Command;
 
 use super::{command_info_by_name, CommandExecutor, COMMAND_INFO, COMMAND_NAMES};
+
+/// Server start time for uptime calculation.
+static SERVER_START: OnceLock<Instant> = OnceLock::new();
+
+/// Unix timestamp of the last successful RDB save (shared across executor instances).
+static LAST_SAVE_TIME: AtomicU64 = AtomicU64::new(0);
+
+/// Get the server uptime in seconds.
+fn server_uptime_secs() -> u64 {
+    SERVER_START
+        .get_or_init(Instant::now)
+        .elapsed()
+        .as_secs()
+}
+
+/// Record a successful save by updating the last-save timestamp.
+fn record_save_time() {
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+    LAST_SAVE_TIME.store(now, AtomicOrdering::Relaxed);
+}
 
 /// Format bytes into a human-readable string
 fn format_bytes(bytes: usize) -> String {
@@ -596,16 +623,13 @@ impl CommandExecutor {
 
         // Server section
         if include("server") {
-            use std::time::SystemTime;
-            let uptime = SystemTime::now()
-                .duration_since(SystemTime::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_secs();
+            let uptime = server_uptime_secs();
 
             output.push_str("# Server\r\n");
             output.push_str("redis_version:7.0.0\r\n");
             output.push_str("ferrite_version:0.1.0\r\n");
-            output.push_str(&format!("uptime_in_seconds:{}\r\n", uptime % 86400)); // Placeholder
+            output.push_str(&format!("uptime_in_seconds:{}\r\n", uptime));
+            output.push_str(&format!("uptime_in_days:{}\r\n", uptime / 86400));
             output.push_str("tcp_port:6379\r\n");
             output.push_str(&format!("process_id:{}\r\n", std::process::id()));
             output.push_str(&format!("num_databases:{}\r\n", self.store.num_databases()));
@@ -717,8 +741,11 @@ impl CommandExecutor {
             for i in 0..self.store.num_databases() {
                 let key_count = self.store.key_count(i as u8);
                 if key_count > 0 {
-                    // Count keys with expiration (simplified)
-                    output.push_str(&format!("db{}:keys={},expires=0\r\n", i, key_count));
+                    let expires = self.store.volatile_key_count(i as u8);
+                    output.push_str(&format!(
+                        "db{}:keys={},expires={}\r\n",
+                        i, key_count, expires
+                    ));
                 }
             }
             output.push_str("\r\n");
@@ -1052,24 +1079,55 @@ impl CommandExecutor {
                 // MEMORY USAGE key [SAMPLES count]
                 match key {
                     Some(k) => {
-                        if self.store.exists(db, &[k.clone()]) == 1 {
-                            // Estimate memory usage - rough estimate
-                            if let Some(value) = self.store.get(db, k) {
-                                let size = match &value {
-                                    Value::String(s) => s.len() + 32, // overhead
-                                    Value::List(l) => l.len() * 16 + 64,
-                                    Value::Hash(h) => h.len() * 48 + 64,
-                                    Value::Set(s) => s.len() * 24 + 64,
-                                    Value::SortedSet { by_member, .. } => {
-                                        by_member.len() * 40 + 128
-                                    }
-                                    Value::Stream(s) => s.entries.len() * 64 + 128,
-                                    Value::HyperLogLog(hll) => hll.len() + 64,
-                                };
-                                Frame::Integer(size as i64)
-                            } else {
-                                Frame::Null
-                            }
+                        if let Some(value) = self.store.get(db, k) {
+                            // Key overhead: DashMap entry + Bytes header + key data
+                            let key_overhead = 64 + k.len();
+                            // Entry overhead: value + expires_at + access_count + last_access
+                            let entry_overhead = 40;
+                            let value_size = match &value {
+                                Value::String(s) => {
+                                    // Bytes object header + data
+                                    24 + s.len()
+                                }
+                                Value::List(l) => {
+                                    // VecDeque header + per-element (Bytes header + data)
+                                    64 + l.iter().map(|item| 24 + item.len()).sum::<usize>()
+                                }
+                                Value::Hash(h) => {
+                                    // HashMap overhead + per-entry (key Bytes + value Bytes + data)
+                                    64 + h
+                                        .iter()
+                                        .map(|(hk, hv)| 48 + hk.len() + hv.len())
+                                        .sum::<usize>()
+                                }
+                                Value::Set(s) => {
+                                    // HashSet overhead + per-member (Bytes header + data)
+                                    64 + s.iter().map(|m| 24 + m.len()).sum::<usize>()
+                                }
+                                Value::SortedSet { by_member, .. } => {
+                                    // Two indexes: BTreeMap + HashMap
+                                    // Per member: key in both + score (f64)
+                                    128 + by_member
+                                        .iter()
+                                        .map(|(m, _)| 56 + m.len())
+                                        .sum::<usize>()
+                                }
+                                Value::Stream(s) => {
+                                    // Stream struct + per-entry (id + field pairs)
+                                    128 + s
+                                        .entries
+                                        .iter()
+                                        .map(|(_, fields)| {
+                                            48 + fields
+                                                .iter()
+                                                .map(|(fk, fv)| 48 + fk.len() + fv.len())
+                                                .sum::<usize>()
+                                        })
+                                        .sum::<usize>()
+                                }
+                                Value::HyperLogLog(hll) => 24 + hll.len(),
+                            };
+                            Frame::Integer((key_overhead + entry_overhead + value_size) as i64)
                         } else {
                             Frame::Null
                         }
@@ -1173,11 +1231,94 @@ impl CommandExecutor {
                 Frame::bulk(format!("{} redir={}", base_info, redir))
             }
             "KILL" => {
-                // CLIENT KILL [options] - handled at connection level
+                // CLIENT KILL [options] - terminate client connections
                 if args.is_empty() {
                     return Frame::error("ERR wrong number of arguments for CLIENT KILL");
                 }
-                Frame::simple("OK")
+
+                let mut killed = 0i64;
+                let first_arg = String::from_utf8_lossy(&args[0]).to_uppercase();
+
+                // Redis supports two forms:
+                // CLIENT KILL addr:port (old form)
+                // CLIENT KILL [ID id] [TYPE type] [USER user] [ADDR addr:port] [SKIPME yes|no]
+                if first_arg == "ID" || first_arg == "TYPE" || first_arg == "USER" || first_arg == "ADDR" {
+                    let mut i = 0;
+                    let mut skip_me = true;
+                    while i < args.len() {
+                        let opt = String::from_utf8_lossy(&args[i]).to_uppercase();
+                        match opt.as_str() {
+                            "ID" => {
+                                i += 1;
+                                if i >= args.len() {
+                                    return Frame::error("ERR syntax error");
+                                }
+                                if let Ok(id) = String::from_utf8_lossy(&args[i]).parse::<u64>() {
+                                    if self.client_registry.kill(id) {
+                                        killed += 1;
+                                    }
+                                }
+                            }
+                            "ADDR" => {
+                                i += 1;
+                                if i >= args.len() {
+                                    return Frame::error("ERR syntax error");
+                                }
+                                let addr = String::from_utf8_lossy(&args[i]).to_string();
+                                for c in self.client_registry.find_by_addr(&addr) {
+                                    if skip_me && c.id == self.current_client_id() {
+                                        continue;
+                                    }
+                                    if self.client_registry.kill(c.id) {
+                                        killed += 1;
+                                    }
+                                }
+                            }
+                            "USER" => {
+                                i += 1;
+                                if i >= args.len() {
+                                    return Frame::error("ERR syntax error");
+                                }
+                                let user = String::from_utf8_lossy(&args[i]).to_string();
+                                for c in self.client_registry.find_by_user(&user) {
+                                    if skip_me && c.id == self.current_client_id() {
+                                        continue;
+                                    }
+                                    if self.client_registry.kill(c.id) {
+                                        killed += 1;
+                                    }
+                                }
+                            }
+                            "SKIPME" => {
+                                i += 1;
+                                if i >= args.len() {
+                                    return Frame::error("ERR syntax error");
+                                }
+                                skip_me = String::from_utf8_lossy(&args[i]).to_uppercase() != "NO";
+                            }
+                            "TYPE" => {
+                                i += 1; // Accept and skip (all connections are "normal" type)
+                            }
+                            _ => {
+                                return Frame::error(format!("ERR unrecognized CLIENT KILL filter '{}'", opt));
+                            }
+                        }
+                        i += 1;
+                    }
+                    Frame::Integer(killed)
+                } else {
+                    // Old form: CLIENT KILL addr:port
+                    let addr = String::from_utf8_lossy(&args[0]).to_string();
+                    let found = self.client_registry.find_by_addr(&addr);
+                    if found.is_empty() {
+                        Frame::error("ERR No such client")
+                    } else {
+                        for c in &found {
+                            self.client_registry.kill(c.id);
+                        }
+                        Frame::simple("OK")
+                    }
+                }
             }
             "PAUSE" => {
                 // CLIENT PAUSE timeout [WRITE|ALL] - pause client commands
@@ -1560,11 +1701,31 @@ impl CommandExecutor {
     }
 
     pub(super) fn monitor(&self) -> Frame {
-        // MONITOR - stream all commands received by server in real time
-        // This is typically implemented as a streaming command that keeps the connection
-        // open and sends command notifications. For now, we return a simple OK response
-        // A full implementation would require connection state tracking and broadcast channels
-        Frame::simple("OK")
+        // MONITOR returns recent command activity from the slowlog.
+        // True Redis MONITOR is a streaming push — this provides a snapshot
+        // of recent commands in the same timestamp format for debugging.
+        let entries = self.slowlog.get(Some(50));
+
+        if entries.is_empty() {
+            // Redis MONITOR first sends OK, then streams. Return OK if no history.
+            return Frame::simple("OK");
+        }
+
+        let mut output = String::new();
+        for entry in &entries {
+            let args_str: Vec<String> = entry
+                .args
+                .iter()
+                .map(|a| format!("\"{}\"", String::from_utf8_lossy(a)))
+                .collect();
+            output.push_str(&format!(
+                "{}.000000 [0 {}] {}\n",
+                entry.timestamp,
+                entry.client_addr,
+                args_str.join(" ")
+            ));
+        }
+        Frame::bulk(output)
     }
 
     pub(super) fn reset(&self) -> Frame {
@@ -1575,14 +1736,22 @@ impl CommandExecutor {
         Frame::simple("RESET")
     }
 
-    pub(super) fn role(&self) -> Frame {
-        // ROLE - return the replication role and info
-        // For standalone mode, return master with default values
-        // Format: [role, replication-offset, [replica-info...]]
+    pub(super) async fn role(&self) -> Frame {
+        let (role_str, offset) = if let Some(ref state) = self.replication_state {
+            let role = state.role().await;
+            let offset = state.repl_offset() as i64;
+            match role {
+                crate::replication::ReplicationRole::Primary => ("master", offset),
+                crate::replication::ReplicationRole::Replica => ("slave", offset),
+            }
+        } else {
+            ("master", 0)
+        };
+
         Frame::array(vec![
-            Frame::bulk("master"),
-            Frame::Integer(0),    // replication offset
-            Frame::array(vec![]), // list of connected replicas (empty for now)
+            Frame::bulk(role_str),
+            Frame::Integer(offset),
+            Frame::array(vec![]),
         ])
     }
 
@@ -1808,11 +1977,19 @@ impl CommandExecutor {
     }
 
     pub(super) fn bgsave(&self, schedule: bool) -> Frame {
-        // BGSAVE - asynchronously save the dataset to disk
-        // In a real implementation, this would fork and save in background
-        // For now, return success indication
+        let store = self.store.clone();
+        // Spawn background RDB save
+        tokio::spawn(async move {
+            let rdb_data = ferrite_core::persistence::generate_rdb(&store);
+            let path = std::path::Path::new("dump.rdb");
+            if let Err(e) = tokio::fs::write(path, &rdb_data).await {
+                tracing::error!("BGSAVE failed: {}", e);
+            } else {
+                record_save_time();
+                tracing::info!("Background RDB save completed ({} bytes)", rdb_data.len());
+            }
+        });
         if schedule {
-            // SCHEDULE option: don't start if already in progress, just schedule
             Frame::simple("Background saving scheduled")
         } else {
             Frame::simple("Background saving started")
@@ -1820,25 +1997,47 @@ impl CommandExecutor {
     }
 
     pub(super) fn save(&self) -> Frame {
-        // SAVE - synchronously save the dataset to disk
-        // In a real implementation, this would block and save
-        Frame::simple("OK")
+        // Synchronous RDB save
+        let rdb_data = ferrite_core::persistence::generate_rdb(&self.store);
+        let path = std::path::Path::new("dump.rdb");
+        match std::fs::write(path, &rdb_data) {
+            Ok(()) => {
+                record_save_time();
+                Frame::simple("OK")
+            }
+            Err(e) => Frame::error(format!("ERR save failed: {}", e)),
+        }
     }
 
     pub(super) fn bgrewriteaof(&self) -> Frame {
-        // BGREWRITEAOF - asynchronously rewrite the append-only file
+        // AOF rewrite: generate a fresh RDB-preamble + AOF
+        // For now, trigger a background RDB save (AOF rewrite uses same snapshot)
+        let store = self.store.clone();
+        tokio::spawn(async move {
+            let rdb_data = ferrite_core::persistence::generate_rdb(&store);
+            let path = std::path::Path::new("appendonly.aof");
+            if let Err(e) = tokio::fs::write(path, &rdb_data).await {
+                tracing::error!("BGREWRITEAOF failed: {}", e);
+            } else {
+                tracing::info!("Background AOF rewrite completed");
+            }
+        });
         Frame::simple("Background append only file rewriting started")
     }
 
     pub(super) fn lastsave(&self) -> Frame {
-        // LASTSAVE - return Unix timestamp of last successful save
-        // For now, return current time as placeholder
-        use std::time::{SystemTime, UNIX_EPOCH};
-        let timestamp = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs() as i64;
-        Frame::Integer(timestamp)
+        let ts = LAST_SAVE_TIME.load(AtomicOrdering::Relaxed);
+        if ts == 0 {
+            // No save has occurred yet — return server start time
+            let start = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs()
+                .saturating_sub(server_uptime_secs());
+            Frame::Integer(start as i64)
+        } else {
+            Frame::Integer(ts as i64)
+        }
     }
 
     pub(super) fn hello(&self, protocol_version: Option<u8>) -> Frame {
@@ -1887,23 +2086,34 @@ impl CommandExecutor {
 
     /// Handle REPLICAOF/SLAVEOF command
     /// This configures the server to replicate from a master or stop replication
-    pub(super) fn replicaof(&self, host: Option<String>, port: Option<u16>) -> Frame {
+    pub(super) async fn replicaof(&self, host: Option<String>, port: Option<u16>) -> Frame {
         match (host, port) {
             (None, None) => {
-                // REPLICAOF NO ONE - stop replication and become master
-                // In a full implementation, this would:
-                // 1. Stop the replication connection
-                // 2. Switch role to Primary
-                // 3. Generate a new replication ID
+                // REPLICAOF NO ONE — promote to primary
+                if let Some(ref state) = self.replication_state {
+                    state
+                        .set_role(crate::replication::ReplicationRole::Primary)
+                        .await;
+                    state
+                        .set_master_replid(crate::replication::ReplicationId::new())
+                        .await;
+                    tracing::info!("Replication stopped — promoted to primary");
+                }
                 Frame::simple("OK")
             }
-            (Some(_host), Some(_port)) => {
-                // REPLICAOF <host> <port> - start replication
-                // In a full implementation, this would:
-                // 1. Initiate connection to master
-                // 2. Perform handshake (PING, REPLCONF, PSYNC)
-                // 3. Receive RDB and start streaming
-                // This is handled at the server level, not executor level
+            (Some(host), Some(port)) => {
+                // REPLICAOF <host> <port> — configure as replica
+                if let Some(ref state) = self.replication_state {
+                    state
+                        .set_role(crate::replication::ReplicationRole::Replica)
+                        .await;
+                    state.set_offset(0);
+                    tracing::info!(
+                        "Replication configured — replicating from {}:{}",
+                        host,
+                        port
+                    );
+                }
                 Frame::simple("OK")
             }
             _ => Frame::error("ERR wrong number of arguments for 'replicaof' command"),
@@ -2287,35 +2497,45 @@ impl CommandExecutor {
         &self,
         nosave: bool,
         save: bool,
-        now: bool,
+        _now: bool,
         force: bool,
         abort: bool,
     ) -> Frame {
-        // SHUTDOWN options:
-        // - NOSAVE: Don't save before shutdown
-        // - SAVE: Force save before shutdown
-        // - NOW: Skip waiting for clients (no lagged replicas)
-        // - FORCE: Ignore errors during save
-        // - ABORT: Cancel a scheduled shutdown
-
         if abort {
-            // SHUTDOWN ABORT - cancel a scheduled shutdown
             return Frame::simple("OK");
         }
 
-        // In a real implementation:
-        // 1. If SAVE (and not NOSAVE): trigger BGSAVE
-        // 2. If NOW: don't wait for clients/replicas
-        // 3. If FORCE: ignore save errors
-        // 4. Signal the server to shutdown gracefully
+        // Persist before shutdown unless NOSAVE
+        if !nosave {
+            // Default behavior: save before shutdown
+            let rdb_data = ferrite_core::persistence::generate_rdb(&self.store);
+            let path = std::path::Path::new("dump.rdb");
+            match std::fs::write(path, &rdb_data) {
+                Ok(()) => {
+                    record_save_time();
+                    tracing::info!("Pre-shutdown RDB save completed");
+                }
+                Err(e) => {
+                    if !force {
+                        return Frame::error(format!(
+                            "ERR Errors trying to SHUTDOWN. Check logs. {}",
+                            e
+                        ));
+                    }
+                    tracing::error!("Pre-shutdown save failed (forced): {}", e);
+                }
+            }
+        }
 
-        // For now, just acknowledge the command
-        // The actual shutdown would be handled at the server level
-        let _ = (nosave, save, now, force);
-
-        // SHUTDOWN normally doesn't return - the connection closes
-        // If it does return, it means shutdown was not initiated
-        Frame::simple("OK")
+        // Signal the server to shut down via broadcast channel
+        if let Some(ref tx) = self.shutdown_tx {
+            let _ = tx.send(());
+            // SHUTDOWN doesn't return — the connection will close
+            Frame::simple("OK")
+        } else {
+            tracing::warn!("SHUTDOWN called but no shutdown channel configured");
+            Frame::simple("OK")
+        }
     }
 
     /// SWAPDB index1 index2
@@ -2326,14 +2546,14 @@ impl CommandExecutor {
         }
 
         if index1 == index2 {
-            // Swapping a database with itself is a no-op
             return Frame::simple("OK");
         }
 
-        // In a full implementation, this would atomically swap the two databases
-        // This requires special support in the Store implementation
-        // For now, return OK but note this is a placeholder
-        Frame::simple("OK")
+        if self.store.swap_db(index1, index2) {
+            Frame::simple("OK")
+        } else {
+            Frame::error("ERR SWAPDB is not supported with the current storage backend")
+        }
     }
 
     /// MOVE key db

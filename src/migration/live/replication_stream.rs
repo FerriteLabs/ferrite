@@ -5,7 +5,6 @@
 //! raw RESP frames into [`ReplicationEvent`]s that the migration orchestrator
 //! can apply to the local store.
 
-#![forbid(unsafe_code)]
 
 use std::collections::VecDeque;
 use std::sync::atomic::{AtomicU64, Ordering};

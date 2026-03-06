@@ -4,7 +4,6 @@
 //! metadata, scanning keys, dumping values, and subscribing to keyspace
 //! notifications.
 
-#![forbid(unsafe_code)]
 
 use serde::{Deserialize, Serialize};
 use std::fmt;

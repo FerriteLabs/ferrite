@@ -1,4 +1,3 @@
-// TODO: wire up CLIENT LIST, CLIENT KILL, CLIENT GETNAME subcommands
 //! Command parsing — RESP frames to typed [`Command`] values.
 //!
 //! This module defines the [`Command`] enum (one variant per Redis command) and
@@ -34,14 +33,20 @@ pub enum ListDirection {
 /// SET command options
 #[derive(Debug, Clone, Default)]
 pub struct SetOptions {
-    /// Expiration in milliseconds
+    /// Expiration in milliseconds (relative, from EX/PX)
     pub expire_ms: Option<u64>,
+    /// Absolute expiration as Unix timestamp in seconds (EXAT)
+    pub expire_at_sec: Option<u64>,
+    /// Absolute expiration as Unix timestamp in milliseconds (PXAT)
+    pub expire_at_ms: Option<u64>,
     /// Only set if key doesn't exist (NX)
     pub nx: bool,
     /// Only set if key exists (XX)
     pub xx: bool,
     /// Return the old value
     pub get: bool,
+    /// Retain the existing TTL (KEEPTTL)
+    pub keep_ttl: bool,
 }
 
 /// SORT command options
@@ -68,7 +73,7 @@ pub enum Command {
     // String commands
     /// GET key
     Get { key: Bytes },
-    /// SET key value [EX seconds | PX milliseconds] [NX | XX] [GET]
+    /// SET key value [EX seconds | PX milliseconds | EXAT unix-time-seconds | PXAT unix-time-milliseconds] [NX | XX] [KEEPTTL] [GET]
     Set {
         key: Bytes,
         value: Bytes,
@@ -3187,6 +3192,74 @@ mod tests {
             }
             _ => panic!("Expected SET command"),
         }
+    }
+
+    #[test]
+    fn test_parse_set_with_exat() {
+        let frame = make_command(&["SET", "mykey", "myvalue", "EXAT", "1700000000"]);
+        let cmd = Command::from_frame(frame).unwrap();
+        match cmd {
+            Command::Set { options, .. } => {
+                assert_eq!(options.expire_at_sec, Some(1_700_000_000));
+                assert!(options.expire_ms.is_none());
+                assert!(options.expire_at_ms.is_none());
+                assert!(!options.keep_ttl);
+            }
+            _ => panic!("Expected SET command"),
+        }
+    }
+
+    #[test]
+    fn test_parse_set_with_pxat() {
+        let frame = make_command(&["SET", "mykey", "myvalue", "PXAT", "1700000000000"]);
+        let cmd = Command::from_frame(frame).unwrap();
+        match cmd {
+            Command::Set { options, .. } => {
+                assert_eq!(options.expire_at_ms, Some(1_700_000_000_000));
+                assert!(options.expire_ms.is_none());
+                assert!(options.expire_at_sec.is_none());
+            }
+            _ => panic!("Expected SET command"),
+        }
+    }
+
+    #[test]
+    fn test_parse_set_with_keepttl() {
+        let frame = make_command(&["SET", "mykey", "myvalue", "KEEPTTL"]);
+        let cmd = Command::from_frame(frame).unwrap();
+        match cmd {
+            Command::Set { options, .. } => {
+                assert!(options.keep_ttl);
+                assert!(options.expire_ms.is_none());
+            }
+            _ => panic!("Expected SET command"),
+        }
+    }
+
+    #[test]
+    fn test_parse_set_exat_with_nx() {
+        let frame = make_command(&["SET", "mykey", "myvalue", "EXAT", "1700000000", "NX", "GET"]);
+        let cmd = Command::from_frame(frame).unwrap();
+        match cmd {
+            Command::Set { options, .. } => {
+                assert_eq!(options.expire_at_sec, Some(1_700_000_000));
+                assert!(options.nx);
+                assert!(options.get);
+            }
+            _ => panic!("Expected SET command"),
+        }
+    }
+
+    #[test]
+    fn test_parse_set_negative_exat_rejected() {
+        let frame = make_command(&["SET", "mykey", "myvalue", "EXAT", "-1"]);
+        assert!(Command::from_frame(frame).is_err());
+    }
+
+    #[test]
+    fn test_parse_set_negative_ex_rejected() {
+        let frame = make_command(&["SET", "mykey", "myvalue", "EX", "-1"]);
+        assert!(Command::from_frame(frame).is_err());
     }
 
     #[test]

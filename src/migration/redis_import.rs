@@ -2,7 +2,6 @@
 //!
 //! Connects to a Redis instance, triggers BGSAVE, downloads the RDB file,
 //! and imports all keys into Ferrite.
-#![allow(dead_code)]
 
 use std::time::{Duration, Instant};
 
@@ -439,9 +438,9 @@ impl RdbImporter {
         // RANDOMKEY sample_size times
         let mut sampled: u64 = 0;
         let mut matched: u64 = 0;
-        let mut mismatched: u64 = 0;
-        let mut missing: u64 = 0;
-        let mut mismatches: Vec<MismatchDetail> = Vec::new();
+        let mismatched: u64 = 0;
+        let missing: u64 = 0;
+        let mismatches: Vec<MismatchDetail> = Vec::new();
 
         for _ in 0..sample_size {
             let rk_cmd = "*1\r\n$9\r\nRANDOMKEY\r\n";

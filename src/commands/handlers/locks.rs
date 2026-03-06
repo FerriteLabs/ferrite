@@ -2,7 +2,6 @@
 //!
 //! LOCK.ACQUIRE, LOCK.RELEASE, LOCK.EXTEND, LOCK.TRY, LOCK.INFO,
 //! LOCK.OWNER, LOCK.DEADLOCKS, LOCK.EXPIRE, LOCK.STATS, LOCK.HELP
-#![allow(dead_code)]
 
 use std::sync::OnceLock;
 use std::time::Duration;

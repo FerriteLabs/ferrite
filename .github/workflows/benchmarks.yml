@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - 'src/**'
-      - 'crates/ferrite-core/src/storage/**'
+      - 'crates/*/src/**'
       - 'benches/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
@@ -13,7 +13,7 @@ on:
     branches: [main]
     paths:
       - 'src/**'
-      - 'crates/ferrite-core/src/storage/**'
+      - 'crates/*/src/**'
       - 'benches/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
@@ -48,8 +48,14 @@ jobs:
       - name: Run latency benchmarks
         run: cargo bench --bench latency -- --output-format bencher | tee latency-output.txt
 
+      - name: Run tiered storage benchmarks
+        run: cargo bench --bench tiered_storage -- --output-format bencher | tee tiered-output.txt
+
+      - name: Run vector search benchmarks
+        run: cargo bench --bench vector_bench -- --output-format bencher | tee vector-output.txt
+
       - name: Combine benchmark results
-        run: cat throughput-output.txt latency-output.txt > combined-output.txt
+        run: cat throughput-output.txt latency-output.txt tiered-output.txt vector-output.txt > combined-output.txt
 
       - name: Store benchmark results
         uses: benchmark-action/github-action-benchmark@v1

@@ -2,7 +2,6 @@
 //!
 //! CLASSIFY.KEY, CLASSIFY.SCAN, CLASSIFY.TAG, CLASSIFY.TAGS, CLASSIFY.FIND,
 //! CLASSIFY.RULES, CLASSIFY.SUMMARY, CLASSIFY.REPORT, CLASSIFY.STATS, CLASSIFY.HELP
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::sync::OnceLock;

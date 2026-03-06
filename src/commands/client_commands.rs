@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 //! Extended CLIENT command implementations
 //!
 //! Provides CLIENT INFO, CLIENT NO-EVICT, and CLIENT NO-TOUCH.

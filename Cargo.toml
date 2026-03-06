@@ -410,6 +410,52 @@ harness = false
 name = "tiered_storage"
 harness = false
 
+[[example]]
+name = "basic_operations"
+
+[[example]]
+name = "embedded_basic"
+
+[[example]]
+name = "persistence_config"
+
+[[example]]
+name = "transactions"
+
+[[example]]
+name = "client_connection"
+
+[[example]]
+name = "server_mode"
+
+[[example]]
+name = "ferriteql_demo"
+
+[[example]]
+name = "embedded_iot"
+
+[[example]]
+name = "embedded_edge_cache"
+
+[[example]]
+name = "ai_features"
+
+[[example]]
+name = "semantic_caching_demo"
+
+[[example]]
+name = "wasm_playground"
+
+[[example]]
+name = "edge_sync"
+
+[[example]]
+name = "pubsub"
+
+[[example]]
+name = "lua_scripting"
+required-features = ["scripting"]
+
 # Optimize dependencies even in dev mode — reduces code size and speeds up tests.
 # Your own crate stays at opt-level 0 for fast iteration.
 [profile.dev.package."*"]

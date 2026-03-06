@@ -32,17 +32,54 @@ pub(crate) fn parse_set(args: &[Frame]) -> Result<Command> {
                 if i >= args.len() {
                     return Err(FerriteError::Syntax);
                 }
-                let seconds = get_int(&args[i])? as u64;
-                options.expire_ms = Some(seconds * 1000);
+                let seconds = get_int(&args[i])?;
+                if seconds <= 0 {
+                    return Err(FerriteError::Protocol(
+                        "invalid expire time in 'set' command".to_string(),
+                    ));
+                }
+                options.expire_ms = Some(seconds as u64 * 1000);
             }
             "PX" => {
                 i += 1;
                 if i >= args.len() {
                     return Err(FerriteError::Syntax);
                 }
-                let ms = get_int(&args[i])? as u64;
-                options.expire_ms = Some(ms);
+                let ms = get_int(&args[i])?;
+                if ms <= 0 {
+                    return Err(FerriteError::Protocol(
+                        "invalid expire time in 'set' command".to_string(),
+                    ));
+                }
+                options.expire_ms = Some(ms as u64);
             }
+            "EXAT" => {
+                i += 1;
+                if i >= args.len() {
+                    return Err(FerriteError::Syntax);
+                }
+                let timestamp = get_int(&args[i])?;
+                if timestamp <= 0 {
+                    return Err(FerriteError::Protocol(
+                        "invalid expire time in 'set' command".to_string(),
+                    ));
+                }
+                options.expire_at_sec = Some(timestamp as u64);
+            }
+            "PXAT" => {
+                i += 1;
+                if i >= args.len() {
+                    return Err(FerriteError::Syntax);
+                }
+                let timestamp_ms = get_int(&args[i])?;
+                if timestamp_ms <= 0 {
+                    return Err(FerriteError::Protocol(
+                        "invalid expire time in 'set' command".to_string(),
+                    ));
+                }
+                options.expire_at_ms = Some(timestamp_ms as u64);
+            }
+            "KEEPTTL" => options.keep_ttl = true,
             "NX" => options.nx = true,
             "XX" => options.xx = true,
             "GET" => options.get = true,

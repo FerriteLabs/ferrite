@@ -2,7 +2,6 @@
 //!
 //! Time-indexed data versioning with branch, tag, merge, compaction, and
 //! point-in-time read support.
-#![allow(dead_code)]
 
 use std::sync::OnceLock;
 

@@ -86,12 +86,18 @@ The rest of this README dives deeper into features, architecture, and operations
 These features are **stable and tested** — you can use them right now:
 
 - **Full Redis Protocol**: Wire-compatible RESP2/RESP3 ([~92% Redis test suite passing](docs/REDIS_COMPAT.md)). Connect with `redis-cli`, `redis-py`, `redis-rs`, or any Redis client
-- **All Core Data Types**: Strings, Lists, Hashes, Sets, Sorted Sets, HyperLogLog
+- **All Core Data Types**: Strings, Lists, Hashes, Sets, Sorted Sets, HyperLogLog, Streams
 - **Key Operations**: DEL, EXISTS, EXPIRE, TTL, PTTL, KEYS, SCAN, TYPE, RENAME
 - **Pub/Sub**: SUBSCRIBE, UNSUBSCRIBE, PSUBSCRIBE, PUBLISH
 - **Transactions**: MULTI, EXEC, DISCARD, WATCH
 - **Lua Scripting**: EVAL, EVALSHA, SCRIPT (requires `--features scripting`, included by default)
 - **Persistence**: AOF with configurable sync + periodic RDB-style checkpoints
+- **HybridLog Storage**: Three-tier engine (memory → mmap → disk) with automatic data tiering
+- **Replication**: Primary-replica sync with PSYNC2 partial resynchronization
+- **TLS**: TLS 1.2/1.3 encrypted connections (default build)
+- **ACLs**: Redis-compatible access control with Argon2 password hashing
+- **Geo Commands**: GEOADD, GEODIST, GEOSEARCH, GEOSEARCHSTORE
+- **Bitmap/Bitfield**: BITFIELD, BITFIELD_RO with overflow control
 - **Prometheus Metrics**: Built-in `/metrics` endpoint on port 9090
 - **Embedded Mode**: Use as a library without a server (`Database::open(...)`)
 - **Docker Ready**: Multi-stage Dockerfile + Compose with Prometheus/Grafana profiles

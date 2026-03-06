@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 //! Integration point for starting the HTTP gateway alongside the RESP server.
 
 use std::sync::Arc;

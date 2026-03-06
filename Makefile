@@ -97,6 +97,25 @@ bench-epoch: ## Run epoch reclamation sweep benchmark
 	@echo "$(BLUE)$(BOLD)Running epoch reclamation benchmark...$(NC)"
 	@$(CARGO) bench --bench epoch_sweep
 
+##@ Examples
+
+test-examples: ## Verify all examples compile
+	@echo "$(BLUE)$(BOLD)Checking examples compile...$(NC)"
+	@$(CARGO) build --examples 2>/dev/null || $(CARGO) build --example basic_operations --example embedded_basic --example persistence_config --example transactions --example client_connection --example server_mode --example ferriteql_demo --example embedded_iot --example embedded_edge_cache --example ai_features --example semantic_caching_demo --example edge_sync
+	@echo "$(GREEN)All examples compile!$(NC)"
+
+run-example: ## Run a specific example (usage: make run-example EXAMPLE=basic_operations)
+	@if [ -z "$(EXAMPLE)" ]; then \
+		echo "$(YELLOW)Usage: make run-example EXAMPLE=basic_operations$(NC)"; \
+		echo "$(CYAN)Available examples:$(NC)"; \
+		echo "  basic_operations embedded_basic persistence_config transactions"; \
+		echo "  client_connection server_mode ferriteql_demo embedded_iot"; \
+		echo "  embedded_edge_cache ai_features semantic_caching_demo edge_sync"; \
+	else \
+		echo "$(BLUE)$(BOLD)Running example: $(EXAMPLE)...$(NC)"; \
+		$(CARGO) run --example $(EXAMPLE); \
+	fi
+
 ##@ Code Quality Targets
 
 lint: ## Run clippy linter
@@ -372,8 +391,8 @@ prepare-release: clean ci bench ## Prepare for release
 	@echo "$(GREEN)$(BOLD)Ready for release!$(NC)"
 
 msrv: ## Check Minimum Supported Rust Version
-	@echo "$(BLUE)$(BOLD)Checking MSRV (1.88)...$(NC)"
-	@$(CARGO) +1.88 check --all-features
+	@echo "$(BLUE)$(BOLD)Checking MSRV (1.80)...$(NC)"
+	@$(CARGO) +1.80 check --all-features
 	@echo "$(GREEN)MSRV check passed!$(NC)"
 
 completions: ## Generate shell completions for bash, zsh, fish

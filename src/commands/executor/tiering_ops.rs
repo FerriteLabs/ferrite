@@ -4,7 +4,6 @@
 //! that wire to the `AutoTierEngine` and `SavingsCalculator` from
 //! `ferrite-core`.
 
-#![allow(dead_code)]
 
 use crate::commands::executor::CommandExecutor;
 use crate::protocol::Frame;

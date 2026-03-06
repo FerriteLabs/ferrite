@@ -41,20 +41,35 @@ impl CommandExecutor {
             return Frame::null();
         }
 
-        // Get old value if GET option is set
-        let old_value = if options.get {
-            self.store.get(db, &key)
+        // Get old value if GET option is set, and existing TTL if KEEPTTL
+        let (old_value, existing_expiry) = if options.get || options.keep_ttl {
+            match self.store.get_entry(db, &key) {
+                Some((val, exp)) => (Some(val), exp),
+                None => (None, None),
+            }
+        } else {
+            (None, None)
+        };
+
+        // Determine expiration: EXAT/PXAT (absolute) > EX/PX (relative) > KEEPTTL
+        let expires_at = if let Some(ts_sec) = options.expire_at_sec {
+            Some(SystemTime::UNIX_EPOCH + Duration::from_secs(ts_sec))
+        } else if let Some(ts_ms) = options.expire_at_ms {
+            Some(SystemTime::UNIX_EPOCH + Duration::from_millis(ts_ms))
+        } else if let Some(expire_ms) = options.expire_ms {
+            Some(SystemTime::now() + Duration::from_millis(expire_ms))
+        } else if options.keep_ttl {
+            existing_expiry
         } else {
             None
         };
 
-        // Set the value
-        if let Some(expire_ms) = options.expire_ms {
-            let expires_at = SystemTime::now() + Duration::from_millis(expire_ms);
-            self.store
-                .set_with_expiry(db, key, Value::String(value), expires_at);
-        } else {
-            self.store.set(db, key, Value::String(value));
+        // Set the value with or without expiry
+        match expires_at {
+            Some(exp) => self
+                .store
+                .set_with_expiry(db, key, Value::String(value), exp),
+            None => self.store.set(db, key, Value::String(value)),
         }
 
         // Return old value or OK

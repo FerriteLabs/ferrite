@@ -2,7 +2,6 @@
 //!
 //! LINEAGE.RECORD, LINEAGE.ANCESTORS, LINEAGE.DESCENDANTS, LINEAGE.IMPACT,
 //! LINEAGE.PATH, LINEAGE.EXPORT, LINEAGE.STATS, LINEAGE.PRUNE, LINEAGE.HELP
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::sync::OnceLock;

@@ -6,8 +6,7 @@
 //!
 //! Run with: `cargo test --test integration_harness`
 
-use ferrite_core::embedded::{Database, EmbeddedError, KeyType};
-use std::thread;
+use ferrite_core::embedded::{Database, KeyType};
 use std::time::Duration;
 
 // ============================================================================

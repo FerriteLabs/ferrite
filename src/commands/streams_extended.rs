@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 //! Extended Redis Streams commands
 //!
 //! Completes the Streams implementation for 95%+ Redis compatibility.

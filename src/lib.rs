@@ -12,6 +12,8 @@
 //! Individual crates can also be used independently for a smaller dependency footprint.
 //!
 //! ## Crate Organization
+
+#![allow(missing_docs)] // Docs added progressively; struct fields and variants documented as APIs stabilize
 //!
 //! | Crate | Description |
 //! |-------|-------------|

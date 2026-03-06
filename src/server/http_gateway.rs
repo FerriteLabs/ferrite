@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 //! HTTP API Gateway Server
 //!
 //! Serves REST and GraphQL endpoints over HTTP, providing
@@ -439,9 +438,132 @@ fn handle_query(body: &[u8], store: &Store) -> Result<Response<Full<Bytes>>, Gat
             let count = store.exists(0, &keys);
             serde_json::json!({ "result": count })
         }
+        "PING" => {
+            let msg = args.first().map(|s| s.as_str()).unwrap_or("PONG");
+            serde_json::json!({ "result": msg })
+        }
+        "DBSIZE" => {
+            serde_json::json!({ "result": store.keys(0).len() })
+        }
+        "TTL" => {
+            if args.is_empty() {
+                return Err(GatewayError::InvalidRequest(
+                    "TTL requires a key argument".into(),
+                ));
+            }
+            match store.ttl(0, &Bytes::from(args[0].clone())) {
+                Some(ttl) => serde_json::json!({ "result": ttl }),
+                None => serde_json::json!({ "result": -2 }),
+            }
+        }
+        "EXPIRE" => {
+            if args.len() < 2 {
+                return Err(GatewayError::InvalidRequest(
+                    "EXPIRE requires key and seconds arguments".into(),
+                ));
+            }
+            let seconds: u64 = args[1].parse().map_err(|_| {
+                GatewayError::InvalidRequest("Invalid seconds value".into())
+            })?;
+            let expires_at = std::time::SystemTime::now()
+                + std::time::Duration::from_secs(seconds);
+            let result = store.expire(0, &Bytes::from(args[0].clone()), expires_at);
+            serde_json::json!({ "result": if result { 1 } else { 0 } })
+        }
+        "KEYS" => {
+            let pattern = args.first().map(|s| s.as_str()).unwrap_or("*");
+            let all_keys = store.keys(0);
+            let matched: Vec<String> = all_keys
+                .into_iter()
+                .filter(|k| {
+                    if pattern == "*" {
+                        true
+                    } else {
+                        let key_str = String::from_utf8_lossy(k);
+                        key_str.contains(pattern.trim_matches('*'))
+                    }
+                })
+                .map(|k| String::from_utf8_lossy(&k).to_string())
+                .collect();
+            serde_json::json!({ "result": matched })
+        }
+        "TYPE" => {
+            if args.is_empty() {
+                return Err(GatewayError::InvalidRequest(
+                    "TYPE requires a key argument".into(),
+                ));
+            }
+            let key = Bytes::from(args[0].clone());
+            let type_name = match store.get(0, &key) {
+                Some(Value::String(_)) => "string",
+                Some(Value::List(_)) => "list",
+                Some(Value::Hash(_)) => "hash",
+                Some(Value::Set(_)) => "set",
+                Some(Value::SortedSet { .. }) => "zset",
+                Some(Value::Stream(_)) => "stream",
+                Some(Value::HyperLogLog(_)) => "string",
+                None => "none",
+            };
+            serde_json::json!({ "result": type_name })
+        }
+        "MGET" => {
+            if args.is_empty() {
+                return Err(GatewayError::InvalidRequest(
+                    "MGET requires at least one key argument".into(),
+                ));
+            }
+            let values: Vec<serde_json::Value> = args
+                .iter()
+                .map(|a| match store.get(0, &Bytes::from(a.clone())) {
+                    Some(Value::String(v)) => {
+                        serde_json::Value::String(String::from_utf8_lossy(&v).to_string())
+                    }
+                    _ => serde_json::Value::Null,
+                })
+                .collect();
+            serde_json::json!({ "result": values })
+        }
+        "MSET" => {
+            if args.len() < 2 || args.len() % 2 != 0 {
+                return Err(GatewayError::InvalidRequest(
+                    "MSET requires key value [key value ...] arguments".into(),
+                ));
+            }
+            for chunk in args.chunks(2) {
+                store.set(
+                    0,
+                    Bytes::from(chunk[0].clone()),
+                    Value::String(Bytes::from(chunk[1].clone())),
+                );
+            }
+            serde_json::json!({ "result": "OK" })
+        }
+        "INCR" => {
+            if args.is_empty() {
+                return Err(GatewayError::InvalidRequest(
+                    "INCR requires a key argument".into(),
+                ));
+            }
+            let key = Bytes::from(args[0].clone());
+            let current = match store.get(0, &key) {
+                Some(Value::String(v)) => {
+                    String::from_utf8_lossy(&v).parse::<i64>().unwrap_or(0)
+                }
+                None => 0,
+                _ => {
+                    return Ok(json_response(
+                        StatusCode::BAD_REQUEST,
+                        serde_json::json!({ "error": "WRONGTYPE" }),
+                    ));
+                }
+            };
+            let new_val = current + 1;
+            store.set(0, key, Value::String(Bytes::from(new_val.to_string())));
+            serde_json::json!({ "result": new_val })
+        }
         _ => {
             return Err(GatewayError::InvalidRequest(format!(
-                "Unsupported command: {}",
+                "Unsupported command via HTTP gateway: {}. Supported: GET, SET, DEL, EXISTS, PING, DBSIZE, TTL, EXPIRE, KEYS, TYPE, MGET, MSET, INCR",
                 command
             )));
         }
@@ -606,7 +728,7 @@ type DelResult {
 /// Build a JSON response with the given status code and body.
 fn json_response(status: StatusCode, body: serde_json::Value) -> Response<Full<Bytes>> {
     let json = serde_json::to_vec(&body).unwrap_or_default();
-    let mut resp = Response::builder()
+    let resp = Response::builder()
         .status(status)
         .header("Content-Type", "application/json")
         .body(Full::new(Bytes::from(json)))
@@ -716,8 +838,8 @@ fn matches_pattern(s: &str, pattern: &str) -> bool {
         return true;
     }
 
-    let mut si = s.chars().peekable();
-    let mut pi = pattern.chars().peekable();
+    let _si = s.chars().peekable();
+    let _pi = pattern.chars().peekable();
 
     matches_pattern_inner(
         &mut s.chars().collect::<Vec<_>>(),

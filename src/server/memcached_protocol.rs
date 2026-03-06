@@ -2,11 +2,14 @@
 //!
 //! Implements both text and binary Memcached protocols, mapping
 //! commands to Ferrite's internal Store operations.
-#![allow(dead_code)]
 
 use std::collections::HashMap;
+use std::sync::Arc;
+use std::time::{Duration, SystemTime};
 
 use bytes::{Bytes, BytesMut};
+
+use crate::storage::{Store, Value};
 
 // ---------------------------------------------------------------------------
 // Commands
@@ -305,14 +308,64 @@ impl MemcachedTextParser {
             .parse::<usize>()
             .map_err(|_| MemcachedError::InvalidArguments("invalid bytes value".to_string()))?;
 
-        // Value data would be read from subsequent bytes in a real implementation
         Ok(MemcachedCommand::Set {
             key,
             flags,
             exptime,
             bytes,
-            value: Vec::new(),
+            value: Vec::new(), // Populated by parse_command_with_data
         })
+    }
+
+    /// Parse a memcached text command that may include a data payload.
+    ///
+    /// In the memcached text protocol, storage commands (SET/ADD/REPLACE)
+    /// have the value on the line following the header. This method accepts
+    /// the full input including the data block.
+    pub fn parse_command_with_data(input: &[u8]) -> Result<MemcachedCommand, MemcachedError> {
+        // Find the first \r\n to split header from data
+        let header_end = input
+            .windows(2)
+            .position(|w| w == b"\r\n")
+            .unwrap_or(input.len());
+        let header = &input[..header_end];
+
+        // Parse header line
+        let mut cmd = Self::parse_command(header)?;
+
+        // For storage commands, read value data after the header
+        let data_start = (header_end + 2).min(input.len());
+        match &mut cmd {
+            MemcachedCommand::Set {
+                bytes: expected,
+                value,
+                ..
+            } => {
+                let take = (*expected).min(input.len().saturating_sub(data_start));
+                if take > 0 {
+                    *value = input[data_start..data_start + take].to_vec();
+                }
+            }
+            MemcachedCommand::Add { value, .. }
+            | MemcachedCommand::Replace { value, .. } => {
+                let available = input.len().saturating_sub(data_start);
+                if available > 0 {
+                    // Trim trailing \r\n from value
+                    let end = if input.ends_with(b"\r\n") {
+                        input.len() - 2
+                    } else {
+                        input.len()
+                    };
+                    let take = end.saturating_sub(data_start);
+                    if take > 0 {
+                        *value = input[data_start..data_start + take].to_vec();
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        Ok(cmd)
     }
 
     /// Encode a Memcached response to bytes for the text protocol.
@@ -375,6 +428,186 @@ pub fn stats_to_map(stats: &MemcachedStats) -> HashMap<String, String> {
 }
 
 // ---------------------------------------------------------------------------
+// Command handler — executes memcached commands against the Store
+// ---------------------------------------------------------------------------
+
+/// Handles memcached commands by executing them against a Ferrite Store.
+pub struct MemcachedHandler {
+    store: Arc<Store>,
+}
+
+impl MemcachedHandler {
+    /// Create a new handler backed by the given store.
+    pub fn new(store: Arc<Store>) -> Self {
+        Self { store }
+    }
+
+    /// Execute a parsed memcached command and return the response(s).
+    pub fn execute(&self, cmd: MemcachedCommand) -> Vec<MemcachedResponse> {
+        match cmd {
+            MemcachedCommand::Get { keys } | MemcachedCommand::Gets { keys } => {
+                let mut responses = Vec::with_capacity(keys.len() + 1);
+                for key in &keys {
+                    let key_bytes = Bytes::from(key.clone());
+                    if let Some(Value::String(data)) = self.store.get(0, &key_bytes) {
+                        responses.push(MemcachedResponse::Value {
+                            key: key.clone(),
+                            flags: 0,
+                            bytes: data.len(),
+                            cas_unique: None,
+                            data: data.to_vec(),
+                        });
+                    }
+                }
+                responses.push(MemcachedResponse::End);
+                responses
+            }
+            MemcachedCommand::Set {
+                key,
+                exptime,
+                value,
+                ..
+            } => {
+                let key_bytes = Bytes::from(key);
+                let val = Value::String(Bytes::from(value));
+                if exptime > 0 {
+                    let expires_at =
+                        SystemTime::now() + Duration::from_secs(u64::from(exptime));
+                    self.store
+                        .set_with_expiry(0, key_bytes, val, expires_at);
+                } else {
+                    self.store.set(0, key_bytes, val);
+                }
+                vec![MemcachedResponse::Stored]
+            }
+            MemcachedCommand::Add {
+                key,
+                exptime,
+                value,
+                ..
+            } => {
+                let key_bytes = Bytes::from(key);
+                if self.store.get(0, &key_bytes).is_some() {
+                    return vec![MemcachedResponse::NotStored];
+                }
+                let val = Value::String(Bytes::from(value));
+                if exptime > 0 {
+                    let expires_at =
+                        SystemTime::now() + Duration::from_secs(u64::from(exptime));
+                    self.store
+                        .set_with_expiry(0, key_bytes, val, expires_at);
+                } else {
+                    self.store.set(0, key_bytes, val);
+                }
+                vec![MemcachedResponse::Stored]
+            }
+            MemcachedCommand::Replace {
+                key,
+                exptime,
+                value,
+                ..
+            } => {
+                let key_bytes = Bytes::from(key);
+                if self.store.get(0, &key_bytes).is_none() {
+                    return vec![MemcachedResponse::NotStored];
+                }
+                let val = Value::String(Bytes::from(value));
+                if exptime > 0 {
+                    let expires_at =
+                        SystemTime::now() + Duration::from_secs(u64::from(exptime));
+                    self.store
+                        .set_with_expiry(0, key_bytes, val, expires_at);
+                } else {
+                    self.store.set(0, key_bytes, val);
+                }
+                vec![MemcachedResponse::Stored]
+            }
+            MemcachedCommand::Delete { key } => {
+                let key_bytes = Bytes::from(key);
+                let deleted = self.store.del(0, &[key_bytes]);
+                if deleted > 0 {
+                    vec![MemcachedResponse::Deleted]
+                } else {
+                    vec![MemcachedResponse::NotFound]
+                }
+            }
+            MemcachedCommand::Incr { key, delta } => {
+                let key_bytes = Bytes::from(key);
+                match self.store.get(0, &key_bytes) {
+                    Some(Value::String(data)) => {
+                        let current: u64 = std::str::from_utf8(&data)
+                            .ok()
+                            .and_then(|s| s.parse().ok())
+                            .unwrap_or(0);
+                        let new_val = current.saturating_add(delta);
+                        self.store.set(
+                            0,
+                            key_bytes,
+                            Value::String(Bytes::from(new_val.to_string())),
+                        );
+                        vec![MemcachedResponse::Value {
+                            key: String::new(),
+                            flags: 0,
+                            bytes: 0,
+                            cas_unique: None,
+                            data: new_val.to_string().into_bytes(),
+                        }]
+                    }
+                    _ => vec![MemcachedResponse::NotFound],
+                }
+            }
+            MemcachedCommand::Decr { key, delta } => {
+                let key_bytes = Bytes::from(key);
+                match self.store.get(0, &key_bytes) {
+                    Some(Value::String(data)) => {
+                        let current: u64 = std::str::from_utf8(&data)
+                            .ok()
+                            .and_then(|s| s.parse().ok())
+                            .unwrap_or(0);
+                        let new_val = current.saturating_sub(delta);
+                        self.store.set(
+                            0,
+                            key_bytes,
+                            Value::String(Bytes::from(new_val.to_string())),
+                        );
+                        vec![MemcachedResponse::Value {
+                            key: String::new(),
+                            flags: 0,
+                            bytes: 0,
+                            cas_unique: None,
+                            data: new_val.to_string().into_bytes(),
+                        }]
+                    }
+                    _ => vec![MemcachedResponse::NotFound],
+                }
+            }
+            MemcachedCommand::FlushAll { .. } => {
+                self.store.flush_db(0);
+                vec![MemcachedResponse::Stored]
+            }
+            MemcachedCommand::Version => {
+                vec![MemcachedResponse::Version("ferrite 0.3.0".to_string())]
+            }
+            MemcachedCommand::Stats => {
+                let key_count = self.store.keys(0).len();
+                vec![
+                    MemcachedResponse::Stat {
+                        name: "curr_items".to_string(),
+                        value: key_count.to_string(),
+                    },
+                    MemcachedResponse::Stat {
+                        name: "version".to_string(),
+                        value: "ferrite 0.3.0".to_string(),
+                    },
+                    MemcachedResponse::End,
+                ]
+            }
+            MemcachedCommand::Quit => vec![],
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -409,6 +642,22 @@ mod tests {
                 assert_eq!(flags, 0);
                 assert_eq!(exptime, 3600);
                 assert_eq!(bytes, 5);
+            }
+            _ => panic!("expected Set command"),
+        }
+    }
+
+    #[test]
+    fn test_parse_set_with_data() {
+        let input = b"set mykey 0 3600 5\r\nhello\r\n";
+        let cmd = MemcachedTextParser::parse_command_with_data(input).expect("should parse");
+        match cmd {
+            MemcachedCommand::Set {
+                key, value, bytes, ..
+            } => {
+                assert_eq!(key, "mykey");
+                assert_eq!(bytes, 5);
+                assert_eq!(value, b"hello");
             }
             _ => panic!("expected Set command"),
         }
@@ -525,5 +774,120 @@ mod tests {
         };
         let map = stats_to_map(&stats);
         assert_eq!(map.get("get_commands"), Some(&"100".to_string()));
+    }
+
+    // --- Handler tests ---
+
+    #[test]
+    fn test_handler_set_and_get() {
+        let store = Arc::new(Store::new(16));
+        let handler = MemcachedHandler::new(store);
+
+        // SET
+        let resp = handler.execute(MemcachedCommand::Set {
+            key: "hello".to_string(),
+            flags: 0,
+            exptime: 0,
+            bytes: 5,
+            value: b"world".to_vec(),
+        });
+        assert_eq!(resp, vec![MemcachedResponse::Stored]);
+
+        // GET
+        let resp = handler.execute(MemcachedCommand::Get {
+            keys: vec!["hello".to_string()],
+        });
+        assert_eq!(resp.len(), 2); // VALUE + END
+        match &resp[0] {
+            MemcachedResponse::Value { key, data, .. } => {
+                assert_eq!(key, "hello");
+                assert_eq!(data, b"world");
+            }
+            _ => panic!("expected Value response"),
+        }
+        assert_eq!(resp[1], MemcachedResponse::End);
+    }
+
+    #[test]
+    fn test_handler_add_existing_key() {
+        let store = Arc::new(Store::new(16));
+        store.set(
+            0,
+            Bytes::from("existing"),
+            Value::String(Bytes::from("val")),
+        );
+        let handler = MemcachedHandler::new(store);
+
+        let resp = handler.execute(MemcachedCommand::Add {
+            key: "existing".to_string(),
+            flags: 0,
+            exptime: 0,
+            value: b"new".to_vec(),
+        });
+        assert_eq!(resp, vec![MemcachedResponse::NotStored]);
+    }
+
+    #[test]
+    fn test_handler_replace_missing_key() {
+        let store = Arc::new(Store::new(16));
+        let handler = MemcachedHandler::new(store);
+
+        let resp = handler.execute(MemcachedCommand::Replace {
+            key: "missing".to_string(),
+            flags: 0,
+            exptime: 0,
+            value: b"val".to_vec(),
+        });
+        assert_eq!(resp, vec![MemcachedResponse::NotStored]);
+    }
+
+    #[test]
+    fn test_handler_delete() {
+        let store = Arc::new(Store::new(16));
+        store.set(0, Bytes::from("k"), Value::String(Bytes::from("v")));
+        let handler = MemcachedHandler::new(store);
+
+        let resp = handler.execute(MemcachedCommand::Delete {
+            key: "k".to_string(),
+        });
+        assert_eq!(resp, vec![MemcachedResponse::Deleted]);
+
+        let resp = handler.execute(MemcachedCommand::Delete {
+            key: "k".to_string(),
+        });
+        assert_eq!(resp, vec![MemcachedResponse::NotFound]);
+    }
+
+    #[test]
+    fn test_handler_incr_decr() {
+        let store = Arc::new(Store::new(16));
+        store.set(
+            0,
+            Bytes::from("counter"),
+            Value::String(Bytes::from("10")),
+        );
+        let handler = MemcachedHandler::new(store);
+
+        let resp = handler.execute(MemcachedCommand::Incr {
+            key: "counter".to_string(),
+            delta: 5,
+        });
+        match &resp[0] {
+            MemcachedResponse::Value { data, .. } => {
+                assert_eq!(data, b"15");
+            }
+            _ => panic!("expected Value response"),
+        }
+
+        let resp = handler.execute(MemcachedCommand::Decr {
+            key: "counter".to_string(),
+            delta: 3,
+        });
+        match &resp[0] {
+            MemcachedResponse::Value { data, .. } => {
+                assert_eq!(data, b"12");
+            }
+            _ => panic!("expected Value response"),
+        }
     }
 }

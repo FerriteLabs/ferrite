@@ -2,7 +2,6 @@
 //!
 //! SCALING.PREDICT, SCALING.HISTORY, SCALING.PATTERN, SCALING.SAMPLE,
 //! SCALING.CONFIG, SCALING.STATS, SCALING.HELP
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::sync::OnceLock;

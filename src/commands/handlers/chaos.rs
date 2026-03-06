@@ -2,7 +2,6 @@
 //!
 //! CHAOS.INJECT, CHAOS.HEAL, CHAOS.LIST, CHAOS.SCENARIO, CHAOS.STATS,
 //! CHAOS.HELP
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::sync::OnceLock;

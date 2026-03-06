@@ -1,7 +1,6 @@
 //! API Gateway command handlers
 //!
 //! Commands for managing the HTTP REST/GraphQL API gateway.
-#![allow(dead_code)]
 
 use std::sync::OnceLock;
 

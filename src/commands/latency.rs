@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 //! LATENCY command family
 //!
 //! Implements Redis LATENCY monitoring: LATEST, HISTORY, RESET, GRAPH, HELP.

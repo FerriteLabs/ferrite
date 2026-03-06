@@ -265,62 +265,180 @@ impl CommandExecutor {
         Frame::simple("OK")
     }
 
-    /// SORT command - basic implementation
-    pub(super) fn sort(&self, db: u8, key: &Bytes) -> Frame {
-        match self.store.get(db, key) {
-            Some(Value::List(list)) => {
-                let mut items: Vec<Bytes> = list.iter().cloned().collect();
-                // Try numeric sort, fall back to lexicographic
-                items.sort_by(|a, b| {
-                    let a_num: Option<f64> =
-                        std::str::from_utf8(a).ok().and_then(|s| s.parse().ok());
-                    let b_num: Option<f64> =
-                        std::str::from_utf8(b).ok().and_then(|s| s.parse().ok());
-                    match (a_num, b_num) {
-                        (Some(an), Some(bn)) => {
-                            an.partial_cmp(&bn).unwrap_or(std::cmp::Ordering::Equal)
-                        }
-                        _ => a.cmp(b),
-                    }
-                });
-                Frame::array(items.into_iter().map(|b| Frame::Bulk(Some(b))).collect())
-            }
-            Some(Value::Set(set)) => {
-                let mut items: Vec<Bytes> = set.iter().cloned().collect();
-                items.sort_by(|a, b| {
-                    let a_num: Option<f64> =
-                        std::str::from_utf8(a).ok().and_then(|s| s.parse().ok());
-                    let b_num: Option<f64> =
-                        std::str::from_utf8(b).ok().and_then(|s| s.parse().ok());
-                    match (a_num, b_num) {
-                        (Some(an), Some(bn)) => {
-                            an.partial_cmp(&bn).unwrap_or(std::cmp::Ordering::Equal)
-                        }
-                        _ => a.cmp(b),
-                    }
-                });
-                Frame::array(items.into_iter().map(|b| Frame::Bulk(Some(b))).collect())
-            }
-            Some(Value::SortedSet { by_member, .. }) => {
-                let mut items: Vec<Bytes> = by_member.keys().cloned().collect();
-                items.sort_by(|a, b| {
-                    let a_num: Option<f64> =
-                        std::str::from_utf8(a).ok().and_then(|s| s.parse().ok());
-                    let b_num: Option<f64> =
-                        std::str::from_utf8(b).ok().and_then(|s| s.parse().ok());
-                    match (a_num, b_num) {
-                        (Some(an), Some(bn)) => {
-                            an.partial_cmp(&bn).unwrap_or(std::cmp::Ordering::Equal)
-                        }
-                        _ => a.cmp(b),
-                    }
-                });
-                Frame::array(items.into_iter().map(|b| Frame::Bulk(Some(b))).collect())
-            }
+    /// SORT command — supports BY, GET, DESC, ALPHA, LIMIT, STORE options
+    pub(super) fn sort(
+        &self,
+        db: u8,
+        key: &Bytes,
+        options: &crate::commands::parser::SortOptions,
+    ) -> Frame {
+        // Extract elements from the source key
+        let mut items: Vec<Bytes> = match self.store.get(db, key) {
+            Some(Value::List(list)) => list.iter().cloned().collect(),
+            Some(Value::Set(set)) => set.iter().cloned().collect(),
+            Some(Value::SortedSet { by_member, .. }) => by_member.keys().cloned().collect(),
             Some(_) => {
-                Frame::error("WRONGTYPE Operation against a key holding the wrong kind of value")
+                return Frame::error(
+                    "WRONGTYPE Operation against a key holding the wrong kind of value",
+                );
             }
-            None => Frame::array(vec![]),
+            None => return Frame::array(vec![]),
+        };
+
+        // BY pattern: sort by external key values instead of element values
+        if let Some(ref by_pattern) = options.by {
+            // BY nosort — skip sorting entirely
+            if by_pattern != "nosort" {
+                items.sort_by(|a, b| {
+                    let a_key = Self::derive_sort_key(by_pattern, a);
+                    let b_key = Self::derive_sort_key(by_pattern, b);
+                    let a_val = self.sort_lookup_value(db, &a_key, options.alpha);
+                    let b_val = self.sort_lookup_value(db, &b_key, options.alpha);
+                    a_val.cmp(&b_val)
+                });
+            }
+        } else if options.alpha {
+            items.sort_by(|a, b| a.cmp(b));
+        } else {
+            items.sort_by(|a, b| {
+                let a_num = Self::parse_sort_float(a);
+                let b_num = Self::parse_sort_float(b);
+                a_num
+                    .partial_cmp(&b_num)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            });
+        }
+
+        // DESC reverses the order
+        if options.desc {
+            items.reverse();
+        }
+
+        // LIMIT offset count
+        if let Some((offset, count)) = options.limit {
+            let start = if offset < 0 { 0usize } else { offset as usize };
+            let end = if count < 0 {
+                items.len()
+            } else {
+                (start + count as usize).min(items.len())
+            };
+            if start >= items.len() {
+                items.clear();
+            } else {
+                items = items[start..end].to_vec();
+            }
+        }
+
+        // Build result: apply GET patterns if any, otherwise return elements
+        let result_frames: Vec<Frame> = if options.get.is_empty() {
+            items.iter().map(|b| Frame::Bulk(Some(b.clone()))).collect()
+        } else {
+            let mut frames = Vec::with_capacity(items.len() * options.get.len());
+            for item in &items {
+                for pattern in &options.get {
+                    if pattern == "#" {
+                        frames.push(Frame::Bulk(Some(item.clone())));
+                    } else {
+                        let derived = Self::derive_sort_key(pattern, item);
+                        let key_bytes = Bytes::from(derived);
+                        match self.store.get(db, &key_bytes) {
+                            Some(Value::String(v)) => frames.push(Frame::Bulk(Some(v))),
+                            _ => frames.push(Frame::Null),
+                        }
+                    }
+                }
+            }
+            frames
+        };
+
+        // STORE saves result to destination key
+        if let Some(ref dest) = options.store {
+            // Collect Bytes from the result frames
+            let list: std::collections::VecDeque<Bytes> = result_frames
+                .iter()
+                .map(|f| match f {
+                    Frame::Bulk(Some(b)) => b.clone(),
+                    _ => Bytes::new(),
+                })
+                .collect();
+            let count = list.len() as i64;
+            self.store.set(db, dest.clone(), Value::List(list));
+            Frame::Integer(count)
+        } else {
+            Frame::array(result_frames)
+        }
+    }
+
+    /// Derive a lookup key by replacing `*` in the pattern with the element value.
+    fn derive_sort_key(pattern: &str, element: &Bytes) -> String {
+        let elem_str = String::from_utf8_lossy(element);
+        // Handle hash field patterns: "key_*->field"
+        pattern.replace('*', &elem_str)
+    }
+
+    /// Look up an external key's value for BY sorting.
+    fn sort_lookup_value(&self, db: u8, key: &str, alpha: bool) -> SortKey {
+        let key_bytes = Bytes::from(key.to_string());
+
+        // Handle hash field dereference: "key->field"
+        if let Some(arrow_pos) = key.find("->") {
+            let hash_key = Bytes::from(key[..arrow_pos].to_string());
+            let field = Bytes::from(key[arrow_pos + 2..].to_string());
+            if let Some(Value::Hash(hash)) = self.store.get(db, &hash_key) {
+                if let Some(val) = hash.get(&field) {
+                    return if alpha {
+                        SortKey::Alpha(val.to_vec())
+                    } else {
+                        SortKey::Numeric(Self::parse_sort_float(val))
+                    };
+                }
+            }
+            return SortKey::Numeric(0.0);
+        }
+
+        match self.store.get(db, &key_bytes) {
+            Some(Value::String(v)) => {
+                if alpha {
+                    SortKey::Alpha(v.to_vec())
+                } else {
+                    SortKey::Numeric(Self::parse_sort_float(&v))
+                }
+            }
+            _ => SortKey::Numeric(0.0),
+        }
+    }
+
+    fn parse_sort_float(data: &[u8]) -> f64 {
+        std::str::from_utf8(data)
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0.0)
+    }
+}
+
+/// Sort key for BY-pattern comparisons.
+#[derive(PartialEq)]
+enum SortKey {
+    Numeric(f64),
+    Alpha(Vec<u8>),
+}
+
+impl Eq for SortKey {}
+
+impl PartialOrd for SortKey {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for SortKey {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        match (self, other) {
+            (SortKey::Numeric(a), SortKey::Numeric(b)) => {
+                a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal)
+            }
+            (SortKey::Alpha(a), SortKey::Alpha(b)) => a.cmp(b),
+            _ => std::cmp::Ordering::Equal,
         }
     }
 }

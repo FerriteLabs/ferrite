@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 //! Extended OBJECT command implementations
 //!
 //! Provides standalone OBJECT FREQ, IDLETIME, and HELP handlers.

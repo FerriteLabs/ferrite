@@ -1,7 +1,6 @@
 //! Migration engine — orchestrates bulk sync, continuous replication,
 //! verification, cutover, and rollback.
 
-#![forbid(unsafe_code)]
 
 use std::sync::Arc;
 

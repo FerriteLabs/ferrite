@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 //! Extended CONFIG command support
 //!
 //! Provides CONFIG RESETSTAT, CONFIG REWRITE, extended CONFIG SET parameters,

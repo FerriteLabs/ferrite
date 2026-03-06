@@ -1,7 +1,6 @@
 //! VECTOR.INGEST command handlers
 //!
 //! Wire streaming vector ingestion pipeline commands into the server.
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::sync::OnceLock;

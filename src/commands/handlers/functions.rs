@@ -1,7 +1,6 @@
 //! FUNCTION.* command handlers
 //!
 //! Serverless function deployment, invocation, and management.
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::sync::OnceLock;

@@ -1,6 +1,5 @@
 //! Multi-cloud replication command handlers
 //! REPLICATE.* commands for active-active management
-#![allow(dead_code)]
 
 use std::sync::OnceLock;
 

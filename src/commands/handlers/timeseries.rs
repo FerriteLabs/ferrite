@@ -44,8 +44,17 @@ struct TimeSeriesMetricMeta {
     labels: Vec<(String, String)>,
 }
 
+#[allow(clippy::unwrap_used)] // OnceLock init runs exactly once; default config allocation cannot fail
 fn get_engine() -> &'static TimeSeriesEngine {
-    TS_ENGINE.get_or_init(|| TimeSeriesEngine::new().expect("Failed to create TimeSeriesEngine"))
+    TS_ENGINE.get_or_init(|| {
+        TimeSeriesEngine::new().unwrap_or_else(|e| {
+            tracing::error!("TimeSeriesEngine init error: {e}, falling back to default config");
+            TimeSeriesEngine::with_config(
+                ferrite_timeseries::timeseries::TimeSeriesConfig::default(),
+            )
+            .expect("default TimeSeriesConfig must always succeed")
+        })
+    })
 }
 
 fn get_metadata() -> &'static RwLock<HashMap<String, TimeSeriesMetricMeta>> {

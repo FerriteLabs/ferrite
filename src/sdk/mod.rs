@@ -20,7 +20,6 @@
 //! generator.generate(Language::Python, "./sdk/python")?;
 //! ```
 
-#![allow(dead_code)]
 pub mod ffi;
 pub mod generator;
 pub mod languages;

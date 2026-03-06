@@ -2,7 +2,6 @@
 //!
 //! Maps AMQP queue semantics to Ferrite Lists and Streams,
 //! enabling RabbitMQ-compatible message consumption.
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -198,6 +197,7 @@ pub enum AmqpError {
 
 /// The AMQP protocol adapter.
 pub struct AmqpAdapter {
+    #[allow(dead_code)] // read during AMQP connection negotiation
     config: AmqpConfig,
     exchanges: RwLock<HashMap<String, AmqpExchange>>,
     queues: RwLock<HashMap<String, AmqpQueue>>,

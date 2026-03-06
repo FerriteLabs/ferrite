@@ -3,7 +3,6 @@
 //! MESH.DISCOVER, MESH.PEERS, MESH.PEER.ADD, MESH.PEER.REMOVE, MESH.PEER.BAN,
 //! MESH.PEER.INFO, MESH.TOPOLOGY, MESH.SYNC, MESH.BROADCAST, MESH.ROUTE,
 //! MESH.HEALTH, MESH.STATS, MESH.HELP
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::sync::OnceLock;

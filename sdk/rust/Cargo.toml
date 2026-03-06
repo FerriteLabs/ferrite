@@ -2,12 +2,10 @@
 name = "ferrite-client"
 version = "0.1.0"
 edition = "2021"
-description = "Official Rust client for Ferrite key-value store"
+description = "DEPRECATED: Use ferrite-rs instead. See ../ferrite-rs/"
 license = "Apache-2.0"
 repository = "https://github.com/ferritelabs/ferrite"
-readme = "README.md"
-keywords = ["ferrite", "redis", "database", "key-value", "vector-search"]
-categories = ["database", "asynchronous"]
+publish = false
 
 [dependencies]
 redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }

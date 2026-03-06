@@ -1,5 +1,10 @@
 # Good First Issues
 
+> **Canonical source:** [`FIRST_CONTRIBUTORS.md`](../FIRST_CONTRIBUTORS.md) in the repository root.
+>
+> This file is a summary. See the full guide for detailed implementation steps,
+> file paths, and expected behavior for each issue.
+
 Welcome, new contributor! 🦀 Here are carefully curated tasks designed to help you make your first contribution to Ferrite.
 
 ## How to Get Started

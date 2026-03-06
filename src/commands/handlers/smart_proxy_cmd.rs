@@ -2,7 +2,6 @@
 //!
 //! PROXY.STATUS, PROXY.UPSTREAM, PROXY.DISCOVER, PROXY.FEATURES,
 //! PROXY.CACHE, PROXY.INTERCEPT, PROXY.STATS, PROXY.HELP
-#![allow(dead_code)]
 
 use std::sync::OnceLock;
 

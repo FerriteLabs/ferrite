@@ -3,7 +3,6 @@
 //! Programmable access control policy commands.
 //! POLICYENGINE.CREATE, POLICYENGINE.DELETE, POLICYENGINE.TEST, POLICYENGINE.LIST,
 //! POLICYENGINE.INFO, POLICYENGINE.EVALUATE, POLICYENGINE.STATS, POLICYENGINE.HELP
-#![allow(dead_code)]
 
 use std::sync::OnceLock;
 

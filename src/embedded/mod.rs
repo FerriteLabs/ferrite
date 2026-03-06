@@ -551,8 +551,9 @@ impl Ferrite {
 impl Drop for Ferrite {
     fn drop(&mut self) {
         if !self.closed.swap(true, Ordering::AcqRel) {
-            // Best-effort flush on close
-            let _ = self.save();
+            if let Err(e) = self.save() {
+                tracing::error!("Ferrite embedded: failed to flush data on close: {e}");
+            }
         }
     }
 }

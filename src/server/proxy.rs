@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 //! Transparent Redis proxy with connection pooling
 //!
 //! Accepts client connections and forwards commands to backend Ferrite/Redis

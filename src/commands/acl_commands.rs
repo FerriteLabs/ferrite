@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 //! Extended ACL command implementations
 //!
 //! Provides ACL LOG, ACL GENPASS, ACL CAT, and ACL DRYRUN.

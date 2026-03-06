@@ -1,6 +1,8 @@
-# ferrite-client
+# ferrite-client (DEPRECATED)
 
-Official Rust client SDK for [Ferrite](https://github.com/ferritelabs/ferrite), a high-performance tiered-storage key-value store that is wire-compatible with Redis.
+> **⚠️ This crate is deprecated.** Use [`ferrite-rs`](../ferrite-rs/) instead, which provides async/sync clients, connection pooling, and full RESP protocol support.
+
+Legacy Rust client SDK for [Ferrite](https://github.com/ferritelabs/ferrite).
 
 ## Installation
 

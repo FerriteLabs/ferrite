@@ -4,7 +4,6 @@
 //! Supports RDB versions 6-11 (Redis 2.6 through 7.x).
 //!
 //! RDB format: [REDIS magic] [version] [database sections] [EOF] [checksum]
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::io;

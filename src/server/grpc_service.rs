@@ -2,11 +2,14 @@
 //!
 //! Provides a protobuf-compatible service interface without requiring
 //! external protobuf compilation. Uses manual message encoding.
-#![allow(dead_code)]
 
 use std::collections::HashMap;
+use std::sync::Arc;
 
+use bytes::Bytes;
 use serde::{Deserialize, Serialize};
+
+use crate::storage::{Store, Value};
 
 // ---------------------------------------------------------------------------
 // Method definitions
@@ -113,15 +116,31 @@ impl GrpcServiceDefinition {
 pub struct FerritGrpcService {
     /// Pre-built method lookup table.
     method_map: HashMap<String, GrpcMethod>,
+    /// Reference to the key-value store.
+    store: Option<Arc<Store>>,
 }
 
 impl FerritGrpcService {
-    /// Create a new gRPC service instance.
+    /// Create a new gRPC service instance (without store — for testing/metadata only).
     pub fn new() -> Self {
         let methods = GrpcServiceDefinition::methods();
         let method_map: HashMap<String, GrpcMethod> =
             methods.into_iter().map(|m| (m.name.clone(), m)).collect();
-        Self { method_map }
+        Self {
+            method_map,
+            store: None,
+        }
+    }
+
+    /// Create a new gRPC service instance connected to a store.
+    pub fn with_store(store: Arc<Store>) -> Self {
+        let methods = GrpcServiceDefinition::methods();
+        let method_map: HashMap<String, GrpcMethod> =
+            methods.into_iter().map(|m| (m.name.clone(), m)).collect();
+        Self {
+            method_map,
+            store: Some(store),
+        }
     }
 
     /// Handle an incoming gRPC request.
@@ -187,14 +206,44 @@ impl FerritGrpcService {
             .get("key")
             .and_then(|v| v.as_str())
             .unwrap_or_default();
-        GrpcResponse {
-            status: 0,
-            payload: serde_json::json!({
-                "key": key,
-                "value": serde_json::Value::Null,
-                "found": false
-            }),
-            error: None,
+
+        if let Some(ref store) = self.store {
+            match store.get(0, &Bytes::from(key.to_string())) {
+                Some(Value::String(v)) => GrpcResponse {
+                    status: 0,
+                    payload: serde_json::json!({
+                        "key": key,
+                        "value": String::from_utf8_lossy(&v).to_string(),
+                        "found": true
+                    }),
+                    error: None,
+                },
+                Some(_) => GrpcResponse {
+                    status: 0,
+                    payload: serde_json::json!({
+                        "key": key,
+                        "value": serde_json::Value::Null,
+                        "found": true,
+                        "type_error": "WRONGTYPE"
+                    }),
+                    error: None,
+                },
+                None => GrpcResponse {
+                    status: 0,
+                    payload: serde_json::json!({
+                        "key": key,
+                        "value": serde_json::Value::Null,
+                        "found": false
+                    }),
+                    error: None,
+                },
+            }
+        } else {
+            GrpcResponse {
+                status: 13, // INTERNAL
+                payload: serde_json::Value::Null,
+                error: Some("store not available".to_string()),
+            }
         }
     }
 
@@ -203,43 +252,96 @@ impl FerritGrpcService {
             .get("key")
             .and_then(|v| v.as_str())
             .unwrap_or_default();
-        GrpcResponse {
-            status: 0,
-            payload: serde_json::json!({
-                "key": key,
-                "ok": true
-            }),
-            error: None,
+        let value = payload
+            .get("value")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default();
+
+        if let Some(ref store) = self.store {
+            store.set(
+                0,
+                Bytes::from(key.to_string()),
+                Value::String(Bytes::from(value.to_string())),
+            );
+            GrpcResponse {
+                status: 0,
+                payload: serde_json::json!({
+                    "key": key,
+                    "ok": true
+                }),
+                error: None,
+            }
+        } else {
+            GrpcResponse {
+                status: 13,
+                payload: serde_json::Value::Null,
+                error: Some("store not available".to_string()),
+            }
         }
     }
 
     fn handle_del(&self, payload: &serde_json::Value) -> GrpcResponse {
-        let keys = payload
+        let keys: Vec<String> = payload
             .get("keys")
             .and_then(|v| v.as_array())
-            .map(|a| a.len())
-            .unwrap_or(0);
-        GrpcResponse {
-            status: 0,
-            payload: serde_json::json!({
-                "deleted": keys
-            }),
-            error: None,
+            .map(|a| {
+                a.iter()
+                    .filter_map(|v| v.as_str().map(String::from))
+                    .collect()
+            })
+            .unwrap_or_default();
+
+        if let Some(ref store) = self.store {
+            let byte_keys: Vec<Bytes> = keys.iter().map(|k| Bytes::from(k.clone())).collect();
+            let deleted = store.del(0, &byte_keys);
+            GrpcResponse {
+                status: 0,
+                payload: serde_json::json!({
+                    "deleted": deleted
+                }),
+                error: None,
+            }
+        } else {
+            GrpcResponse {
+                status: 13,
+                payload: serde_json::Value::Null,
+                error: Some("store not available".to_string()),
+            }
         }
     }
 
-    fn handle_scan(&self, _payload: &serde_json::Value) -> GrpcResponse {
-        GrpcResponse {
-            status: 0,
-            payload: serde_json::json!({
-                "keys": [],
-                "cursor": "0"
-            }),
-            error: None,
+    fn handle_scan(&self, payload: &serde_json::Value) -> GrpcResponse {
+        let count = payload
+            .get("count")
+            .and_then(|v| v.as_u64())
+            .unwrap_or(10) as usize;
+
+        if let Some(ref store) = self.store {
+            let all_keys = store.keys(0);
+            let limited: Vec<String> = all_keys
+                .into_iter()
+                .take(count)
+                .map(|k| String::from_utf8_lossy(&k).to_string())
+                .collect();
+            GrpcResponse {
+                status: 0,
+                payload: serde_json::json!({
+                    "keys": limited,
+                    "cursor": "0"
+                }),
+                error: None,
+            }
+        } else {
+            GrpcResponse {
+                status: 13,
+                payload: serde_json::Value::Null,
+                error: Some("store not available".to_string()),
+            }
         }
     }
 
     fn handle_subscribe(&self, _payload: &serde_json::Value) -> GrpcResponse {
+        // Pub/Sub subscriptions require a streaming connection; acknowledge intent
         GrpcResponse {
             status: 0,
             payload: serde_json::json!({
@@ -253,14 +355,76 @@ impl FerritGrpcService {
         let command = payload
             .get("command")
             .and_then(|v| v.as_str())
+            .unwrap_or_default()
+            .to_uppercase();
+        let args: Vec<String> = payload
+            .get("args")
+            .and_then(|v| v.as_array())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|v| v.as_str().map(String::from))
+                    .collect()
+            })
             .unwrap_or_default();
-        GrpcResponse {
-            status: 0,
-            payload: serde_json::json!({
-                "command": command,
-                "result": "OK"
-            }),
-            error: None,
+
+        if let Some(ref store) = self.store {
+            let result = match command.as_str() {
+                "PING" => {
+                    let msg = args.first().map(|s| s.as_str()).unwrap_or("PONG");
+                    serde_json::json!({ "result": msg })
+                }
+                "GET" => {
+                    if let Some(key) = args.first() {
+                        match store.get(0, &Bytes::from(key.clone())) {
+                            Some(Value::String(v)) => {
+                                serde_json::json!({ "result": String::from_utf8_lossy(&v).to_string() })
+                            }
+                            _ => serde_json::json!({ "result": null }),
+                        }
+                    } else {
+                        serde_json::json!({ "error": "ERR wrong number of arguments" })
+                    }
+                }
+                "SET" => {
+                    if args.len() >= 2 {
+                        store.set(
+                            0,
+                            Bytes::from(args[0].clone()),
+                            Value::String(Bytes::from(args[1].clone())),
+                        );
+                        serde_json::json!({ "result": "OK" })
+                    } else {
+                        serde_json::json!({ "error": "ERR wrong number of arguments" })
+                    }
+                }
+                "DEL" => {
+                    let byte_keys: Vec<Bytes> =
+                        args.iter().map(|a| Bytes::from(a.clone())).collect();
+                    let deleted = store.del(0, &byte_keys);
+                    serde_json::json!({ "result": deleted })
+                }
+                "DBSIZE" => {
+                    serde_json::json!({ "result": store.keys(0).len() })
+                }
+                _ => {
+                    serde_json::json!({ "error": format!("ERR unsupported command: {}", command) })
+                }
+            };
+
+            GrpcResponse {
+                status: 0,
+                payload: serde_json::json!({
+                    "command": command,
+                    "result": result
+                }),
+                error: None,
+            }
+        } else {
+            GrpcResponse {
+                status: 13,
+                payload: serde_json::Value::Null,
+                error: Some("store not available".to_string()),
+            }
         }
     }
 }
@@ -289,22 +453,6 @@ mod tests {
     }
 
     #[test]
-    fn test_handle_get() {
-        let service = FerritGrpcService::new();
-        let resp = service.handle_request("Get", &serde_json::json!({"key": "foo"}));
-        assert_eq!(resp.status, 0);
-        assert!(resp.error.is_none());
-    }
-
-    #[test]
-    fn test_handle_set() {
-        let service = FerritGrpcService::new();
-        let resp =
-            service.handle_request("Set", &serde_json::json!({"key": "foo", "value": "bar"}));
-        assert_eq!(resp.status, 0);
-    }
-
-    #[test]
     fn test_handle_unknown_method() {
         let service = FerritGrpcService::new();
         let resp = service.handle_request("Unknown", &serde_json::json!({}));
@@ -329,9 +477,79 @@ mod tests {
     }
 
     #[test]
-    fn test_handle_execute() {
-        let service = FerritGrpcService::new();
-        let resp = service.handle_request("Execute", &serde_json::json!({"command": "PING"}));
+    fn test_get_set_with_store() {
+        let store = Arc::new(Store::new(16));
+        let service = FerritGrpcService::with_store(store);
+
+        // SET a key
+        let resp = service.handle_request(
+            "Set",
+            &serde_json::json!({"key": "hello", "value": "world"}),
+        );
+        assert_eq!(resp.status, 0);
+
+        // GET the key back
+        let resp = service.handle_request("Get", &serde_json::json!({"key": "hello"}));
+        assert_eq!(resp.status, 0);
+        assert_eq!(resp.payload["found"], true);
+        assert_eq!(resp.payload["value"], "world");
+    }
+
+    #[test]
+    fn test_get_missing_key() {
+        let store = Arc::new(Store::new(16));
+        let service = FerritGrpcService::with_store(store);
+
+        let resp = service.handle_request("Get", &serde_json::json!({"key": "nonexistent"}));
+        assert_eq!(resp.status, 0);
+        assert_eq!(resp.payload["found"], false);
+    }
+
+    #[test]
+    fn test_del_with_store() {
+        let store = Arc::new(Store::new(16));
+        store.set(
+            0,
+            Bytes::from("k1"),
+            Value::String(Bytes::from("v1")),
+        );
+        let service = FerritGrpcService::with_store(store);
+
+        let resp = service.handle_request("Del", &serde_json::json!({"keys": ["k1", "k2"]}));
+        assert_eq!(resp.status, 0);
+        assert_eq!(resp.payload["deleted"], 1);
+    }
+
+    #[test]
+    fn test_scan_with_store() {
+        let store = Arc::new(Store::new(16));
+        store.set(
+            0,
+            Bytes::from("a"),
+            Value::String(Bytes::from("1")),
+        );
+        store.set(
+            0,
+            Bytes::from("b"),
+            Value::String(Bytes::from("2")),
+        );
+        let service = FerritGrpcService::with_store(store);
+
+        let resp = service.handle_request("Scan", &serde_json::json!({"count": 10}));
+        assert_eq!(resp.status, 0);
+        let keys = resp.payload["keys"].as_array().expect("keys array");
+        assert_eq!(keys.len(), 2);
+    }
+
+    #[test]
+    fn test_execute_ping() {
+        let store = Arc::new(Store::new(16));
+        let service = FerritGrpcService::with_store(store);
+
+        let resp = service.handle_request(
+            "Execute",
+            &serde_json::json!({"command": "PING"}),
+        );
         assert_eq!(resp.status, 0);
     }
 }

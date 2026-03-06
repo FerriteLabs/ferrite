@@ -5554,7 +5554,7 @@ async fn test_client_info() {
     }
 }
 
-#[tokio::test]
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn test_debug_sleep() {
     let executor = create_executor();
 

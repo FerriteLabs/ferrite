@@ -1,7 +1,6 @@
 //! Observability command handlers
 //!
 //! OBSERVE.* commands for real-time monitoring and diagnostics.
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::sync::OnceLock;

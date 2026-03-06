@@ -1,5 +1,4 @@
 //! Materialized view command handlers
-#![allow(dead_code)]
 
 use std::sync::OnceLock;
 use std::time::{Duration, Instant};

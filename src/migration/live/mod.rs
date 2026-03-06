@@ -18,7 +18,6 @@
 //! engine.cutover().await?;
 //! ```
 
-#![forbid(unsafe_code)]
 
 pub mod connector;
 pub mod state;
