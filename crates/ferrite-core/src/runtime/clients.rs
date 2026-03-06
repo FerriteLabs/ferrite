@@ -74,6 +74,14 @@ pub struct ClientInfo {
     pub omem: u64,
     /// Authenticated user
     pub user: String,
+    /// Whether this client's keys are exempt from eviction (CLIENT NO-EVICT ON)
+    pub no_evict: bool,
+    /// Whether key accesses from this client skip LRU/LFU updates (CLIENT NO-TOUCH ON)
+    pub no_touch: bool,
+    /// Client library name (set via CLIENT SETINFO LIB-NAME)
+    pub lib_name: Option<String>,
+    /// Client library version (set via CLIENT SETINFO LIB-VER)
+    pub lib_ver: Option<String>,
 }
 
 impl ClientInfo {
@@ -97,6 +105,10 @@ impl ClientInfo {
             oll: 0,
             omem: 0,
             user: "default".to_string(),
+            no_evict: false,
+            no_touch: false,
+            lib_name: None,
+            lib_ver: None,
         }
     }
 
@@ -116,15 +128,27 @@ impl ClientInfo {
         let laddr = self.laddr.map(|a| a.to_string()).unwrap_or_default();
         let name = self.name.as_deref().unwrap_or("");
 
+        // Build flags string — Redis 7.x includes no-evict (e) and no-touch (T) flags
+        let mut flags = self.flags.clone();
+        if self.no_evict {
+            flags.push('e');
+        }
+        if self.no_touch {
+            flags.push('T');
+        }
+
+        let lib_name = self.lib_name.as_deref().unwrap_or("");
+        let lib_ver = self.lib_ver.as_deref().unwrap_or("");
+
         format!(
-            "id={} addr={} laddr={} fd=0 name={} age={} idle={} flags={} db={} sub={} psub={} multi={} qbuf=0 qbuf-free=0 obl={} oll={} omem={} events=r cmd={} user={}",
+            "id={} addr={} laddr={} fd=0 name={} age={} idle={} flags={} db={} sub={} psub={} multi={} qbuf=0 qbuf-free=0 obl={} oll={} omem={} events=r cmd={} user={} lib-name={} lib-ver={}",
             self.id,
             addr,
             laddr,
             name,
             self.age(),
             self.idle(),
-            self.flags,
+            flags,
             self.db,
             self.subscriptions,
             self.psubscriptions,
@@ -134,6 +158,8 @@ impl ClientInfo {
             self.omem,
             self.last_cmd,
             self.user,
+            lib_name,
+            lib_ver,
         )
     }
 }
@@ -445,5 +471,58 @@ mod tests {
 
         // Should no longer be paused
         assert!(!registry.is_paused());
+    }
+
+    #[test]
+    fn test_client_no_evict_no_touch_flags() {
+        let registry = ClientRegistry::new();
+        let id = registry.register(Some("127.0.0.1:12345".parse().unwrap()));
+
+        // Default: both flags off — flags field should be just "N"
+        let client = registry.get(id).unwrap();
+        assert!(!client.no_evict);
+        assert!(!client.no_touch);
+        assert!(client.to_info_string().contains("flags=N "));
+
+        // Set no_evict ON
+        registry.update(id, |c| c.no_evict = true);
+        let client = registry.get(id).unwrap();
+        assert!(client.no_evict);
+        assert!(client.to_info_string().contains("flags=Ne "));
+
+        // Set no_touch ON
+        registry.update(id, |c| c.no_touch = true);
+        let client = registry.get(id).unwrap();
+        assert!(client.no_touch);
+        assert!(client.to_info_string().contains("flags=NeT "));
+
+        // Turn off no_evict
+        registry.update(id, |c| c.no_evict = false);
+        let client = registry.get(id).unwrap();
+        assert!(!client.no_evict);
+        assert!(client.no_touch);
+        assert!(client.to_info_string().contains("flags=NT "));
+    }
+
+    #[test]
+    fn test_client_setinfo_lib_fields() {
+        let registry = ClientRegistry::new();
+        let id = registry.register(Some("127.0.0.1:12345".parse().unwrap()));
+
+        // Default: no lib info
+        let client = registry.get(id).unwrap();
+        assert!(client.lib_name.is_none());
+        assert!(client.lib_ver.is_none());
+        assert!(client.to_info_string().contains("lib-name= lib-ver="));
+
+        // Set lib-name and lib-ver
+        registry.update(id, |c| {
+            c.lib_name = Some("redis-py".to_string());
+            c.lib_ver = Some("5.0.1".to_string());
+        });
+        let client = registry.get(id).unwrap();
+        assert_eq!(client.lib_name.as_deref(), Some("redis-py"));
+        assert_eq!(client.lib_ver.as_deref(), Some("5.0.1"));
+        assert!(client.to_info_string().contains("lib-name=redis-py lib-ver=5.0.1"));
     }
 }

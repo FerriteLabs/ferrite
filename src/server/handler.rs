@@ -461,7 +461,111 @@ impl Handler {
                         .await;
                     return result;
                 }
+                "NO-EVICT" => {
+                    if args.is_empty() {
+                        let result = Frame::error(
+                            "ERR wrong number of arguments for 'CLIENT NO-EVICT' command",
+                        );
+                        self.log_audit_result(audit_entry, start_time, &result)
+                            .await;
+                        return result;
+                    }
+                    let flag = match String::from_utf8_lossy(&args[0]).to_uppercase().as_str() {
+                        "ON" => true,
+                        "OFF" => false,
+                        _ => {
+                            let result = Frame::error(
+                                "ERR argument must be 'ON' or 'OFF'",
+                            );
+                            self.log_audit_result(audit_entry, start_time, &result)
+                                .await;
+                            return result;
+                        }
+                    };
+                    self.connection.no_evict = flag;
+                    self.client_registry.update(self.client_id, |client| {
+                        client.no_evict = flag;
+                    });
+                    let result = Frame::simple("OK");
+                    self.log_audit_result(audit_entry, start_time, &result)
+                        .await;
+                    return result;
+                }
+                "NO-TOUCH" => {
+                    if args.is_empty() {
+                        let result = Frame::error(
+                            "ERR wrong number of arguments for 'CLIENT NO-TOUCH' command",
+                        );
+                        self.log_audit_result(audit_entry, start_time, &result)
+                            .await;
+                        return result;
+                    }
+                    let flag = match String::from_utf8_lossy(&args[0]).to_uppercase().as_str() {
+                        "ON" => true,
+                        "OFF" => false,
+                        _ => {
+                            let result = Frame::error(
+                                "ERR argument must be 'ON' or 'OFF'",
+                            );
+                            self.log_audit_result(audit_entry, start_time, &result)
+                                .await;
+                            return result;
+                        }
+                    };
+                    self.connection.no_touch = flag;
+                    self.client_registry.update(self.client_id, |client| {
+                        client.no_touch = flag;
+                    });
+                    let result = Frame::simple("OK");
+                    self.log_audit_result(audit_entry, start_time, &result)
+                        .await;
+                    return result;
+                }
                 _ => {} // Fall through to executor for other CLIENT subcommands
+            }
+        }
+
+        // Handle CLIENT SETINFO at handler level (needs registry state)
+        if let Command::Client {
+            ref subcommand,
+            ref args,
+        } = command
+        {
+            if subcommand == "SETINFO" {
+                if args.len() < 2 {
+                    let result = Frame::error(
+                        "ERR wrong number of arguments for 'CLIENT SETINFO' command",
+                    );
+                    self.log_audit_result(audit_entry, start_time, &result)
+                        .await;
+                    return result;
+                }
+                let field = String::from_utf8_lossy(&args[0]).to_uppercase();
+                let value = String::from_utf8_lossy(&args[1]).to_string();
+                match field.as_str() {
+                    "LIB-NAME" => {
+                        self.client_registry.update(self.client_id, |client| {
+                            client.lib_name = Some(value);
+                        });
+                    }
+                    "LIB-VER" => {
+                        self.client_registry.update(self.client_id, |client| {
+                            client.lib_ver = Some(value);
+                        });
+                    }
+                    _ => {
+                        let result = Frame::error(
+                            "ERR Unrecognized option for CLIENT SETINFO. Only LIB-NAME and LIB-VER are supported",
+                        );
+                        self.log_audit_result(audit_entry, start_time, &result)
+                            .await;
+                        return result;
+                    }
+                }
+                let result = Frame::simple("OK");
+                self.log_audit_result(audit_entry, start_time, &result)
+                    .await;
+                return result;
             }
         }
 
@@ -552,8 +656,9 @@ impl Handler {
 
         // Handle SELECT command specially since it updates connection state
         if let Command::Select { db } = &command {
-            if *db > 15 {
-                let result = Frame::error("ERR invalid DB index");
+            let max_db = self.executor.store().num_databases();
+            if *db as usize >= max_db {
+                let result = Frame::error("ERR DB index is out of range");
                 self.log_audit_result(audit_entry, start_time, &result)
                     .await;
                 return result;
@@ -671,6 +776,12 @@ impl Handler {
             client_addr,
             client_name,
         );
+
+        // Record latency event for the LATENCY command family
+        let ms = elapsed.as_millis() as u64;
+        if ms > 0 {
+            self.executor.latency_tracker().record("command", ms);
+        }
 
         self.client_registry.update(self.client_id, |client| {
             client.last_cmd = cmd_name.to_string();
@@ -1107,9 +1218,12 @@ impl Handler {
         // Return server info as a Map (RESP3 style response)
         let mut info = HashMap::new();
         info.insert(Bytes::from_static(b"server"), Frame::bulk("ferrite"));
-        info.insert(Bytes::from_static(b"version"), Frame::bulk("0.1.0"));
+        info.insert(Bytes::from_static(b"version"), Frame::bulk("0.3.0-dev"));
         info.insert(Bytes::from_static(b"proto"), Frame::Integer(proto as i64));
-        info.insert(Bytes::from_static(b"id"), Frame::Integer(1)); // Connection ID placeholder
+        info.insert(
+            Bytes::from_static(b"id"),
+            Frame::Integer(self.client_id as i64),
+        );
         info.insert(Bytes::from_static(b"mode"), Frame::bulk("standalone"));
         info.insert(Bytes::from_static(b"role"), Frame::bulk("master"));
         info.insert(Bytes::from_static(b"modules"), Frame::array(vec![]));

@@ -26,6 +26,7 @@ fn get_store() -> &'static PersistentAgentMemoryStore {
 
 /// Dispatch an `AGENT` subcommand.
 pub fn agent_command(subcommand: &str, args: &[String]) -> Frame {
+    super::warn_experimental("AGENT");
     match subcommand.to_uppercase().as_str() {
         "REMEMBER" => agent_remember(args),
         "RECALL" => agent_recall(args),

@@ -45,7 +45,8 @@ use crate::cluster::ClusterStateManager;
 use crate::config::SharedConfig;
 use crate::protocol::Frame;
 use crate::runtime::{
-    ClientRegistry, SharedClientRegistry, SharedSlowLog, SharedSubscriptionManager, SlowLog,
+    ClientRegistry, LatencyTracker, SharedClientRegistry, SharedSlowLog,
+    SharedSubscriptionManager, SlowLog,
 };
 use crate::storage::Store;
 
@@ -639,6 +640,8 @@ pub struct CommandExecutor {
     config: Option<SharedConfig>,
     /// Slow query log
     slowlog: SharedSlowLog,
+    /// Latency event tracker for LATENCY command family
+    latency_tracker: Arc<LatencyTracker>,
     /// Client registry for tracking connected clients
     client_registry: SharedClientRegistry,
     /// Cluster state manager for Redis Cluster protocol compatibility
@@ -673,6 +676,7 @@ impl CommandExecutor {
             blocking_zset_manager,
             config: None,
             slowlog: Arc::new(SlowLog::default()),
+            latency_tracker: Arc::new(LatencyTracker::default()),
             client_registry: Arc::new(ClientRegistry::new()),
             cluster_state: None,
             tracking_table: None,
@@ -703,6 +707,7 @@ impl CommandExecutor {
             blocking_zset_manager,
             config: Some(config),
             slowlog: Arc::new(SlowLog::default()),
+            latency_tracker: Arc::new(LatencyTracker::default()),
             client_registry: Arc::new(ClientRegistry::new()),
             cluster_state: None,
             tracking_table: None,
@@ -736,6 +741,7 @@ impl CommandExecutor {
             blocking_zset_manager,
             config: Some(config),
             slowlog,
+            latency_tracker: Arc::new(LatencyTracker::default()),
             client_registry,
             cluster_state: None,
             tracking_table: None,
@@ -786,6 +792,16 @@ impl CommandExecutor {
     /// Get the slow log
     pub fn slowlog(&self) -> &SharedSlowLog {
         &self.slowlog
+    }
+
+    /// Get the shared store
+    pub fn store(&self) -> &Arc<Store> {
+        &self.store
+    }
+
+    /// Get the latency tracker
+    pub fn latency_tracker(&self) -> &Arc<LatencyTracker> {
+        &self.latency_tracker
     }
 
     /// Get the client registry
@@ -1314,6 +1330,19 @@ impl CommandExecutor {
                 count,
                 withscores,
             } => sorted_sets::zrandmember(&self.store, db, &key, count, withscores),
+            Command::ZRangeStore {
+                dst,
+                src,
+                min,
+                max,
+                by_score,
+                by_lex,
+                rev,
+                offset,
+                count,
+            } => sorted_sets::zrangestore(
+                &self.store, db, &dst, &src, &min, &max, by_score, by_lex, rev, offset, count,
+            ),
             Command::ZMPop {
                 keys,
                 direction,
@@ -1419,8 +1448,8 @@ impl CommandExecutor {
             }
             Command::Info { section } => self.info(section),
             Command::DbSize => self.dbsize(db),
-            Command::FlushDb { .. } => self.flushdb(db),
-            Command::FlushAll { .. } => self.flushall(),
+            Command::FlushDb { r#async } => self.flushdb(db, r#async),
+            Command::FlushAll { r#async } => self.flushall(r#async),
             Command::Time => self.time(),
             Command::CommandCmd { subcommand, args } => self.command_cmd(subcommand, args),
             Command::Debug { subcommand, args } => self.debug(&subcommand, args),
@@ -1445,6 +1474,11 @@ impl CommandExecutor {
                 numreplicas,
                 timeout,
             } => self.wait(numreplicas, timeout),
+            Command::WaitAof {
+                numlocal,
+                numreplicas,
+                timeout,
+            } => self.waitaof(numlocal, numreplicas, timeout),
             Command::Shutdown {
                 nosave,
                 save,

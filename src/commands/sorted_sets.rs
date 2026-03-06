@@ -39,6 +39,10 @@ pub fn zadd(
     for (score, member) in pairs {
         let score = *score;
 
+        if score.is_nan() {
+            return Frame::error("ERR score is not a valid float");
+        }
+
         if let Some(&old_score) = by_member.get(member) {
             // Member exists
             if options.nx {
@@ -476,6 +480,10 @@ pub fn zrevrangebyscore(
 /// ZINCRBY key increment member
 /// Increment the score of a member
 pub fn zincrby(store: &Arc<Store>, db: u8, key: &Bytes, increment: f64, member: &Bytes) -> Frame {
+    if increment.is_nan() {
+        return Frame::error("ERR increment would produce NaN or Infinity");
+    }
+
     let (mut by_score, mut by_member) = match store.get(db, key) {
         Some(Value::SortedSet {
             by_score,
@@ -492,7 +500,11 @@ pub fn zincrby(store: &Arc<Store>, db: u8, key: &Bytes, increment: f64, member: 
     let new_score = if let Some(&old_score) = by_member.get(member) {
         // Remove old entry
         by_score.remove(&(OrderedFloat(old_score), member.clone()));
-        old_score + increment
+        let result = old_score + increment;
+        if result.is_nan() {
+            return Frame::error("ERR increment would produce NaN or Infinity");
+        }
+        result
     } else {
         increment
     };
@@ -1580,6 +1592,200 @@ pub fn bzmpop(
 ) -> Frame {
     // For now, just call zmpop since we don't have proper blocking support
     zmpop(store, db, keys, direction, count)
+}
+
+/// ZRANGESTORE dst src min max [BYSCORE|BYLEX] [REV] [LIMIT offset count]
+/// Store a range of members from a sorted set into a new key. Returns the number stored.
+#[allow(clippy::too_many_arguments)]
+pub fn zrangestore(
+    store: &Arc<Store>,
+    db: u8,
+    dst: &Bytes,
+    src: &Bytes,
+    min: &Bytes,
+    max: &Bytes,
+    by_score: bool,
+    by_lex: bool,
+    rev: bool,
+    offset: Option<usize>,
+    count: Option<usize>,
+) -> Frame {
+    let (by_score_map, _by_member) = match store.get(db, src) {
+        Some(Value::SortedSet {
+            by_score,
+            by_member,
+        }) => (by_score, by_member),
+        Some(_) => {
+            return Frame::error(
+                "WRONGTYPE Operation against a key holding the wrong kind of value",
+            );
+        }
+        None => {
+            // Source doesn't exist — store empty set (delete dst if exists)
+            store.del(db, &[dst.clone()]);
+            return Frame::Integer(0);
+        }
+    };
+
+    // Collect (score, member) pairs based on range mode
+    let pairs: Vec<(f64, Bytes)> = if by_score {
+        let min_str = String::from_utf8_lossy(min);
+        let max_str = String::from_utf8_lossy(max);
+
+        let min_f = parse_score_bound(&min_str, f64::NEG_INFINITY);
+        let max_f = parse_score_bound(&max_str, f64::INFINITY);
+
+        let offset = offset.unwrap_or(0);
+        let base_iter = by_score_map
+            .iter()
+            .filter(|((score, _), _)| score.0 >= min_f && score.0 <= max_f);
+
+        if rev {
+            let collected: Vec<_> = base_iter.collect();
+            let iter = collected.into_iter().rev().skip(offset);
+            if let Some(c) = count {
+                iter.take(c)
+                    .map(|((score, member), _)| (score.0, member.clone()))
+                    .collect()
+            } else {
+                iter.map(|((score, member), _)| (score.0, member.clone()))
+                    .collect()
+            }
+        } else {
+            let iter = base_iter.skip(offset);
+            if let Some(c) = count {
+                iter.take(c)
+                    .map(|((score, member), _)| (score.0, member.clone()))
+                    .collect()
+            } else {
+                iter.map(|((score, member), _)| (score.0, member.clone()))
+                    .collect()
+            }
+        }
+    } else if by_lex {
+        let min_str = String::from_utf8_lossy(min);
+        let max_str = String::from_utf8_lossy(max);
+
+        let offset = offset.unwrap_or(0);
+        let base_iter = by_score_map.iter().filter(|((_, member), _)| {
+            let m = String::from_utf8_lossy(member);
+            lex_in_range(&m, &min_str, &max_str)
+        });
+
+        if rev {
+            let collected: Vec<_> = base_iter.collect();
+            let iter = collected.into_iter().rev().skip(offset);
+            if let Some(c) = count {
+                iter.take(c)
+                    .map(|((score, member), _)| (score.0, member.clone()))
+                    .collect()
+            } else {
+                iter.map(|((score, member), _)| (score.0, member.clone()))
+                    .collect()
+            }
+        } else {
+            let iter = base_iter.skip(offset);
+            if let Some(c) = count {
+                iter.take(c)
+                    .map(|((score, member), _)| (score.0, member.clone()))
+                    .collect()
+            } else {
+                iter.map(|((score, member), _)| (score.0, member.clone()))
+                    .collect()
+            }
+        }
+    } else {
+        // Default: by rank (index)
+        let len = by_score_map.len() as i64;
+        let min_str = String::from_utf8_lossy(min);
+        let max_str = String::from_utf8_lossy(max);
+
+        let start = min_str.parse::<i64>().unwrap_or(0);
+        let stop = max_str.parse::<i64>().unwrap_or(-1);
+
+        let start = if start < 0 {
+            (len + start).max(0) as usize
+        } else {
+            start.min(len) as usize
+        };
+        let stop = if stop < 0 {
+            (len + stop).max(0) as usize
+        } else {
+            stop.min(len - 1) as usize
+        };
+
+        if start > stop || start >= len as usize {
+            store.del(db, &[dst.clone()]);
+            return Frame::Integer(0);
+        }
+
+        if rev {
+            by_score_map
+                .iter()
+                .rev()
+                .skip(start)
+                .take(stop - start + 1)
+                .map(|((score, member), _)| (score.0, member.clone()))
+                .collect()
+        } else {
+            by_score_map
+                .iter()
+                .skip(start)
+                .take(stop - start + 1)
+                .map(|((score, member), _)| (score.0, member.clone()))
+                .collect()
+        }
+    };
+
+    let stored = pairs.len() as i64;
+
+    if pairs.is_empty() {
+        store.del(db, &[dst.clone()]);
+    } else {
+        let mut new_by_score = BTreeMap::new();
+        let mut new_by_member = HashMap::new();
+        for (score, member) in pairs {
+            new_by_score.insert((OrderedFloat(score), member.clone()), ());
+            new_by_member.insert(member, score);
+        }
+        store.set(
+            db,
+            dst.clone(),
+            Value::SortedSet {
+                by_score: new_by_score,
+                by_member: new_by_member,
+            },
+        );
+    }
+
+    Frame::Integer(stored)
+}
+
+/// Parse a score bound string like "-inf", "+inf", "(1.5", "1.5"
+fn parse_score_bound(s: &str, default: f64) -> f64 {
+    match s {
+        "-inf" | "(-inf" => f64::NEG_INFINITY,
+        "+inf" | "(+inf" | "inf" => f64::INFINITY,
+        s if s.starts_with('(') => s[1..].parse::<f64>().unwrap_or(default),
+        s => s.parse::<f64>().unwrap_or(default),
+    }
+}
+
+/// Check if a member value falls within lex bounds
+fn lex_in_range(member: &str, min: &str, max: &str) -> bool {
+    let above_min = match min {
+        "-" => true,
+        s if s.starts_with('(') => member > &s[1..],
+        s if s.starts_with('[') => member >= &s[1..],
+        _ => member >= min,
+    };
+    let below_max = match max {
+        "+" => true,
+        s if s.starts_with('(') => member < &s[1..],
+        s if s.starts_with('[') => member <= &s[1..],
+        _ => member <= max,
+    };
+    above_min && below_max
 }
 
 #[cfg(test)]

@@ -143,6 +143,9 @@ pub fn is_read_only_command(cmd_name: &str) -> bool {
             | "PUBSUB"
             // LCS (read-only string comparison)
             | "LCS"
+            // Additional read-only commands
+            | "SORT_RO" | "EXPIRETIME" | "PEXPIRETIME" | "OBJECT ENCODING"
+            | "SINTERCARD" | "ZINTERCARD" | "WAITAOF"
     )
 }
 

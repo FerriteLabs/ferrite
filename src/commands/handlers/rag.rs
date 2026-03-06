@@ -66,6 +66,7 @@ where
 /// # Returns
 /// OK on success.
 pub fn rag_create(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
+    super::warn_experimental("RAG");
     if args.is_empty() {
         return err_frame("wrong number of arguments for 'RAG.CREATE' command");
     }

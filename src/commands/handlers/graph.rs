@@ -50,6 +50,7 @@ fn get_graph_store() -> &'static RwLock<HashMap<String, Graph>> {
 /// # Returns
 /// OK on success.
 pub fn graph_create(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
+    super::warn_experimental("GRAPH");
     if args.is_empty() {
         return err_frame("wrong number of arguments for 'GRAPH.CREATE' command");
     }

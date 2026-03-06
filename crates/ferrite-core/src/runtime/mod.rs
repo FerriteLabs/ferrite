@@ -12,6 +12,8 @@ pub mod error_recovery;
 pub mod shutdown;
 /// Slow query log for debugging
 pub mod slowlog;
+/// Latency event tracking for LATENCY command family
+pub mod latency;
 /// Pub/Sub subscription management
 pub mod subscription;
 /// WATCH registry for optimistic locking
@@ -23,6 +25,7 @@ pub mod keyspace_notify;
 
 pub use clients::{ClientInfo, ClientRegistry, PauseMode, SharedClientRegistry};
 pub use keyspace_notify::{KeyspaceNotifier, SharedKeyspaceNotifier};
+pub use latency::LatencyTracker;
 pub use slowlog::{SharedSlowLog, SlowLog, SlowLogEntry};
 pub use subscription::{SharedSubscriptionManager, SubscriptionManager};
 pub use tracking::{SharedTrackingTable, TrackingMode, TrackingTable};

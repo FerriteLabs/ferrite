@@ -947,3 +947,69 @@ pub(crate) fn parse_bzpopmax(args: &[Frame]) -> Result<Command> {
 
     Ok(Command::BZPopMax { keys, timeout })
 }
+
+/// ZRANGESTORE dst src min max [BYSCORE|BYLEX] [REV] [LIMIT offset count]
+pub(crate) fn parse_zrangestore(args: &[Frame]) -> Result<Command> {
+    if args.len() < 4 {
+        return Err(FerriteError::WrongArity("ZRANGESTORE".to_string()));
+    }
+
+    let dst = get_bytes(&args[0])?;
+    let src = get_bytes(&args[1])?;
+    let min = get_bytes(&args[2])?;
+    let max = get_bytes(&args[3])?;
+
+    let mut by_score = false;
+    let mut by_lex = false;
+    let mut rev = false;
+    let mut offset = None;
+    let mut count = None;
+
+    let mut i = 4;
+    while i < args.len() {
+        let opt = get_string(&args[i])?.to_uppercase();
+        match opt.as_str() {
+            "BYSCORE" => by_score = true,
+            "BYLEX" => by_lex = true,
+            "REV" => rev = true,
+            "LIMIT" => {
+                if i + 2 >= args.len() {
+                    return Err(FerriteError::InvalidArgument(
+                        "LIMIT requires offset and count".to_string(),
+                    ));
+                }
+                i += 1;
+                offset = Some(
+                    get_string(&args[i])?
+                        .parse::<usize>()
+                        .map_err(|_| FerriteError::NotInteger)?,
+                );
+                i += 1;
+                count = Some(
+                    get_string(&args[i])?
+                        .parse::<usize>()
+                        .map_err(|_| FerriteError::NotInteger)?,
+                );
+            }
+            _ => {
+                return Err(FerriteError::InvalidArgument(format!(
+                    "Unsupported option '{}'",
+                    opt
+                )))
+            }
+        }
+        i += 1;
+    }
+
+    Ok(Command::ZRangeStore {
+        dst,
+        src,
+        min,
+        max,
+        by_score,
+        by_lex,
+        rev,
+        offset,
+        count,
+    })
+}

@@ -23,6 +23,10 @@ static SERVER_START: OnceLock<Instant> = OnceLock::new();
 /// Unix timestamp of the last successful RDB save (shared across executor instances).
 static LAST_SAVE_TIME: AtomicU64 = AtomicU64::new(0);
 
+/// Guard to prevent concurrent BGSAVE operations.
+static BGSAVE_IN_PROGRESS: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
 /// Get the server uptime in seconds.
 fn server_uptime_secs() -> u64 {
     SERVER_START
@@ -38,6 +42,11 @@ fn record_save_time() {
         .unwrap_or_default()
         .as_secs();
     LAST_SAVE_TIME.store(now, AtomicOrdering::Relaxed);
+}
+
+/// Get the last save timestamp (unix seconds, 0 if never saved).
+fn last_save_time() -> u64 {
+    LAST_SAVE_TIME.load(AtomicOrdering::Relaxed)
 }
 
 /// Format bytes into a human-readable string
@@ -627,7 +636,7 @@ impl CommandExecutor {
 
             output.push_str("# Server\r\n");
             output.push_str("redis_version:7.0.0\r\n");
-            output.push_str("ferrite_version:0.1.0\r\n");
+            output.push_str("ferrite_version:0.3.0-dev\r\n");
             output.push_str(&format!("uptime_in_seconds:{}\r\n", uptime));
             output.push_str(&format!("uptime_in_days:{}\r\n", uptime / 86400));
             output.push_str("tcp_port:6379\r\n");
@@ -751,6 +760,71 @@ impl CommandExecutor {
             output.push_str("\r\n");
         }
 
+        // Clients section
+        if include("clients") {
+            output.push_str("# Clients\r\n");
+            let client_count = self.client_registry.count();
+            output.push_str(&format!("connected_clients:{}\r\n", client_count));
+            output.push_str(&format!(
+                "blocked_clients:0\r\n"
+            ));
+            output.push_str(&format!(
+                "tracking_clients:0\r\n"
+            ));
+            output.push_str(&format!("maxclients:10000\r\n"));
+            output.push_str("\r\n");
+        }
+
+        // Persistence section
+        if include("persistence") {
+            output.push_str("# Persistence\r\n");
+            output.push_str("loading:0\r\n");
+
+            // AOF status
+            let aof_enabled = self
+                .config
+                .as_ref()
+                .and_then(|c| c.get_param("appendonly"))
+                .map(|v| v == "yes")
+                .unwrap_or(false);
+            output.push_str(&format!(
+                "aof_enabled:{}\r\n",
+                if aof_enabled { 1 } else { 0 }
+            ));
+            output.push_str("rdb_changes_since_last_save:0\r\n");
+            output.push_str(&format!(
+                "rdb_last_save_time:{}\r\n",
+                last_save_time()
+            ));
+            output.push_str("rdb_last_bgsave_status:ok\r\n");
+            output.push_str("aof_last_bgrewrite_status:ok\r\n");
+            output.push_str("\r\n");
+        }
+
+        // Replication section
+        if include("replication") {
+            output.push_str("# Replication\r\n");
+            output.push_str("role:master\r\n");
+            output.push_str("connected_slaves:0\r\n");
+            output.push_str("master_replid:0000000000000000000000000000000000000000\r\n");
+            output.push_str("master_repl_offset:0\r\n");
+            output.push_str("\r\n");
+        }
+
+        // CPU section
+        if include("cpu") {
+            output.push_str("# CPU\r\n");
+            output.push_str(&format!(
+                "used_cpu_sys:{:.6}\r\n",
+                0.0f64
+            ));
+            output.push_str(&format!(
+                "used_cpu_user:{:.6}\r\n",
+                0.0f64
+            ));
+            output.push_str("\r\n");
+        }
+
         Frame::bulk(output)
     }
 
@@ -758,13 +832,27 @@ impl CommandExecutor {
         Frame::Integer(self.store.key_count(db) as i64)
     }
 
-    pub(super) fn flushdb(&self, db: u8) -> Frame {
-        self.store.flush_db(db);
+    pub(super) fn flushdb(&self, db: u8, async_mode: bool) -> Frame {
+        if async_mode {
+            let store = self.store.clone();
+            tokio::spawn(async move {
+                store.flush_db(db);
+            });
+        } else {
+            self.store.flush_db(db);
+        }
         Frame::simple("OK")
     }
 
-    pub(super) fn flushall(&self) -> Frame {
-        self.store.flush_all();
+    pub(super) fn flushall(&self, async_mode: bool) -> Frame {
+        if async_mode {
+            let store = self.store.clone();
+            tokio::spawn(async move {
+                store.flush_all();
+            });
+        } else {
+            self.store.flush_all();
+        }
         Frame::simple("OK")
     }
 
@@ -1176,15 +1264,85 @@ impl CommandExecutor {
     pub(super) fn client(&self, subcommand: &str, args: Vec<Bytes>) -> Frame {
         match subcommand {
             "LIST" => {
-                // CLIENT LIST - list connected clients
-                // Uses the client registry to get actual client info
+                // CLIENT LIST [TYPE <normal|master|replica|pubsub>] [ID id [id ...]]
                 let clients = self.client_registry.list();
-                if clients.is_empty() {
-                    // Fallback if no clients registered (shouldn't happen in practice)
-                    let info = "id=1 addr=127.0.0.1:0 fd=0 name= age=0 idle=0 flags=N db=0 sub=0 psub=0 multi=-1 qbuf=0 qbuf-free=0 obl=0 oll=0 omem=0 events=r cmd=client\n";
-                    Frame::bulk(info)
+
+                // Parse optional filters
+                let mut type_filter: Option<String> = None;
+                let mut id_filter: Vec<u64> = Vec::new();
+                let mut i = 0;
+                while i < args.len() {
+                    let opt = String::from_utf8_lossy(&args[i]).to_uppercase();
+                    match opt.as_str() {
+                        "TYPE" => {
+                            i += 1;
+                            if i >= args.len() {
+                                return Frame::error("ERR syntax error");
+                            }
+                            let t = String::from_utf8_lossy(&args[i]).to_lowercase();
+                            match t.as_str() {
+                                "normal" | "master" | "replica" | "slave" | "pubsub" => {
+                                    type_filter = Some(t);
+                                }
+                                _ => {
+                                    return Frame::error(
+                                        "ERR Unknown client type 'unknown'",
+                                    );
+                                }
+                            }
+                        }
+                        "ID" => {
+                            i += 1;
+                            while i < args.len() {
+                                if let Ok(id) = String::from_utf8_lossy(&args[i]).parse::<u64>() {
+                                    id_filter.push(id);
+                                    i += 1;
+                                } else {
+                                    break;
+                                }
+                            }
+                            continue; // Skip the i += 1 at the end since we advanced
+                        }
+                        _ => {
+                            return Frame::error(format!(
+                                "ERR syntax error, unrecognized option '{}'",
+                                opt,
+                            ));
+                        }
+                    }
+                    i += 1;
+                }
+
+                // Apply filters
+                let filtered: Vec<_> = clients
+                    .iter()
+                    .filter(|c| {
+                        // TYPE filter: match against client flags
+                        if let Some(ref t) = type_filter {
+                            let matches = match t.as_str() {
+                                "normal" => c.flags.contains('N'),
+                                "master" | "replica" | "slave" => {
+                                    c.flags.contains('M') || c.flags.contains('S')
+                                }
+                                "pubsub" => c.subscriptions > 0 || c.psubscriptions > 0,
+                                _ => true,
+                            };
+                            if !matches {
+                                return false;
+                            }
+                        }
+                        // ID filter
+                        if !id_filter.is_empty() && !id_filter.contains(&c.id) {
+                            return false;
+                        }
+                        true
+                    })
+                    .collect();
+
+                if filtered.is_empty() {
+                    Frame::bulk("\n")
                 } else {
-                    let output = clients
+                    let output = filtered
                         .iter()
                         .map(|c| c.to_info_string())
                         .collect::<Vec<_>>()
@@ -1977,8 +2135,19 @@ impl CommandExecutor {
     }
 
     pub(super) fn bgsave(&self, schedule: bool) -> Frame {
+        use std::sync::atomic::Ordering;
+
+        // Prevent concurrent BGSAVE operations
+        if BGSAVE_IN_PROGRESS.load(Ordering::SeqCst) {
+            if schedule {
+                return Frame::simple("Background saving scheduled");
+            }
+            return Frame::error("ERR Background save already in progress");
+        }
+
+        BGSAVE_IN_PROGRESS.store(true, Ordering::SeqCst);
         let store = self.store.clone();
-        // Spawn background RDB save
+
         tokio::spawn(async move {
             let rdb_data = ferrite_core::persistence::generate_rdb(&store);
             let path = std::path::Path::new("dump.rdb");
@@ -1988,12 +2157,10 @@ impl CommandExecutor {
                 record_save_time();
                 tracing::info!("Background RDB save completed ({} bytes)", rdb_data.len());
             }
+            BGSAVE_IN_PROGRESS.store(false, std::sync::atomic::Ordering::SeqCst);
         });
-        if schedule {
-            Frame::simple("Background saving scheduled")
-        } else {
-            Frame::simple("Background saving started")
-        }
+
+        Frame::simple("Background saving started")
     }
 
     pub(super) fn save(&self) -> Frame {
@@ -2397,19 +2564,47 @@ impl CommandExecutor {
                 Frame::bulk("")
             }
             "HISTORY" => {
-                // LATENCY HISTORY event
+                // LATENCY HISTORY event — return timestamped latency samples
                 if args.is_empty() {
                     return Frame::error("ERR wrong number of arguments for 'latency|history' command");
                 }
-                Frame::array(vec![])
+                let event = String::from_utf8_lossy(&args[0]).to_string();
+                let samples = self.latency_tracker.history(&event);
+                let items: Vec<Frame> = samples
+                    .iter()
+                    .map(|s| {
+                        Frame::array(vec![
+                            Frame::Integer(s.timestamp as i64),
+                            Frame::Integer(s.latency_ms as i64),
+                        ])
+                    })
+                    .collect();
+                Frame::array(items)
             }
             "LATEST" => {
-                // LATENCY LATEST - return latest latency samples for all events
-                Frame::array(vec![])
+                // LATENCY LATEST — latest sample per event: [name, timestamp, latest, max]
+                let entries = self.latency_tracker.latest();
+                let items: Vec<Frame> = entries
+                    .into_iter()
+                    .map(|(name, ts, latest, max)| {
+                        Frame::array(vec![
+                            Frame::bulk(name),
+                            Frame::Integer(ts as i64),
+                            Frame::Integer(latest as i64),
+                            Frame::Integer(max as i64),
+                        ])
+                    })
+                    .collect();
+                Frame::array(items)
             }
             "RESET" => {
-                // LATENCY RESET [event ...]
-                Frame::Integer(0)
+                // LATENCY RESET [event ...] — clear latency data
+                let event_names: Vec<String> = args
+                    .iter()
+                    .map(|a| String::from_utf8_lossy(a).to_string())
+                    .collect();
+                let count = self.latency_tracker.reset(&event_names);
+                Frame::Integer(count as i64)
             }
             "HISTOGRAM" => {
                 // LATENCY HISTOGRAM [command ...] - Redis 7.0+
@@ -2491,6 +2686,39 @@ impl CommandExecutor {
         Frame::Integer(0)
     }
 
+    /// WAITAOF numlocal numreplicas timeout
+    /// Wait for AOF fsync confirmation from local and replica nodes.
+    /// Returns a two-element array: [num_local, num_replicas] that confirmed.
+    pub(super) fn waitaof(&self, numlocal: i64, numreplicas: i64, timeout: i64) -> Frame {
+        // In standalone mode, if AOF is enabled the local fsync is always
+        // confirmed (data has been written). Replicas always return 0.
+        let _ = timeout;
+
+        let local_confirmed = if numlocal > 0 {
+            // Check if AOF persistence is enabled via config
+            if let Some(ref config) = self.config {
+                let aof_enabled = config
+                    .get_param("appendonly")
+                    .map(|v| v == "yes")
+                    .unwrap_or(false);
+                if aof_enabled { 1i64 } else { 0i64 }
+            } else {
+                0i64
+            }
+        } else {
+            0i64
+        };
+
+        // No replica AOF tracking in standalone mode
+        let _ = numreplicas;
+        let replica_confirmed = 0i64;
+
+        Frame::array(vec![
+            Frame::Integer(local_confirmed),
+            Frame::Integer(replica_confirmed),
+        ])
+    }
+
     /// SHUTDOWN [NOSAVE | SAVE] [NOW] [FORCE] [ABORT]
     /// Shutdown the server
     pub(super) fn shutdown(
@@ -2505,9 +2733,11 @@ impl CommandExecutor {
             return Frame::simple("OK");
         }
 
-        // Persist before shutdown unless NOSAVE
-        if !nosave {
-            // Default behavior: save before shutdown
+        // SHUTDOWN SAVE forces a save; SHUTDOWN NOSAVE skips it.
+        // Default (neither flag): save before shutdown.
+        let should_save = save || !nosave;
+
+        if should_save {
             let rdb_data = ferrite_core::persistence::generate_rdb(&self.store);
             let path = std::path::Path::new("dump.rdb");
             match std::fs::write(path, &rdb_data) {

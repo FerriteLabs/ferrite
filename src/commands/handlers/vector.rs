@@ -33,6 +33,7 @@ pub async fn create(
     dimension: Option<usize>,
     metric: Option<&str>,
 ) -> Frame {
+    super::warn_experimental("FT");
     use ferrite_ai::vector::{DistanceMetric, VectorIndexConfig};
 
     let index_name = String::from_utf8_lossy(index).to_string();

@@ -246,9 +246,18 @@ impl RdbWriter {
         self.buffer.extend_from_slice(s);
     }
 
-    /// Write a double-precision float
+    /// Write a double-precision float with special encoding for infinity/NaN
     fn write_double(&mut self, val: f64) {
-        self.buffer.put_f64_le(val);
+        if val == f64::INFINITY {
+            self.buffer.put_u8(255);
+        } else if val == f64::NEG_INFINITY {
+            self.buffer.put_u8(254);
+        } else if val.is_nan() {
+            self.buffer.put_u8(253);
+        } else {
+            self.buffer.put_u8(0); // marker: normal f64 follows
+            self.buffer.put_f64_le(val);
+        }
     }
 }
 
@@ -420,7 +429,7 @@ impl<R: Read> RdbReader<R> {
                 for _ in 0..len {
                     let member = Bytes::from(self.read_string()?);
                     let score = if value_type == RDB_TYPE_ZSET_2 {
-                        self.read_f64_le()?
+                        self.read_double()?
                     } else {
                         // Old format: score as string
                         let score_str = self.read_string()?;
@@ -515,6 +524,24 @@ impl<R: Read> RdbReader<R> {
         let mut buf = [0u8; 8];
         self.reader.read_exact(&mut buf)?;
         Ok(f64::from_le_bytes(buf))
+    }
+
+    /// Read a double encoded with special markers for infinity/NaN
+    fn read_double(&mut self) -> Result<f64> {
+        let marker = self.read_u8()?;
+        match marker {
+            255 => Ok(f64::INFINITY),
+            254 => Ok(f64::NEG_INFINITY),
+            253 => Ok(f64::NAN),
+            0 => self.read_f64_le(),
+            // Backward compat: treat unknown markers as first byte of raw f64
+            _ => {
+                let mut buf = [0u8; 8];
+                buf[0] = marker;
+                self.reader.read_exact(&mut buf[1..])?;
+                Ok(f64::from_le_bytes(buf))
+            }
+        }
     }
 
     fn read_length(&mut self) -> Result<u64> {

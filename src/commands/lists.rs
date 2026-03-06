@@ -255,7 +255,7 @@ pub fn lset(store: &Arc<Store>, db: u8, key: &Bytes, index: i64, value: &Bytes) 
     };
 
     if idx >= list.len() {
-        return Frame::error("ERR index out of range");
+        return Frame::error("ERR index is out of range");
     }
 
     list[idx] = value.clone();

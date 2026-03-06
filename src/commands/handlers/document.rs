@@ -50,6 +50,7 @@ fn get_document_store() -> &'static DocumentStore {
 /// # Returns
 /// OK on success, error if collection exists.
 pub fn doc_create(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
+    super::warn_experimental("DOC");
     if args.is_empty() {
         return err_frame("wrong number of arguments for 'DOC.CREATE' command");
     }

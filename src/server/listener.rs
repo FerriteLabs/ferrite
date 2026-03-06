@@ -250,6 +250,68 @@ impl Server {
             );
         }
 
+        // Spawn active key expiration background task
+        {
+            let store = self.store.clone();
+            let mut exp_shutdown = self.shutdown_tx.subscribe();
+            tokio::spawn(async move {
+                // Sweep every 100ms, checking up to 20 keys per database per cycle
+                // (matches Redis default: 10 Hz × 20 keys = 200 keys/sec per db)
+                let mut interval = tokio::time::interval(std::time::Duration::from_millis(100));
+                loop {
+                    tokio::select! {
+                        _ = interval.tick() => {
+                            let removed = store.sweep_expired(20);
+                            if removed > 0 {
+                                tracing::trace!("Active expiration removed {} keys", removed);
+                            }
+                        }
+                        _ = exp_shutdown.recv() => break,
+                    }
+                }
+            });
+            info!("Active key expiration task started (10 Hz, 20 keys/db/cycle)");
+        }
+
+        // Spawn auto-save background task (checks every 60s if enough changes warrant a save)
+        {
+            let store = self.store.clone();
+            let mut save_shutdown = self.shutdown_tx.subscribe();
+            let save_threshold: u64 = 1000; // save if >= 1000 changes
+            tokio::spawn(async move {
+                let mut interval = tokio::time::interval(std::time::Duration::from_secs(60));
+                loop {
+                    tokio::select! {
+                        _ = interval.tick() => {
+                            let changes = store.changes_since_save();
+                            if changes >= save_threshold {
+                                tracing::info!(
+                                    "Auto-save triggered ({} changes since last save)",
+                                    changes
+                                );
+                                let rdb_data = ferrite_core::persistence::generate_rdb(&store);
+                                let path = std::path::Path::new("dump.rdb");
+                                match tokio::fs::write(path, &rdb_data).await {
+                                    Ok(()) => {
+                                        store.reset_changes_since_save();
+                                        tracing::info!(
+                                            "Auto-save completed ({} bytes)",
+                                            rdb_data.len()
+                                        );
+                                    }
+                                    Err(e) => {
+                                        tracing::error!("Auto-save failed: {}", e);
+                                    }
+                                }
+                            }
+                        }
+                        _ = save_shutdown.recv() => break,
+                    }
+                }
+            });
+            info!("Auto-save task started (every 60s, threshold: {} changes)", save_threshold);
+        }
+
         self.accept_loop().await
     }
 
@@ -279,6 +341,11 @@ impl Server {
 
                             info!("Accepted connection from {}", addr);
                             otel_metrics::connection_opened();
+
+                            // Disable Nagle's algorithm for low-latency command processing
+                            if let Err(e) = stream.set_nodelay(true) {
+                                tracing::warn!("Failed to set TCP_NODELAY: {}", e);
+                            }
 
                             // Register client in the registry
                             let client_id = self.client_registry.register(Some(addr));

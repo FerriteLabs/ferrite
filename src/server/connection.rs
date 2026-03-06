@@ -73,6 +73,12 @@ pub struct Connection {
 
     /// Protocol parser limits for DoS protection
     parser_limits: ParserLimits,
+
+    /// When true, this client's keys are excluded from eviction (CLIENT NO-EVICT ON)
+    pub no_evict: bool,
+
+    /// When true, accessing keys from this client won't update LRU/LFU counters (CLIENT NO-TOUCH ON)
+    pub no_touch: bool,
 }
 
 impl Connection {
@@ -93,6 +99,8 @@ impl Connection {
             client_name: None,
             peer_addr,
             parser_limits,
+            no_evict: false,
+            no_touch: false,
         }
     }
 

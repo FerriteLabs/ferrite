@@ -734,6 +734,12 @@ impl Command {
                 keys: vec![key.clone()],
                 permission: Permission::Read,
             },
+            Command::ZRangeStore { dst, src, .. } => CommandMeta {
+                name: "ZRANGESTORE",
+                category: "sortedset",
+                keys: vec![dst.clone(), src.clone()],
+                permission: Permission::Write,
+            },
             Command::ZMPop { keys, .. } => CommandMeta {
                 name: "ZMPOP",
                 category: "sortedset",
@@ -1018,6 +1024,12 @@ impl Command {
             },
             Command::Wait { .. } => CommandMeta {
                 name: "WAIT",
+                category: "generic",
+                keys: vec![],
+                permission: Permission::Read,
+            },
+            Command::WaitAof { .. } => CommandMeta {
+                name: "WAITAOF",
                 category: "generic",
                 keys: vec![],
                 permission: Permission::Read,

@@ -482,6 +482,18 @@ pub enum Command {
         count: Option<i64>,
         withscores: bool,
     },
+    /// ZRANGESTORE dst src min max [BYSCORE|BYLEX] [REV] [LIMIT offset count]
+    ZRangeStore {
+        dst: Bytes,
+        src: Bytes,
+        min: Bytes,
+        max: Bytes,
+        by_score: bool,
+        by_lex: bool,
+        rev: bool,
+        offset: Option<usize>,
+        count: Option<usize>,
+    },
     /// ZMPOP numkeys key [key ...] MIN|MAX [COUNT count]
     ZMPop {
         keys: Vec<Bytes>,
@@ -680,6 +692,12 @@ pub enum Command {
     },
     /// WAIT numreplicas timeout
     Wait { numreplicas: i64, timeout: i64 },
+    /// WAITAOF numlocal numreplicas timeout
+    WaitAof {
+        numlocal: i64,
+        numreplicas: i64,
+        timeout: i64,
+    },
     /// SHUTDOWN [NOSAVE | SAVE] [NOW] [FORCE] [ABORT]
     Shutdown {
         nosave: bool,
@@ -1933,7 +1951,7 @@ impl Command {
             "MSET" => parsers::strings::parse_mset(args),
             "APPEND" => parsers::strings::parse_append(args),
             "STRLEN" => parsers::strings::parse_strlen(args),
-            "GETRANGE" => parsers::strings::parse_getrange(args),
+            "GETRANGE" | "SUBSTR" => parsers::strings::parse_getrange(args),
             "SETRANGE" => parsers::strings::parse_setrange(args),
             "SETNX" => parsers::strings::parse_setnx(args),
             "SETEX" => parsers::strings::parse_setex(args),
@@ -2020,6 +2038,7 @@ impl Command {
             "ZINTERCARD" => parsers::sorted_sets::parse_zintercard(args),
             "ZDIFF" => parsers::sorted_sets::parse_zdiff(args),
             "ZDIFFSTORE" => parsers::sorted_sets::parse_zdiffstore(args),
+            "ZRANGESTORE" => parsers::sorted_sets::parse_zrangestore(args),
             "ZRANGEBYLEX" => parsers::sorted_sets::parse_zrangebylex(args),
             "ZREVRANGEBYLEX" => parsers::sorted_sets::parse_zrevrangebylex(args),
             "ZLEXCOUNT" => parsers::sorted_sets::parse_zlexcount(args),
@@ -2066,6 +2085,7 @@ impl Command {
             "DUMP" => parsers::keys::parse_dump(args),
             "RESTORE" => parsers::keys::parse_restore(args),
             "SORT" => parsers::keys::parse_sort(args),
+            "SORT_RO" => parsers::keys::parse_sort_ro(args),
             "PING" => parsers::server::parse_ping(args),
             "ECHO" => parsers::server::parse_echo(args),
             "SELECT" => parsers::server::parse_select(args),
@@ -2090,6 +2110,7 @@ impl Command {
             "SLOWLOG" => parsers::server::parse_slowlog(args),
             "LATENCY" => parsers::server::parse_latency(args),
             "WAIT" => parsers::server::parse_wait(args),
+            "WAITAOF" => parsers::server::parse_waitaof(args),
             "SHUTDOWN" => parsers::server::parse_shutdown(args),
             "SWAPDB" => parsers::server::parse_swapdb(args),
             "MOVE" => parsers::server::parse_move(args),

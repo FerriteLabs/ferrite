@@ -31,7 +31,7 @@ pub(crate) fn parse_select(args: &[Frame]) -> Result<Command> {
         return Err(FerriteError::WrongArity("SELECT".to_string()));
     }
     let db = get_int(&args[0])?;
-    if !(0..=15).contains(&db) {
+    if !(0..=255).contains(&db) {
         return Err(FerriteError::Protocol("invalid DB index".to_string()));
     }
     Ok(Command::Select { db: db as u8 })
@@ -179,6 +179,21 @@ pub(crate) fn parse_wait(args: &[Frame]) -> Result<Command> {
     let numreplicas = get_int(&args[0])?;
     let timeout = get_int(&args[1])?;
     Ok(Command::Wait {
+        numreplicas,
+        timeout,
+    })
+}
+
+/// WAITAOF numlocal numreplicas timeout
+pub(crate) fn parse_waitaof(args: &[Frame]) -> Result<Command> {
+    if args.len() < 3 {
+        return Err(FerriteError::WrongArity("WAITAOF".to_string()));
+    }
+    let numlocal = get_int(&args[0])?;
+    let numreplicas = get_int(&args[1])?;
+    let timeout = get_int(&args[2])?;
+    Ok(Command::WaitAof {
+        numlocal,
         numreplicas,
         timeout,
     })

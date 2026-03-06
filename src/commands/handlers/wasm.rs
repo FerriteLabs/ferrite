@@ -92,6 +92,7 @@ pub fn execution_result_to_frame(result: &crate::wasm::runtime::ExecutionResult)
 
 /// Handle WASM.LOAD command
 pub async fn load(name: &str, module: &Bytes, replace: bool, permissions: &[String]) -> Frame {
+    super::warn_experimental("WASM");
     use ferrite_plugins::wasm::{FunctionMetadata, FunctionPermissions};
 
     let registry = get_registry();

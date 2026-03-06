@@ -442,6 +442,12 @@ fn matches_pattern(pattern: &str, text: &str) -> bool {
 /// cursor: iteration cursor (0 to start)
 /// pattern: optional glob pattern to match fields
 /// count: hint for number of elements to return
+/// HSCAN key cursor [MATCH pattern] [COUNT count] [NOVALUES]
+///
+/// Incrementally iterate hash fields. Uses sorted-key iteration with index-based
+/// cursors for deterministic ordering. The cursor returned is an index into the
+/// sorted key list. This differs from Redis's opaque cursor implementation but
+/// provides equivalent guarantees for hashes that don't change during iteration.
 pub fn hscan(
     store: &Arc<Store>,
     db: u8,

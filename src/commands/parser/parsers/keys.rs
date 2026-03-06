@@ -286,3 +286,63 @@ pub(crate) fn parse_sort(args: &[Frame]) -> Result<Command> {
 
     Ok(Command::Sort { key, options })
 }
+
+/// SORT_RO key [BY pattern] [LIMIT offset count] [GET pattern ...] [ASC|DESC] [ALPHA]
+/// Read-only variant of SORT — identical but rejects STORE option.
+pub(crate) fn parse_sort_ro(args: &[Frame]) -> Result<Command> {
+    if args.is_empty() {
+        return Err(FerriteError::WrongArity("SORT_RO".to_string()));
+    }
+
+    let key = get_bytes(&args[0])?;
+    let mut options = SortOptions::default();
+
+    let mut i = 1;
+    while i < args.len() {
+        let opt = get_string(&args[i])?.to_uppercase();
+        match opt.as_str() {
+            "BY" => {
+                i += 1;
+                if i >= args.len() {
+                    return Err(FerriteError::Syntax);
+                }
+                options.by = Some(get_string(&args[i])?);
+            }
+            "LIMIT" => {
+                i += 1;
+                if i + 1 >= args.len() {
+                    return Err(FerriteError::Syntax);
+                }
+                let offset = get_int(&args[i])?;
+                i += 1;
+                let count = get_int(&args[i])?;
+                options.limit = Some((offset, count));
+            }
+            "GET" => {
+                i += 1;
+                if i >= args.len() {
+                    return Err(FerriteError::Syntax);
+                }
+                options.get.push(get_string(&args[i])?);
+            }
+            "ASC" => {
+                options.desc = false;
+            }
+            "DESC" => {
+                options.desc = true;
+            }
+            "ALPHA" => {
+                options.alpha = true;
+            }
+            "STORE" => {
+                return Err(FerriteError::InvalidArgument(
+                    "SORT_RO does not support the STORE option".to_string(),
+                ));
+            }
+            _ => return Err(FerriteError::Syntax),
+        }
+        i += 1;
+    }
+
+    Ok(Command::Sort { key, options })
+}

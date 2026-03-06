@@ -7595,3 +7595,90 @@ async fn test_dbsize_multiple_databases() {
     let r1 = executor.execute(Command::DbSize, 1).await;
     assert!(matches!(r1, Frame::Integer(2)));
 }
+
+#[tokio::test]
+async fn test_zadd_rejects_nan_score() {
+    let executor = create_executor();
+
+    let response = executor
+        .execute(
+            Command::ZAdd {
+                key: Bytes::from("myzset"),
+                options: Default::default(),
+                pairs: vec![(f64::NAN, Bytes::from("member"))],
+            },
+            0,
+        )
+        .await;
+    match response {
+        Frame::Error(_) => {} // Expected: NaN should be rejected
+        other => panic!("Expected error for NaN score, got {:?}", other),
+    }
+}
+
+#[tokio::test]
+async fn test_zadd_allows_infinity_scores() {
+    let executor = create_executor();
+
+    // Redis allows +inf/-inf as valid scores
+    let response = executor
+        .execute(
+            Command::ZAdd {
+                key: Bytes::from("myzset"),
+                options: Default::default(),
+                pairs: vec![
+                    (f64::NEG_INFINITY, Bytes::from("lowest")),
+                    (f64::INFINITY, Bytes::from("highest")),
+                ],
+            },
+            0,
+        )
+        .await;
+    assert!(matches!(response, Frame::Integer(2)));
+}
+
+#[tokio::test]
+async fn test_zrangestore_by_rank() {
+    let executor = create_executor();
+
+    executor
+        .execute(
+            Command::ZAdd {
+                key: Bytes::from("src"),
+                options: Default::default(),
+                pairs: vec![
+                    (1.0, Bytes::from("a")),
+                    (2.0, Bytes::from("b")),
+                    (3.0, Bytes::from("c")),
+                    (4.0, Bytes::from("d")),
+                    (5.0, Bytes::from("e")),
+                ],
+            },
+            0,
+        )
+        .await;
+
+    // ZRANGESTORE dst src 1 3 → store rank 1,2,3 (b,c,d)
+    let response = executor
+        .execute(
+            Command::ZRangeStore {
+                dst: Bytes::from("dst"),
+                src: Bytes::from("src"),
+                min: Bytes::from("1"),
+                max: Bytes::from("3"),
+                by_score: false,
+                by_lex: false,
+                rev: false,
+                offset: None,
+                count: None,
+            },
+            0,
+        )
+        .await;
+    assert!(matches!(response, Frame::Integer(3)));
+
+    let response = executor
+        .execute(Command::ZCard { key: Bytes::from("dst") }, 0)
+        .await;
+    assert!(matches!(response, Frame::Integer(3)));
+}

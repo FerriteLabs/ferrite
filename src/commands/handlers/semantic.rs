@@ -25,6 +25,7 @@ use crate::protocol::Frame;
 
 /// Handle SEMANTIC.SET command
 pub async fn set(query: &Bytes, value: &Bytes, embedding: &[f32], ttl_secs: Option<u64>) -> Frame {
+    super::warn_experimental("SEMANTIC");
     use ferrite_ai::semantic::SemanticCache;
 
     let cache = SemanticCache::with_defaults();

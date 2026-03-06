@@ -59,6 +59,14 @@ pub fn key_type(store: &Arc<Store>, db: u8, key: &Bytes) -> Frame {
 
 /// RENAME command - rename a key
 pub fn rename(store: &Arc<Store>, db: u8, key: &Bytes, new_key: &Bytes) -> Frame {
+    // Short-circuit: renaming a key to itself is a no-op
+    if key == new_key {
+        return match store.get(db, key) {
+            Some(_) => Frame::simple("OK"),
+            None => Frame::error("ERR no such key"),
+        };
+    }
+
     // Get the value and TTL of the old key
     match store.get_entry(db, key) {
         Some((value, expires_at)) => {

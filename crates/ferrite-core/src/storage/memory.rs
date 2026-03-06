@@ -317,6 +317,38 @@ impl Database {
         self.data.clear();
     }
 
+    /// Remove expired keys from this database. Returns the count of keys removed.
+    ///
+    /// Samples up to `max_keys` entries per sweep to bound CPU usage.
+    /// Called periodically by the active expiration background task.
+    pub fn sweep_expired(&self, max_keys: usize) -> usize {
+        let mut removed = 0;
+        let mut checked = 0;
+        // Collect expired keys (can't remove during DashMap iteration)
+        let mut expired_keys = Vec::new();
+        for entry in self.data.iter() {
+            if checked >= max_keys {
+                break;
+            }
+            checked += 1;
+            if entry.is_expired() {
+                expired_keys.push(entry.key().clone());
+            }
+        }
+        for key in expired_keys {
+            // Double-check before removal (entry may have been updated/deleted)
+            if let Some(entry) = self.data.get(&key) {
+                if entry.is_expired() {
+                    drop(entry); // Release read guard before removing
+                    if self.data.remove(&key).is_some() {
+                        removed += 1;
+                    }
+                }
+            }
+        }
+        removed
+    }
+
     /// Evict keys according to the given policy until `target_bytes` are freed.
     ///
     /// Uses Redis-compatible sampling: picks `sample_size` random keys and
@@ -459,6 +491,8 @@ pub struct Store {
     profiler: Option<Arc<WorkloadProfiler>>,
     /// Optional auto-tiering engine for access pattern tracking
     auto_tier: Option<Arc<crate::tiering::auto_tier::AutoTierEngine>>,
+    /// Count of write operations since last RDB save (for auto-save triggers)
+    changes_since_save: AtomicU64,
 }
 
 impl Store {
@@ -473,6 +507,7 @@ impl Store {
             num_dbs: num_databases as usize,
             profiler: None,
             auto_tier: None,
+            changes_since_save: AtomicU64::new(0),
         }
     }
 
@@ -502,6 +537,7 @@ impl Store {
                     num_dbs: config.databases as usize,
                     profiler: None,
                     auto_tier: None,
+                    changes_since_save: AtomicU64::new(0),
                 })
             }
         }
@@ -685,6 +721,7 @@ impl Store {
 
     /// Set a value in a specific database
     pub fn set(&self, db: u8, key: Bytes, value: Value) {
+        self.record_change();
         if let Some(profiler) = &self.profiler {
             let key_str = String::from_utf8_lossy(&key);
             profiler.record_key_access(&key_str, CommandKind::Write, None);
@@ -714,6 +751,7 @@ impl Store {
 
     /// Set a value with expiration
     pub fn set_with_expiry(&self, db: u8, key: Bytes, value: Value, expires_at: SystemTime) {
+        self.record_change();
         match &self.backend {
             StorageBackend::Memory(databases) => databases[db as usize]
                 .read()
@@ -732,6 +770,7 @@ impl Store {
 
     /// Delete keys from a specific database
     pub fn del(&self, db: u8, keys: &[Bytes]) -> i64 {
+        self.record_change();
         if let Some(ref engine) = self.auto_tier {
             for key in keys {
                 engine.record_access(key.as_ref(), true, 0);
@@ -868,7 +907,11 @@ impl Store {
         }
     }
 
-    /// Get key count for a database
+    /// Get key count for a database.
+    ///
+    /// Note: may include expired-but-not-yet-evicted keys (matches Redis DBSIZE
+    /// behavior). The active expiration background task progressively cleans
+    /// these up, so the count converges to the true live key count over time.
     pub fn key_count(&self, db: u8) -> u64 {
         match &self.backend {
             StorageBackend::Memory(databases) => databases[db as usize].read().len() as u64,
@@ -922,9 +965,44 @@ impl Store {
         }
     }
 
+    /// Sweep expired keys across all databases. Returns total keys removed.
+    ///
+    /// Called periodically by the active expiration background task.
+    /// `max_per_db` limits the number of keys checked per database per sweep.
+    pub fn sweep_expired(&self, max_per_db: usize) -> usize {
+        match &self.backend {
+            StorageBackend::Memory(databases) => {
+                let mut total = 0;
+                for db in databases {
+                    total += db.read().sweep_expired(max_per_db);
+                }
+                total
+            }
+            StorageBackend::HybridLog(_) => {
+                // HybridLog manages TTL differently via its own compaction
+                0
+            }
+        }
+    }
+
     /// Check if the store is using HybridLog backend
     pub fn is_hybridlog(&self) -> bool {
         matches!(&self.backend, StorageBackend::HybridLog(_))
+    }
+
+    /// Increment the write counter (called on every mutation).
+    pub fn record_change(&self) {
+        self.changes_since_save.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    }
+
+    /// Get the number of changes since the last save and optionally reset.
+    pub fn changes_since_save(&self) -> u64 {
+        self.changes_since_save.load(std::sync::atomic::Ordering::Relaxed)
+    }
+
+    /// Reset the change counter (called after a successful save).
+    pub fn reset_changes_since_save(&self) {
+        self.changes_since_save.store(0, std::sync::atomic::Ordering::Relaxed);
     }
 
     /// Atomically swap two databases (SWAPDB)
@@ -1022,6 +1100,56 @@ mod tests {
         // Should be expired
         assert!(db.get(&key).is_none());
         assert!(!db.exists(&key));
+    }
+
+    #[test]
+    fn test_sweep_expired() {
+        use std::time::Duration;
+
+        let db = Database::new();
+
+        // Add 3 expired keys and 2 live keys
+        let past = SystemTime::now() - Duration::from_secs(1);
+        let future = SystemTime::now() + Duration::from_secs(3600);
+
+        db.set_with_expiry(Bytes::from("expired1"), Value::String(Bytes::from("v")), past);
+        db.set_with_expiry(Bytes::from("expired2"), Value::String(Bytes::from("v")), past);
+        db.set_with_expiry(Bytes::from("expired3"), Value::String(Bytes::from("v")), past);
+        db.set_with_expiry(Bytes::from("live1"), Value::String(Bytes::from("v")), future);
+        db.set(Bytes::from("live2"), Value::String(Bytes::from("v")));
+
+        // raw len includes expired keys
+        assert_eq!(db.len(), 5);
+
+        // Sweep should remove all 3 expired keys
+        let removed = db.sweep_expired(100);
+        assert_eq!(removed, 3);
+
+        // Only live keys remain
+        assert_eq!(db.len(), 2);
+        assert!(db.get(&Bytes::from("live1")).is_some());
+        assert!(db.get(&Bytes::from("live2")).is_some());
+    }
+
+    #[test]
+    fn test_sweep_expired_respects_limit() {
+        use std::time::Duration;
+
+        let db = Database::new();
+        let past = SystemTime::now() - Duration::from_secs(1);
+
+        for i in 0..10 {
+            db.set_with_expiry(
+                Bytes::from(format!("key{}", i)),
+                Value::String(Bytes::from("v")),
+                past,
+            );
+        }
+
+        // Sweep with limit of 5 — should remove at most 5
+        let removed = db.sweep_expired(5);
+        assert!(removed <= 5);
+        assert!(db.len() <= 10);
     }
 
     #[test]

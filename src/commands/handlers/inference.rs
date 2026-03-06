@@ -43,6 +43,7 @@ fn get_trigger_manager() -> &'static InferenceTrigger {
 ///
 /// Syntax: ML.MODEL.LOAD model_name path [FORMAT onnx|tflite|torchscript] [GPU] [BATCH max_batch_size]
 pub async fn ml_model_load(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
+    super::warn_experimental("ML");
     if args.len() < 2 {
         return err_frame("wrong number of arguments for 'ML.MODEL.LOAD' command");
     }

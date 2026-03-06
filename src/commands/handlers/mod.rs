@@ -11,6 +11,48 @@
 //! delegating to trait-based `CommandHandler` implementations rather than containing
 //! the logic directly.
 //!
+//! # Handler Maturity & Persistence Model
+//!
+//! Handlers fall into two categories based on how they manage state:
+//!
+//! ## Store-integrated (production-grade)
+//!
+//! These handlers operate on the main [`Store`] and participate fully in persistence,
+//! replication, and cluster routing. Their data survives restarts and is included in
+//! RDB/AOF snapshots, replication streams, and backup/restore operations.
+//!
+//! **Handlers**: `admin`, `cluster`, `keys`, `server`, `transaction`, `query`,
+//! `replication_cmd`, `ebpf`, `version`, `temporal`, `trigger`, `views`
+//!
+//! ## OnceLock-singleton (experimental)
+//!
+//! These handlers manage state via `static OnceLock<T>` singletons initialized on
+//! first use. This means:
+//!
+//! - **No persistence**: State is lost on server restart
+//! - **No replication**: State is not propagated to replicas
+//! - **No backup/restore**: State is not included in RDB/AOF snapshots
+//! - **No cluster routing**: Operations execute on the local node only
+//!
+//! This is an intentional design choice for rapid feature prototyping. Each handler
+//! will be migrated to Store-integrated persistence as it matures.
+//!
+//! **Handlers**: `agent`, `analytics`, `audit`, `chaos`, `classify`, `cloud`,
+//! `consensus`, `contract`, `costoptimizer`, `document`, `edge`, `feature_store`,
+//! `federation`, `functions`, `gateway`, `global_index`, `graph`, `inference`,
+//! `lineage`, `locks`, `marketplace`, `mesh`, `multicloud`, `observe`, `optimizer`,
+//! `pipeline`, `policy`, `policy_engine`, `protocol`, `rag`, `s3`, `scaling`,
+//! `schema`, `semantic`, `slots`, `smart_proxy_cmd`, `timeseries`, `vector`,
+//! `vector_ingest`, `wasm`
+//!
+//! ## Dead code (declared but not routed)
+//!
+//! The following handlers are fully implemented but not yet wired into the command
+//! dispatcher. They are preserved for future activation:
+//!
+//! `autoindex`, `conversation`, `costoptimizer`, `multicloud`, `policy`, `s3`,
+//! `slots`, `vector_ingest`
+//!
 //! ## Migration Targets
 //!
 //! | Handler file      | Target crate          | Status    |
@@ -241,4 +283,31 @@ pub fn ok_frame() -> Frame {
 #[inline]
 pub fn pong_frame() -> Frame {
     Frame::Simple(Bytes::from("PONG"))
+}
+
+/// Log a one-time warning that a command uses ephemeral in-memory state.
+///
+/// Experimental handlers store data in process-local `OnceLock` singletons
+/// rather than the main [`Store`]. This means their state is **not persisted**,
+/// **not replicated**, and **not included in backups**. This helper emits a
+/// single warning per command family so operators are aware.
+#[cold]
+pub fn warn_experimental(command_family: &str) {
+    // tracing::warn_once is not available; use a static set to deduplicate.
+    use std::sync::Mutex;
+    use std::collections::HashSet;
+
+    static WARNED: std::sync::LazyLock<Mutex<HashSet<String>>> =
+        std::sync::LazyLock::new(|| Mutex::new(HashSet::new()));
+
+    if let Ok(mut set) = WARNED.lock() {
+        if set.insert(command_family.to_owned()) {
+            tracing::warn!(
+                command_family,
+                "Experimental command family '{}' uses ephemeral in-memory state. \
+                 Data will NOT be persisted, replicated, or included in backups.",
+                command_family,
+            );
+        }
+    }
 }

@@ -71,6 +71,7 @@ fn get_metadata() -> &'static RwLock<HashMap<String, TimeSeriesMetricMeta>> {
 /// # Returns
 /// OK on success, error otherwise.
 pub fn ts_create(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
+    super::warn_experimental("TS");
     if args.is_empty() {
         return err_frame("wrong number of arguments for 'TS.CREATE' command");
     }
