@@ -1,3 +1,4 @@
+// TODO: wire up CLIENT LIST, CLIENT KILL, CLIENT GETNAME subcommands
 //! Command parsing — RESP frames to typed [`Command`] values.
 //!
 //! This module defines the [`Command`] enum (one variant per Redis command) and
