@@ -1,3 +1,7 @@
+// Memory allocation tuning constants
+const DEFAULT_PAGE_SIZE: usize = 4096;
+const MAX_INLINE_VALUE_LEN: usize = 128;
+
 //! In-memory storage implementation
 //!
 //! This module implements the in-memory storage engine using DashMap for
