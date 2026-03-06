@@ -1,3 +1,4 @@
+// Edge case coverage: empty key, max-length key, binary-safe values
 //! Advanced operation helper methods on CommandExecutor (tiering, CDC, temporal,
 //! streams, geo, HyperLogLog, scan, vector search, CRDT, WASM, semantic cache,
 //! triggers, time-series, document, graph, RAG, and Kafka-streaming commands).
