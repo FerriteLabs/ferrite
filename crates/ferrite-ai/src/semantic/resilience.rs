@@ -425,6 +425,7 @@ pub struct Bulkhead {
     /// Available permits
     permits: AtomicU32,
     /// Maximum permits
+    #[allow(dead_code)]
     max_permits: u32,
     /// Waiting queue size
     queue_size: AtomicU32,

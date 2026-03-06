@@ -120,6 +120,7 @@ impl HnswConfig {
 #[derive(Clone)]
 struct HnswNode {
     /// Node ID
+    #[allow(dead_code)]
     id: u64,
     /// Vector data
     vector: Vec<f32>,

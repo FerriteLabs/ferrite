@@ -4,7 +4,6 @@
 //! overwhelmed by upstream producers. Uses high/low watermarks to signal
 //! when consumers should pause or resume reading.
 
-#![allow(dead_code)]
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Duration;

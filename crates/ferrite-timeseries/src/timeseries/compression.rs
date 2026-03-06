@@ -175,6 +175,7 @@ impl GorillaCompressor {
     }
 
     /// Get the effective block duration based on compression level
+    #[allow(dead_code)]
     fn effective_block_duration(&self) -> std::time::Duration {
         match self.level {
             CompressionLevel::Fast => self.block_duration * 2,

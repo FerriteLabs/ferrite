@@ -14,7 +14,7 @@ use super::ast::*;
 use super::planner::QueryPlan;
 
 /// Execute a Cypher statement against a graph storage.
-pub fn execute(stmt: &CypherStatement, storage: &mut GraphStorage) -> Result<QueryResult, String> {
+pub fn execute(stmt: &CypherStatement, storage: &mut GraphStorage) -> Result<QueryResult, super::CypherError> {
     match stmt {
         CypherStatement::Query(query) => execute_query(query, storage),
         CypherStatement::Create(create) => execute_create(create, storage, &HashMap::new()),
@@ -29,12 +29,12 @@ pub fn execute(stmt: &CypherStatement, storage: &mut GraphStorage) -> Result<Que
 pub fn execute_read_only(
     query: &CypherQuery,
     storage: &GraphStorage,
-) -> Result<QueryResult, String> {
+) -> Result<QueryResult, super::CypherError> {
     execute_query(query, storage)
 }
 
 /// Execute a query plan.
-pub fn execute_plan(plan: &QueryPlan, storage: &GraphStorage) -> Result<QueryResult, String> {
+pub fn execute_plan(plan: &QueryPlan, storage: &GraphStorage) -> Result<QueryResult, super::CypherError> {
     execute_query(&plan.query, storage)
 }
 
@@ -47,7 +47,7 @@ enum BoundValue {
     Edge(Edge),
 }
 
-fn execute_query(query: &CypherQuery, storage: &GraphStorage) -> Result<QueryResult, String> {
+fn execute_query(query: &CypherQuery, storage: &GraphStorage) -> Result<QueryResult, super::CypherError> {
     let start = std::time::Instant::now();
 
     // 1. Expand MATCH patterns into bindings
@@ -134,7 +134,7 @@ fn execute_aggregation(
     query: &CypherQuery,
     bindings: &[Bindings],
     start: std::time::Instant,
-) -> Result<QueryResult, String> {
+) -> Result<QueryResult, super::CypherError> {
     let columns: Vec<String> = query
         .return_clause
         .items
@@ -267,7 +267,7 @@ fn compute_aggregate(expr: &Expr, bindings: &[&Bindings]) -> QueryValue {
 fn expand_match(
     match_pattern: &MatchPattern,
     storage: &GraphStorage,
-) -> Result<Vec<Bindings>, String> {
+) -> Result<Vec<Bindings>, super::CypherError> {
     let mut bindings: Vec<Bindings> = vec![HashMap::new()];
 
     for pattern_part in &match_pattern.patterns {
@@ -281,7 +281,7 @@ fn expand_pattern_part(
     part: &PatternPart,
     bindings: &[Bindings],
     storage: &GraphStorage,
-) -> Result<Vec<Bindings>, String> {
+) -> Result<Vec<Bindings>, super::CypherError> {
     // First expand the start node
     let mut current = expand_node(&part.start, bindings, storage)?;
 
@@ -297,7 +297,7 @@ fn expand_node(
     node: &NodePatternAst,
     bindings: &[Bindings],
     storage: &GraphStorage,
-) -> Result<Vec<Bindings>, String> {
+) -> Result<Vec<Bindings>, super::CypherError> {
     let mut results = Vec::new();
 
     for binding in bindings {
@@ -351,7 +351,7 @@ fn expand_relationship(
     target_node: &NodePatternAst,
     bindings: &[Bindings],
     storage: &GraphStorage,
-) -> Result<Vec<Bindings>, String> {
+) -> Result<Vec<Bindings>, super::CypherError> {
     let mut results = Vec::new();
 
     for binding in bindings {
@@ -683,7 +683,7 @@ fn execute_create(
     create: &CreateClause,
     storage: &mut GraphStorage,
     bindings: &Bindings,
-) -> Result<QueryResult, String> {
+) -> Result<QueryResult, super::CypherError> {
     let start = std::time::Instant::now();
     let mut created_bindings: Bindings = bindings.clone();
 
@@ -700,7 +700,7 @@ fn execute_create(
                 if let Some(ref props) = node_pattern.properties {
                     vertex.properties = props.clone();
                 }
-                storage.add_vertex(vertex).map_err(|e| format!("{}", e))?;
+                storage.add_vertex(vertex).map_err(|e| super::CypherError::Execution(format!("{}", e)))?;
 
                 if let Some(ref var) = node_pattern.variable {
                     if let Some(v) = storage.get_vertex(id) {
@@ -716,11 +716,11 @@ fn execute_create(
             } => {
                 let from_id = match created_bindings.get(from) {
                     Some(BoundValue::Vertex(v)) => v.id,
-                    _ => return Err(format!("variable '{}' not bound to a node", from)),
+                    _ => return Err(super::CypherError::Execution(format!("variable '{}' not bound to a node", from))),
                 };
                 let to_id = match created_bindings.get(to) {
                     Some(BoundValue::Vertex(v)) => v.id,
-                    _ => return Err(format!("variable '{}' not bound to a node", to)),
+                    _ => return Err(super::CypherError::Execution(format!("variable '{}' not bound to a node", to))),
                 };
 
                 let id = next_edge_id();
@@ -728,7 +728,7 @@ fn execute_create(
                 if let Some(props) = properties {
                     edge.properties = props.clone();
                 }
-                storage.add_edge(edge).map_err(|e| format!("{}", e))?;
+                storage.add_edge(edge).map_err(|e| super::CypherError::Execution(format!("{}", e)))?;
             }
         }
     }
@@ -744,7 +744,7 @@ fn execute_match_create(
     match_clause: &MatchPattern,
     create_clause: &CreateClause,
     storage: &mut GraphStorage,
-) -> Result<QueryResult, String> {
+) -> Result<QueryResult, super::CypherError> {
     let start = std::time::Instant::now();
 
     // First expand match bindings (read-only)

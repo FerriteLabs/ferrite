@@ -311,6 +311,7 @@ pub struct PercentileFunction {
 }
 
 impl PercentileFunction {
+    /// Create a new percentile aggregation for the given percentile (0–100).
     pub fn new(percentile: f64) -> Self {
         Self {
             percentile: percentile.clamp(0.0, 100.0),

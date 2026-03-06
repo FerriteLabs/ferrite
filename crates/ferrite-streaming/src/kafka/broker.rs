@@ -67,6 +67,7 @@ pub struct StreamingBroker {
     topics: DashMap<String, Topic>,
     partitions: DashMap<(String, u32), RwLock<PartitionLog>>,
     consumer_groups: DashMap<String, RwLock<ConsumerGroup>>,
+    #[allow(dead_code)] // Used in future configuration-driven behavior
     config: BrokerConfig,
     message_count: AtomicU64,
 }

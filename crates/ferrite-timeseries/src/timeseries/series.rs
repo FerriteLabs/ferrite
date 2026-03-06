@@ -581,6 +581,7 @@ fn aggregate_values(values: &[f64], stat: Statistic) -> Option<f64> {
 #[derive(Debug)]
 pub struct TimeSeriesSet {
     /// Metric name
+    #[allow(dead_code)]
     metric: String,
     /// Series by fingerprint
     series: RwLock<std::collections::HashMap<u64, Arc<TimeSeries>>>,

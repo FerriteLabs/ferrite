@@ -51,3 +51,40 @@ pub use ast::{
 pub use executor::{execute, execute_read_only};
 pub use parser::CypherParser;
 pub use planner::{plan, PlanStep, QueryPlan};
+
+/// Errors produced by the Cypher parser and executor.
+#[derive(Debug, Clone, thiserror::Error)]
+pub enum CypherError {
+    /// Lexer encountered an invalid token.
+    #[error("parse error: {0}")]
+    Parse(String),
+
+    /// Expected a specific token but found something else.
+    #[error("syntax error: {0}")]
+    Syntax(String),
+
+    /// A variable referenced in the query was not bound.
+    #[error("unbound variable: {0}")]
+    UnboundVariable(String),
+
+    /// Type mismatch during execution (e.g. non-numeric aggregation).
+    #[error("type error: {0}")]
+    Type(String),
+
+    /// An unsupported Cypher feature was used.
+    #[error("unsupported: {0}")]
+    Unsupported(String),
+
+    /// Generic execution error.
+    #[error("execution error: {0}")]
+    Execution(String),
+}
+
+impl From<String> for CypherError {
+    fn from(s: String) -> Self {
+        Self::Execution(s)
+    }
+}
+
+/// Result alias for Cypher operations.
+pub type CypherResult<T> = std::result::Result<T, CypherError>;

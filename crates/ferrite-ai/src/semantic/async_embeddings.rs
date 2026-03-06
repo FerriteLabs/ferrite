@@ -47,6 +47,7 @@ pub struct AsyncEmbedder {
     model: Arc<EmbeddingModel>,
     config: AsyncEmbeddingConfig,
     semaphore: Arc<Semaphore>,
+    #[allow(dead_code)]
     queue: Arc<Mutex<VecDeque<EmbeddingRequest>>>,
 }
 
@@ -144,6 +145,7 @@ impl AsyncEmbedder {
 }
 
 /// Batch processor for embedding requests
+    #[allow(dead_code)]
 pub struct EmbeddingBatchProcessor {
     embedder: Arc<AsyncEmbedder>,
     request_tx: mpsc::Sender<EmbeddingRequest>,

@@ -1,5 +1,4 @@
 //! WebSocket server for real-time dashboard updates
-#![allow(dead_code)]
 
 use std::time::Duration;
 

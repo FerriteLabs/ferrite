@@ -726,7 +726,7 @@ mod tests {
     fn test_registry_call() {
         let registry = FunctionRegistry::new();
 
-        let mut metadata = FunctionMetadata::new("test".to_string(), "hash".to_string());
+        let metadata = FunctionMetadata::new("test".to_string(), "hash".to_string());
         registry
             .load("test", valid_wasm_bytes(), Some(metadata))
             .unwrap();

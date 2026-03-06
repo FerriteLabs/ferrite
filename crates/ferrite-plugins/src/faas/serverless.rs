@@ -2,7 +2,6 @@
 //!
 //! Execute JavaScript/TypeScript functions inside Ferrite, triggered
 //! by data events. Sub-millisecond cold start via lightweight runtime.
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
@@ -276,6 +275,7 @@ struct FunctionState {
     definition: FunctionDefinition,
     invocations: AtomicU64,
     total_duration_ms: AtomicU64,
+    #[allow(dead_code)]
     errors: AtomicU64,
     last_invoked: RwLock<Option<u64>>,
     recent_results: RwLock<Vec<FunctionResult>>,

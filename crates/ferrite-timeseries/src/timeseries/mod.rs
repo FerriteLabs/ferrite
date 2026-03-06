@@ -50,7 +50,6 @@
 //!     .execute()?;
 //! ```
 
-#![allow(dead_code)]
 pub mod aggregation;
 pub mod compression;
 pub mod continuous;

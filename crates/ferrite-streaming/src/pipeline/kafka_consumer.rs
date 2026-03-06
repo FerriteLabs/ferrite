@@ -4,7 +4,6 @@
 //! vector ingestion pipeline, consuming records and converting
 //! them to IngestDocument format.
 
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::sync::Arc;

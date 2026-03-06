@@ -366,6 +366,7 @@ impl KeyedStateStore {
 /// Window state store for windowed aggregations
 pub struct WindowStateStore {
     /// Base name
+    #[allow(dead_code)]
     name: String,
     /// State by window key
     windows: Arc<RwLock<HashMap<WindowKey, serde_json::Value>>>,
@@ -468,6 +469,7 @@ impl WindowStateStore {
 
 /// Session state store for session windows
 pub struct SessionStateStore {
+    #[allow(dead_code)]
     /// Base name
     name: String,
     /// Sessions by key

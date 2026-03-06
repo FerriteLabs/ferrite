@@ -84,6 +84,7 @@ pub struct AccessPredictor {
     /// Model weights (simple linear model)
     weights: RwLock<ModelWeights>,
     /// Prediction horizon in seconds
+    #[allow(dead_code)]
     horizon_secs: u64,
 }
 
@@ -101,6 +102,7 @@ struct PatternHistory {
 struct ModelWeights {
     /// Trend weight
     trend_weight: f64,
+    #[allow(dead_code)]
     /// Momentum weight
     momentum_weight: f64,
     /// Seasonality weight
@@ -506,8 +508,8 @@ impl AccessPredictor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::autoindex::collector::AccessType;
-    use std::time::Duration;
+    
+    
 
     fn create_test_pattern(access_count: u64, read_count: u64, write_count: u64) -> QueryPattern {
         QueryPattern {

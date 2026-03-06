@@ -38,6 +38,7 @@ pub struct Pattern {
     /// Maximum time window for the pattern
     within: Option<Duration>,
     /// Pattern quantifier
+    #[allow(dead_code)]
     quantifier: Quantifier,
 }
 
@@ -199,6 +200,7 @@ pub struct PatternStage {
     negative: bool,
     /// Whether this is an alternative pattern
     alternative: bool,
+    #[allow(dead_code)]
     /// Stage quantifier
     quantifier: Quantifier,
 }
@@ -387,8 +389,10 @@ struct PartialMatch {
     /// Pattern context with matched events
     context: PatternContext,
     /// Start time of the match
+    #[allow(dead_code)]
     start_time: u64,
     /// Last event time
+    #[allow(dead_code)]
     last_event_time: u64,
 }
 

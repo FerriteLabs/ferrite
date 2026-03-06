@@ -61,6 +61,7 @@ pub struct RedisSource {
     consumer_group: String,
     consumer_name: String,
     running: Arc<RwLock<bool>>,
+    #[allow(dead_code)]
     last_id: Arc<RwLock<String>>,
     /// Internal event queue for push-based delivery
     event_queue: Arc<RwLock<std::collections::VecDeque<StreamEvent>>>,

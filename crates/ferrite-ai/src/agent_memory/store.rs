@@ -4,7 +4,6 @@
 //! recall, conversation history, and tool call caching.
 //!
 //! Designed for LangChain, LlamaIndex, AutoGen, and similar frameworks.
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};

@@ -234,6 +234,7 @@ pub struct CounterMap {
     counters: HashMap<Bytes, PNCounter>,
 }
 
+#[allow(dead_code)]
 impl CounterMap {
     /// Create a new counter map
     pub fn new() -> Self {

@@ -11,9 +11,7 @@
 //! - OffsetCommit (API key 8)
 //! - Heartbeat (API key 12)
 
-#![allow(dead_code)]
 
-use std::collections::HashMap;
 use std::io;
 use std::net::SocketAddr;
 use std::sync::atomic::{AtomicI32, Ordering};
@@ -656,6 +654,7 @@ pub struct KafkaWireClient {
     stream: Option<TcpStream>,
     config: KafkaWireConfig,
     correlation_id: AtomicI32,
+    #[allow(dead_code)]
     read_buf: BytesMut,
 }
 

@@ -254,6 +254,7 @@ pub struct LlmCacheStats {
 }
 
 /// Embedding request for async processing
+    #[allow(dead_code)]
 struct EmbeddingRequest {
     text: String,
     response_tx: oneshot::Sender<Result<Vec<f32>, SemanticError>>,
@@ -261,8 +262,11 @@ struct EmbeddingRequest {
 
 /// Batch embedding processor
 struct EmbeddingProcessor {
+    #[allow(dead_code)]
     model: Arc<EmbeddingModel>,
+    #[allow(dead_code)]
     batch_size: usize,
+    #[allow(dead_code)]
     timeout: Duration,
 }
 
@@ -279,6 +283,7 @@ impl EmbeddingProcessor {
         self.model.embed(text)
     }
 
+    #[allow(dead_code)]
     fn embed_batch(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>, SemanticError> {
         self.model.embed_batch(texts)
     }
@@ -294,9 +299,11 @@ pub struct LlmCache {
     exact_cache: DashMap<u64, u64>,
     /// Embedding processor
     embedding_processor: Arc<EmbeddingProcessor>,
+    #[allow(dead_code)]
     /// Embedding cache (text hash -> embedding)
     embedding_cache: DashMap<u64, Vec<f32>>,
     /// Statistics
+    #[allow(dead_code)]
     stats: LlmCacheStats,
     /// Atomic stats counters
     hits: AtomicU64,
@@ -311,6 +318,7 @@ pub struct LlmCache {
     /// Cost tracking
     cost_stats: RwLock<CostStats>,
     /// Concurrency limiter
+    #[allow(dead_code)]
     semaphore: Arc<Semaphore>,
 }
 

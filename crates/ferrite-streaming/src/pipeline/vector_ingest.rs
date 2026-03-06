@@ -11,7 +11,6 @@
 //! 4. Insert vectors into target index (incremental)
 //! 5. Track offsets for exactly-once processing
 
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};

@@ -670,13 +670,13 @@ impl Graph {
     /// Supports MATCH, WHERE, RETURN, ORDER BY, LIMIT, SKIP, and aggregations.
     pub fn cypher_query(&self, cypher: &str) -> Result<QueryResult> {
         use crate::cypher::{self, CypherParser};
-        let stmt = CypherParser::parse(cypher).map_err(GraphError::InvalidQuery)?;
+        let stmt = CypherParser::parse(cypher).map_err(|e| GraphError::InvalidQuery(e.to_string()))?;
         match stmt {
             cypher::CypherStatement::Query(ref q) => {
                 self.metrics
                     .queries
                     .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                cypher::execute_read_only(q, &self.storage.read()).map_err(GraphError::InvalidQuery)
+                cypher::execute_read_only(q, &self.storage.read()).map_err(|e| GraphError::InvalidQuery(e.to_string()))
             }
             _ => Err(GraphError::InvalidQuery(
                 "cypher_query only supports read queries; use cypher_execute for mutations"
@@ -691,17 +691,17 @@ impl Graph {
     /// to read queries.
     pub fn cypher_execute(&self, cypher: &str) -> Result<QueryResult> {
         use crate::cypher::{self, CypherParser};
-        let stmt = CypherParser::parse(cypher).map_err(GraphError::InvalidQuery)?;
+        let stmt = CypherParser::parse(cypher).map_err(|e| GraphError::InvalidQuery(e.to_string()))?;
         self.metrics
             .queries
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        cypher::execute(&stmt, &mut self.storage.write()).map_err(GraphError::InvalidQuery)
+        cypher::execute(&stmt, &mut self.storage.write()).map_err(|e| GraphError::InvalidQuery(e.to_string()))
     }
 
     /// Plan a Cypher query and return the execution plan.
     pub fn cypher_plan(&self, cypher: &str) -> Result<crate::cypher::QueryPlan> {
         use crate::cypher::{self, CypherParser};
-        let stmt = CypherParser::parse(cypher).map_err(GraphError::InvalidQuery)?;
+        let stmt = CypherParser::parse(cypher).map_err(|e| GraphError::InvalidQuery(e.to_string()))?;
         match stmt {
             cypher::CypherStatement::Query(ref q) => Ok(cypher::plan(q)),
             _ => Err(GraphError::InvalidQuery(

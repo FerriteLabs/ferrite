@@ -38,7 +38,6 @@
 //! let installed = marketplace.list_installed();
 //! ```
 
-#![allow(dead_code)]
 pub mod client;
 pub mod discovery;
 pub mod installer;

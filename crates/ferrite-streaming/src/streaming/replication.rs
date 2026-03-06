@@ -236,12 +236,16 @@ struct ConsumerGroupState {
 
 #[derive(Debug, Clone)]
 struct ConsumerMember {
+    #[allow(dead_code)]
     id: String,
+    #[allow(dead_code)]
     assigned_partitions: Vec<(String, u32)>,
+    #[allow(dead_code)]
     last_heartbeat: u64,
 }
 
 /// Consumer group coordinator.
+    #[allow(dead_code)]
 struct ConsumerGroup {
     group_id: String,
     state: RwLock<ConsumerGroupState>,

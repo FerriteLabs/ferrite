@@ -130,6 +130,7 @@ pub struct PatternCollector {
     /// History retention in hours
     retention_hours: u64,
     /// Creation time
+    #[allow(dead_code)]
     created_at: Instant,
 }
 
@@ -147,6 +148,7 @@ struct PatternStats {
 
 /// A single access record
 #[derive(Clone, Debug)]
+    #[allow(dead_code)]
 struct AccessRecord {
     access_type: AccessType,
     latency_us: u64,

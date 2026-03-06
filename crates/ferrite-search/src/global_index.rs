@@ -2,7 +2,6 @@
 //!
 //! Secondary indexes spanning multiple Ferrite clusters, maintained
 //! via CDC-driven replication with configurable lag tolerance.
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};

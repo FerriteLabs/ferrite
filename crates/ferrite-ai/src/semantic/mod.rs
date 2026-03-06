@@ -183,7 +183,6 @@
 //! 4. **Warm the cache** with common queries at startup
 //! 5. **Use separate caches** for different domains (code, general knowledge, etc.)
 
-#![allow(dead_code)]
 pub mod async_embeddings;
 mod cache;
 mod embeddings;

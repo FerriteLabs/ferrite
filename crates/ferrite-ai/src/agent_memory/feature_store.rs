@@ -2,7 +2,6 @@
 //!
 //! ML feature serving with point-in-time correctness, versioning,
 //! and automatic drift detection.
-#![allow(dead_code)]
 
 use std::collections::{BTreeMap, HashMap};
 use std::sync::atomic::{AtomicU64, Ordering};

@@ -2,11 +2,9 @@
 //!
 //! DAG-based ETL/ELT pipelines with source, transform, and sink stages.
 //! Execute entirely inside Ferrite with backpressure control.
-#![allow(dead_code)]
 
 use std::collections::{HashMap, HashSet, VecDeque};
-use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
@@ -375,6 +373,7 @@ struct PipelineRuntime {
     started_at: Option<Instant>,
     records_processed: u64,
     errors: u64,
+    #[allow(dead_code)]
     created_instant: Instant,
 }
 

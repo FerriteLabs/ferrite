@@ -294,6 +294,7 @@ struct FunctionCacheEntry {
     /// Last access time
     last_accessed: Instant,
     /// Dependencies (other function results this depends on)
+    #[allow(dead_code)]
     dependencies: Vec<u64>,
 }
 

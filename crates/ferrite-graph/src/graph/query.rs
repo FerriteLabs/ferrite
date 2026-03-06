@@ -349,17 +349,26 @@ impl Default for GraphQuery {
 pub enum MatchClause {
     /// Match a node
     Node {
+        /// Variable name bound to the matched node
         variable: String,
+        /// Label filters
         labels: Vec<String>,
+        /// Property filters
         properties: Option<HashMap<String, PropertyValue>>,
     },
     /// Match a relationship
     Relationship {
+        /// Source node variable
         from: String,
+        /// Edge variable
         edge: Option<String>,
+        /// Target node variable
         to: String,
+        /// Relationship direction
         direction: Direction,
+        /// Label filters
         labels: Vec<String>,
+        /// Property filters
         properties: Option<HashMap<String, PropertyValue>>,
     },
 }
@@ -369,9 +378,13 @@ pub enum MatchClause {
 pub enum WhereClause {
     /// Property comparison
     Property {
+        /// Variable name
         variable: String,
+        /// Property name
         property: String,
+        /// Comparison operator
         operator: String,
+        /// Value to compare against
         value: PropertyValue,
     },
     /// AND
@@ -381,9 +394,17 @@ pub enum WhereClause {
     /// NOT
     Not(Box<WhereClause>),
     /// EXISTS
-    Exists { variable: String },
+    Exists {
+        /// Variable to check existence of
+        variable: String,
+    },
     /// IS NULL
-    IsNull { variable: String, property: String },
+    IsNull {
+        /// Variable name
+        variable: String,
+        /// Property to check for null
+        property: String,
+    },
 }
 
 /// Return clause

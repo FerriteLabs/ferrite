@@ -1,5 +1,3 @@
-#![forbid(unsafe_code)]
-#![warn(missing_docs)]
 //! # ferrite-timeseries
 //!
 //! Time-series data ingestion and downsampling for Ferrite.
@@ -10,5 +8,8 @@
 //! # Modules
 //!
 //! - [`timeseries`] — Time-series ingestion, storage, and query
+
+#![forbid(unsafe_code)]
+#![warn(missing_docs)]
 
 pub mod timeseries;

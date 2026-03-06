@@ -1,7 +1,6 @@
 // Extension crate under active development — using targeted dead_code annotations
-// #![allow(dead_code)] -- removed, using targeted annotations
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
+#![allow(missing_docs)] // Extension crate under active development; docs added progressively
 
 //! # ferrite-plugins
 //!

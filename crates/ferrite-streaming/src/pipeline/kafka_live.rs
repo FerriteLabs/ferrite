@@ -4,13 +4,12 @@
 //! compatible with the vector ingest pipeline. Connects to real Kafka
 //! brokers over TCP, fetches metadata, polls messages, and tracks offsets.
 
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
 use super::kafka_wire::{
-    FetchRecord, FetchResponse, KafkaWireClient, KafkaWireConfig, KafkaWireError, MetadataResponse,
+    FetchRecord, KafkaWireClient, KafkaWireConfig, KafkaWireError,
     PartitionMetadata,
 };
 
@@ -69,6 +68,7 @@ pub struct LiveKafkaConsumer {
     /// Per-partition offset tracking.
     partitions: HashMap<i32, PartitionState>,
     /// Cached partition metadata for the target topic.
+    #[allow(dead_code)]
     topic_partitions: Vec<PartitionMetadata>,
     /// Timestamp of the last auto-commit.
     last_commit: Instant,

@@ -224,6 +224,36 @@ pub use subscription::{
     SubscriptionState,
 };
 
+/// Errors produced by the CDC subsystem.
+#[derive(Debug, Clone, thiserror::Error)]
+pub enum CdcError {
+    /// A referenced subscription was not found.
+    #[error("subscription not found: {0}")]
+    SubscriptionNotFound(String),
+
+    /// A referenced sink was not found.
+    #[error("sink not found: {0}")]
+    SinkNotFound(String),
+
+    /// A duplicate resource was detected.
+    #[error("already exists: {0}")]
+    AlreadyExists(String),
+
+    /// An I/O or transport error occurred.
+    #[error("transport error: {0}")]
+    Transport(String),
+
+    /// Generic CDC error.
+    #[error("{0}")]
+    Other(String),
+}
+
+impl From<String> for CdcError {
+    fn from(s: String) -> Self {
+        Self::Other(s)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

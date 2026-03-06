@@ -1,5 +1,4 @@
 //! Dashboard rendering — terminal and HTML output
-#![allow(dead_code)]
 
 use super::data_source::DashboardSnapshot;
 

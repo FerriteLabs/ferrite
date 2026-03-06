@@ -1,5 +1,4 @@
 //! Dashboard data sources — aggregates all observability data
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
@@ -9,10 +8,13 @@ use serde::{Deserialize, Serialize};
 /// Aggregated dashboard data source that collects metrics from all subsystems.
 pub struct DashboardDataSource {
     /// Cached snapshot for debouncing
+    #[allow(dead_code)]
     last_snapshot: Option<(Instant, DashboardSnapshot)>,
     /// Minimum interval between full collections
+    #[allow(dead_code)]
     min_interval: Duration,
     /// Custom labels applied to this data source
+    #[allow(dead_code)]
     labels: HashMap<String, String>,
 }
 

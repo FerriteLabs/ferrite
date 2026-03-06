@@ -181,6 +181,7 @@ impl VectorIndex {
         }
     }
 
+    #[allow(dead_code)]
     fn len(&self) -> usize {
         self.vectors.len()
     }

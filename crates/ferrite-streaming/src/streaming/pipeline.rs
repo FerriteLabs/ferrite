@@ -15,6 +15,7 @@ pub struct Pipeline {
     /// Pipeline name
     name: String,
     /// Configuration
+    #[allow(dead_code)]
     config: StreamConfig,
     /// Source
     source: Option<Arc<dyn Source>>,
@@ -27,8 +28,10 @@ pub struct Pipeline {
     /// Running flag
     running: Arc<RwLock<bool>>,
     /// Event channel
+    #[allow(dead_code)]
     event_tx: Option<mpsc::Sender<StreamEvent>>,
     /// Output channel
+    #[allow(dead_code)]
     output_rx: Option<mpsc::Receiver<StreamEvent>>,
 }
 

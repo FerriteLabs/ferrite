@@ -65,7 +65,6 @@
 //! engine.apply_recommendations(&recommendations).await?;
 //! ```
 
-#![allow(dead_code)]
 pub mod collector;
 pub mod cost;
 pub mod predictor;
@@ -181,6 +180,7 @@ pub struct AutoIndexEngine {
     /// Statistics
     stats: RwLock<AutoIndexStats>,
     /// Running flag
+    #[allow(dead_code)]
     running: AtomicBool,
     /// Last analysis time
     last_analysis: RwLock<Instant>,

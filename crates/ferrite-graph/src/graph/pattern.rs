@@ -276,15 +276,22 @@ impl EdgePattern {
 pub enum PatternConstraint {
     /// Property equals value
     PropertyEqual {
+        /// Variable name
         variable: String,
+        /// Property name
         property: String,
+        /// Expected value
         value: PropertyValue,
     },
     /// Property comparison
     PropertyCompare {
+        /// Variable name
         variable: String,
+        /// Property name
         property: String,
+        /// Comparison operator
         operator: ComparisonOp,
+        /// Value to compare against
         value: PropertyValue,
     },
     /// Variables must be different
@@ -292,7 +299,12 @@ pub enum PatternConstraint {
     /// Variables must be the same
     Same(String, String),
     /// Property exists
-    HasProperty { variable: String, property: String },
+    HasProperty {
+        /// Variable name
+        variable: String,
+        /// Property name
+        property: String,
+    },
     /// Custom predicate
     Custom(String),
 }

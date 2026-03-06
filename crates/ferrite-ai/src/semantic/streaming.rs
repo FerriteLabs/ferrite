@@ -296,6 +296,7 @@ pub struct StreamingEmbedder {
     stats: Arc<RwLock<StreamStats>>,
     circuit_breaker: Arc<CircuitBreaker>,
     rate_limiter: Option<Arc<RateLimiter>>,
+    #[allow(dead_code)]
     semaphore: Arc<Semaphore>,
     shutdown: Arc<AtomicBool>,
 }

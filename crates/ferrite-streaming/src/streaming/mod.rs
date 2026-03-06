@@ -52,7 +52,6 @@
 //! pipeline.run().await?;
 //! ```
 
-#![allow(dead_code)]
 pub mod cep;
 pub mod event_bus;
 pub mod operator;
@@ -371,9 +370,12 @@ impl StreamEngine {
 
 /// Stream builder for fluent API
 pub struct StreamBuilder {
+    #[allow(dead_code)]
     name: String,
+    #[allow(dead_code)]
     source: Option<Box<dyn Source>>,
     operators: Vec<Box<dyn Operator<String, serde_json::Value>>>,
+    #[allow(dead_code)]
     sink: Option<Box<dyn Sink>>,
     config: StreamConfig,
 }

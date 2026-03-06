@@ -392,6 +392,7 @@ pub struct ContinuousAggregateManager {
     /// Aggregates by name
     aggregates: RwLock<HashMap<String, Arc<ContinuousAggregate>>>,
     /// Background refresh enabled
+    #[allow(dead_code)]
     refresh_enabled: std::sync::atomic::AtomicBool,
 }
 

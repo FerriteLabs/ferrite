@@ -31,7 +31,7 @@ use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, info, warn};
 
-use super::byoe::{CustomEmbeddingModel, EmbedError, ModelMetadata, ModelStats};
+use super::byoe::{CustomEmbeddingModel, EmbedError, ModelMetadata};
 
 // ---------------------------------------------------------------------------
 // Configuration

@@ -465,6 +465,7 @@ where
 /// Join operator for stream-stream joins
 pub struct JoinOperator {
     name: String,
+    #[allow(dead_code)]
     join_type: JoinType,
     left_key: String,
     right_key: String,

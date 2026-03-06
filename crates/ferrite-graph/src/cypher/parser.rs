@@ -69,7 +69,7 @@ enum Token {
 }
 
 /// Tokenize a Cypher query string.
-fn tokenize(input: &str) -> Result<Vec<Token>, String> {
+fn tokenize(input: &str) -> Result<Vec<Token>, super::CypherError> {
     let mut tokens = Vec::new();
     let chars: Vec<char> = input.chars().collect();
     let len = chars.len();
@@ -195,7 +195,7 @@ fn tokenize(input: &str) -> Result<Vec<Token>, String> {
                     i += 1;
                 }
                 if i >= len {
-                    return Err("unterminated string literal".to_string());
+                    return Err(super::CypherError::Parse("unterminated string literal".to_string()));
                 }
                 let s: String = chars[start..i].iter().collect();
                 tokens.push(Token::StringLit(s));
@@ -216,13 +216,13 @@ fn tokenize(input: &str) -> Result<Vec<Token>, String> {
                     let num_str: String = chars[start..i].iter().collect();
                     match num_str.parse::<f64>() {
                         Ok(f) => tokens.push(Token::FloatLit(f)),
-                        Err(_) => return Err(format!("invalid float: {}", num_str)),
+                        Err(_) => return Err(super::CypherError::Parse(format!("invalid float: {}", num_str))),
                     }
                 } else {
                     let num_str: String = chars[start..i].iter().collect();
                     match num_str.parse::<i64>() {
                         Ok(n) => tokens.push(Token::IntLit(n)),
-                        Err(_) => return Err(format!("invalid integer: {}", num_str)),
+                        Err(_) => return Err(super::CypherError::Parse(format!("invalid integer: {}", num_str))),
                     }
                 }
             }
@@ -288,7 +288,7 @@ fn tokenize(input: &str) -> Result<Vec<Token>, String> {
                 };
                 tokens.push(tok);
             }
-            c => return Err(format!("unexpected character: '{}'", c)),
+            c => return Err(super::CypherError::Parse(format!("unexpected character: '{}'", c))),
         }
     }
 
@@ -304,7 +304,7 @@ pub struct CypherParser {
 
 impl CypherParser {
     /// Parse a Cypher query string into an AST.
-    pub fn parse(input: &str) -> Result<CypherStatement, String> {
+    pub fn parse(input: &str) -> Result<CypherStatement, super::CypherError> {
         let tokens = tokenize(input.trim())?;
         let mut parser = Self { tokens, pos: 0 };
         parser.parse_statement()
@@ -320,16 +320,16 @@ impl CypherParser {
         tok
     }
 
-    fn expect(&mut self, expected: &Token) -> Result<(), String> {
+    fn expect(&mut self, expected: &Token) -> Result<(), super::CypherError> {
         let tok = self.advance();
         if &tok == expected {
             Ok(())
         } else {
-            Err(format!("expected {:?}, got {:?}", expected, tok))
+            Err(super::CypherError::Parse(format!("expected {:?}, got {:?}", expected, tok)))
         }
     }
 
-    fn parse_statement(&mut self) -> Result<CypherStatement, String> {
+    fn parse_statement(&mut self) -> Result<CypherStatement, super::CypherError> {
         match self.peek().clone() {
             Token::Match => {
                 self.advance();
@@ -375,11 +375,11 @@ impl CypherParser {
                 let create_clause = self.parse_create_clause()?;
                 Ok(CypherStatement::Create(create_clause))
             }
-            _ => Err(format!("expected MATCH or CREATE, got {:?}", self.peek())),
+            _ => Err(super::CypherError::Parse(format!("expected MATCH or CREATE, got {:?}", self.peek()))),
         }
     }
 
-    fn parse_match_pattern(&mut self) -> Result<MatchPattern, String> {
+    fn parse_match_pattern(&mut self) -> Result<MatchPattern, super::CypherError> {
         let mut patterns = Vec::new();
         patterns.push(self.parse_pattern_part()?);
         while *self.peek() == Token::Comma {
@@ -389,7 +389,7 @@ impl CypherParser {
         Ok(MatchPattern { patterns })
     }
 
-    fn parse_pattern_part(&mut self) -> Result<PatternPart, String> {
+    fn parse_pattern_part(&mut self) -> Result<PatternPart, super::CypherError> {
         let start = self.parse_node_pattern()?;
         let mut chain = Vec::new();
 
@@ -402,7 +402,7 @@ impl CypherParser {
         Ok(PatternPart { start, chain })
     }
 
-    fn parse_node_pattern(&mut self) -> Result<NodePatternAst, String> {
+    fn parse_node_pattern(&mut self) -> Result<NodePatternAst, super::CypherError> {
         self.expect(&Token::LParen)?;
 
         let mut variable = None;
@@ -422,7 +422,7 @@ impl CypherParser {
             if let Token::Ident(label) = self.advance() {
                 labels.push(label);
             } else {
-                return Err("expected label name after ':'".to_string());
+                return Err(super::CypherError::Parse("expected label name after ':'".to_string()));
             }
         }
 
@@ -440,7 +440,7 @@ impl CypherParser {
         })
     }
 
-    fn parse_rel_pattern(&mut self) -> Result<RelPatternAst, String> {
+    fn parse_rel_pattern(&mut self) -> Result<RelPatternAst, super::CypherError> {
         // Determine direction: -[...]-> or <-[...]- or -[...]-
         let left_arrow = *self.peek() == Token::LArrow;
         if left_arrow {
@@ -471,7 +471,7 @@ impl CypherParser {
                 if let Token::Ident(rt) = self.advance() {
                     rel_type = Some(rt);
                 } else {
-                    return Err("expected relationship type after ':'".to_string());
+                    return Err(super::CypherError::Parse("expected relationship type after ':'".to_string()));
                 }
             }
 
@@ -534,7 +534,7 @@ impl CypherParser {
         })
     }
 
-    fn parse_property_map(&mut self) -> Result<HashMap<String, PropertyValue>, String> {
+    fn parse_property_map(&mut self) -> Result<HashMap<String, PropertyValue>, super::CypherError> {
         self.expect(&Token::LBrace)?;
         let mut props = HashMap::new();
 
@@ -542,7 +542,7 @@ impl CypherParser {
             loop {
                 let key = match self.advance() {
                     Token::Ident(k) => k,
-                    tok => return Err(format!("expected property key, got {:?}", tok)),
+                    tok => return Err(super::CypherError::Parse(format!("expected property key, got {:?}", tok))),
                 };
                 self.expect(&Token::Colon)?;
                 let value = self.parse_literal_value()?;
@@ -559,18 +559,18 @@ impl CypherParser {
         Ok(props)
     }
 
-    fn parse_literal_value(&mut self) -> Result<PropertyValue, String> {
+    fn parse_literal_value(&mut self) -> Result<PropertyValue, super::CypherError> {
         match self.advance() {
             Token::StringLit(s) => Ok(PropertyValue::String(s)),
             Token::IntLit(n) => Ok(PropertyValue::Integer(n)),
             Token::FloatLit(f) => Ok(PropertyValue::Float(f)),
             Token::BoolLit(b) => Ok(PropertyValue::Boolean(b)),
             Token::Null => Ok(PropertyValue::Null),
-            tok => Err(format!("expected literal value, got {:?}", tok)),
+            tok => Err(super::CypherError::Parse(format!("expected literal value, got {:?}", tok))),
         }
     }
 
-    fn parse_where_expr(&mut self) -> Result<WhereExpr, String> {
+    fn parse_where_expr(&mut self) -> Result<WhereExpr, super::CypherError> {
         let left = self.parse_where_primary()?;
 
         match self.peek().clone() {
@@ -588,7 +588,7 @@ impl CypherParser {
         }
     }
 
-    fn parse_where_primary(&mut self) -> Result<WhereExpr, String> {
+    fn parse_where_primary(&mut self) -> Result<WhereExpr, super::CypherError> {
         if *self.peek() == Token::Not {
             self.advance();
             let expr = self.parse_where_primary()?;
@@ -605,12 +605,12 @@ impl CypherParser {
         // variable.property op value
         let variable = match self.advance() {
             Token::Ident(v) => v,
-            tok => return Err(format!("expected variable in WHERE, got {:?}", tok)),
+            tok => return Err(super::CypherError::Parse(format!("expected variable in WHERE, got {:?}", tok))),
         };
         self.expect(&Token::Dot)?;
         let property = match self.advance() {
             Token::Ident(p) => p,
-            tok => return Err(format!("expected property name, got {:?}", tok)),
+            tok => return Err(super::CypherError::Parse(format!("expected property name, got {:?}", tok))),
         };
 
         let op = self.parse_comparison_op()?;
@@ -623,7 +623,7 @@ impl CypherParser {
         })
     }
 
-    fn parse_comparison_op(&mut self) -> Result<CypherOp, String> {
+    fn parse_comparison_op(&mut self) -> Result<CypherOp, super::CypherError> {
         match self.advance() {
             Token::Eq => Ok(CypherOp::Eq),
             Token::Ne => Ok(CypherOp::Ne),
@@ -634,11 +634,11 @@ impl CypherParser {
             Token::Contains => Ok(CypherOp::Contains),
             Token::StartsWith => Ok(CypherOp::StartsWith),
             Token::EndsWith => Ok(CypherOp::EndsWith),
-            tok => Err(format!("expected comparison operator, got {:?}", tok)),
+            tok => Err(super::CypherError::Parse(format!("expected comparison operator, got {:?}", tok))),
         }
     }
 
-    fn parse_return_clause(&mut self) -> Result<ReturnClause, String> {
+    fn parse_return_clause(&mut self) -> Result<ReturnClause, super::CypherError> {
         let distinct = if *self.peek() == Token::Distinct {
             self.advance();
             true
@@ -657,14 +657,14 @@ impl CypherParser {
         Ok(ReturnClause { items, distinct })
     }
 
-    fn parse_return_item(&mut self) -> Result<ReturnItem, String> {
+    fn parse_return_item(&mut self) -> Result<ReturnItem, super::CypherError> {
         let expr = self.parse_expr()?;
 
         let alias = if *self.peek() == Token::As {
             self.advance();
             match self.advance() {
                 Token::Ident(a) => Some(a),
-                tok => return Err(format!("expected alias name, got {:?}", tok)),
+                tok => return Err(super::CypherError::Parse(format!("expected alias name, got {:?}", tok))),
             }
         } else {
             None
@@ -673,7 +673,7 @@ impl CypherParser {
         Ok(ReturnItem { expr, alias })
     }
 
-    fn parse_expr(&mut self) -> Result<Expr, String> {
+    fn parse_expr(&mut self) -> Result<Expr, super::CypherError> {
         // Check for aggregate functions
         match self.peek().clone() {
             Token::Count | Token::Sum | Token::Avg | Token::Min | Token::Max => {
@@ -717,7 +717,7 @@ impl CypherParser {
                 self.advance();
                 let prop = match self.advance() {
                     Token::Ident(p) => p,
-                    tok => return Err(format!("expected property name, got {:?}", tok)),
+                    tok => return Err(super::CypherError::Parse(format!("expected property name, got {:?}", tok))),
                 };
                 return Ok(Expr::Property(PropertyAccess {
                     variable: name,
@@ -728,10 +728,10 @@ impl CypherParser {
             return Ok(Expr::Variable(name));
         }
 
-        Err(format!("expected expression, got {:?}", self.peek()))
+        Err(super::CypherError::Parse(format!("expected expression, got {:?}", self.peek())))
     }
 
-    fn parse_order_by(&mut self) -> Result<Option<Vec<OrderByItem>>, String> {
+    fn parse_order_by(&mut self) -> Result<Option<Vec<OrderByItem>>, super::CypherError> {
         if *self.peek() != Token::OrderBy {
             return Ok(None);
         }
@@ -767,29 +767,29 @@ impl CypherParser {
         Ok(Some(items))
     }
 
-    fn parse_limit(&mut self) -> Result<Option<usize>, String> {
+    fn parse_limit(&mut self) -> Result<Option<usize>, super::CypherError> {
         if *self.peek() != Token::Limit {
             return Ok(None);
         }
         self.advance();
         match self.advance() {
             Token::IntLit(n) => Ok(Some(n as usize)),
-            tok => Err(format!("expected integer after LIMIT, got {:?}", tok)),
+            tok => Err(super::CypherError::Parse(format!("expected integer after LIMIT, got {:?}", tok))),
         }
     }
 
-    fn parse_skip(&mut self) -> Result<Option<usize>, String> {
+    fn parse_skip(&mut self) -> Result<Option<usize>, super::CypherError> {
         if *self.peek() != Token::Skip {
             return Ok(None);
         }
         self.advance();
         match self.advance() {
             Token::IntLit(n) => Ok(Some(n as usize)),
-            tok => Err(format!("expected integer after SKIP, got {:?}", tok)),
+            tok => Err(super::CypherError::Parse(format!("expected integer after SKIP, got {:?}", tok))),
         }
     }
 
-    fn parse_create_clause(&mut self) -> Result<CreateClause, String> {
+    fn parse_create_clause(&mut self) -> Result<CreateClause, super::CypherError> {
         let mut elements = Vec::new();
 
         loop {
