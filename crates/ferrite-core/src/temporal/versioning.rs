@@ -3,8 +3,6 @@
 //! Git-like versioning for key-value data with branch, tag, and merge
 //! operations. Enables A/B testing, canary deployments, and audit at
 //! the data layer.
-#![allow(dead_code)]
-
 use std::collections::{BTreeMap, HashMap};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};

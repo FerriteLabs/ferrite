@@ -761,15 +761,17 @@ impl CodeGenerator {
              {indent}}}\n\n\
              {indent}/// Retrieves a record by id.\n\
              {indent}pub fn get(&self, _id: &str) -> Option<{name}> {{\n\
-             {indent}{indent}unimplemented!(\"connect a Ferrite client\")\n\
+             {indent}{indent}// TODO: connect a Ferrite client (e.g. via ferrite-rs SDK)\n\
+             {indent}{indent}None\n\
              {indent}}}\n\n\
              {indent}/// Stores a record by id.\n\
              {indent}pub fn set(&self, _id: &str, _data: &{name}) {{\n\
-             {indent}{indent}unimplemented!(\"connect a Ferrite client\")\n\
+             {indent}{indent}// TODO: connect a Ferrite client (e.g. via ferrite-rs SDK)\n\
              {indent}}}\n\n\
              {indent}/// Finds records matching a query.\n\
              {indent}pub fn find(&self, _query: &str) -> Vec<{name}> {{\n\
-             {indent}{indent}unimplemented!(\"connect a Ferrite client\")\n\
+             {indent}{indent}// TODO: connect a Ferrite client (e.g. via ferrite-rs SDK)\n\
+             {indent}{indent}Vec::new()\n\
              {indent}}}\n\
              }}\n",
             name = name,

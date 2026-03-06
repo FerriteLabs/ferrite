@@ -3,8 +3,6 @@
 //! Exposes Raft consensus as a general-purpose distributed coordination
 //! primitive. Clients can create consensus groups for leader election,
 //! distributed config, and state machines.
-#![allow(dead_code)]
-
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};

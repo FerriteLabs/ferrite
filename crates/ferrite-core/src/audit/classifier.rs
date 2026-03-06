@@ -3,7 +3,6 @@
 //! ML-based classification of stored data (PII, PHI, financial, public)
 //! using pattern recognition on key names and value shapes.
 //! Tags propagate through lineage graph for compliance.
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::time::Instant;
@@ -301,6 +300,7 @@ struct CompiledRule {
     name: String,
     category: ClassCategory,
     patterns: Vec<CompiledPattern>,
+    #[allow(dead_code)] // used for rule ordering during classification
     priority: i32,
     enabled: bool,
 }

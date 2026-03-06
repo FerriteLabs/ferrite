@@ -388,6 +388,7 @@ struct CommandStats {
     min_duration_us: u64,
 }
 
+#[allow(dead_code)] // planned for workload profiling reports
 impl CommandStats {
     fn new() -> Self {
         Self {
@@ -427,6 +428,7 @@ pub struct PatternStats {
     pub min_duration_us: u64,
 }
 
+#[allow(dead_code)] // planned for pattern-based query analysis
 impl PatternStats {
     fn new() -> Self {
         Self {

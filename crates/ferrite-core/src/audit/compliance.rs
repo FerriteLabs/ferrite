@@ -2,7 +2,6 @@
 //!
 //! Immutable audit logging, data retention policies, field-level encryption,
 //! GDPR right-to-deletion, and compliance report generation.
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};

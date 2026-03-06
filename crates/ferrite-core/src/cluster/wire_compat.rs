@@ -4,8 +4,6 @@
 //! Redis-compatible wire format for CLUSTER NODES, CLUSTER SLOTS,
 //! CLUSTER SHARDS, and CLUSTER INFO responses.
 
-#![allow(dead_code)]
-
 use std::fmt::Write;
 use std::sync::atomic::{AtomicU64, Ordering};
 

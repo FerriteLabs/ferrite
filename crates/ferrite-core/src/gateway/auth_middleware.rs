@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 //! Authentication and rate limiting middleware for HTTP APIs
 //!
 //! Provides JWT authentication, API key validation, basic auth support,

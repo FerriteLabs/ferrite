@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 //! REST API router for Ferrite
 //!
 //! Provides a complete REST interface for all data types with

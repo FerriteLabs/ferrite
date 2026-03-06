@@ -2,11 +2,11 @@
 //!
 //! Executes trigger actions when events occur.
 
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use bytes::Bytes;
 
-use super::actions::{Action, ActionResult, BuiltinAction, HttpMethod, TemplateRenderer};
+use super::actions::{Action, ActionResult, BuiltinAction, TemplateRenderer};
 use super::conditions::EventType;
 use super::{Trigger, TriggerConfig, TriggerError};
 use crate::runtime::SharedSubscriptionManager;

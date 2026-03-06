@@ -2,7 +2,6 @@
 //!
 //! Schema registry for key-value data: define expected shapes per key
 //! pattern, enforce on write, track breaking changes, generate reports.
-#![allow(dead_code)]
 
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};

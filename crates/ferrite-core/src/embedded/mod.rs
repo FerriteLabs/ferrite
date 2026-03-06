@@ -248,7 +248,6 @@
 //! 4. **Use edge mode** for resource-constrained devices
 //! 5. **Share Arc<Database>** instead of creating multiple instances
 
-#![allow(dead_code)]
 mod database;
 pub mod edge;
 /// Lightweight DashMap-backed embedded database for edge and WASM deployments.

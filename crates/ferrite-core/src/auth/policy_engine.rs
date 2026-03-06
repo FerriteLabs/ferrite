@@ -3,8 +3,6 @@
 //! Policy-as-code for fine-grained, context-aware access control.
 //! Rules evaluate at request time using key patterns, time, client
 //! attributes, data classification, and tenant context.
-#![allow(dead_code)]
-
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};

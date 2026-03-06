@@ -79,7 +79,8 @@ pub enum ParticipantState {
 /// Transaction state in coordinator
 #[derive(Debug)]
 struct CoordinatedTransaction {
-    /// Transaction ID
+    /// Transaction ID (used during 2PC commit/abort phases)
+    #[allow(dead_code)]
     txn_id: TransactionId,
     /// Participant nodes
     participants: Vec<String>,
@@ -87,7 +88,8 @@ struct CoordinatedTransaction {
     states: HashMap<String, ParticipantState>,
     /// Global decision
     decision: Option<TransactionDecision>,
-    /// Start time
+    /// Start time (used for transaction timeout detection)
+    #[allow(dead_code)]
     started_at: Instant,
     /// Prepare responses received
     prepare_responses: HashSet<String>,
@@ -482,13 +484,15 @@ impl TwoPhaseCoordinator {
 
 /// Participant handler for 2PC (runs on each participant node)
 pub struct TwoPhaseParticipant {
-    /// Node identifier
+    /// Node identifier (used during cross-node coordination)
+    #[allow(dead_code)]
     node_id: String,
     /// Prepared transactions waiting for decision
     prepared: RwLock<HashMap<TransactionId, PreparedState>>,
 }
 
 /// State of a prepared transaction on participant
+#[allow(dead_code)] // fields read during 2PC commit/abort resolution
 struct PreparedState {
     txn_id: TransactionId,
     prepared_at: Instant,

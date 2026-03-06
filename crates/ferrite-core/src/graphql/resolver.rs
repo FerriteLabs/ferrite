@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use bytes::Bytes;
 use serde::{Deserialize, Serialize};
-use tracing::{debug, warn};
+use tracing::debug;
 
 use crate::storage::{Store, Value};
 
@@ -164,6 +164,111 @@ impl GraphQLEngine {
                         serde_json::Value::Number(serde_json::Number::from(size)),
                     );
                 }
+                "mget" => {
+                    if let Some(keys_str) = field.get_arg("keys", variables) {
+                        let vals: Vec<serde_json::Value> = keys_str
+                            .split(',')
+                            .map(|k| {
+                                let key = Bytes::from(k.trim().to_string());
+                                match self.store.get(self.default_db, &key) {
+                                    Some(Value::String(v)) => serde_json::json!({
+                                        "key": k.trim(),
+                                        "value": String::from_utf8_lossy(&v).to_string(),
+                                    }),
+                                    _ => serde_json::json!({
+                                        "key": k.trim(),
+                                        "value": null,
+                                    }),
+                                }
+                            })
+                            .collect();
+                        result.insert(field.alias_or_name(), serde_json::Value::Array(vals));
+                    }
+                }
+                "scan" | "keys" => {
+                    let pattern = field
+                        .get_arg("pattern", variables)
+                        .unwrap_or_else(|| "*".to_string());
+                    let count = field
+                        .get_arg("count", variables)
+                        .and_then(|v| v.parse::<usize>().ok())
+                        .unwrap_or(100);
+                    let all_keys = self.store.keys(self.default_db);
+                    let matched: Vec<serde_json::Value> = all_keys
+                        .into_iter()
+                        .filter(|k| {
+                            if pattern == "*" {
+                                true
+                            } else {
+                                let key_str = String::from_utf8_lossy(k);
+                                key_str.contains(pattern.trim_matches('*'))
+                            }
+                        })
+                        .take(count)
+                        .map(|k| {
+                            serde_json::Value::String(
+                                String::from_utf8_lossy(&k).to_string(),
+                            )
+                        })
+                        .collect();
+                    result.insert(field.alias_or_name(), serde_json::Value::Array(matched));
+                }
+                "hgetall" => {
+                    if let Some(key) = field.get_arg("key", variables) {
+                        let key_bytes = Bytes::from(key);
+                        match self.store.get(self.default_db, &key_bytes) {
+                            Some(Value::Hash(map)) => {
+                                let fields: Vec<serde_json::Value> = map
+                                    .iter()
+                                    .map(|(k, v)| {
+                                        serde_json::json!({
+                                            "field": String::from_utf8_lossy(k).to_string(),
+                                            "value": String::from_utf8_lossy(v).to_string(),
+                                        })
+                                    })
+                                    .collect();
+                                result.insert(
+                                    field.alias_or_name(),
+                                    serde_json::Value::Array(fields),
+                                );
+                            }
+                            _ => {
+                                result.insert(
+                                    field.alias_or_name(),
+                                    serde_json::Value::Null,
+                                );
+                            }
+                        }
+                    }
+                }
+                "ttl" => {
+                    if let Some(key) = field.get_arg("key", variables) {
+                        let key_bytes = Bytes::from(key);
+                        let ttl = self.store.ttl(self.default_db, &key_bytes).unwrap_or(-2);
+                        result.insert(
+                            field.alias_or_name(),
+                            serde_json::Value::Number(serde_json::Number::from(ttl)),
+                        );
+                    }
+                }
+                "type" => {
+                    if let Some(key) = field.get_arg("key", variables) {
+                        let key_bytes = Bytes::from(key);
+                        let type_name = match self.store.get(self.default_db, &key_bytes) {
+                            Some(Value::String(_)) => "string",
+                            Some(Value::List(_)) => "list",
+                            Some(Value::Hash(_)) => "hash",
+                            Some(Value::Set(_)) => "set",
+                            Some(Value::SortedSet { .. }) => "zset",
+                            Some(Value::Stream(_)) => "stream",
+                            _ => "none",
+                        };
+                        result.insert(
+                            field.alias_or_name(),
+                            serde_json::Value::String(type_name.to_string()),
+                        );
+                    }
+                }
                 other => {
                     result.insert(
                         other.to_string(),
@@ -225,6 +330,46 @@ impl GraphQLEngine {
                         .unwrap_or(self.default_db);
                     self.store.flush_db(db);
                     result.insert(field.alias_or_name(), serde_json::Value::Bool(true));
+                }
+                "expire" => {
+                    if let (Some(key), Some(seconds_str)) = (
+                        field.get_arg("key", variables),
+                        field.get_arg("seconds", variables),
+                    ) {
+                        if let Ok(seconds) = seconds_str.parse::<u64>() {
+                            let key_bytes = Bytes::from(key);
+                            let expires_at = std::time::SystemTime::now()
+                                + std::time::Duration::from_secs(seconds);
+                            let ok = self
+                                .store
+                                .expire(self.default_db, &key_bytes, expires_at);
+                            result.insert(
+                                field.alias_or_name(),
+                                serde_json::Value::Bool(ok),
+                            );
+                        }
+                    }
+                }
+                "hset" => {
+                    if let (Some(key), Some(field_name), Some(value)) = (
+                        field.get_arg("key", variables),
+                        field.get_arg("field", variables),
+                        field.get_arg("value", variables),
+                    ) {
+                        let key_bytes = Bytes::from(key);
+                        // Get or create hash
+                        let mut hash = match self.store.get(self.default_db, &key_bytes) {
+                            Some(Value::Hash(h)) => h,
+                            _ => std::collections::HashMap::new(),
+                        };
+                        hash.insert(Bytes::from(field_name), Bytes::from(value));
+                        self.store
+                            .set(self.default_db, key_bytes, Value::Hash(hash));
+                        result.insert(
+                            field.alias_or_name(),
+                            serde_json::Value::Bool(true),
+                        );
+                    }
                 }
                 other => {
                     result.insert(

@@ -300,7 +300,8 @@ pub struct RaftNode {
     election_deadline: RwLock<Instant>,
     /// Number of votes received in current election
     votes_received: AtomicU64,
-    /// Applied command results for client notification
+    /// Applied command results for client notification (read during commit phase)
+    #[allow(dead_code)]
     applied_results: RwLock<HashMap<LogIndex, ApplyResult>>,
 }
 

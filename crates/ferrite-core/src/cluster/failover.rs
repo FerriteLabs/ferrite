@@ -106,7 +106,8 @@ pub struct FailoverManager {
     last_election_request: RwLock<Option<Instant>>,
     /// Configuration epoch for current election
     election_epoch: RwLock<u64>,
-    /// Shutdown signal
+    /// Shutdown signal (retained for graceful failover shutdown)
+    #[allow(dead_code)]
     shutdown_tx: broadcast::Sender<()>,
 }
 

@@ -558,7 +558,8 @@ pub struct GossipManager {
     cluster: Arc<ClusterManager>,
     /// Statistics
     stats: GossipStats,
-    /// Ping counters per node
+    /// Ping counters per node (retained for gossip protocol diagnostics)
+    #[allow(dead_code)]
     ping_counts: RwLock<HashMap<NodeId, u64>>,
     /// Last ping sent time per node
     last_ping_sent: RwLock<HashMap<NodeId, Instant>>,

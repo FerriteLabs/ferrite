@@ -2,7 +2,6 @@
 //!
 //! Run SQL-like analytics directly on cached data without ETL.
 //! Supports aggregations, window functions, and streaming results.
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};

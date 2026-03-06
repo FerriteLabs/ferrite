@@ -8,7 +8,6 @@
 //! - Gossip protocol for node discovery and failure detection
 //! - Slot migration for cluster resharding
 
-#![allow(dead_code)]
 pub mod auto_reshard;
 pub mod cluster_metrics;
 pub mod consensus_api;
@@ -574,7 +573,8 @@ pub struct ClusterManager {
     current_epoch: RwLock<u64>,
     /// Cluster state
     state: RwLock<ClusterState>,
-    /// Shutdown signal sender
+    /// Shutdown signal sender (retained for graceful cluster shutdown)
+    #[allow(dead_code)]
     shutdown_tx: broadcast::Sender<()>,
     /// Slot migration state (slot -> migration info)
     migrating_slots: RwLock<HashMap<u16, SlotMigrationInfo>>,

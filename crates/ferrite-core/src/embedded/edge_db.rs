@@ -14,7 +14,6 @@
 //! assert_eq!(db.get("key").unwrap(), Some("value".to_string()));
 //! db.close().unwrap();
 //! ```
-#![allow(dead_code)]
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::PathBuf;
@@ -100,9 +99,11 @@ enum StoredValue {
 pub struct Database {
     data: DashMap<String, StoredValue>,
     expiries: DashMap<String, Instant>,
+    #[allow(dead_code)] // read during database introspection
     config: DatabaseConfig,
     closed: AtomicBool,
     command_count: AtomicU64,
+    #[allow(dead_code)] // used for uptime reporting
     created_at: Instant,
 }
 

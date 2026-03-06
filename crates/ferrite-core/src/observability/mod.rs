@@ -30,7 +30,6 @@
 //! PROFILE STOP
 //! ```
 
-#![allow(dead_code)]
 pub mod advisor;
 pub mod analyzer;
 pub mod anomaly;

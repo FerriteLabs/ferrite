@@ -2,7 +2,6 @@
 //!
 //! Tracks data flow through Ferrite: which keys derived from which sources,
 //! dependency graphs for materialized views, and impact analysis for changes.
-#![allow(dead_code)]
 
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::time::{Duration, Instant};

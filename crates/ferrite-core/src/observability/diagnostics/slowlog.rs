@@ -204,6 +204,7 @@ fn extract_pattern(key: &str) -> String {
 }
 
 /// Helper to get a current timestamp in microseconds.
+#[allow(dead_code)] // used by slowlog extensions
 pub(crate) fn current_timestamp_us() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)

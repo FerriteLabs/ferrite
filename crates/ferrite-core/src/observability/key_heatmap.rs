@@ -4,7 +4,6 @@
 //! probabilistic data structures (Count-Min Sketch + Space-Saving) for
 //! bounded memory usage regardless of keyspace size.
 
-#![allow(dead_code)]
 
 use std::collections::BinaryHeap;
 use std::hash::{Hash, Hasher};

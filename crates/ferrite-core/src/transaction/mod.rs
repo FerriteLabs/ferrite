@@ -52,7 +52,6 @@
 //! txn.commit().await?;
 //! ```
 
-#![allow(dead_code)]
 pub mod coordinator;
 /// Distributed lock manager with deadlock detection for cross-node ACID.
 pub mod distributed;

@@ -156,6 +156,7 @@ pub struct AutoReshardEngine {
     running: AtomicBool,
     total_rebalances: AtomicU64,
     total_slots_migrated: AtomicU64,
+    #[allow(dead_code)] // tracked for reshard reporting in v0.3
     total_keys_migrated: AtomicU64,
     last_known_primaries: RwLock<Vec<NodeId>>,
     shutdown_tx: broadcast::Sender<()>,

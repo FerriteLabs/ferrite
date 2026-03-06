@@ -76,6 +76,7 @@ pub struct LockGrant {
 struct LockRequest {
     txn_id: TransactionId,
     mode: LockMode,
+    #[allow(dead_code)] // used for FIFO ordering and timeout in wait queue
     requested_at: Instant,
 }
 

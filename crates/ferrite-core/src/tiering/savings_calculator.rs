@@ -3,8 +3,6 @@
 //! Provides detailed cost comparisons between tiered Ferrite storage and
 //! pure in-memory solutions (Redis), along with globally optimal key placement.
 
-#![allow(dead_code)]
-
 use std::collections::HashMap;
 
 use super::config::TierCostConfig;

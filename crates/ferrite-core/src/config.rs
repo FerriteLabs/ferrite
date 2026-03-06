@@ -129,6 +129,14 @@ pub enum ConfigKey {
     ServerHz,
     /// Keyspace notification events (`server.notify_keyspace_events`).
     ServerNotifyKeyspaceEvents,
+    /// Per-connection command rate limit in commands/sec (`server.rate_limit_per_sec`).
+    ServerRateLimitPerSec,
+    /// Maximum burst size above the sustained rate limit (`server.rate_limit_burst`).
+    ServerRateLimitBurst,
+    /// Maximum memory in bytes before rejecting writes (`server.max_memory`).
+    ServerMaxMemory,
+    /// Memory threshold ratio for write rejection (`server.max_memory_reject_threshold`).
+    ServerMaxMemoryRejectThreshold,
 }
 
 impl ConfigKey {
@@ -170,6 +178,10 @@ impl ConfigKey {
             ConfigKey::ServerSlowlogMaxLen => "server.slowlog_max_len",
             ConfigKey::ServerHz => "server.hz",
             ConfigKey::ServerNotifyKeyspaceEvents => "server.notify_keyspace_events",
+            ConfigKey::ServerRateLimitPerSec => "server.rate_limit_per_sec",
+            ConfigKey::ServerRateLimitBurst => "server.rate_limit_burst",
+            ConfigKey::ServerMaxMemory => "server.max_memory",
+            ConfigKey::ServerMaxMemoryRejectThreshold => "server.max_memory_reject_threshold",
         }
     }
 
@@ -221,6 +233,10 @@ impl ConfigKey {
             "server.notify_keyspace_events" | "notify-keyspace-events" => {
                 ConfigKey::ServerNotifyKeyspaceEvents
             }
+            "server.rate_limit_per_sec" => ConfigKey::ServerRateLimitPerSec,
+            "server.rate_limit_burst" => ConfigKey::ServerRateLimitBurst,
+            "server.max_memory" => ConfigKey::ServerMaxMemory,
+            "server.max_memory_reject_threshold" => ConfigKey::ServerMaxMemoryRejectThreshold,
             _ => return None,
         })
     }
@@ -313,6 +329,10 @@ impl ConfigKey {
             ConfigKey::ServerSlowlogMaxLen,
             ConfigKey::ServerHz,
             ConfigKey::ServerNotifyKeyspaceEvents,
+            ConfigKey::ServerRateLimitPerSec,
+            ConfigKey::ServerRateLimitBurst,
+            ConfigKey::ServerMaxMemory,
+            ConfigKey::ServerMaxMemoryRejectThreshold,
         ]
     }
 }
@@ -674,6 +694,39 @@ impl Config {
                 self.server.notify_keyspace_events = value.to_string();
                 Ok(true)
             }
+            ConfigKey::ServerRateLimitPerSec => {
+                let v = value.parse::<u64>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid integer value: {}", value))
+                })?;
+                self.server.rate_limit_per_sec = v;
+                Ok(true)
+            }
+            ConfigKey::ServerRateLimitBurst => {
+                let v = value.parse::<u64>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid integer value: {}", value))
+                })?;
+                self.server.rate_limit_burst = v;
+                Ok(true)
+            }
+            ConfigKey::ServerMaxMemory => {
+                let v = value.parse::<u64>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid integer value: {}", value))
+                })?;
+                self.server.max_memory = v;
+                Ok(true)
+            }
+            ConfigKey::ServerMaxMemoryRejectThreshold => {
+                let v = value.parse::<f64>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid float value: {}", value))
+                })?;
+                if !(0.0..=1.0).contains(&v) {
+                    return Err(FerriteError::Config(
+                        "max_memory_reject_threshold must be between 0.0 and 1.0".to_string(),
+                    ));
+                }
+                self.server.max_memory_reject_threshold = v;
+                Ok(true)
+            }
             _ => Ok(false),
         }
     }
@@ -863,6 +916,18 @@ pub struct ServerConfig {
 
     /// Keyspace notification events configuration string (empty = disabled)
     pub notify_keyspace_events: String,
+
+    /// Per-connection command rate limit in commands/sec (0 = unlimited)
+    pub rate_limit_per_sec: u64,
+
+    /// Maximum burst size above the sustained rate limit
+    pub rate_limit_burst: u64,
+
+    /// Maximum memory in bytes before rejecting writes (0 = unlimited)
+    pub max_memory: u64,
+
+    /// Memory threshold ratio (0.0-1.0) at which to start rejecting writes
+    pub max_memory_reject_threshold: f64,
 }
 
 impl Default for ServerConfig {
@@ -881,6 +946,10 @@ impl Default for ServerConfig {
             slowlog_max_len: 128,           // Redis default
             hz: 10,                         // Redis default
             notify_keyspace_events: String::new(), // Disabled by default
+            rate_limit_per_sec: 0,                     // Unlimited by default
+            rate_limit_burst: 100,                     // Default burst size
+            max_memory: 0,                             // Unlimited by default
+            max_memory_reject_threshold: 0.9,          // Reject writes at 90% capacity
         }
     }
 }

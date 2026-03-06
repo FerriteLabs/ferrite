@@ -11,7 +11,6 @@
 //! VIEW.DROP top_users
 //! VIEW.LIST
 //! ```
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::sync::Arc;

@@ -182,6 +182,7 @@ struct WasmEntry {
     /// Optional expiration timestamp in milliseconds since UNIX epoch.
     expires_at: Option<u64>,
     /// Creation timestamp in milliseconds since UNIX epoch.
+    #[allow(dead_code)] // read during entry metadata queries
     created_at: u64,
     /// Estimated in-memory size.
     size_bytes: usize,

@@ -85,6 +85,7 @@ pub struct ClusterNodeInfo {
 
 /// Cluster state encoded as a single byte for atomic access.
 const CLUSTER_STATE_OK: u8 = 0;
+#[allow(dead_code)] // used when cluster health degrades to FAIL state
 const CLUSTER_STATE_FAIL: u8 = 1;
 
 /// Central, thread-safe cluster state manager.

@@ -99,7 +99,8 @@ pub enum MigrationState {
 
 /// Slot migration manager
 pub struct SlotMigrationManager {
-    /// Reference to cluster manager
+    /// Reference to cluster manager (used during slot migration coordination)
+    #[allow(dead_code)]
     cluster: Arc<ClusterManager>,
     /// Reference to local store
     store: Arc<Store>,

@@ -5,7 +5,6 @@
 
 use std::io::{Read, Write};
 use std::path::PathBuf;
-use std::sync::Arc;
 
 use async_trait::async_trait;
 use bytes::Bytes;

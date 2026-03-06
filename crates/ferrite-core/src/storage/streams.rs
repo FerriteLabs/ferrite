@@ -4,6 +4,18 @@ use bytes::Bytes;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap, HashSet};
 
+/// Returns the current wall-clock time as milliseconds since the Unix epoch.
+///
+/// Uses `SystemTime::now()` which is guaranteed to succeed on all supported
+/// platforms. The `unwrap_or(0)` is a defensive fallback that is unreachable
+/// in practice (would require a system clock set before 1970).
+fn epoch_ms() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or(std::time::Duration::ZERO)
+        .as_millis() as u64
+}
+
 /// Stream entry ID (timestamp-sequence)
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 pub struct StreamEntryId {
@@ -88,10 +100,7 @@ impl StreamConsumer {
         Self {
             name,
             pending: HashSet::new(),
-            seen_time: std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_millis() as u64,
+            seen_time: epoch_ms(),
         }
     }
 }
@@ -132,10 +141,7 @@ impl StreamConsumerGroup {
 
     /// Add a pending entry
     pub fn add_pending(&mut self, id: StreamEntryId, consumer_name: &Bytes) {
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_millis() as u64;
+        let now = epoch_ms();
 
         let pending_entry = StreamPendingEntry {
             id: id.clone(),
@@ -181,10 +187,7 @@ impl StreamConsumerGroup {
         new_retry_count: Option<u64>,
         force: bool,
     ) -> Vec<StreamEntryId> {
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_millis() as u64;
+        let now = epoch_ms();
 
         let mut claimed = Vec::new();
 
@@ -247,10 +250,7 @@ impl StreamConsumerGroup {
 
     /// Get pending entries that have been idle for at least the specified time
     pub fn get_idle_pending(&self, min_idle_ms: u64) -> Vec<&StreamPendingEntry> {
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_millis() as u64;
+        let now = epoch_ms();
 
         self.pending
             .values()
@@ -306,10 +306,7 @@ impl StreamConsumerGroup {
 
         if let Some(target_consumer) = transfer_to {
             // Transfer pending entries to another consumer
-            let now = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_millis() as u64;
+            let now = epoch_ms();
 
             for id in &pending_ids {
                 if let Some(pe) = self.pending.get_mut(id) {
@@ -460,10 +457,7 @@ impl Stream {
             }
             None => {
                 // Auto-generate ID
-                let now_ms = std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap_or_default()
-                    .as_millis() as u64;
+                let now_ms = epoch_ms();
                 if now_ms == self.last_id.ms {
                     StreamEntryId::new(now_ms, self.last_id.seq + 1)
                 } else if now_ms > self.last_id.ms {
@@ -550,5 +544,299 @@ impl Stream {
             removed += 1;
         }
         removed
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #![allow(clippy::unwrap_used)]
+
+    use super::*;
+
+    fn entry_id(ms: u64, seq: u64) -> StreamEntryId {
+        StreamEntryId::new(ms, seq)
+    }
+
+    fn consumer(name: &str) -> Bytes {
+        Bytes::from(name.to_string())
+    }
+
+    // ── StreamEntryId ────────────────────────────────────────────────
+
+    #[test]
+    fn parse_entry_id_normal() {
+        let id = StreamEntryId::parse("1000-5").unwrap();
+        assert_eq!(id.ms, 1000);
+        assert_eq!(id.seq, 5);
+    }
+
+    #[test]
+    fn parse_entry_id_star_returns_none() {
+        assert!(StreamEntryId::parse("*").is_none());
+    }
+
+    #[test]
+    fn parse_entry_id_no_seq_defaults_to_zero() {
+        let id = StreamEntryId::parse("1000").unwrap();
+        assert_eq!(id.ms, 1000);
+        assert_eq!(id.seq, 0);
+    }
+
+    #[test]
+    fn entry_id_as_string() {
+        assert_eq!(entry_id(1000, 5).as_string(), "1000-5");
+    }
+
+    #[test]
+    fn entry_id_ordering() {
+        assert!(entry_id(1, 0) < entry_id(2, 0));
+        assert!(entry_id(1, 0) < entry_id(1, 1));
+    }
+
+    // ── Stream basics ────────────────────────────────────────────────
+
+    #[test]
+    fn stream_add_and_range() {
+        let mut stream = Stream::new();
+        let fields = vec![
+            (Bytes::from("name"), Bytes::from("Alice")),
+            (Bytes::from("age"), Bytes::from("30")),
+        ];
+        let id = stream.add(None, fields.clone()).unwrap();
+        assert_eq!(stream.length, 1);
+
+        let entries = stream.range(&entry_id(0, 0), &entry_id(u64::MAX, u64::MAX), None);
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].id, id);
+        assert_eq!(entries[0].fields, fields);
+    }
+
+    #[test]
+    fn stream_add_with_explicit_id() {
+        let mut stream = Stream::new();
+        let fields = vec![(Bytes::from("k"), Bytes::from("v"))];
+        let id = stream.add(Some(entry_id(999, 0)), fields).unwrap();
+        assert_eq!(id, entry_id(999, 0));
+    }
+
+    #[test]
+    fn stream_auto_increments_seq() {
+        let mut stream = Stream::new();
+        let fields = vec![(Bytes::from("k"), Bytes::from("v"))];
+        let id1 = stream.add(Some(entry_id(1000, 0)), fields.clone()).unwrap();
+        let id2 = stream.add(Some(entry_id(1000, 1)), fields).unwrap();
+        assert_eq!(id1.ms, 1000);
+        assert_eq!(id2.ms, 1000);
+        assert!(id2.seq > id1.seq);
+    }
+
+    #[test]
+    fn stream_delete() {
+        let mut stream = Stream::new();
+        let fields = vec![(Bytes::from("k"), Bytes::from("v"))];
+        let id = stream.add(None, fields).unwrap();
+        assert_eq!(stream.delete(&[id]), 1);
+        assert_eq!(stream.length, 0);
+    }
+
+    #[test]
+    fn stream_trim_maxlen() {
+        let mut stream = Stream::new();
+        let fields = vec![(Bytes::from("k"), Bytes::from("v"))];
+        for i in 1..=5 {
+            stream.add(Some(entry_id(i * 100, 0)), fields.clone());
+        }
+        assert_eq!(stream.length, 5);
+        let trimmed = stream.trim(3);
+        assert_eq!(trimmed, 2);
+        assert_eq!(stream.length, 3);
+    }
+
+    #[test]
+    fn stream_trim_by_minid() {
+        let mut stream = Stream::new();
+        let fields = vec![(Bytes::from("k"), Bytes::from("v"))];
+        stream.add(Some(entry_id(100, 0)), fields.clone());
+        stream.add(Some(entry_id(200, 0)), fields.clone());
+        stream.add(Some(entry_id(300, 0)), fields);
+        let trimmed = stream.trim_by_minid(&entry_id(200, 0));
+        assert_eq!(trimmed, 1);
+        assert_eq!(stream.length, 2);
+    }
+
+    // ── Consumer groups ──────────────────────────────────────────────
+
+    #[test]
+    fn create_and_get_group() {
+        let mut stream = Stream::new();
+        assert!(stream.create_group(consumer("mygroup"), entry_id(0, 0)));
+        assert!(stream.get_group(&consumer("mygroup")).is_some());
+    }
+
+    #[test]
+    fn create_duplicate_group_fails() {
+        let mut stream = Stream::new();
+        assert!(stream.create_group(consumer("mygroup"), entry_id(0, 0)));
+        assert!(!stream.create_group(consumer("mygroup"), entry_id(0, 0)));
+    }
+
+    #[test]
+    fn delete_group() {
+        let mut stream = Stream::new();
+        stream.create_group(consumer("mygroup"), entry_id(0, 0));
+        assert!(stream.delete_group(&consumer("mygroup")));
+        assert!(!stream.delete_group(&consumer("mygroup")));
+    }
+
+    // ── Consumer operations ──────────────────────────────────────────
+
+    #[test]
+    fn create_consumer_in_group() {
+        let mut stream = Stream::new();
+        stream.create_group(consumer("grp"), entry_id(0, 0));
+        assert!(stream.create_consumer(&consumer("grp"), &consumer("alice")));
+        // Creating same consumer again returns false
+        assert!(!stream.create_consumer(&consumer("grp"), &consumer("alice")));
+    }
+
+    #[test]
+    fn delete_consumer_from_group() {
+        let mut stream = Stream::new();
+        stream.create_group(consumer("grp"), entry_id(0, 0));
+        stream.create_consumer(&consumer("grp"), &consumer("alice"));
+        let result = stream.delete_consumer(&consumer("grp"), &consumer("alice"));
+        assert!(result.is_some());
+    }
+
+    // ── Pending entries & ACK ────────────────────────────────────────
+
+    #[test]
+    fn add_pending_and_ack() {
+        let mut group = StreamConsumerGroup::new(consumer("grp"), entry_id(0, 0));
+        let id = entry_id(1000, 0);
+        group.add_pending(id.clone(), &consumer("alice"));
+
+        assert_eq!(group.pending_count(), 1);
+        let acked = group.ack(&[id]);
+        assert_eq!(acked, 1);
+        assert_eq!(group.pending_count(), 0);
+    }
+
+    #[test]
+    fn ack_nonexistent_returns_zero() {
+        let mut group = StreamConsumerGroup::new(consumer("grp"), entry_id(0, 0));
+        let acked = group.ack(&[entry_id(999, 0)]);
+        assert_eq!(acked, 0);
+    }
+
+    #[test]
+    fn pending_counts_by_consumer() {
+        let mut group = StreamConsumerGroup::new(consumer("grp"), entry_id(0, 0));
+        group.add_pending(entry_id(1, 0), &consumer("alice"));
+        group.add_pending(entry_id(2, 0), &consumer("alice"));
+        group.add_pending(entry_id(3, 0), &consumer("bob"));
+
+        let counts = group.get_pending_counts_by_consumer();
+        assert_eq!(*counts.get(&consumer("alice")).unwrap(), 2);
+        assert_eq!(*counts.get(&consumer("bob")).unwrap(), 1);
+    }
+
+    #[test]
+    fn get_pending_for_consumer() {
+        let mut group = StreamConsumerGroup::new(consumer("grp"), entry_id(0, 0));
+        group.add_pending(entry_id(1, 0), &consumer("alice"));
+        group.add_pending(entry_id(2, 0), &consumer("bob"));
+
+        let alice_pending = group.get_pending_for_consumer(&consumer("alice"));
+        assert_eq!(alice_pending.len(), 1);
+        assert_eq!(alice_pending[0].id, entry_id(1, 0));
+    }
+
+    #[test]
+    fn pending_id_range() {
+        let mut group = StreamConsumerGroup::new(consumer("grp"), entry_id(0, 0));
+        assert!(group.get_pending_id_range().is_none());
+
+        group.add_pending(entry_id(10, 0), &consumer("alice"));
+        group.add_pending(entry_id(20, 0), &consumer("alice"));
+        group.add_pending(entry_id(5, 0), &consumer("bob"));
+
+        let (min, max) = group.get_pending_id_range().unwrap();
+        assert_eq!(min, entry_id(5, 0));
+        assert_eq!(max, entry_id(20, 0));
+    }
+
+    // ── CLAIM ────────────────────────────────────────────────────────
+
+    #[test]
+    fn claim_transfers_pending() {
+        let mut group = StreamConsumerGroup::new(consumer("grp"), entry_id(0, 0));
+        let id = entry_id(1, 0);
+        group.add_pending(id.clone(), &consumer("alice"));
+
+        let claimed = group.claim(&[id.clone()], &consumer("bob"), 0, None, None, false);
+        assert_eq!(claimed.len(), 1);
+
+        // Now bob owns it
+        let bob_pending = group.get_pending_for_consumer(&consumer("bob"));
+        assert_eq!(bob_pending.len(), 1);
+        assert_eq!(bob_pending[0].consumer, consumer("bob"));
+    }
+
+    // ── Consumer deletion with transfer ──────────────────────────────
+
+    #[test]
+    fn delete_consumer_transfers_pending() {
+        let mut group = StreamConsumerGroup::new(consumer("grp"), entry_id(0, 0));
+        group.add_pending(entry_id(1, 0), &consumer("alice"));
+        group.add_pending(entry_id(2, 0), &consumer("alice"));
+
+        let count = group.delete_consumer(&consumer("alice"), Some(&consumer("bob")));
+        assert_eq!(count, 2);
+
+        // Verify bob has the transferred entries
+        let bob_pending = group.get_pending_for_consumer(&consumer("bob"));
+        assert_eq!(bob_pending.len(), 2);
+    }
+
+    // ── last_delivered_id ────────────────────────────────────────────
+
+    #[test]
+    fn set_last_delivered_id() {
+        let mut group = StreamConsumerGroup::new(consumer("grp"), entry_id(0, 0));
+        group.set_last_delivered_id(entry_id(100, 5));
+        assert_eq!(group.last_delivered_id, entry_id(100, 5));
+    }
+
+    #[test]
+    fn set_group_id_via_stream() {
+        let mut stream = Stream::new();
+        stream.create_group(consumer("grp"), entry_id(0, 0));
+        assert!(stream.set_group_id(&consumer("grp"), entry_id(50, 0)));
+        assert!(!stream.set_group_id(&consumer("nonexistent"), entry_id(50, 0)));
+    }
+
+    // ── range with bounds ────────────────────────────────────────────
+
+    #[test]
+    fn range_with_count() {
+        let mut stream = Stream::new();
+        let fields = vec![(Bytes::from("k"), Bytes::from("v"))];
+        for i in 1..=10 {
+            stream.add(Some(entry_id(i * 100, 0)), fields.clone());
+        }
+        let entries = stream.range(&entry_id(0, 0), &entry_id(u64::MAX, u64::MAX), Some(3));
+        assert_eq!(entries.len(), 3);
+    }
+
+    #[test]
+    fn range_with_start_end() {
+        let mut stream = Stream::new();
+        let fields = vec![(Bytes::from("k"), Bytes::from("v"))];
+        for i in 1..=5 {
+            stream.add(Some(entry_id(i * 100, 0)), fields.clone());
+        }
+        let entries = stream.range(&entry_id(200, 0), &entry_id(400, 0), None);
+        assert_eq!(entries.len(), 3); // 200, 300, 400
     }
 }

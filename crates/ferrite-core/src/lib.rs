@@ -8,6 +8,8 @@
 //! This crate contains all Tier 1 (Stable) and Tier 2 (Beta) modules that form
 //! the production database engine.
 
+#![allow(missing_docs)] // Docs added progressively; struct fields and variants documented as APIs stabilize
+
 // ── Tier 1 — Stable ──────────────────────────────────────────────────────────
 
 pub mod auth;

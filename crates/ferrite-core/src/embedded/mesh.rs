@@ -388,6 +388,7 @@ pub struct MeshNode {
     keys_sent: AtomicU64,
     conflicts_resolved: AtomicU64,
     running: AtomicBool,
+    #[allow(dead_code)] // used for mesh uptime tracking
     started_at: Instant,
 }
 

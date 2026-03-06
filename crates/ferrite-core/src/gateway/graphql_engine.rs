@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 //! GraphQL execution engine for Ferrite
 //!
 //! Provides GraphQL query/mutation/subscription support

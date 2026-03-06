@@ -1,11 +1,13 @@
-// Memory allocation tuning constants
-const DEFAULT_PAGE_SIZE: usize = 4096;
-const MAX_INLINE_VALUE_LEN: usize = 128;
-
 //! In-memory storage implementation
 //!
 //! This module implements the in-memory storage engine using DashMap for
 //! concurrent access.
+
+// Memory allocation tuning constants (reserved for future page-aligned storage)
+#[allow(dead_code)]
+const DEFAULT_PAGE_SIZE: usize = 4096;
+#[allow(dead_code)]
+const MAX_INLINE_VALUE_LEN: usize = 128;
 
 use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
 
@@ -240,6 +242,14 @@ impl Database {
         self.data.is_empty()
     }
 
+    /// Count keys that have an expiration set (volatile keys)
+    pub fn volatile_count(&self) -> usize {
+        self.data
+            .iter()
+            .filter(|entry| !entry.is_expired() && entry.expires_at.is_some())
+            .count()
+    }
+
     /// Get a mutable reference to an entry for atomic operations
     pub fn get_entry_mut(
         &self,
@@ -394,7 +404,9 @@ impl Database {
                     }
                     volatile
                         .iter()
-                        .min_by_key(|(_, _, _, exp)| exp.unwrap())
+                        .min_by_key(|(_, _, _, exp)| {
+                            exp.unwrap_or(std::time::SystemTime::UNIX_EPOCH)
+                        })
                         .copied()
                 }
                 EvictionPolicy::NoEviction => {
@@ -864,6 +876,16 @@ impl Store {
         }
     }
 
+    /// Count keys with an expiration (volatile keys) for a database
+    pub fn volatile_key_count(&self, db: u8) -> u64 {
+        match &self.backend {
+            StorageBackend::Memory(databases) => {
+                databases[db as usize].read().volatile_count() as u64
+            }
+            StorageBackend::HybridLog(_) => 0, // HybridLog manages TTL differently
+        }
+    }
+
     /// Get the number of databases
     pub fn num_databases(&self) -> usize {
         self.num_dbs
@@ -903,6 +925,27 @@ impl Store {
     /// Check if the store is using HybridLog backend
     pub fn is_hybridlog(&self) -> bool {
         matches!(&self.backend, StorageBackend::HybridLog(_))
+    }
+
+    /// Atomically swap two databases (SWAPDB)
+    pub fn swap_db(&self, db1: u8, db2: u8) -> bool {
+        if db1 as usize >= self.num_dbs || db2 as usize >= self.num_dbs || db1 == db2 {
+            return false;
+        }
+        match &self.backend {
+            StorageBackend::Memory(databases) => {
+                // Acquire both write locks in consistent order to avoid deadlocks
+                let (first, second) = if db1 < db2 { (db1, db2) } else { (db2, db1) };
+                let mut lock1 = databases[first as usize].write();
+                let mut lock2 = databases[second as usize].write();
+                std::mem::swap(&mut *lock1, &mut *lock2);
+                true
+            }
+            StorageBackend::HybridLog(_) => {
+                // HybridLog doesn't support swap (would require swapping entire log state)
+                false
+            }
+        }
     }
 }
 

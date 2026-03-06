@@ -117,9 +117,11 @@ pub struct TimestampOracle {
     physical_ts: AtomicU64,
     /// Site ID for hybrid timestamps
     site_id: u64,
-    /// Batch size for timestamp allocation
+    /// Batch size for timestamp allocation (used for bulk timestamp pre-allocation)
+    #[allow(dead_code)]
     batch_size: AtomicU64,
-    /// Pre-allocated timestamps
+    /// Pre-allocated timestamps (read during high-throughput timestamp allocation)
+    #[allow(dead_code)]
     allocated: RwLock<Vec<u64>>,
 }
 
@@ -346,6 +348,7 @@ pub struct PercolatorTransaction {
     /// Write buffer
     write_buffer: RwLock<HashMap<KeyRef, WriteIntent>>,
     /// Read set (for validation in serializable mode)
+    #[allow(dead_code)]
     read_set: RwLock<HashSet<KeyRef>>,
     /// Primary key (first key in write set)
     primary_key: RwLock<Option<KeyRef>>,
@@ -770,7 +773,8 @@ pub struct PercolatorLockManager {
     locks: DashMap<KeyRef, LockRecord>,
     /// Write records: key -> list of (commit_ts, write_record)
     writes: DashMap<KeyRef, Vec<(Timestamp, WriteRecord)>>,
-    /// Configuration
+    /// Configuration (read during lock acquisition and conflict resolution)
+    #[allow(dead_code)]
     config: PercolatorConfig,
 }
 

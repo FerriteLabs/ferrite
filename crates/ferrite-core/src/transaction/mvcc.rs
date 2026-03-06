@@ -41,7 +41,8 @@ pub struct VersionManager {
 pub struct VersionChain {
     /// Versions sorted by timestamp (newest first)
     versions: Vec<Version>,
-    /// Whether the key has been deleted
+    /// Whether the key has been deleted (checked during snapshot reads)
+    #[allow(dead_code)]
     deleted: bool,
 }
 

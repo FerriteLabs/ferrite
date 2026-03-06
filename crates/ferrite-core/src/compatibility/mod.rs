@@ -4,7 +4,6 @@
 //! Ferrite's compatibility with Redis commands and behaviors. Produces
 //! a machine-readable compatibility matrix and certification score.
 
-#![allow(dead_code)]
 pub mod certification;
 pub mod dashboard;
 pub mod report;

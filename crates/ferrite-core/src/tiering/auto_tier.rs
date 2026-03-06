@@ -3,8 +3,6 @@
 //! Combines access pattern analysis, cost modeling, and migration scheduling
 //! to autonomously move data between storage tiers.
 
-#![allow(dead_code)]
-
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 

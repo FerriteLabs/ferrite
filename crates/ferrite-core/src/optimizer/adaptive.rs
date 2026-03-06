@@ -2,8 +2,6 @@
 //!
 //! ML-based workload profiler that auto-creates indexes, tunes memory,
 //! and preemptively warms cache based on access patterns.
-#![allow(dead_code)]
-
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 

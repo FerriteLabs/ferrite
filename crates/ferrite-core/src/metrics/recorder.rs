@@ -192,3 +192,25 @@ mod tests {
         // In a real test, we'd set up a debugging recorder and verify values
     }
 }
+
+// ── Rate limiting & backpressure metrics ─────────────────────────────────────
+
+/// Record a rate-limited (rejected) command.
+pub fn record_rate_limit_rejected() {
+    counter!("ferrite_rate_limit_rejected_total").increment(1);
+}
+
+/// Record a rejected connection due to max_connections limit.
+pub fn record_connection_rejected() {
+    counter!("ferrite_connections_rejected_total").increment(1);
+}
+
+/// Record a write command rejected due to memory backpressure.
+pub fn record_backpressure_rejected() {
+    counter!("ferrite_backpressure_rejected_total").increment(1);
+}
+
+/// Set the current memory backpressure ratio (0.0-1.0).
+pub fn set_backpressure_memory_ratio(ratio: f64) {
+    gauge!("ferrite_backpressure_memory_ratio").set(ratio);
+}

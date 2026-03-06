@@ -2,7 +2,6 @@
 //!
 //! Execute queries across multiple data sources through a unified
 //! FerriteQL interface. Supports Ferrite, Redis, PostgreSQL, S3, Kafka.
-#![allow(dead_code)]
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
