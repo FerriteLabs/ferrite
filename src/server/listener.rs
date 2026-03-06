@@ -22,6 +22,7 @@ use crate::replication::{
 use crate::storage::Store;
 use ferrite_core::telemetry::metrics as otel_metrics;
 
+use super::backpressure::{BackpressureController, SharedBackpressure};
 use super::connection::Connection;
 use super::handler::{Handler, HandlerDependencies};
 use crate::runtime::{
@@ -75,6 +76,9 @@ pub struct Server {
 
     /// Shutdown signal sender
     shutdown_tx: broadcast::Sender<()>,
+
+    /// Shared backpressure controller for memory-aware write rejection
+    backpressure: SharedBackpressure,
 }
 
 /// Optional dependency overrides for building a Server
@@ -179,6 +183,14 @@ impl Server {
             .watch_registry
             .unwrap_or_else(|| Arc::new(WatchRegistry::new()));
 
+        // Initialize backpressure controller from config
+        let cfg = shared_config.read();
+        let backpressure = Arc::new(BackpressureController::new(
+            cfg.server.max_memory,
+            cfg.server.max_memory_reject_threshold,
+        ));
+        drop(cfg);
+
         Ok(Self {
             config: shared_config,
             listener,
@@ -195,6 +207,7 @@ impl Server {
             client_registry,
             watch_registry,
             shutdown_tx,
+            backpressure,
         })
     }
 
@@ -212,6 +225,31 @@ impl Server {
             let _ = shutdown_tx.send(());
         });
 
+        // Spawn background memory monitor for backpressure
+        if !self.backpressure.is_unlimited() {
+            let bp = self.backpressure.clone();
+            let mut bp_shutdown = self.shutdown_tx.subscribe();
+            tokio::spawn(async move {
+                let mut interval = tokio::time::interval(std::time::Duration::from_secs(1));
+                loop {
+                    tokio::select! {
+                        _ = interval.tick() => {
+                            let rss = estimate_rss_bytes();
+                            bp.update_memory(rss);
+                            ferrite_core::metrics::set_backpressure_memory_ratio(
+                                bp.memory_ratio(),
+                            );
+                        }
+                        _ = bp_shutdown.recv() => break,
+                    }
+                }
+            });
+            info!(
+                "Memory backpressure monitor started (max_memory={})",
+                self.backpressure.max_memory_bytes()
+            );
+        }
+
         self.accept_loop().await
     }
 
@@ -224,6 +262,21 @@ impl Server {
                 result = self.listener.accept() => {
                     match result {
                         Ok((stream, addr)) => {
+                            // Check connection limit before accepting
+                            let max_conn = self.config.read().server.max_connections;
+                            if !super::backpressure::should_accept_connection(
+                                self.client_registry.count(),
+                                max_conn,
+                            ) {
+                                warn!(
+                                    "Rejecting connection from {}: max connections ({}) reached",
+                                    addr, max_conn
+                                );
+                                ferrite_core::metrics::record_connection_rejected();
+                                drop(stream);
+                                continue;
+                            }
+
                             info!("Accepted connection from {}", addr);
                             otel_metrics::connection_opened();
 
@@ -245,11 +298,13 @@ impl Server {
                                 replication_primary: self.replication_primary.clone(),
                                 audit_handle: self.audit_handle.clone(),
                                 shutdown_rx: self.shutdown_tx.subscribe(),
+                                shutdown_tx: self.shutdown_tx.clone(),
                                 slowlog: self.slowlog.clone(),
                                 client_registry: self.client_registry.clone(),
                                 client_id,
                                 watch_registry: self.watch_registry.clone(),
                                 config: Some(self.config.clone()),
+                                backpressure: self.backpressure.clone(),
                             };
                             let handler = Handler::new(connection, deps);
 
@@ -283,5 +338,59 @@ impl Server {
     #[cfg(test)]
     pub fn store(&self) -> &Arc<Store> {
         &self.store
+    }
+}
+
+/// Estimate the process's resident set size in bytes.
+///
+/// On macOS, reads from `mach_task_basic_info`. On Linux, reads from
+/// `/proc/self/statm`. Falls back to 0 on unsupported platforms.
+fn estimate_rss_bytes() -> u64 {
+    #[cfg(target_os = "linux")]
+    {
+        // /proc/self/statm: size resident shared text lib data dt (pages)
+        if let Ok(statm) = std::fs::read_to_string("/proc/self/statm") {
+            if let Some(rss_pages) = statm.split_whitespace().nth(1) {
+                if let Ok(pages) = rss_pages.parse::<u64>() {
+                    return pages * 4096; // page size is typically 4K
+                }
+            }
+        }
+        0
+    }
+    #[cfg(target_os = "macos")]
+    {
+        // Use mach API to get RSS
+        use std::mem;
+        extern "C" {
+            fn mach_task_self() -> u32;
+            fn task_info(
+                target_task: u32,
+                flavor: u32,
+                task_info_out: *mut libc_task_basic_info,
+                task_info_out_cnt: *mut u32,
+            ) -> i32;
+        }
+        #[repr(C)]
+        struct libc_task_basic_info {
+            suspend_count: i32,
+            virtual_size: u64,
+            resident_size: u64,
+            user_time: [u32; 2],
+            system_time: [u32; 2],
+            policy: i32,
+        }
+        const MACH_TASK_BASIC_INFO: u32 = 20;
+        let mut info: libc_task_basic_info = unsafe { mem::zeroed() };
+        let mut count = (mem::size_of::<libc_task_basic_info>() / mem::size_of::<u32>()) as u32;
+        let kr = unsafe { task_info(mach_task_self(), MACH_TASK_BASIC_INFO, &mut info, &mut count) };
+        if kr == 0 {
+            return info.resident_size;
+        }
+        0
+    }
+    #[cfg(not(any(target_os = "linux", target_os = "macos")))]
+    {
+        0
     }
 }

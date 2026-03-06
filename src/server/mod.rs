@@ -18,6 +18,10 @@ mod listener;
 pub mod memcached_protocol;
 /// Transparent Redis proxy with connection pooling
 pub mod proxy;
+/// Server-level rate limiting using token bucket algorithm
+pub mod rate_limiter;
+/// Graceful degradation and memory backpressure
+pub mod backpressure;
 /// Zero-config smart proxy with Ferrite capability injection
 pub mod smart_proxy;
 /// TLS support for encrypted connections

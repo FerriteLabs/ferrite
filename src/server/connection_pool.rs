@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 //! Native connection pooler and multiplexer
 //!
 //! Built-in proxy that multiplexes N client connections onto M backend
@@ -7,7 +6,6 @@
 use std::collections::VecDeque;
 use std::net::SocketAddr;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use parking_lot::{Mutex, RwLock};

@@ -20,8 +20,11 @@ use crate::replication::{
     ReplicationCommand, ReplicationPrimary, ReplicationRole, SharedReplicationState,
 };
 use crate::storage::Store;
+use ferrite_core::metrics as prom;
 
+use super::backpressure::{self, SharedBackpressure};
 use super::connection::{Connection, ProtocolVersion};
+use super::rate_limiter::RateLimiter;
 use crate::runtime::{
     ConnectionId, SharedClientRegistry, SharedSlowLog, SharedSubscriptionManager,
     SharedWatchRegistry,
@@ -62,11 +65,13 @@ pub struct HandlerDependencies {
     pub replication_primary: Arc<ReplicationPrimary>,
     pub audit_handle: SharedAuditHandle,
     pub shutdown_rx: broadcast::Receiver<()>,
+    pub shutdown_tx: broadcast::Sender<()>,
     pub slowlog: SharedSlowLog,
     pub client_registry: SharedClientRegistry,
     pub client_id: u64,
     pub watch_registry: SharedWatchRegistry,
     pub config: Option<SharedConfig>,
+    pub backpressure: SharedBackpressure,
 }
 
 /// Handler for a single client connection
@@ -120,6 +125,12 @@ pub struct Handler {
 
     /// This connection's ID in the watch registry
     watch_connection_id: ConnectionId,
+
+    /// Per-connection rate limiter
+    rate_limiter: RateLimiter,
+
+    /// Shared backpressure controller for memory-aware write rejection
+    backpressure: SharedBackpressure,
 }
 
 /// RESP3 response transformation type
@@ -158,8 +169,23 @@ impl Handler {
                 deps.blocking_zset_manager.clone(),
             ),
         };
+        let mut executor = executor;
+        executor.set_shutdown_tx(deps.shutdown_tx.clone());
+        executor.set_replication_state(deps.replication_state.clone());
         // Register with watch registry and get connection ID
         let watch_connection_id = ConnectionId::new();
+
+        // Initialize per-connection rate limiter from config
+        let (rate_per_sec, rate_burst) = deps
+            .config
+            .as_ref()
+            .map(|c| {
+                let cfg = c.read();
+                (cfg.server.rate_limit_per_sec, cfg.server.rate_limit_burst)
+            })
+            .unwrap_or((0, 100));
+        let rate_limiter = RateLimiter::new(rate_per_sec, rate_burst);
+
         Self {
             connection,
             executor,
@@ -177,6 +203,8 @@ impl Handler {
             client_id: deps.client_id,
             watch_registry: deps.watch_registry,
             watch_connection_id,
+            rate_limiter,
+            backpressure: deps.backpressure,
         }
     }
 
@@ -274,10 +302,32 @@ impl Handler {
             Err(e) => return Frame::error(e.to_resp_error()),
         };
 
+        // Rate limit check (skip for AUTH/HELLO/PING to allow connection setup)
+        if !matches!(
+            command,
+            Command::Auth { .. } | Command::Hello { .. } | Command::Ping { .. }
+        ) && !self.rate_limiter.try_acquire()
+        {
+            prom::record_rate_limit_rejected();
+            return Frame::error(
+                "ERR rate limit exceeded, too many commands per second".to_string(),
+            );
+        }
+
         // Extract audit info (command name and keys)
         let (cmd_name, keys) = extract_audit_info(&command);
         let cmd_name_for_tracking = cmd_name.clone();
         let keys_for_otel = keys.clone();
+
+        // Memory backpressure: reject write commands when memory exceeds threshold
+        if self.backpressure.should_reject_writes()
+            && !backpressure::is_read_only_command(&cmd_name)
+        {
+            prom::record_backpressure_rejected();
+            return Frame::error(
+                "OOM command not allowed when used memory > max_memory".to_string(),
+            );
+        }
 
         // Create audit entry
         let audit_entry = AuditEntry::new(
@@ -358,6 +408,143 @@ impl Handler {
         // If in transaction, queue the command instead of executing
         if self.transaction.in_transaction {
             let result = self.queue_command(command);
+            self.log_audit_result(audit_entry, start_time, &result)
+                .await;
+            return result;
+        }
+
+        // Handle CLIENT SETNAME/GETNAME at handler level (needs connection state)
+        if let Command::Client {
+            ref subcommand,
+            ref args,
+        } = command
+        {
+            match subcommand.as_str() {
+                "SETNAME" => {
+                    if args.is_empty() {
+                        let result =
+                            Frame::error("ERR wrong number of arguments for CLIENT SETNAME");
+                        self.log_audit_result(audit_entry, start_time, &result)
+                            .await;
+                        return result;
+                    }
+                    let name = String::from_utf8_lossy(&args[0]).to_string();
+                    // Validate: client name cannot contain spaces
+                    if name.contains(' ') {
+                        let result =
+                            Frame::error("ERR Client names cannot contain spaces, newlines or special characters.");
+                        self.log_audit_result(audit_entry, start_time, &result)
+                            .await;
+                        return result;
+                    }
+                    self.connection.set_client_name(Some(name.clone()));
+                    self.client_registry.update(self.client_id, |client| {
+                        client.name = Some(name);
+                    });
+                    let result = Frame::simple("OK");
+                    self.log_audit_result(audit_entry, start_time, &result)
+                        .await;
+                    return result;
+                }
+                "GETNAME" => {
+                    let result = match &self.connection.client_name {
+                        Some(name) => Frame::bulk(name.clone()),
+                        None => Frame::Null,
+                    };
+                    self.log_audit_result(audit_entry, start_time, &result)
+                        .await;
+                    return result;
+                }
+                "ID" => {
+                    let result = Frame::Integer(self.client_id as i64);
+                    self.log_audit_result(audit_entry, start_time, &result)
+                        .await;
+                    return result;
+                }
+                _ => {} // Fall through to executor for other CLIENT subcommands
+            }
+        }
+
+        // Handle ACL subcommands that require async at handler level
+        if let Command::Acl {
+            ref subcommand,
+            ref args,
+        } = command
+        {
+            let result = match subcommand.to_uppercase().as_str() {
+                "LIST" => {
+                    let usernames = self.acl.list_users().await;
+                    let mut entries = Vec::with_capacity(usernames.len());
+                    for name in &usernames {
+                        if let Some(acl_str) = self.acl.get_user_acl(name).await {
+                            entries.push(Frame::bulk(acl_str));
+                        }
+                    }
+                    Frame::array(entries)
+                }
+                "USERS" => {
+                    let users = self.acl.list_users().await;
+                    let names: Vec<Frame> = users
+                        .iter()
+                        .map(|u| Frame::bulk(u.clone()))
+                        .collect();
+                    Frame::array(names)
+                }
+                "GETUSER" => {
+                    if args.is_empty() {
+                        Frame::error("ERR wrong number of arguments for 'acl|getuser' command")
+                    } else {
+                        match self.acl.get_user_acl(&args[0]).await {
+                            Some(acl_str) => Frame::bulk(acl_str),
+                            None => Frame::Null,
+                        }
+                    }
+                }
+                "SETUSER" => {
+                    if args.is_empty() {
+                        Frame::error("ERR wrong number of arguments for 'acl|setuser' command")
+                    } else {
+                        let username = &args[0];
+                        let rules: Vec<String> = args[1..].to_vec();
+                        match self.acl.set_user(username, &rules).await {
+                            Ok(()) => Frame::simple("OK"),
+                            Err(e) => Frame::error(format!("ERR {}", e)),
+                        }
+                    }
+                }
+                "DELUSER" => {
+                    if args.is_empty() {
+                        Frame::error("ERR wrong number of arguments for 'acl|deluser' command")
+                    } else {
+                        let mut deleted = 0;
+                        for username in args {
+                            match self.acl.del_user(username).await {
+                                Ok(()) => deleted += 1,
+                                Err(e) => {
+                                    return {
+                                        let result = Frame::error(format!("ERR {}", e));
+                                        self.log_audit_result(audit_entry, start_time, &result)
+                                            .await;
+                                        result
+                                    };
+                                }
+                            }
+                        }
+                        Frame::Integer(deleted)
+                    }
+                }
+                "WHOAMI" => Frame::bulk(self.current_user.clone()),
+                _ => {
+                    // Fall through to executor for CAT, GENPASS, LOG, DRYRUN, HELP
+                    let result = self
+                        .executor
+                        .execute_with_acl(command, self.connection.database, &self.current_user)
+                        .await;
+                    self.log_audit_result(audit_entry, start_time, &result)
+                        .await;
+                    return result;
+                }
+            };
             self.log_audit_result(audit_entry, start_time, &result)
                 .await;
             return result;
