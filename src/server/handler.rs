@@ -108,6 +108,9 @@ pub struct Handler {
     /// Transaction state
     transaction: TransactionState,
 
+    /// Whether this connection is in pub/sub mode (has active subscriptions)
+    pub_sub_active: bool,
+
     /// Shutdown signal receiver
     shutdown_rx: broadcast::Receiver<()>,
 
@@ -197,6 +200,7 @@ impl Handler {
             audit_handle: deps.audit_handle,
             current_user: "default".to_string(),
             transaction: TransactionState::default(),
+            pub_sub_active: false,
             shutdown_rx: deps.shutdown_rx,
             slowlog: deps.slowlog,
             client_registry: deps.client_registry,
@@ -783,6 +787,9 @@ impl Handler {
             self.executor.latency_tracker().record("command", ms);
         }
 
+        // Feed the OBSERVE.LATENCY per-command tracker
+        crate::commands::handlers::observe::record_command_latency(cmd_name, elapsed);
+
         self.client_registry.update(self.client_id, |client| {
             client.last_cmd = cmd_name.to_string();
             client.last_interaction = std::time::Instant::now();
@@ -1322,7 +1329,7 @@ impl Handler {
     /// Per Redis spec, RESET:
     /// - Discards any transaction state (MULTI)
     /// - Unwatches all keys
-    /// - Exits pub/sub mode (TODO: when pub/sub state is tracked in handler)
+    /// - Exits pub/sub mode
     /// - Resets client name
     /// - Switches to database 0
     /// - Resets authentication to default user
@@ -1331,6 +1338,9 @@ impl Handler {
         self.watch_registry.unwatch_all(self.watch_connection_id);
         // Reset transaction state
         self.transaction.reset();
+
+        // Exit pub/sub mode
+        self.pub_sub_active = false;
 
         // Reset to database 0
         self.connection.database = 0;
