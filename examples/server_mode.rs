@@ -59,6 +59,7 @@ fn main() -> anyhow::Result<()> {
             tcp_keepalive: 300,          // 5 minutes
             timeout: 0,                  // No timeout
             acl_file: Some(PathBuf::from("./data/users.acl")),
+            ..Default::default()
         },
         storage: StorageConfig {
             backend: StorageBackendType::Memory, // In-memory backend

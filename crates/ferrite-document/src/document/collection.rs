@@ -6,7 +6,7 @@ use tracing::warn;
 
 use super::document::{Document, DocumentId};
 use super::index::DocumentIndex;
-use super::query::DocumentQuery;
+use super::query::{DocumentQuery, SortOrder};
 use super::validation::{JsonSchema, ValidationLevel};
 use super::{DeleteResult, DocumentStoreError, IndexOptions, UpdateOperation, UpdateResult};
 
@@ -191,17 +191,49 @@ impl Collection {
     /// Find documents matching a query
     pub fn find(&self, query: &DocumentQuery) -> Result<Vec<Document>, DocumentStoreError> {
         // Try to use index
-        if let Some(index_result) = self.try_index_scan(query) {
-            return Ok(index_result);
+        let mut results = if let Some(index_result) = self.try_index_scan(query) {
+            index_result
+        } else {
+            // Fall back to collection scan
+            self.documents
+                .values()
+                .filter(|doc| query.matches(doc))
+                .cloned()
+                .collect()
+        };
+
+        // Apply sort at the storage layer
+        if let Some(sort_spec) = query.get_sort() {
+            results.sort_by(|a, b| {
+                for (field, order) in sort_spec {
+                    let va = a.data.get(field.as_str());
+                    let vb = b.data.get(field.as_str());
+                    let cmp = cmp_json_for_sort(va, vb);
+                    let ordered = match order {
+                        SortOrder::Ascending => cmp,
+                        SortOrder::Descending => cmp.reverse(),
+                    };
+                    if ordered != std::cmp::Ordering::Equal {
+                        return ordered;
+                    }
+                }
+                std::cmp::Ordering::Equal
+            });
         }
 
-        // Fall back to collection scan
-        let results: Vec<Document> = self
-            .documents
-            .values()
-            .filter(|doc| query.matches(doc))
-            .cloned()
-            .collect();
+        // Apply skip
+        if let Some(skip) = query.get_skip() {
+            if skip < results.len() {
+                results = results.into_iter().skip(skip).collect();
+            } else {
+                results.clear();
+            }
+        }
+
+        // Apply limit
+        if let Some(limit) = query.get_limit() {
+            results.truncate(limit);
+        }
 
         Ok(results)
     }
@@ -730,6 +762,31 @@ pub struct IndexInfo {
     pub unique: bool,
     /// Sparse index
     pub sparse: bool,
+}
+
+/// Compare two optional JSON values for sort ordering.
+/// Null/missing sort last, numbers and strings compare naturally.
+fn cmp_json_for_sort(
+    a: Option<&serde_json::Value>,
+    b: Option<&serde_json::Value>,
+) -> std::cmp::Ordering {
+    match (a, b) {
+        (None | Some(serde_json::Value::Null), None | Some(serde_json::Value::Null)) => {
+            std::cmp::Ordering::Equal
+        }
+        (None | Some(serde_json::Value::Null), _) => std::cmp::Ordering::Greater,
+        (_, None | Some(serde_json::Value::Null)) => std::cmp::Ordering::Less,
+        (Some(va), Some(vb)) => match (va, vb) {
+            (serde_json::Value::Number(na), serde_json::Value::Number(nb)) => {
+                let fa = na.as_f64().unwrap_or(0.0);
+                let fb = nb.as_f64().unwrap_or(0.0);
+                fa.partial_cmp(&fb).unwrap_or(std::cmp::Ordering::Equal)
+            }
+            (serde_json::Value::String(sa), serde_json::Value::String(sb)) => sa.cmp(sb),
+            (serde_json::Value::Bool(ba), serde_json::Value::Bool(bb)) => ba.cmp(bb),
+            _ => va.to_string().cmp(&vb.to_string()),
+        },
+    }
 }
 
 #[cfg(test)]

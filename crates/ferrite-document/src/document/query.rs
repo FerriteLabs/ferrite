@@ -169,13 +169,10 @@ pub struct DocumentQuery {
     /// Logical operators at root level
     logical_ops: Vec<QueryOperator>,
     /// Sort specification
-    #[allow(dead_code)] // Planned for v0.2 — stored for query result sorting
     sort: Option<Vec<(String, SortOrder)>>,
     /// Skip count
-    #[allow(dead_code)] // Planned for v0.2 — stored for query result pagination
     skip: Option<usize>,
     /// Limit count
-    #[allow(dead_code)] // Planned for v0.2 — stored for query result pagination
     limit: Option<usize>,
 }
 
@@ -203,6 +200,21 @@ impl DocumentQuery {
     /// Check if query is empty (matches all)
     pub fn is_empty(&self) -> bool {
         self.conditions.is_empty() && self.logical_ops.is_empty()
+    }
+
+    /// Get the sort specification, if any.
+    pub fn get_sort(&self) -> Option<&[(String, SortOrder)]> {
+        self.sort.as_deref()
+    }
+
+    /// Get the skip count, if any.
+    pub fn get_skip(&self) -> Option<usize> {
+        self.skip
+    }
+
+    /// Get the limit count, if any.
+    pub fn get_limit(&self) -> Option<usize> {
+        self.limit
     }
 
     /// Parse query from JSON
