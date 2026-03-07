@@ -430,7 +430,218 @@ async fn test_del() -> Result<(), Box<dyn std::error::Error>> {
 }
 "#
             .to_string(),
-            _ => "// TODO: Add tests\n".to_string(),
+            Language::Go => r#"package ferrite_test
+
+import (
+	"context"
+	"testing"
+
+	ferrite "github.com/ferrite/ferrite-client"
+)
+
+func setupClient(t *testing.T) *ferrite.Client {
+	t.Helper()
+	client := ferrite.NewClient(ferrite.Options{Addr: "localhost:6379"})
+	return client
+}
+
+func TestPing(t *testing.T) {
+	client := setupClient(t)
+	defer client.Close()
+	ctx := context.Background()
+	result, err := client.Ping(ctx)
+	if err != nil {
+		t.Fatalf("ping failed: %v", err)
+	}
+	if result != "PONG" {
+		t.Fatalf("expected PONG, got %s", result)
+	}
+}
+
+func TestSetAndGet(t *testing.T) {
+	client := setupClient(t)
+	defer client.Close()
+	ctx := context.Background()
+	err := client.Set(ctx, "test:key", "test:value")
+	if err != nil {
+		t.Fatalf("set failed: %v", err)
+	}
+	value, err := client.Get(ctx, "test:key")
+	if err != nil {
+		t.Fatalf("get failed: %v", err)
+	}
+	if value != "test:value" {
+		t.Fatalf("expected test:value, got %s", value)
+	}
+}
+
+func TestDel(t *testing.T) {
+	client := setupClient(t)
+	defer client.Close()
+	ctx := context.Background()
+	_ = client.Set(ctx, "test:del", "value")
+	deleted, err := client.Del(ctx, "test:del")
+	if err != nil {
+		t.Fatalf("del failed: %v", err)
+	}
+	if deleted != 1 {
+		t.Fatalf("expected 1 deleted, got %d", deleted)
+	}
+}
+"#
+            .to_string(),
+            Language::Java => r#"import org.junit.jupiter.api.*;
+import static org.junit.jupiter.api.Assertions.*;
+
+class FerriteClientTest {
+    private static FerriteClient client;
+
+    @BeforeAll
+    static void setUp() {
+        client = FerriteClient.create("localhost", 6379);
+    }
+
+    @AfterAll
+    static void tearDown() {
+        client.close();
+    }
+
+    @Test
+    void testPing() {
+        String result = client.ping();
+        assertEquals("PONG", result);
+    }
+
+    @Test
+    void testSetAndGet() {
+        client.set("test:key", "test:value");
+        String value = client.get("test:key");
+        assertEquals("test:value", value);
+    }
+
+    @Test
+    void testDel() {
+        client.set("test:del", "value");
+        long deleted = client.del("test:del");
+        assertEquals(1, deleted);
+    }
+}
+"#
+            .to_string(),
+            Language::CSharp => r#"using Xunit;
+using Ferrite.Client;
+
+public class FerriteClientTests : IAsyncLifetime
+{
+    private FerriteClient _client = null!;
+
+    public async Task InitializeAsync()
+    {
+        _client = await FerriteClient.ConnectAsync("localhost:6379");
+    }
+
+    public async Task DisposeAsync()
+    {
+        await _client.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task Ping_ReturnsPong()
+    {
+        var result = await _client.PingAsync();
+        Assert.Equal("PONG", result);
+    }
+
+    [Fact]
+    public async Task SetAndGet_ReturnsValue()
+    {
+        await _client.SetAsync("test:key", "test:value");
+        var value = await _client.GetAsync("test:key");
+        Assert.Equal("test:value", value);
+    }
+
+    [Fact]
+    public async Task Del_ReturnsDeletedCount()
+    {
+        await _client.SetAsync("test:del", "value");
+        var deleted = await _client.DelAsync("test:del");
+        Assert.Equal(1, deleted);
+    }
+}
+"#
+            .to_string(),
+            Language::Php => r#"<?php
+
+use PHPUnit\Framework\TestCase;
+use Ferrite\FerriteClient;
+
+class FerriteClientTest extends TestCase
+{
+    private static FerriteClient $client;
+
+    public static function setUpBeforeClass(): void
+    {
+        self::$client = new FerriteClient('localhost', 6379);
+    }
+
+    public static function tearDownAfterClass(): void
+    {
+        self::$client->close();
+    }
+
+    public function testPing(): void
+    {
+        $result = self::$client->ping();
+        $this->assertEquals('PONG', $result);
+    }
+
+    public function testSetAndGet(): void
+    {
+        self::$client->set('test:key', 'test:value');
+        $value = self::$client->get('test:key');
+        $this->assertEquals('test:value', $value);
+    }
+
+    public function testDel(): void
+    {
+        self::$client->set('test:del', 'value');
+        $deleted = self::$client->del('test:del');
+        $this->assertEquals(1, $deleted);
+    }
+}
+"#
+            .to_string(),
+            Language::Ruby => r#"require 'minitest/autorun'
+require 'ferrite'
+
+class FerriteClientTest < Minitest::Test
+  def setup
+    @client = Ferrite::Client.new(host: 'localhost', port: 6379)
+  end
+
+  def teardown
+    @client.close
+  end
+
+  def test_ping
+    result = @client.ping
+    assert_equal 'PONG', result
+  end
+
+  def test_set_and_get
+    @client.set('test:key', 'test:value')
+    value = @client.get('test:key')
+    assert_equal 'test:value', value
+  end
+
+  def test_del
+    @client.set('test:del', 'value')
+    deleted = @client.del('test:del')
+    assert_equal 1, deleted
+  end
+end
+"#
+            .to_string(),
         }
     }
 
@@ -569,7 +780,155 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 "#
             .to_string(),
-            _ => "// TODO: Add examples\n".to_string(),
+            Language::Go => r#"// Ferrite Go Client Example
+package main
+
+import (
+	"context"
+	"fmt"
+
+	ferrite "github.com/ferrite/ferrite-client"
+)
+
+func main() {
+	client := ferrite.NewClient(ferrite.Options{Addr: "localhost:6379"})
+	defer client.Close()
+	ctx := context.Background()
+
+	// String operations
+	fmt.Println("=== String Operations ===")
+	_ = client.Set(ctx, "greeting", "Hello, Ferrite!")
+	greeting, _ := client.Get(ctx, "greeting")
+	fmt.Printf("Greeting: %s\n", greeting)
+
+	// Counter operations
+	fmt.Println("\n=== Counter Operations ===")
+	_ = client.Set(ctx, "counter", "0")
+	_ = client.Incr(ctx, "counter")
+	_ = client.Incr(ctx, "counter")
+	count, _ := client.Get(ctx, "counter")
+	fmt.Printf("Counter: %s\n", count)
+
+	// Clean up
+	_ = client.Del(ctx, "greeting")
+	_ = client.Del(ctx, "counter")
+}
+"#
+            .to_string(),
+            Language::Java => r#"/**
+ * Ferrite Java Client Example
+ */
+
+import io.ferrite.FerriteClient;
+
+public class FerriteExample {
+    public static void main(String[] args) {
+        try (FerriteClient client = FerriteClient.create("localhost", 6379)) {
+            // String operations
+            System.out.println("=== String Operations ===");
+            client.set("greeting", "Hello, Ferrite!");
+            String greeting = client.get("greeting");
+            System.out.println("Greeting: " + greeting);
+
+            // Counter operations
+            System.out.println("\n=== Counter Operations ===");
+            client.set("counter", "0");
+            client.incr("counter");
+            client.incr("counter");
+            String count = client.get("counter");
+            System.out.println("Counter: " + count);
+
+            // Clean up
+            client.del("greeting");
+            client.del("counter");
+        }
+    }
+}
+"#
+            .to_string(),
+            Language::CSharp => r#"// Ferrite C# Client Example
+
+using Ferrite.Client;
+
+var client = await FerriteClient.ConnectAsync("localhost:6379");
+
+// String operations
+Console.WriteLine("=== String Operations ===");
+await client.SetAsync("greeting", "Hello, Ferrite!");
+var greeting = await client.GetAsync("greeting");
+Console.WriteLine($"Greeting: {greeting}");
+
+// Counter operations
+Console.WriteLine("\n=== Counter Operations ===");
+await client.SetAsync("counter", "0");
+await client.IncrAsync("counter");
+await client.IncrAsync("counter");
+var count = await client.GetAsync("counter");
+Console.WriteLine($"Counter: {count}");
+
+// Clean up
+await client.DelAsync("greeting");
+await client.DelAsync("counter");
+await client.DisposeAsync();
+"#
+            .to_string(),
+            Language::Php => r#"<?php
+/**
+ * Ferrite PHP Client Example
+ */
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+use Ferrite\FerriteClient;
+
+$client = new FerriteClient('localhost', 6379);
+
+// String operations
+echo "=== String Operations ===\n";
+$client->set('greeting', 'Hello, Ferrite!');
+$greeting = $client->get('greeting');
+echo "Greeting: $greeting\n";
+
+// Counter operations
+echo "\n=== Counter Operations ===\n";
+$client->set('counter', '0');
+$client->incr('counter');
+$client->incr('counter');
+$count = $client->get('counter');
+echo "Counter: $count\n";
+
+// Clean up
+$client->del('greeting');
+$client->del('counter');
+$client->close();
+"#
+            .to_string(),
+            Language::Ruby => r#"# Ferrite Ruby Client Example
+
+require 'ferrite'
+
+client = Ferrite::Client.new(host: 'localhost', port: 6379)
+
+# String operations
+puts '=== String Operations ==='
+client.set('greeting', 'Hello, Ferrite!')
+greeting = client.get('greeting')
+puts "Greeting: #{greeting}"
+
+# Counter operations
+puts "\n=== Counter Operations ==="
+client.set('counter', '0')
+client.incr('counter')
+client.incr('counter')
+count = client.get('counter')
+puts "Counter: #{count}"
+
+# Clean up
+client.del('greeting')
+client.del('counter')
+client.close
+"#
+            .to_string(),
         }
     }
 
