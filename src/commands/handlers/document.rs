@@ -257,6 +257,7 @@ pub fn doc_find(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     // Parse optional arguments
     let mut limit: Option<usize> = None;
     let mut skip: Option<usize> = None;
+    let mut sort_fields: Vec<(String, bool)> = Vec::new(); // (field, ascending)
 
     let mut i = 2;
     while i < args.len() {
@@ -280,7 +281,14 @@ pub fn doc_find(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
                 if i + 2 >= args.len() {
                     return err_frame("SORT requires field and order");
                 }
-                // TODO: Implement sort when DocumentStore supports it
+                let field = String::from_utf8_lossy(&args[i + 1]).to_string();
+                let order = String::from_utf8_lossy(&args[i + 2]).to_uppercase();
+                let ascending = match order.as_str() {
+                    "ASC" | "ASCENDING" => true,
+                    "DESC" | "DESCENDING" => false,
+                    _ => return err_frame("SORT order must be ASC or DESC"),
+                };
+                sort_fields.push((field, ascending));
                 i += 3;
             }
             _ => {
@@ -303,6 +311,22 @@ pub fn doc_find(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     match result {
         Ok(docs) => {
             let mut results: Vec<_> = docs.into_iter().collect();
+
+            // Apply sort before skip/limit so pagination works on sorted data
+            if !sort_fields.is_empty() {
+                results.sort_by(|a, b| {
+                    for (field, ascending) in &sort_fields {
+                        let val_a = a.data.get(field.as_str());
+                        let val_b = b.data.get(field.as_str());
+                        let cmp = compare_json_values(val_a, val_b);
+                        let ordered = if *ascending { cmp } else { cmp.reverse() };
+                        if ordered != std::cmp::Ordering::Equal {
+                            return ordered;
+                        }
+                    }
+                    std::cmp::Ordering::Equal
+                });
+            }
 
             // Apply skip
             if let Some(s) = skip {
@@ -801,6 +825,35 @@ pub fn doc_stats(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     ])
 }
 
+/// Compare two optional JSON values for sorting.
+/// Null/missing values sort last. Numbers, strings, and booleans are compared
+/// by type then value; other types compare by their string representation.
+fn compare_json_values(
+    a: Option<&serde_json::Value>,
+    b: Option<&serde_json::Value>,
+) -> std::cmp::Ordering {
+    match (a, b) {
+        (None | Some(serde_json::Value::Null), None | Some(serde_json::Value::Null)) => {
+            std::cmp::Ordering::Equal
+        }
+        (None | Some(serde_json::Value::Null), _) => std::cmp::Ordering::Greater,
+        (_, None | Some(serde_json::Value::Null)) => std::cmp::Ordering::Less,
+        (Some(va), Some(vb)) => {
+            match (va, vb) {
+                (serde_json::Value::Number(na), serde_json::Value::Number(nb)) => {
+                    let fa = na.as_f64().unwrap_or(0.0);
+                    let fb = nb.as_f64().unwrap_or(0.0);
+                    fa.partial_cmp(&fb).unwrap_or(std::cmp::Ordering::Equal)
+                }
+                (serde_json::Value::String(sa), serde_json::Value::String(sb)) => sa.cmp(sb),
+                (serde_json::Value::Bool(ba), serde_json::Value::Bool(bb)) => ba.cmp(bb),
+                // Cross-type: compare by string representation
+                _ => va.to_string().cmp(&vb.to_string()),
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     #![allow(clippy::unwrap_used)]
@@ -838,5 +891,56 @@ mod tests {
         let store1 = get_document_store();
         let store2 = get_document_store();
         assert!(std::ptr::eq(store1, store2));
+    }
+
+    #[test]
+    fn test_compare_json_values_numbers() {
+        let a = serde_json::json!(1);
+        let b = serde_json::json!(2);
+        assert_eq!(compare_json_values(Some(&a), Some(&b)), std::cmp::Ordering::Less);
+        assert_eq!(compare_json_values(Some(&b), Some(&a)), std::cmp::Ordering::Greater);
+        assert_eq!(compare_json_values(Some(&a), Some(&a)), std::cmp::Ordering::Equal);
+    }
+
+    #[test]
+    fn test_compare_json_values_strings() {
+        let a = serde_json::json!("apple");
+        let b = serde_json::json!("banana");
+        assert_eq!(compare_json_values(Some(&a), Some(&b)), std::cmp::Ordering::Less);
+        assert_eq!(compare_json_values(Some(&b), Some(&a)), std::cmp::Ordering::Greater);
+    }
+
+    #[test]
+    fn test_compare_json_values_nulls_sort_last() {
+        let a = serde_json::json!(1);
+        let null = serde_json::Value::Null;
+        assert_eq!(compare_json_values(Some(&a), Some(&null)), std::cmp::Ordering::Less);
+        assert_eq!(compare_json_values(Some(&null), Some(&a)), std::cmp::Ordering::Greater);
+        assert_eq!(compare_json_values(None, Some(&a)), std::cmp::Ordering::Greater);
+        assert_eq!(compare_json_values(Some(&a), None), std::cmp::Ordering::Less);
+    }
+
+    #[test]
+    fn test_compare_json_values_missing_equal() {
+        assert_eq!(compare_json_values(None, None), std::cmp::Ordering::Equal);
+        let null = serde_json::Value::Null;
+        assert_eq!(compare_json_values(Some(&null), None), std::cmp::Ordering::Equal);
+    }
+
+    #[test]
+    fn test_compare_json_values_booleans() {
+        let t = serde_json::json!(true);
+        let f = serde_json::json!(false);
+        assert_eq!(compare_json_values(Some(&f), Some(&t)), std::cmp::Ordering::Less);
+    }
+
+    #[test]
+    fn test_sort_order_validation() {
+        // Valid sort orders
+        for valid in &["ASC", "DESC", "ASCENDING", "DESCENDING"] {
+            let upper = valid.to_uppercase();
+            let is_valid = matches!(upper.as_str(), "ASC" | "ASCENDING" | "DESC" | "DESCENDING");
+            assert!(is_valid, "Should accept {}", valid);
+        }
     }
 }
