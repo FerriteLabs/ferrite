@@ -13,9 +13,14 @@ use super::ast::*;
 enum Token {
     // Keywords
     Match,
+    Optional,
     Where,
     Return,
     Create,
+    Delete,
+    Detach,
+    Set,
+    Remove,
     OrderBy,
     Limit,
     Skip,
@@ -236,9 +241,14 @@ fn tokenize(input: &str) -> Result<Vec<Token>, super::CypherError> {
                 let upper = word.to_uppercase();
                 let tok = match upper.as_str() {
                     "MATCH" => Token::Match,
+                    "OPTIONAL" => Token::Optional,
                     "WHERE" => Token::Where,
                     "RETURN" => Token::Return,
                     "CREATE" => Token::Create,
+                    "DELETE" => Token::Delete,
+                    "DETACH" => Token::Detach,
+                    "SET" => Token::Set,
+                    "REMOVE" => Token::Remove,
                     "ORDER" => Token::OrderBy,
                     "LIMIT" => Token::Limit,
                     "SKIP" => Token::Skip,
@@ -331,9 +341,10 @@ impl CypherParser {
 
     fn parse_statement(&mut self) -> Result<CypherStatement, super::CypherError> {
         match self.peek().clone() {
-            Token::Match => {
-                self.advance();
-                let match_clause = self.parse_match_pattern()?;
+            Token::Match | Token::Optional => {
+                let match_clause = self.parse_match_with_optional()?;
+                let optional_match = match_clause.1;
+                let match_clause = match_clause.0;
 
                 match self.peek().clone() {
                     Token::Create => {
@@ -344,6 +355,30 @@ impl CypherParser {
                             create_clause,
                         })
                     }
+                    Token::Delete | Token::Detach => {
+                        let delete_clause = self.parse_delete_clause()?;
+                        Ok(CypherStatement::MatchDelete {
+                            match_clause,
+                            where_clause: None,
+                            delete_clause,
+                        })
+                    }
+                    Token::Set => {
+                        let set_clause = self.parse_set_clause()?;
+                        Ok(CypherStatement::MatchSet {
+                            match_clause,
+                            where_clause: None,
+                            set_clause,
+                        })
+                    }
+                    Token::Remove => {
+                        let remove_clause = self.parse_remove_clause()?;
+                        Ok(CypherStatement::MatchRemove {
+                            match_clause,
+                            where_clause: None,
+                            remove_clause,
+                        })
+                    }
                     _ => {
                         let where_clause = if *self.peek() == Token::Where {
                             self.advance();
@@ -352,21 +387,51 @@ impl CypherParser {
                             None
                         };
 
-                        self.expect(&Token::Return)?;
-                        let return_clause = self.parse_return_clause()?;
+                        // After WHERE, check for mutation clauses
+                        match self.peek().clone() {
+                            Token::Delete | Token::Detach => {
+                                let delete_clause = self.parse_delete_clause()?;
+                                Ok(CypherStatement::MatchDelete {
+                                    match_clause,
+                                    where_clause,
+                                    delete_clause,
+                                })
+                            }
+                            Token::Set => {
+                                let set_clause = self.parse_set_clause()?;
+                                Ok(CypherStatement::MatchSet {
+                                    match_clause,
+                                    where_clause,
+                                    set_clause,
+                                })
+                            }
+                            Token::Remove => {
+                                let remove_clause = self.parse_remove_clause()?;
+                                Ok(CypherStatement::MatchRemove {
+                                    match_clause,
+                                    where_clause,
+                                    remove_clause,
+                                })
+                            }
+                            _ => {
+                                self.expect(&Token::Return)?;
+                                let return_clause = self.parse_return_clause()?;
 
-                        let order_by = self.parse_order_by()?;
-                        let limit = self.parse_limit()?;
-                        let skip = self.parse_skip()?;
+                                let order_by = self.parse_order_by()?;
+                                let limit = self.parse_limit()?;
+                                let skip = self.parse_skip()?;
 
-                        Ok(CypherStatement::Query(CypherQuery {
-                            match_clause,
-                            where_clause,
-                            return_clause,
-                            order_by,
-                            limit,
-                            skip,
-                        }))
+                                Ok(CypherStatement::Query(CypherQuery {
+                                    match_clause,
+                                    optional_match,
+                                    where_clause,
+                                    return_clause,
+                                    order_by,
+                                    limit,
+                                    skip,
+                                }))
+                            }
+                        }
                     }
                 }
             }
@@ -375,7 +440,148 @@ impl CypherParser {
                 let create_clause = self.parse_create_clause()?;
                 Ok(CypherStatement::Create(create_clause))
             }
-            _ => Err(super::CypherError::Parse(format!("expected MATCH or CREATE, got {:?}", self.peek()))),
+            _ => Err(super::CypherError::Parse(format!("expected MATCH, OPTIONAL MATCH, or CREATE, got {:?}", self.peek()))),
+        }
+    }
+
+    /// Parse MATCH with possible OPTIONAL MATCH following.
+    fn parse_match_with_optional(&mut self) -> Result<(MatchPattern, Option<MatchPattern>), super::CypherError> {
+        // Handle OPTIONAL MATCH as the primary
+        if *self.peek() == Token::Optional {
+            self.advance(); // consume OPTIONAL
+            self.expect(&Token::Match)?;
+            let optional = self.parse_match_pattern()?;
+            return Ok((MatchPattern { patterns: Vec::new() }, Some(optional)));
+        }
+
+        self.expect(&Token::Match)?;
+        let match_clause = self.parse_match_pattern()?;
+
+        // Check for OPTIONAL MATCH after the main MATCH
+        let optional_match = if *self.peek() == Token::Optional {
+            self.advance(); // consume OPTIONAL
+            self.expect(&Token::Match)?;
+            Some(self.parse_match_pattern()?)
+        } else {
+            None
+        };
+
+        Ok((match_clause, optional_match))
+    }
+
+    /// Parse DELETE or DETACH DELETE clause.
+    fn parse_delete_clause(&mut self) -> Result<DeleteClause, super::CypherError> {
+        let detach = if *self.peek() == Token::Detach {
+            self.advance();
+            true
+        } else {
+            false
+        };
+
+        self.expect(&Token::Delete)?;
+
+        let mut variables = Vec::new();
+        match self.advance() {
+            Token::Ident(name) => variables.push(name),
+            other => return Err(super::CypherError::Parse(format!("expected variable name after DELETE, got {:?}", other))),
+        }
+
+        while *self.peek() == Token::Comma {
+            self.advance();
+            match self.advance() {
+                Token::Ident(name) => variables.push(name),
+                other => return Err(super::CypherError::Parse(format!("expected variable name, got {:?}", other))),
+            }
+        }
+
+        Ok(DeleteClause { variables, detach })
+    }
+
+    /// Parse SET clause.
+    fn parse_set_clause(&mut self) -> Result<SetClause, super::CypherError> {
+        self.expect(&Token::Set)?;
+
+        let mut items = Vec::new();
+        items.push(self.parse_set_item()?);
+
+        while *self.peek() == Token::Comma {
+            self.advance();
+            items.push(self.parse_set_item()?);
+        }
+
+        Ok(SetClause { items })
+    }
+
+    /// Parse a single SET item: `n.prop = value` or `n:Label`.
+    fn parse_set_item(&mut self) -> Result<SetItem, super::CypherError> {
+        let variable = match self.advance() {
+            Token::Ident(name) => name,
+            other => return Err(super::CypherError::Parse(format!("expected variable name in SET, got {:?}", other))),
+        };
+
+        match self.peek().clone() {
+            Token::Dot => {
+                self.advance(); // consume dot
+                let property = match self.advance() {
+                    Token::Ident(name) => name,
+                    other => return Err(super::CypherError::Parse(format!("expected property name, got {:?}", other))),
+                };
+                self.expect(&Token::Eq)?;
+                let value = self.parse_expr()?;
+                Ok(SetItem::Property { variable, property, value })
+            }
+            Token::Colon => {
+                self.advance(); // consume colon
+                let label = match self.advance() {
+                    Token::Ident(name) => name,
+                    other => return Err(super::CypherError::Parse(format!("expected label name, got {:?}", other))),
+                };
+                Ok(SetItem::Label { variable, label })
+            }
+            other => Err(super::CypherError::Parse(format!("expected '.' or ':' after variable in SET, got {:?}", other))),
+        }
+    }
+
+    /// Parse REMOVE clause.
+    fn parse_remove_clause(&mut self) -> Result<RemoveClause, super::CypherError> {
+        self.expect(&Token::Remove)?;
+
+        let mut items = Vec::new();
+        items.push(self.parse_remove_item()?);
+
+        while *self.peek() == Token::Comma {
+            self.advance();
+            items.push(self.parse_remove_item()?);
+        }
+
+        Ok(RemoveClause { items })
+    }
+
+    /// Parse a single REMOVE item: `n.prop` or `n:Label`.
+    fn parse_remove_item(&mut self) -> Result<RemoveItem, super::CypherError> {
+        let variable = match self.advance() {
+            Token::Ident(name) => name,
+            other => return Err(super::CypherError::Parse(format!("expected variable name in REMOVE, got {:?}", other))),
+        };
+
+        match self.peek().clone() {
+            Token::Dot => {
+                self.advance();
+                let property = match self.advance() {
+                    Token::Ident(name) => name,
+                    other => return Err(super::CypherError::Parse(format!("expected property name, got {:?}", other))),
+                };
+                Ok(RemoveItem::Property { variable, property })
+            }
+            Token::Colon => {
+                self.advance();
+                let label = match self.advance() {
+                    Token::Ident(name) => name,
+                    other => return Err(super::CypherError::Parse(format!("expected label name, got {:?}", other))),
+                };
+                Ok(RemoveItem::Label { variable, label })
+            }
+            other => Err(super::CypherError::Parse(format!("expected '.' or ':' after variable in REMOVE, got {:?}", other))),
         }
     }
 

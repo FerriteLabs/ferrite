@@ -20,6 +20,33 @@ pub enum CypherStatement {
         /// Create clause
         create_clause: CreateClause,
     },
+    /// A MATCH + DELETE statement
+    MatchDelete {
+        /// Match clause
+        match_clause: MatchPattern,
+        /// Optional WHERE filter
+        where_clause: Option<WhereExpr>,
+        /// Delete clause
+        delete_clause: DeleteClause,
+    },
+    /// A MATCH + SET statement (update properties/labels)
+    MatchSet {
+        /// Match clause
+        match_clause: MatchPattern,
+        /// Optional WHERE filter
+        where_clause: Option<WhereExpr>,
+        /// Set clause
+        set_clause: SetClause,
+    },
+    /// A MATCH + REMOVE statement (remove properties/labels)
+    MatchRemove {
+        /// Match clause
+        match_clause: MatchPattern,
+        /// Optional WHERE filter
+        where_clause: Option<WhereExpr>,
+        /// Remove clause
+        remove_clause: RemoveClause,
+    },
 }
 
 /// A read-only Cypher query.
@@ -27,6 +54,8 @@ pub enum CypherStatement {
 pub struct CypherQuery {
     /// MATCH pattern
     pub match_clause: MatchPattern,
+    /// Optional OPTIONAL MATCH pattern
+    pub optional_match: Option<MatchPattern>,
     /// Optional WHERE clause
     pub where_clause: Option<WhereExpr>,
     /// RETURN clause
@@ -221,5 +250,68 @@ pub enum CreateElement {
         to: String,
         /// Optional properties
         properties: Option<HashMap<String, PropertyValue>>,
+    },
+}
+
+/// DELETE clause.
+#[derive(Debug, Clone)]
+pub struct DeleteClause {
+    /// Variables to delete
+    pub variables: Vec<String>,
+    /// Whether to use DETACH DELETE (also removes connected edges)
+    pub detach: bool,
+}
+
+/// SET clause for updating properties and labels.
+#[derive(Debug, Clone)]
+pub struct SetClause {
+    /// Items to set
+    pub items: Vec<SetItem>,
+}
+
+/// A single SET item.
+#[derive(Debug, Clone)]
+pub enum SetItem {
+    /// Set a property: `n.name = 'value'`
+    Property {
+        /// Variable name
+        variable: String,
+        /// Property name
+        property: String,
+        /// Value to set
+        value: Expr,
+    },
+    /// Add a label: `n:NewLabel`
+    Label {
+        /// Variable name
+        variable: String,
+        /// Label to add
+        label: String,
+    },
+}
+
+/// REMOVE clause for removing properties and labels.
+#[derive(Debug, Clone)]
+pub struct RemoveClause {
+    /// Items to remove
+    pub items: Vec<RemoveItem>,
+}
+
+/// A single REMOVE item.
+#[derive(Debug, Clone)]
+pub enum RemoveItem {
+    /// Remove a property: `n.name`
+    Property {
+        /// Variable name
+        variable: String,
+        /// Property name
+        property: String,
+    },
+    /// Remove a label: `n:Label`
+    Label {
+        /// Variable name
+        variable: String,
+        /// Label to remove
+        label: String,
     },
 }

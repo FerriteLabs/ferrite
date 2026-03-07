@@ -2,10 +2,14 @@
 //!
 //! Implements a subset of the Cypher graph query language including:
 //! - `MATCH` patterns (nodes, relationships, variable-length paths)
+//! - `OPTIONAL MATCH` for left-join semantics
 //! - `WHERE` clauses with comparison operators
 //! - `RETURN` with property access and aggregation (count, sum, avg, min, max)
 //! - `ORDER BY`, `LIMIT`, `SKIP`
 //! - `CREATE` for nodes and relationships
+//! - `DELETE` / `DETACH DELETE` for removing nodes and edges
+//! - `SET` for updating properties and adding labels
+//! - `REMOVE` for removing properties and labels
 //!
 //! # Examples
 //!
@@ -44,9 +48,10 @@ pub mod parser;
 pub mod planner;
 
 pub use ast::{
-    AggregateFunc, CreateClause, CreateElement, CypherOp, CypherQuery, CypherStatement, Expr,
-    MatchPattern, NodePatternAst, OrderByItem, PropertyAccess, RelDirection, RelPatternAst,
-    ReturnClause, ReturnItem, WhereExpr,
+    AggregateFunc, CreateClause, CreateElement, CypherOp, CypherQuery, CypherStatement,
+    DeleteClause, Expr, MatchPattern, NodePatternAst, OrderByItem, PropertyAccess, RelDirection,
+    RelPatternAst, RemoveClause, RemoveItem, ReturnClause, ReturnItem, SetClause, SetItem,
+    WhereExpr,
 };
 pub use executor::{execute, execute_read_only};
 pub use parser::CypherParser;

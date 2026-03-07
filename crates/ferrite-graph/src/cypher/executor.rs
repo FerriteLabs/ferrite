@@ -22,6 +22,21 @@ pub fn execute(stmt: &CypherStatement, storage: &mut GraphStorage) -> Result<Que
             match_clause,
             create_clause,
         } => execute_match_create(match_clause, create_clause, storage),
+        CypherStatement::MatchDelete {
+            match_clause,
+            where_clause,
+            delete_clause,
+        } => execute_match_delete(match_clause, where_clause.as_ref(), delete_clause, storage),
+        CypherStatement::MatchSet {
+            match_clause,
+            where_clause,
+            set_clause,
+        } => execute_match_set(match_clause, where_clause.as_ref(), set_clause, storage),
+        CypherStatement::MatchRemove {
+            match_clause,
+            where_clause,
+            remove_clause,
+        } => execute_match_remove(match_clause, where_clause.as_ref(), remove_clause, storage),
     }
 }
 
@@ -52,6 +67,20 @@ fn execute_query(query: &CypherQuery, storage: &GraphStorage) -> Result<QueryRes
 
     // 1. Expand MATCH patterns into bindings
     let mut bindings = expand_match(&query.match_clause, storage)?;
+
+    // 1b. Expand OPTIONAL MATCH (left-join semantics: keep all bindings, add NULLs for non-matches)
+    if let Some(ref optional) = query.optional_match {
+        let mut new_bindings = Vec::new();
+        for binding in &bindings {
+            let optional_results = expand_match_with_bindings(optional, &[binding.clone()], storage)?;
+            if optional_results.is_empty() {
+                new_bindings.push(binding.clone());
+            } else {
+                new_bindings.extend(optional_results);
+            }
+        }
+        bindings = new_bindings;
+    }
 
     // 2. Apply WHERE filter
     if let Some(ref where_expr) = query.where_clause {
@@ -762,6 +791,193 @@ fn execute_match_create(
     })
 }
 
+/// Expand match with existing bindings as a starting point (for OPTIONAL MATCH).
+fn expand_match_with_bindings(
+    match_pattern: &MatchPattern,
+    bindings: &[Bindings],
+    storage: &GraphStorage,
+) -> Result<Vec<Bindings>, super::CypherError> {
+    let mut current = bindings.to_vec();
+    for pattern_part in &match_pattern.patterns {
+        current = expand_pattern_part(pattern_part, &current, storage)?;
+    }
+    Ok(current)
+}
+
+fn execute_match_delete(
+    match_clause: &MatchPattern,
+    where_clause: Option<&WhereExpr>,
+    delete_clause: &DeleteClause,
+    storage: &mut GraphStorage,
+) -> Result<QueryResult, super::CypherError> {
+    let start = std::time::Instant::now();
+    let mut bindings = expand_match(match_clause, storage)?;
+
+    if let Some(where_expr) = where_clause {
+        bindings.retain(|b| evaluate_where(where_expr, b, storage));
+    }
+
+    let mut deleted_vertices = std::collections::HashSet::new();
+    let mut deleted_edges = std::collections::HashSet::new();
+
+    for binding in &bindings {
+        for var in &delete_clause.variables {
+            match binding.get(var) {
+                Some(BoundValue::Vertex(v)) => {
+                    if !deleted_vertices.contains(&v.id) {
+                        if delete_clause.detach {
+                            // Remove all connected edges first
+                            let edge_ids = storage.get_edges(v.id);
+                            for eid in edge_ids {
+                                if !deleted_edges.contains(&eid) {
+                                    let _ = storage.remove_edge(eid);
+                                    deleted_edges.insert(eid);
+                                }
+                            }
+                        }
+                        let _ = storage.remove_vertex(v.id);
+                        deleted_vertices.insert(v.id);
+                    }
+                }
+                Some(BoundValue::Edge(e)) => {
+                    if !deleted_edges.contains(&e.id) {
+                        let _ = storage.remove_edge(e.id);
+                        deleted_edges.insert(e.id);
+                    }
+                }
+                None => {
+                    return Err(super::CypherError::UnboundVariable(var.clone()));
+                }
+            }
+        }
+    }
+
+    Ok(QueryResult {
+        rows: Vec::new(),
+        columns: vec!["deleted".to_string()],
+        took_ms: start.elapsed().as_millis() as u64,
+    })
+}
+
+fn execute_match_set(
+    match_clause: &MatchPattern,
+    where_clause: Option<&WhereExpr>,
+    set_clause: &SetClause,
+    storage: &mut GraphStorage,
+) -> Result<QueryResult, super::CypherError> {
+    let start = std::time::Instant::now();
+    let mut bindings = expand_match(match_clause, storage)?;
+
+    if let Some(where_expr) = where_clause {
+        bindings.retain(|b| evaluate_where(where_expr, b, storage));
+    }
+
+    for binding in &bindings {
+        for item in &set_clause.items {
+            match item {
+                SetItem::Property { variable, property, value } => {
+                    let prop_value = match value {
+                        Expr::Literal(v) => v.clone(),
+                        Expr::Property(pa) => {
+                            match get_property_from_binding(binding, &pa.variable, &pa.property) {
+                                Some(v) => v,
+                                None => continue,
+                            }
+                        }
+                        _ => continue,
+                    };
+
+                    match binding.get(variable) {
+                        Some(BoundValue::Vertex(v)) => {
+                            if let Some(vertex) = storage.get_vertex_mut(v.id) {
+                                vertex.set(property, prop_value);
+                            }
+                        }
+                        Some(BoundValue::Edge(e)) => {
+                            if let Some(edge) = storage.get_edge_mut(e.id) {
+                                edge.properties.insert(property.clone(), prop_value);
+                            }
+                        }
+                        None => return Err(super::CypherError::UnboundVariable(variable.clone())),
+                    }
+                }
+                SetItem::Label { variable, label } => {
+                    match binding.get(variable) {
+                        Some(BoundValue::Vertex(v)) => {
+                            if let Some(vertex) = storage.get_vertex_mut(v.id) {
+                                vertex.add_label(label);
+                            }
+                        }
+                        _ => return Err(super::CypherError::Execution(
+                            format!("cannot add label to non-node variable '{}'", variable),
+                        )),
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(QueryResult {
+        rows: Vec::new(),
+        columns: Vec::new(),
+        took_ms: start.elapsed().as_millis() as u64,
+    })
+}
+
+fn execute_match_remove(
+    match_clause: &MatchPattern,
+    where_clause: Option<&WhereExpr>,
+    remove_clause: &RemoveClause,
+    storage: &mut GraphStorage,
+) -> Result<QueryResult, super::CypherError> {
+    let start = std::time::Instant::now();
+    let mut bindings = expand_match(match_clause, storage)?;
+
+    if let Some(where_expr) = where_clause {
+        bindings.retain(|b| evaluate_where(where_expr, b, storage));
+    }
+
+    for binding in &bindings {
+        for item in &remove_clause.items {
+            match item {
+                RemoveItem::Property { variable, property } => {
+                    match binding.get(variable) {
+                        Some(BoundValue::Vertex(v)) => {
+                            if let Some(vertex) = storage.get_vertex_mut(v.id) {
+                                vertex.remove(property);
+                            }
+                        }
+                        Some(BoundValue::Edge(e)) => {
+                            if let Some(edge) = storage.get_edge_mut(e.id) {
+                                edge.properties.remove(property);
+                            }
+                        }
+                        None => return Err(super::CypherError::UnboundVariable(variable.clone())),
+                    }
+                }
+                RemoveItem::Label { variable, label } => {
+                    match binding.get(variable) {
+                        Some(BoundValue::Vertex(v)) => {
+                            if let Some(vertex) = storage.get_vertex_mut(v.id) {
+                                vertex.remove_label(label);
+                            }
+                        }
+                        _ => return Err(super::CypherError::Execution(
+                            format!("cannot remove label from non-node variable '{}'", variable),
+                        )),
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(QueryResult {
+        rows: Vec::new(),
+        columns: Vec::new(),
+        took_ms: start.elapsed().as_millis() as u64,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -982,5 +1198,172 @@ mod tests {
             "MATCH (n:Person) WHERE n.name = 'Alice' RETURN n.name, n.age",
         );
         assert_eq!(result.len(), 1);
+    }
+
+    // ── Tests for DELETE / SET / REMOVE / OPTIONAL MATCH ──
+
+    fn run_mutation(storage: &mut GraphStorage, cypher: &str) -> QueryResult {
+        let stmt = CypherParser::parse(cypher).unwrap();
+        execute(&stmt, storage).unwrap()
+    }
+
+    #[test]
+    fn test_match_set_property() {
+        let mut storage = setup_test_storage();
+        assert_eq!(storage.vertex_count(), 4);
+
+        // SET Alice's age to 31
+        run_mutation(
+            &mut storage,
+            "MATCH (n:Person) WHERE n.name = 'Alice' SET n.age = 31",
+        );
+
+        let alice = storage.get_vertex(VertexId::new(100)).unwrap();
+        assert_eq!(
+            alice.properties.get("age"),
+            Some(&PropertyValue::Integer(31))
+        );
+    }
+
+    #[test]
+    fn test_match_set_string_property() {
+        let mut storage = setup_test_storage();
+
+        run_mutation(
+            &mut storage,
+            "MATCH (n:Person) WHERE n.name = 'Bob' SET n.city = 'Portland'",
+        );
+
+        let bob = storage.get_vertex(VertexId::new(101)).unwrap();
+        assert_eq!(
+            bob.properties.get("city"),
+            Some(&PropertyValue::String("Portland".to_string()))
+        );
+    }
+
+    #[test]
+    fn test_match_set_label() {
+        let mut storage = setup_test_storage();
+
+        run_mutation(
+            &mut storage,
+            "MATCH (n:Person) WHERE n.name = 'Alice' SET n:Employee",
+        );
+
+        let alice = storage.get_vertex(VertexId::new(100)).unwrap();
+        assert!(alice.labels.contains(&"Employee".to_string()));
+        assert!(alice.labels.contains(&"Person".to_string()));
+    }
+
+    #[test]
+    fn test_match_remove_property() {
+        let mut storage = setup_test_storage();
+
+        // Verify age exists first
+        let alice = storage.get_vertex(VertexId::new(100)).unwrap();
+        assert!(alice.properties.contains_key("age"));
+
+        run_mutation(
+            &mut storage,
+            "MATCH (n:Person) WHERE n.name = 'Alice' REMOVE n.age",
+        );
+
+        let alice = storage.get_vertex(VertexId::new(100)).unwrap();
+        assert!(!alice.properties.contains_key("age"));
+    }
+
+    #[test]
+    fn test_match_remove_label() {
+        let mut storage = setup_test_storage();
+
+        // First add a label
+        run_mutation(
+            &mut storage,
+            "MATCH (n:Person) WHERE n.name = 'Bob' SET n:Temp",
+        );
+        let bob = storage.get_vertex(VertexId::new(101)).unwrap();
+        assert!(bob.labels.contains(&"Temp".to_string()));
+
+        // Then remove it
+        run_mutation(
+            &mut storage,
+            "MATCH (n:Person) WHERE n.name = 'Bob' REMOVE n:Temp",
+        );
+        let bob = storage.get_vertex(VertexId::new(101)).unwrap();
+        assert!(!bob.labels.contains(&"Temp".to_string()));
+    }
+
+    #[test]
+    fn test_match_delete_node() {
+        let mut storage = setup_test_storage();
+        assert_eq!(storage.vertex_count(), 4);
+
+        // DETACH DELETE removes node and its edges
+        run_mutation(
+            &mut storage,
+            "MATCH (n:Company) DETACH DELETE n",
+        );
+
+        assert_eq!(storage.vertex_count(), 3);
+        assert!(storage.get_vertex(VertexId::new(103)).is_none());
+    }
+
+    #[test]
+    fn test_match_delete_filtered() {
+        let mut storage = setup_test_storage();
+        assert_eq!(storage.vertex_count(), 4);
+
+        run_mutation(
+            &mut storage,
+            "MATCH (n:Person) WHERE n.name = 'Charlie' DETACH DELETE n",
+        );
+
+        assert_eq!(storage.vertex_count(), 3);
+        assert!(storage.get_vertex(VertexId::new(102)).is_none());
+    }
+
+    #[test]
+    fn test_optional_match_returns_all_rows() {
+        let storage = setup_test_storage();
+
+        // OPTIONAL MATCH should include persons even if they have no WORKS_AT edge
+        // Charlie has no WORKS_AT relationship
+        let stmt = CypherParser::parse(
+            "MATCH (n:Person) OPTIONAL MATCH (n)-[:WORKS_AT]->(c:Company) RETURN n, c",
+        )
+        .unwrap();
+
+        match stmt {
+            CypherStatement::Query(ref q) => {
+                let result = execute_read_only(q, &storage).unwrap();
+                // Alice→Acme, Bob→Acme, Charlie→(no match but still included)
+                assert!(result.len() >= 3);
+            }
+            _ => panic!("expected query"),
+        }
+    }
+
+    #[test]
+    fn test_parse_delete_without_detach() {
+        // Simple DELETE (without DETACH) should also parse
+        let stmt = CypherParser::parse("MATCH (n:Person) WHERE n.name = 'Alice' DELETE n");
+        assert!(stmt.is_ok());
+    }
+
+    #[test]
+    fn test_parse_set_multiple_properties() {
+        // SET with comma-separated items
+        let stmt = CypherParser::parse(
+            "MATCH (n:Person) WHERE n.name = 'Alice' SET n.age = 31, n.city = 'NYC'",
+        );
+        assert!(stmt.is_ok());
+    }
+
+    #[test]
+    fn test_parse_remove_multiple() {
+        let stmt = CypherParser::parse(
+            "MATCH (n:Person) WHERE n.name = 'Alice' REMOVE n.age, n:Person",
+        );
+        assert!(stmt.is_ok());
     }
 }
