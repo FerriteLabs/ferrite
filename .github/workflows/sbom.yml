@@ -1,0 +1,59 @@
+name: Cargo SBOM Generation
+
+on:
+  release:
+    types: [published]
+  schedule:
+    # Weekly on Mondays at 05:00 UTC
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cargo-sbom:
+    name: Generate Cargo SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-cyclonedx
+        run: cargo install cargo-cyclonedx
+
+      - name: Generate CycloneDX SBOM
+        run: cargo cyclonedx --all --format json --output-cdx
+
+      - name: Rename SBOM for clarity
+        run: |
+          if [ -f bom.json ]; then
+            mv bom.json ferrite-cargo-sbom-cyclonedx.json
+          fi
+
+      - name: Generate dependency tree
+        run: cargo tree --all-features --depth 3 > ferrite-dependency-tree.txt
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cargo-sbom-${{ github.sha }}
+          path: |
+            ferrite-cargo-sbom-cyclonedx.json
+            ferrite-dependency-tree.txt
+          retention-days: 90
+
+      - name: Upload SBOM as release asset
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" \
+            ferrite-cargo-sbom-cyclonedx.json \
+            ferrite-dependency-tree.txt \
+            --clobber

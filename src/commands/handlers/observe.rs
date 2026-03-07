@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::sync::OnceLock;
 
 use bytes::Bytes;
+use parking_lot::RwLock;
 
 use crate::protocol::Frame;
 use ferrite_core::observability::key_heatmap::{HeatmapOp, KeyHeatmap};
@@ -14,6 +15,9 @@ use super::err_frame;
 
 /// Global key heatmap instance.
 static KEY_HEATMAP: OnceLock<KeyHeatmap> = OnceLock::new();
+
+/// Global command latency tracker.
+static LATENCY_TRACKER: OnceLock<LatencyTracker> = OnceLock::new();
 
 /// Return the global heatmap singleton.
 pub fn global_heatmap() -> &'static KeyHeatmap {
@@ -176,20 +180,38 @@ fn observe_stats() -> Frame {
     Frame::Map(map)
 }
 
-/// OBSERVE.LATENCY [command_name] — return latency percentiles placeholder.
+/// OBSERVE.LATENCY [command_name] — return latency percentiles from tracked commands.
 fn observe_latency(args: &[String]) -> Frame {
-    // Latency tracking is a placeholder; return default percentile structure
+    let tracker = get_latency_tracker();
     let cmd = args.first().map(|s| s.as_str()).unwrap_or("ALL");
+
+    let percentiles = tracker.percentiles(cmd);
 
     let mut map = HashMap::new();
     map.insert(
         Bytes::from_static(b"command"),
         Frame::bulk(Bytes::from(cmd.to_string())),
     );
-    map.insert(Bytes::from_static(b"p50"), Frame::Double(0.0));
-    map.insert(Bytes::from_static(b"p90"), Frame::Double(0.0));
-    map.insert(Bytes::from_static(b"p99"), Frame::Double(0.0));
-    map.insert(Bytes::from_static(b"p99.9"), Frame::Double(0.0));
+    map.insert(
+        Bytes::from_static(b"samples"),
+        Frame::Integer(percentiles.count as i64),
+    );
+    map.insert(
+        Bytes::from_static(b"p50_us"),
+        Frame::Double(percentiles.p50),
+    );
+    map.insert(
+        Bytes::from_static(b"p90_us"),
+        Frame::Double(percentiles.p90),
+    );
+    map.insert(
+        Bytes::from_static(b"p99_us"),
+        Frame::Double(percentiles.p99),
+    );
+    map.insert(
+        Bytes::from_static(b"p999_us"),
+        Frame::Double(percentiles.p999),
+    );
     Frame::Map(map)
 }
 
@@ -211,4 +233,98 @@ fn observe_help() -> Frame {
         Frame::bulk("OBSERVE.LATENCY [command_name]"),
         Frame::bulk("  Return latency percentiles (P50, P90, P99, P99.9)."),
     ])
+}
+
+// ── Latency Tracker ─────────────────────────────────────────────────────
+
+const MAX_SAMPLES_PER_COMMAND: usize = 10_000;
+
+/// Lightweight in-process latency tracker for OBSERVE.LATENCY.
+///
+/// Stores the most recent samples per command in a ring buffer and computes
+/// percentiles on demand. Thread-safe via `RwLock`.
+struct LatencyTracker {
+    samples: RwLock<HashMap<String, Vec<f64>>>,
+}
+
+/// Computed percentile result.
+struct LatencyPercentiles {
+    count: usize,
+    p50: f64,
+    p90: f64,
+    p99: f64,
+    p999: f64,
+}
+
+impl LatencyTracker {
+    fn new() -> Self {
+        Self {
+            samples: RwLock::new(HashMap::new()),
+        }
+    }
+
+    /// Record a command latency in microseconds.
+    fn record(&self, command: &str, latency_us: f64) {
+        let mut map = self.samples.write();
+        let entry = map
+            .entry(command.to_uppercase())
+            .or_insert_with(Vec::new);
+        if entry.len() >= MAX_SAMPLES_PER_COMMAND {
+            entry.remove(0);
+        }
+        entry.push(latency_us);
+    }
+
+    /// Compute percentiles for a command (or "ALL" for aggregate).
+    fn percentiles(&self, command: &str) -> LatencyPercentiles {
+        let map = self.samples.read();
+
+        let mut combined: Vec<f64> = if command == "ALL" {
+            map.values().flat_map(|v| v.iter().copied()).collect()
+        } else {
+            match map.get(&command.to_uppercase()) {
+                Some(v) => v.clone(),
+                None => {
+                    return LatencyPercentiles {
+                        count: 0,
+                        p50: 0.0,
+                        p90: 0.0,
+                        p99: 0.0,
+                        p999: 0.0,
+                    }
+                }
+            }
+        };
+
+        if combined.is_empty() {
+            return LatencyPercentiles {
+                count: 0,
+                p50: 0.0,
+                p90: 0.0,
+                p99: 0.0,
+                p999: 0.0,
+            };
+        }
+
+        combined.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+        let len = combined.len();
+
+        LatencyPercentiles {
+            count: len,
+            p50: combined[len * 50 / 100],
+            p90: combined[len * 90 / 100],
+            p99: combined[(len * 99 / 100).min(len - 1)],
+            p999: combined[(len * 999 / 1000).min(len - 1)],
+        }
+    }
+}
+
+fn get_latency_tracker() -> &'static LatencyTracker {
+    LATENCY_TRACKER.get_or_init(LatencyTracker::new)
+}
+
+/// Record a command's latency from the request handler path.
+/// Call this after each command execution.
+pub fn record_command_latency(command: &str, duration: std::time::Duration) {
+    get_latency_tracker().record(command, duration.as_micros() as f64);
 }
