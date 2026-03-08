@@ -712,7 +712,7 @@ impl SourceSyncManager {
             let doc_key = format!("{}:{}", id, path_str);
 
             if detector.has_changed(&doc_key, hash) {
-                if detector.len() > 0 && !detector.is_empty() {
+                if !detector.is_empty() && !detector.is_empty() {
                     // Existing doc updated vs. brand-new doc
                     if detector.has_changed(&doc_key, 0) && !detector.is_empty() {
                         // First time seeing this key → added

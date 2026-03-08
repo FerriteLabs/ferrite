@@ -439,7 +439,7 @@ impl PersistentAgentMemoryStore {
 }
 
 fn is_expired(entry: &StoreMemoryEntry, now: u64) -> bool {
-    entry.expires_at.map_or(false, |exp| now > exp)
+    entry.expires_at.is_some_and(|exp| now > exp)
 }
 
 // ---------------------------------------------------------------------------
