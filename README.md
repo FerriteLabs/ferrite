@@ -64,7 +64,7 @@ redis-cli INFO
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ferritelabs/ferrite/main/scripts/install.sh | bash
-# or: curl -fsSL https://raw.githubusercontent.com/ferritelabs/ferrite/main/scripts/install.sh | bash -s -- v0.1.0
+# or: curl -fsSL https://raw.githubusercontent.com/ferritelabs/ferrite/main/scripts/install.sh | bash -s -- v0.3.0
 ```
 
 The installer writes a default config to `~/.config/ferrite/ferrite.toml` (unless
@@ -338,7 +338,7 @@ max_memory = 1073741824
 
 [persistence]
 aof_enabled = true
-aof_sync = "everysecond"
+aof_sync = "everysec"
 checkpoint_interval = 300
 
 [metrics]

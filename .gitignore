@@ -37,4 +37,3 @@ dist/
 # Prevent accidental binary artifacts in repo root
 warming
 *.exe
-echo ___BEGIN___COMMAND_OUTPUT_MARKER___.rs
