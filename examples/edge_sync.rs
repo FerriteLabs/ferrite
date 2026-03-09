@@ -1,4 +1,4 @@
-#![allow(clippy::unwrap_used)]
+#![allow(clippy::unwrap_used, clippy::print_stdout)]
 //! Edge-to-Cloud Synchronisation Example
 //!
 //! Demonstrates how an edge device can:
@@ -26,16 +26,16 @@ fn main() -> anyhow::Result<()> {
     let readings: Vec<(&str, &[&str])> = vec![
         ("temperature", &["22.5", "23.1", "22.8", "23.4", "22.9"]),
         ("humidity", &["45.2", "46.0", "44.8", "45.5", "46.1"]),
-        ("pressure", &["1013.2", "1013.5", "1012.9", "1013.1", "1013.4"]),
+        (
+            "pressure",
+            &["1013.2", "1013.5", "1012.9", "1013.1", "1013.4"],
+        ),
     ];
 
     for (sensor, values) in &readings {
         let key = format!("edge:sensor:{}", sensor);
         for val in *values {
-            db.rpush(
-                key.clone(),
-                &[bytes::Bytes::from(val.to_string())],
-            )?;
+            db.rpush(key.clone(), &[bytes::Bytes::from(val.to_string())])?;
         }
         println!("  {} → {} readings queued", sensor, values.len());
     }
@@ -81,10 +81,7 @@ fn main() -> anyhow::Result<()> {
             "{{\"sensor\":\"{}\",\"bucket\":\"{}\",\"status\":\"pending\"}}",
             sensor, bucket
         );
-        db.rpush(
-            "edge:sync:queue",
-            &[bytes::Bytes::from(sync_payload)],
-        )?;
+        db.rpush("edge:sync:queue", &[bytes::Bytes::from(sync_payload)])?;
     }
     let queue_len = db.lrange("edge:sync:queue", 0, -1)?.len();
     println!("  {} sync operations queued", queue_len);

@@ -42,7 +42,7 @@ impl KvModel {
     /// - `Read`   → returns the current value (or `None`).
     /// - `Write`  → stores the value, returns `None`.
     /// - `Cas`    → if current == expected, stores new value and returns
-    ///              `Some(new_value)`. Otherwise returns the current value.
+    ///   `Some(new_value)`. Otherwise returns the current value.
     /// - `Delete` → removes the key, returns the old value.
     pub fn apply(&mut self, op: &Operation) -> Option<String> {
         match op {

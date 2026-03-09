@@ -41,6 +41,7 @@
 //! node.sync().await?;
 //! ```
 
+pub mod delta_sync;
 pub mod mesh;
 pub mod offline_sync;
 pub mod resource_monitor;

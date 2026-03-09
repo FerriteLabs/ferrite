@@ -498,14 +498,11 @@ impl HnswIndex {
         ep_id: u64,
         layer: usize,
     ) -> Candidate {
-        let ep_node = match nodes.get(&ep_id) {
-            Some(n) => n,
-            None => {
-                return Candidate {
-                    id: ep_id,
-                    distance: f32::MAX,
-                }
-            }
+        let Some(ep_node) = nodes.get(&ep_id) else {
+            return Candidate {
+                id: ep_id,
+                distance: f32::MAX,
+            };
         };
 
         let mut current = Candidate {
@@ -547,9 +544,8 @@ impl HnswIndex {
         ef: usize,
         layer: usize,
     ) -> Vec<Candidate> {
-        let ep_node = match nodes.get(&ep_id) {
-            Some(n) => n,
-            None => return Vec::new(),
+        let Some(ep_node) = nodes.get(&ep_id) else {
+            return Vec::new();
         };
 
         let mut visited = HashSet::new();

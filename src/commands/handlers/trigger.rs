@@ -37,9 +37,8 @@ pub async fn create(
     let pattern_str = String::from_utf8_lossy(pattern).to_string();
 
     // Parse event type
-    let event = match EventType::parse_str(&event_str) {
-        Some(e) => e,
-        None => return Frame::error(format!("ERR Unknown event type: {}", event_str)),
+    let Some(event) = EventType::parse_str(&event_str) else {
+        return Frame::error(format!("ERR Unknown event type: {}", event_str));
     };
 
     // Parse pattern

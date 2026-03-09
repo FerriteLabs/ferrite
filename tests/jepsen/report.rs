@@ -193,11 +193,7 @@ impl ReportGenerator {
         // Account for "║ " prefix and " ║" suffix (4 chars of chrome).
         let inner_width = width.saturating_sub(2);
         let display_len = Self::display_width(text);
-        let padding = if display_len < inner_width {
-            inner_width - display_len
-        } else {
-            0
-        };
+        let padding = inner_width.saturating_sub(display_len);
         format!("║ {}{} ║", text, " ".repeat(padding))
     }
 

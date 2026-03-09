@@ -99,9 +99,8 @@ pub fn conv_delete(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
         return err_frame("wrong number of arguments for 'CONV.DELETE' command");
     }
 
-    let conv_id = match std::str::from_utf8(&args[0]) {
-        Ok(s) => s,
-        Err(_) => return err_frame("invalid conversation_id"),
+    let Ok(conv_id) = std::str::from_utf8(&args[0]) else {
+        return err_frame("invalid conversation_id");
     };
 
     if get_store().delete(conv_id) {
@@ -119,9 +118,8 @@ pub fn conv_message(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
         return err_frame("wrong number of arguments for 'CONV.MESSAGE' command");
     }
 
-    let conv_id = match std::str::from_utf8(&args[0]) {
-        Ok(s) => s,
-        Err(_) => return err_frame("invalid conversation_id"),
+    let Ok(conv_id) = std::str::from_utf8(&args[0]) else {
+        return err_frame("invalid conversation_id");
     };
 
     let role_str = match std::str::from_utf8(&args[1]) {
@@ -200,9 +198,8 @@ pub fn conv_context(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
         return err_frame("wrong number of arguments for 'CONV.CONTEXT' command");
     }
 
-    let conv_id = match std::str::from_utf8(&args[0]) {
-        Ok(s) => s,
-        Err(_) => return err_frame("invalid conversation_id"),
+    let Ok(conv_id) = std::str::from_utf8(&args[0]) else {
+        return err_frame("invalid conversation_id");
     };
 
     // Check for token limit
@@ -262,9 +259,8 @@ pub fn conv_list(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
         return err_frame("wrong number of arguments for 'CONV.LIST' command");
     }
 
-    let user_id = match std::str::from_utf8(&args[0]) {
-        Ok(s) => s,
-        Err(_) => return err_frame("invalid user_id"),
+    let Ok(user_id) = std::str::from_utf8(&args[0]) else {
+        return err_frame("invalid user_id");
     };
 
     let conversations = get_store().list_for_user(user_id);
@@ -281,9 +277,8 @@ pub fn conv_info(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
         return err_frame("wrong number of arguments for 'CONV.INFO' command");
     }
 
-    let conv_id = match std::str::from_utf8(&args[0]) {
-        Ok(s) => s,
-        Err(_) => return err_frame("invalid conversation_id"),
+    let Ok(conv_id) = std::str::from_utf8(&args[0]) else {
+        return err_frame("invalid conversation_id");
     };
 
     match get_store().get(conv_id) {
@@ -335,9 +330,8 @@ pub fn conv_clear(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
         return err_frame("wrong number of arguments for 'CONV.CLEAR' command");
     }
 
-    let conv_id = match std::str::from_utf8(&args[0]) {
-        Ok(s) => s,
-        Err(_) => return err_frame("invalid conversation_id"),
+    let Ok(conv_id) = std::str::from_utf8(&args[0]) else {
+        return err_frame("invalid conversation_id");
     };
 
     match get_store().clear_messages(conv_id) {
@@ -354,9 +348,8 @@ pub fn conv_system(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
         return err_frame("wrong number of arguments for 'CONV.SYSTEM' command");
     }
 
-    let conv_id = match std::str::from_utf8(&args[0]) {
-        Ok(s) => s,
-        Err(_) => return err_frame("invalid conversation_id"),
+    let Ok(conv_id) = std::str::from_utf8(&args[0]) else {
+        return err_frame("invalid conversation_id");
     };
 
     let prompt = match std::str::from_utf8(&args[1]) {
@@ -378,9 +371,8 @@ pub fn conv_archive(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
         return err_frame("wrong number of arguments for 'CONV.ARCHIVE' command");
     }
 
-    let conv_id = match std::str::from_utf8(&args[0]) {
-        Ok(s) => s,
-        Err(_) => return err_frame("invalid conversation_id"),
+    let Ok(conv_id) = std::str::from_utf8(&args[0]) else {
+        return err_frame("invalid conversation_id");
     };
 
     match get_store().archive(conv_id) {
@@ -395,9 +387,8 @@ pub fn conv_archive(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
 pub fn conv_stats(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     if !args.is_empty() {
         // Stats for specific conversation
-        let conv_id = match std::str::from_utf8(&args[0]) {
-            Ok(s) => s,
-            Err(_) => return err_frame("invalid conversation_id"),
+        let Ok(conv_id) = std::str::from_utf8(&args[0]) else {
+            return err_frame("invalid conversation_id");
         };
 
         match get_store().conversation_stats(conv_id) {
@@ -447,10 +438,6 @@ pub fn conv_cleanup(_ctx: &HandlerContext<'_>, _args: &[Bytes]) -> Frame {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn make_args(args: &[&str]) -> Vec<Bytes> {
-        args.iter().map(|s| Bytes::from(s.to_string())).collect()
-    }
 
     #[test]
     fn test_conv_create() {

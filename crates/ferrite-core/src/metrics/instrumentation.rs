@@ -228,7 +228,7 @@ pub struct KeyspaceMetrics {
 }
 
 /// Persistence engine metrics.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct PersistenceMetrics {
     /// Whether the AOF is enabled.
     pub aof_enabled: bool,
@@ -240,18 +240,6 @@ pub struct PersistenceMetrics {
     pub rdb_last_save_time: Option<DateTime<Utc>>,
     /// Number of changes since the last RDB save.
     pub rdb_changes_since_save: u64,
-}
-
-impl Default for PersistenceMetrics {
-    fn default() -> Self {
-        Self {
-            aof_enabled: false,
-            aof_size_bytes: 0,
-            aof_last_write_ms: 0,
-            rdb_last_save_time: None,
-            rdb_changes_since_save: 0,
-        }
-    }
 }
 
 /// Replication statistics.

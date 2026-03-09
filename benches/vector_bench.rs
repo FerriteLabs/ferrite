@@ -1,4 +1,10 @@
-#![allow(clippy::unwrap_used, unused_must_use, dead_code, unused_imports)]
+#![allow(
+    clippy::unwrap_used,
+    unused_must_use,
+    dead_code,
+    unused_imports,
+    missing_docs
+)]
 //! Vector search and semantic cache benchmarks
 //!
 //! Measures performance of vector operations across different index types,

@@ -599,7 +599,7 @@ async fn test_concurrent_offset_updates_consistency() {
 // ============================================================================
 
 /// Test behavior with many keys (memory pressure scenario).
-#[ignore] // Long-running stress test
+#[ignore = "Long-running stress test"]
 #[tokio::test]
 async fn test_many_keys_stress() {
     let store = Arc::new(Store::new(16));
@@ -650,7 +650,7 @@ async fn test_large_payload_handling() {
 }
 
 /// Test rapid connect/disconnect cycles (connection churn) against a real server.
-#[ignore] // Requires server startup
+#[ignore = "Requires server startup"]
 #[tokio::test]
 async fn test_connection_churn() {
     let port = start_test_server().await;
@@ -674,7 +674,7 @@ async fn test_connection_churn() {
 }
 
 /// Test concurrent SET/GET against a real server from multiple connections.
-#[ignore] // Requires server startup
+#[ignore = "Requires server startup"]
 #[tokio::test]
 async fn test_concurrent_server_operations() {
     let port = start_test_server().await;
@@ -1119,7 +1119,7 @@ async fn test_backlog_concurrent_push_integrity() {
 // ============================================================================
 
 /// Test that a server handles rapid key creation and deletion gracefully.
-#[ignore] // Requires server startup
+#[ignore = "Requires server startup"]
 #[tokio::test]
 async fn test_server_rapid_create_delete_cycle() {
     let port = start_test_server().await;
@@ -1140,7 +1140,7 @@ async fn test_server_rapid_create_delete_cycle() {
 
 /// Test pipeline saturation: send many commands without reading responses,
 /// then read all responses.
-#[ignore] // Requires server startup
+#[ignore = "Requires server startup"]
 #[tokio::test]
 async fn test_pipeline_saturation() {
     let port = start_test_server().await;

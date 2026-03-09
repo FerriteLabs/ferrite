@@ -79,9 +79,8 @@ pub fn scan(
     let mut keys: Vec<(u64, Bytes)> = Vec::new();
 
     for key in store.keys(db) {
-        let value = match store.get(db, &key) {
-            Some(value) => value,
-            None => continue,
+        let Some(value) = store.get(db, &key) else {
+            continue;
         };
 
         // Apply type filter if specified

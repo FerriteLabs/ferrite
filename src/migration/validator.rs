@@ -417,6 +417,6 @@ mod tests {
             duration_ms: 100,
         };
 
-        assert_eq!(result.pass_rate(), 80.0);
+        assert!((result.pass_rate() - 80.0).abs() < f64::EPSILON);
     }
 }

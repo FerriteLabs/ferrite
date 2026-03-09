@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout)]
 //! AI Features Example
 //!
 //! Demonstrates Ferrite's AI/ML capabilities:

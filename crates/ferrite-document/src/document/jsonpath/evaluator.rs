@@ -79,9 +79,8 @@ fn index(value: &Value, idx: i64) -> Option<&Value> {
 }
 
 fn slice(value: &Value, start: Option<i64>, end: Option<i64>, step: Option<i64>) -> Vec<&Value> {
-    let arr = match value {
-        Value::Array(arr) => arr,
-        _ => return vec![],
+    let Value::Array(arr) = value else {
+        return vec![];
     };
 
     let len = arr.len() as i64;

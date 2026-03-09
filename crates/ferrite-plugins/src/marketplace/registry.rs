@@ -316,13 +316,11 @@ fn semver_matches(version: &str, requirement: &str) -> bool {
         (">=", req) // default to >= for bare versions
     };
 
-    let v = match parse_semver(version) {
-        Some(v) => v,
-        None => return false,
+    let Some(v) = parse_semver(version) else {
+        return false;
     };
-    let r = match parse_semver(req_ver) {
-        Some(r) => r,
-        None => return false,
+    let Some(r) = parse_semver(req_ver) else {
+        return false;
     };
 
     match op {

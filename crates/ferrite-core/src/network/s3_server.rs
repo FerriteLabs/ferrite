@@ -104,16 +104,23 @@ impl S3Server {
     }
 }
 
+/// Callback type for getting a value by database index and key.
+type GetFn = dyn Fn(u8, &str) -> Option<Vec<u8>> + Send + Sync;
+/// Callback type for setting a value by database index, key, and body.
+type SetFn = dyn Fn(u8, &str, &[u8]) -> bool + Send + Sync;
+/// Callback type for deleting or checking existence by database index and key.
+type KeyOpFn = dyn Fn(u8, &str) -> bool + Send + Sync;
+
 /// Store operation callbacks for the S3 server.
 pub struct StoreOps {
     /// Get a value by database index and key.
-    pub get: Box<dyn Fn(u8, &str) -> Option<Vec<u8>> + Send + Sync>,
+    pub get: Box<GetFn>,
     /// Set a value by database index, key, and body.
-    pub set: Box<dyn Fn(u8, &str, &[u8]) -> bool + Send + Sync>,
+    pub set: Box<SetFn>,
     /// Delete a key by database index and key.
-    pub del: Box<dyn Fn(u8, &str) -> bool + Send + Sync>,
+    pub del: Box<KeyOpFn>,
     /// Check existence by database index and key.
-    pub exists: Box<dyn Fn(u8, &str) -> bool + Send + Sync>,
+    pub exists: Box<KeyOpFn>,
 }
 
 async fn handle_s3_request(

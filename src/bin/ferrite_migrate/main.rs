@@ -4,6 +4,7 @@
 //! migrations from Redis to Ferrite.
 #![allow(clippy::print_stdout, clippy::print_stderr)]
 
+use std::path::Path;
 use std::process::ExitCode;
 use std::time::Duration;
 
@@ -1218,7 +1219,7 @@ async fn import_rdb(
             stream.write_all(cmd.as_bytes()).await?;
             let mut buf = [0u8; 256];
             // Consume the SELECT response
-            stream.read(&mut buf).await?;
+            let _ = stream.read(&mut buf).await?;
         }
 
         for entry in &db.entries {
@@ -1268,13 +1269,18 @@ async fn import_rdb(
                     for se in entries {
                         let id = format!("{}-{}", se.id.0, se.id.1);
                         let xadd = build_resp_xadd_cmd(&key_str, &id, &se.fields);
-                        if let Err(_) = stream.write_all(xadd.as_bytes()).await {
+                        if stream.write_all(xadd.as_bytes()).await.is_err() {
                             errors += 1;
                             continue;
                         }
                         let mut buf = [0u8; 256];
                         if let Err(e) = stream.read(&mut buf).await {
-                            eprintln!("  {} Failed to read XADD response for {}: {}", "⚠".yellow(), key_str, e);
+                            eprintln!(
+                                "  {} Failed to read XADD response for {}: {}",
+                                "⚠".yellow(),
+                                key_str,
+                                e
+                            );
                         }
                     }
                     // Create consumer groups
@@ -1292,7 +1298,12 @@ async fn import_rdb(
                             None,
                         );
                         if let Err(e) = stream.write_all(xcreate.as_bytes()).await {
-                            eprintln!("  {} Failed to create consumer group {}: {}", "⚠".yellow(), group.name, e);
+                            eprintln!(
+                                "  {} Failed to create consumer group {}: {}",
+                                "⚠".yellow(),
+                                group.name,
+                                e
+                            );
                             errors += 1;
                         }
                         let mut buf = [0u8; 256];
@@ -1358,7 +1369,12 @@ async fn import_rdb(
                     }
                     let mut buf = [0u8; 256];
                     if let Err(e) = stream.read(&mut buf).await {
-                        eprintln!("  {} Failed to read PEXPIRE response for {}: {}", "⚠".yellow(), key_str, e);
+                        eprintln!(
+                            "  {} Failed to read PEXPIRE response for {}: {}",
+                            "⚠".yellow(),
+                            key_str,
+                            e
+                        );
                     }
                 }
             }
@@ -1427,7 +1443,7 @@ async fn import_rdb(
 async fn import_aof(
     path: &Path,
     target: &str,
-    key_pattern: Option<&str>,
+    _key_pattern: Option<&str>,
     verify: bool,
 ) -> anyhow::Result<()> {
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -1456,13 +1472,8 @@ async fn import_aof(
                 let cmd = &aof_data[cmd_start..end];
 
                 // Apply key pattern filter if provided (best-effort for AOF)
-                let should_send = if key_pattern.is_some() {
-                    true // AOF filtering is complex; send all for correctness
-                } else {
-                    true
-                };
-
-                if should_send {
+                // AOF filtering is complex; send all for correctness
+                {
                     match stream.write_all(cmd).await {
                         Ok(()) => {
                             let mut buf = [0u8; 256];
@@ -1581,7 +1592,12 @@ async fn import_json(
         }
         let mut buf = [0u8; 256];
         if let Err(e) = stream.read(&mut buf).await {
-            eprintln!("  {} Failed to read SET response for {}: {}", "⚠".yellow(), key, e);
+            eprintln!(
+                "  {} Failed to read SET response for {}: {}",
+                "⚠".yellow(),
+                key,
+                e
+            );
         }
         imported += 1;
 

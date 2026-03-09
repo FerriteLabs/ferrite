@@ -134,7 +134,7 @@ impl FerriteWasm {
                         .join("\n")
                 }
             }
-            "INFO" => "# Server\r\nferrite_version:0.1.0-wasm\r\nferrite_mode:playground\r\narch_bits:32\r\nos:wasm32".to_string(),
+            "INFO" => format!("# Server\r\nferrite_version:{}-wasm\r\nferrite_mode:playground\r\narch_bits:32\r\nos:wasm32", env!("CARGO_PKG_VERSION")),
             _ => format!(
                 "(error) ERR unknown command '{}'. Try PING, SET, GET, DEL, EXISTS, KEYS, DBSIZE, INFO",
                 parts[0]

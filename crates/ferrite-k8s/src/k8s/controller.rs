@@ -21,6 +21,7 @@ pub struct ClusterController {
     /// Reconciler
     reconciler: ClusterReconciler,
     /// Controller configuration
+    #[allow(dead_code)]
     config: ControllerConfig,
     /// Per-cluster retry contexts for exponential backoff
     retry_contexts: RwLock<HashMap<String, ReconcileContext>>,
@@ -86,7 +87,8 @@ impl ClusterController {
         cluster: &FerriteCluster,
     ) -> Result<ReconcileResult, OperatorError> {
         let key = cluster.metadata.namespaced_name();
-        let result = self.reconciler.reconcile(cluster).await;
+        let result: Result<ReconcileResult, OperatorError> =
+            self.reconciler.reconcile(cluster).await;
 
         match &result {
             Ok(_) => {
@@ -939,6 +941,7 @@ pub struct RestoreController {
     #[allow(dead_code)]
     restores: RwLock<HashMap<String, FerriteRestore>>,
     /// Controller configuration
+    #[allow(dead_code)]
     config: ControllerConfig,
 }
 

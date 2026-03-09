@@ -183,9 +183,8 @@ impl HotReloader {
 
     fn scan_directory(&self) -> HashMap<String, FileState> {
         let mut files = HashMap::new();
-        let dir = match std::fs::read_dir(&self.config.watch_dir) {
-            Ok(d) => d,
-            Err(_) => return files,
+        let Ok(dir) = std::fs::read_dir(&self.config.watch_dir) else {
+            return files;
         };
 
         for entry in dir.flatten() {

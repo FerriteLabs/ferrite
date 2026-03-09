@@ -204,7 +204,7 @@ impl Default for SdkConfig {
     fn default() -> Self {
         Self {
             package_name: "Ferrite".into(),
-            version: "0.1.0".into(),
+            version: env!("CARGO_PKG_VERSION").into(),
             api_methods: Vec::new(),
             include_async: true,
             include_ttl: true,

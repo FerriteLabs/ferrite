@@ -148,7 +148,7 @@ struct PatternStats {
 
 /// A single access record
 #[derive(Clone, Debug)]
-    #[allow(dead_code)]
+#[allow(dead_code)]
 struct AccessRecord {
     access_type: AccessType,
     latency_us: u64,

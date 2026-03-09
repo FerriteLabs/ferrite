@@ -94,11 +94,7 @@ impl ActiveActiveManager {
     /// Replicate a write to all configured downstream peers.
     ///
     /// Returns the list of region ids that were successfully updated.
-    pub fn replicate_write(
-        &self,
-        key: &str,
-        value: &[u8],
-    ) -> Vec<String> {
+    pub fn replicate_write(&self, key: &str, value: &[u8]) -> Vec<String> {
         self.replicator
             .record_write(key, value, self.replicator.local_region());
 

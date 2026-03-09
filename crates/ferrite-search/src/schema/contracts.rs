@@ -412,23 +412,20 @@ impl ContractRegistry {
         let mut errors = Vec::new();
         let mut warnings = Vec::new();
 
-        let obj = match value.as_object() {
-            Some(o) => o,
-            None => {
-                errors.push(ValidationError {
-                    field: "<root>".to_string(),
-                    message: "Expected JSON object".to_string(),
-                    error_type: ValidationErrorType::TypeMismatch,
-                });
-                self.metrics
-                    .validations_failed
-                    .fetch_add(1, Ordering::Relaxed);
-                return Ok(ValidationResult {
-                    valid: false,
-                    errors,
-                    warnings,
-                });
-            }
+        let Some(obj) = value.as_object() else {
+            errors.push(ValidationError {
+                field: "<root>".to_string(),
+                message: "Expected JSON object".to_string(),
+                error_type: ValidationErrorType::TypeMismatch,
+            });
+            self.metrics
+                .validations_failed
+                .fetch_add(1, Ordering::Relaxed);
+            return Ok(ValidationResult {
+                valid: false,
+                errors,
+                warnings,
+            });
         };
 
         // Check required fields

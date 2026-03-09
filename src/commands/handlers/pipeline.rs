@@ -68,8 +68,10 @@ fn handle_create(args: &[String]) -> Frame {
         return err_frame(&format!("pipeline '{}' already exists", name));
     }
 
-    let mut def = ComposablePipelineDefinition::default();
-    def.name = name.clone();
+    let mut def = ComposablePipelineDefinition {
+        name: name.clone(),
+        ..ComposablePipelineDefinition::default()
+    };
 
     // Parse optional args
     let mut i = 1;
@@ -117,9 +119,8 @@ fn handle_add_source(args: &[String]) -> Frame {
 
     let pipeline_name = &args[0];
     let stage_name = &args[1];
-    let source_type = match SourceKind::from_str_loose(&args[2]) {
-        Some(t) => t,
-        None => return err_frame(&format!("unknown source type '{}'", args[2])),
+    let Some(source_type) = SourceKind::from_str_loose(&args[2]) else {
+        return err_frame(&format!("unknown source type '{}'", args[2]));
     };
     let connection = &args[3];
 
@@ -163,9 +164,8 @@ fn handle_add_transform(args: &[String]) -> Frame {
 
     let pipeline_name = &args[0];
     let stage_name = &args[1];
-    let transform_kind = match TransformKind::from_str_loose(&args[2]) {
-        Some(t) => t,
-        None => return err_frame(&format!("unknown transform type '{}'", args[2])),
+    let Some(transform_kind) = TransformKind::from_str_loose(&args[2]) else {
+        return err_frame(&format!("unknown transform type '{}'", args[2]));
     };
 
     // Parse additional params into a map
@@ -199,9 +199,8 @@ fn handle_add_sink(args: &[String]) -> Frame {
 
     let pipeline_name = &args[0];
     let stage_name = &args[1];
-    let sink_type = match SinkKind::from_str_loose(&args[2]) {
-        Some(t) => t,
-        None => return err_frame(&format!("unknown sink type '{}'", args[2])),
+    let Some(sink_type) = SinkKind::from_str_loose(&args[2]) else {
+        return err_frame(&format!("unknown sink type '{}'", args[2]));
     };
     let connection = &args[3];
 
@@ -246,24 +245,18 @@ fn handle_link(args: &[String]) -> Frame {
     let to_stage = &args[2];
 
     let mut builders = get_builders().write();
-    let def = match builders.get_mut(pipeline_name.as_str()) {
-        Some(d) => d,
-        None => {
-            return err_frame(&format!(
-                "pipeline '{}' not found in builder",
-                pipeline_name
-            ))
-        }
+    let Some(def) = builders.get_mut(pipeline_name.as_str()) else {
+        return err_frame(&format!(
+            "pipeline '{}' not found in builder",
+            pipeline_name
+        ));
     };
 
-    let stage = match def.stages.iter_mut().find(|s| s.name == *from_stage) {
-        Some(s) => s,
-        None => {
-            return err_frame(&format!(
-                "stage '{}' not found in pipeline '{}'",
-                from_stage, pipeline_name
-            ))
-        }
+    let Some(stage) = def.stages.iter_mut().find(|s| s.name == *from_stage) else {
+        return err_frame(&format!(
+            "stage '{}' not found in pipeline '{}'",
+            from_stage, pipeline_name
+        ));
     };
 
     if !stage.next.contains(to_stage) {
@@ -475,16 +468,14 @@ fn handle_validate(args: &[String]) -> Frame {
 
     // Check builder first
     let builders = get_builders().read();
-    let def = match builders.get(name.as_str()) {
-        Some(d) => d.clone(),
-        None => {
-            // Not in builder — if it's already registered, it was valid
-            if get_manager().get_pipeline(name).is_some() {
-                return Frame::array(vec![]); // empty = valid
-            }
-            return err_frame(&format!("pipeline '{}' not found", name));
+    let Some(def) = builders.get(name.as_str()) else {
+        // Not in builder — if it's already registered, it was valid
+        if get_manager().get_pipeline(name).is_some() {
+            return Frame::array(vec![]); // empty = valid
         }
+        return err_frame(&format!("pipeline '{}' not found", name));
     };
+    let def = def.clone();
     drop(builders);
 
     let errors = get_manager().validate_pipeline(&def);
@@ -559,14 +550,11 @@ fn handle_help() -> Frame {
 
 fn add_stage_to_builder(pipeline_name: &str, stage: PipelineStage) -> Frame {
     let mut builders = get_builders().write();
-    let def = match builders.get_mut(pipeline_name) {
-        Some(d) => d,
-        None => {
-            return err_frame(&format!(
-                "pipeline '{}' not found in builder (use PIPELINE.CREATE first)",
-                pipeline_name
-            ))
-        }
+    let Some(def) = builders.get_mut(pipeline_name) else {
+        return err_frame(&format!(
+            "pipeline '{}' not found in builder (use PIPELINE.CREATE first)",
+            pipeline_name
+        ));
     };
 
     // Check duplicate stage name

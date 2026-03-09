@@ -2,7 +2,6 @@
 //!
 //! Wires TENANT.* commands to the ferrite-enterprise tenancy module.
 
-
 use crate::commands::executor::CommandExecutor;
 use crate::protocol::Frame;
 use bytes::Bytes;
@@ -91,14 +90,8 @@ impl CommandExecutor {
                         return Frame::error("ERR QUOTA requires <field> <value>");
                     }
                     let field = args[i + 1].to_lowercase();
-                    let value = match args[i + 2].parse::<u64>() {
-                        Ok(v) => v,
-                        Err(_) => {
-                            return Frame::error(format!(
-                                "ERR Invalid quota value '{}'",
-                                args[i + 2]
-                            ));
-                        }
+                    let Ok(value) = args[i + 2].parse::<u64>() else {
+                        return Frame::error(format!("ERR Invalid quota value '{}'", args[i + 2]));
                     };
                     let q = quota_override.get_or_insert_with(QuotaConfig::default);
                     match field.as_str() {
@@ -130,10 +123,10 @@ impl CommandExecutor {
         match mgr.create_tenant(request) {
             Ok(record) => {
                 let mut map = HashMap::new();
-                map.insert(Bytes::from_static(b"id"), Frame::bulk(record.id.as_str()));
+                map.insert(Bytes::from_static(b"id"), Frame::bulk(record.id.clone()));
                 map.insert(
                     Bytes::from_static(b"name"),
-                    Frame::bulk(record.name.as_str()),
+                    Frame::bulk(record.name.clone()),
                 );
                 map.insert(
                     Bytes::from_static(b"state"),
@@ -141,7 +134,7 @@ impl CommandExecutor {
                 );
                 map.insert(
                     Bytes::from_static(b"tier"),
-                    Frame::bulk(tier_name(&record.tier)),
+                    Frame::bulk(tier_name(&record.tier).to_string()),
                 );
                 Frame::Map(map)
             }
@@ -193,13 +186,16 @@ impl CommandExecutor {
             .iter()
             .map(|r| {
                 let mut map = HashMap::new();
-                map.insert(Bytes::from_static(b"id"), Frame::bulk(r.id.as_str()));
-                map.insert(Bytes::from_static(b"name"), Frame::bulk(r.name.as_str()));
+                map.insert(Bytes::from_static(b"id"), Frame::bulk(r.id.clone()));
+                map.insert(Bytes::from_static(b"name"), Frame::bulk(r.name.clone()));
                 map.insert(
                     Bytes::from_static(b"state"),
                     Frame::bulk(r.state.to_string()),
                 );
-                map.insert(Bytes::from_static(b"tier"), Frame::bulk(tier_name(&r.tier)));
+                map.insert(
+                    Bytes::from_static(b"tier"),
+                    Frame::bulk(tier_name(&r.tier).to_string()),
+                );
                 Frame::Map(map)
             })
             .collect();
@@ -213,7 +209,7 @@ impl CommandExecutor {
             return Frame::error("ERR TENANT DELETE requires a tenant_id");
         }
         let tenant_id = &args[0];
-        let force = args.get(1).map_or(false, |s| s.to_uppercase() == "FORCE");
+        let force = args.get(1).is_some_and(|s| s.to_uppercase() == "FORCE");
 
         let mgr = tenant_manager();
         match mgr.delete_tenant(tenant_id, force) {
@@ -233,10 +229,10 @@ impl CommandExecutor {
         match mgr.get_tenant(tenant_id) {
             Some(record) => {
                 let mut map = HashMap::new();
-                map.insert(Bytes::from_static(b"id"), Frame::bulk(record.id.as_str()));
+                map.insert(Bytes::from_static(b"id"), Frame::bulk(record.id.clone()));
                 map.insert(
                     Bytes::from_static(b"name"),
-                    Frame::bulk(record.name.as_str()),
+                    Frame::bulk(record.name.clone()),
                 );
                 map.insert(
                     Bytes::from_static(b"state"),
@@ -244,7 +240,7 @@ impl CommandExecutor {
                 );
                 map.insert(
                     Bytes::from_static(b"tier"),
-                    Frame::bulk(tier_name(&record.tier)),
+                    Frame::bulk(tier_name(&record.tier).to_string()),
                 );
                 map.insert(
                     Bytes::from_static(b"max_memory_bytes"),
@@ -371,11 +367,8 @@ impl CommandExecutor {
                     return Frame::error("ERR TENANT QUOTA SET requires <field> <value>");
                 }
                 let field = args[2].to_lowercase();
-                let value = match args[3].parse::<u64>() {
-                    Ok(v) => v,
-                    Err(_) => {
-                        return Frame::error(format!("ERR Invalid quota value '{}'", args[3]));
-                    }
+                let Ok(value) = args[3].parse::<u64>() else {
+                    return Frame::error(format!("ERR Invalid quota value '{}'", args[3]));
                 };
 
                 // Get current record, modify quota, then update

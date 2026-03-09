@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout)]
 //! Pub/Sub Example
 //!
 //! Demonstrates Ferrite's publish/subscribe messaging:
@@ -81,7 +82,10 @@ async fn main() -> anyhow::Result<()> {
         for _ in 0..2 {
             let n = stream.read(&mut buf).await.expect("read confirm");
             let resp = String::from_utf8_lossy(&buf[..n]);
-            println!("[subscriber] Confirmed: {}", resp.trim().replace("\r\n", " "));
+            println!(
+                "[subscriber] Confirmed: {}",
+                resp.trim().replace("\r\n", " ")
+            );
         }
 
         // Listen for published messages (we expect 3)
@@ -91,7 +95,10 @@ async fn main() -> anyhow::Result<()> {
                 break;
             }
             let resp = String::from_utf8_lossy(&buf[..n]);
-            println!("[subscriber] Received: {}", resp.trim().replace("\r\n", " "));
+            println!(
+                "[subscriber] Received: {}",
+                resp.trim().replace("\r\n", " ")
+            );
         }
 
         println!("[subscriber] Done listening.");
@@ -112,7 +119,10 @@ async fn main() -> anyhow::Result<()> {
     pub_stream.write_all(&cmd).await?;
     let n = pub_stream.read(&mut buf).await?;
     let receivers = String::from_utf8_lossy(&buf[..n]);
-    println!("[publisher] PUBLISH news:tech → {} receivers", receivers.trim());
+    println!(
+        "[publisher] PUBLISH news:tech → {} receivers",
+        receivers.trim()
+    );
 
     tokio::time::sleep(Duration::from_millis(50)).await;
 
@@ -121,7 +131,10 @@ async fn main() -> anyhow::Result<()> {
     pub_stream.write_all(&cmd).await?;
     let n = pub_stream.read(&mut buf).await?;
     let receivers = String::from_utf8_lossy(&buf[..n]);
-    println!("[publisher] PUBLISH news:science → {} receivers", receivers.trim());
+    println!(
+        "[publisher] PUBLISH news:science → {} receivers",
+        receivers.trim()
+    );
 
     tokio::time::sleep(Duration::from_millis(50)).await;
 
@@ -130,7 +143,10 @@ async fn main() -> anyhow::Result<()> {
     pub_stream.write_all(&cmd).await?;
     let n = pub_stream.read(&mut buf).await?;
     let receivers = String::from_utf8_lossy(&buf[..n]);
-    println!("[publisher] PUBLISH news:tech → {} receivers", receivers.trim());
+    println!(
+        "[publisher] PUBLISH news:tech → {} receivers",
+        receivers.trim()
+    );
 
     // Wait for subscriber to finish
     tokio::time::sleep(Duration::from_millis(200)).await;

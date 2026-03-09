@@ -140,13 +140,10 @@ impl ConsistencyChecker {
             }
 
             ConsistencyLevel::SessionConsistency => {
-                let session = match session_id {
-                    Some(id) => id,
-                    None => {
-                        return ConsistencyResult::NotSatisfied(
-                            "session id required for session consistency".to_string(),
-                        );
-                    }
+                let Some(session) = session_id else {
+                    return ConsistencyResult::NotSatisfied(
+                        "session id required for session consistency".to_string(),
+                    );
                 };
 
                 let session_vec = self.session_vectors.get(session);

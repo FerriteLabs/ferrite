@@ -3,7 +3,6 @@
 //! Provides per-tenant backup creation, restoration, listing,
 //! deletion and scheduled backup management.
 
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;

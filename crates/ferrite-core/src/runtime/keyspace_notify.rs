@@ -62,8 +62,9 @@ fn event_flag_for_command(event: &str) -> u32 {
         | "rename_to" | "rename_from" | "persist" | "copy_to" | "restore" | "move" => FLAG_G,
         // String commands
         "set" | "setex" | "psetex" | "setnx" | "getset" | "mset" | "msetnx" | "setrange"
-        | "incr" | "decr" | "incrby" | "decrby" | "incrbyfloat" | "append" | "getdel"
-        | "getex" => FLAG_STRING,
+        | "incr" | "decr" | "incrby" | "decrby" | "incrbyfloat" | "append" | "getdel" | "getex" => {
+            FLAG_STRING
+        }
         // List commands
         "lpush" | "rpush" | "rpoplpush" | "linsert" | "lset" | "lrem" | "ltrim" | "lpop"
         | "rpop" | "lmove" | "lmpop" => FLAG_LIST,
@@ -77,8 +78,8 @@ fn event_flag_for_command(event: &str) -> u32 {
         "zadd" | "zincrby" | "zrem" | "zrangestore" | "zinterstore" | "zunionstore"
         | "zdiffstore" | "zpopmin" | "zpopmax" | "bzpopmin" | "bzpopmax" | "zmpop" => FLAG_ZSET,
         // Stream commands
-        "xadd" | "xtrim" | "xdel" | "xgroup-create" | "xgroup-delconsumer"
-        | "xgroup-destroy" | "xgroup-setid" | "xclaim" | "xautoclaim" => FLAG_STREAM,
+        "xadd" | "xtrim" | "xdel" | "xgroup-create" | "xgroup-delconsumer" | "xgroup-destroy"
+        | "xgroup-setid" | "xclaim" | "xautoclaim" => FLAG_STREAM,
         // Lifecycle events
         "expired" => FLAG_EXPIRED,
         "evicted" => FLAG_EVICTED,
@@ -211,13 +212,7 @@ impl KeyspaceNotifier {
     ///
     /// `event` is the lowercase command/event name (e.g., "set", "del", "expired").
     /// `key` is the affected key. `db` is the database index.
-    pub fn notify(
-        &self,
-        pubsub: &Arc<SubscriptionManager>,
-        db: u8,
-        event: &str,
-        key: &Bytes,
-    ) {
+    pub fn notify(&self, pubsub: &Arc<SubscriptionManager>, db: u8, event: &str, key: &Bytes) {
         let flags = self.flags.load(Ordering::Relaxed);
         if flags == 0 {
             return;
@@ -230,7 +225,11 @@ impl KeyspaceNotifier {
 
         // __keyspace@<db>__:<key> → event name
         if flags & FLAG_K != 0 {
-            let channel = Bytes::from(format!("__keyspace@{}__:{}", db, String::from_utf8_lossy(key)));
+            let channel = Bytes::from(format!(
+                "__keyspace@{}__:{}",
+                db,
+                String::from_utf8_lossy(key)
+            ));
             let message = Bytes::from(event.to_string());
             pubsub.publish(&channel, &message);
         }

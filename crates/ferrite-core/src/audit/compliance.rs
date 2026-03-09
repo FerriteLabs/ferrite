@@ -517,6 +517,12 @@ pub struct GdprHandler {
     consents: RwLock<HashMap<String, HashMap<String, bool>>>,
 }
 
+impl Default for GdprHandler {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GdprHandler {
     pub fn new() -> Self {
         Self {

@@ -46,6 +46,7 @@ impl TestServer {
     }
 
     /// Stop the server by dropping the database.
+    #[allow(dead_code)]
     fn stop(&mut self) {
         self.db.take();
     }
@@ -81,7 +82,7 @@ impl<'a> TestClient<'a> {
     }
 
     /// Execute a single RESP-style command against the database.
-    fn command(&mut self, args: &[&str]) -> TestResult {
+    fn command(&self, args: &[&str]) -> TestResult {
         if args.is_empty() {
             return TestResult::Err("empty command".into());
         }
@@ -137,7 +138,7 @@ impl<'a> TestClient<'a> {
     }
 
     /// Execute a pipeline of commands, returning results in order.
-    fn pipeline(&mut self, commands: Vec<Vec<&str>>) -> Vec<TestResult> {
+    fn pipeline(&self, commands: Vec<Vec<&str>>) -> Vec<TestResult> {
         commands.iter().map(|cmd| self.command(cmd)).collect()
     }
 
@@ -613,14 +614,14 @@ fn setup() -> (TestServer, u16) {
 #[test]
 fn test_ping_pong() {
     let (server, _) = setup();
-    let mut client = TestClient::connect(&server.addr(), &server);
+    let client = TestClient::connect(&server.addr(), &server);
     assert_eq!(client.command(&["PING"]), TestResult::Ok("PONG".into()));
 }
 
 #[test]
 fn test_set_get() {
     let (server, _) = setup();
-    let mut client = TestClient::connect(&server.addr(), &server);
+    let client = TestClient::connect(&server.addr(), &server);
 
     assert_eq!(
         client.command(&["SET", "mykey", "hello"]),
@@ -635,7 +636,7 @@ fn test_set_get() {
 #[test]
 fn test_set_get_delete() {
     let (server, _) = setup();
-    let mut client = TestClient::connect(&server.addr(), &server);
+    let client = TestClient::connect(&server.addr(), &server);
 
     client.command(&["SET", "k", "v"]);
     assert_eq!(client.command(&["GET", "k"]), TestResult::Bulk("v".into()));
@@ -646,7 +647,7 @@ fn test_set_get_delete() {
 #[test]
 fn test_exists() {
     let (server, _) = setup();
-    let mut client = TestClient::connect(&server.addr(), &server);
+    let client = TestClient::connect(&server.addr(), &server);
 
     client.command(&["SET", "a", "1"]);
     assert_eq!(client.command(&["EXISTS", "a"]), TestResult::Int(1));
@@ -658,7 +659,7 @@ fn test_exists() {
 #[test]
 fn test_incr_decr() {
     let (server, _) = setup();
-    let mut client = TestClient::connect(&server.addr(), &server);
+    let client = TestClient::connect(&server.addr(), &server);
 
     // INCR on non-existent key starts at 0, returns 1
     assert_eq!(client.command(&["INCR", "counter"]), TestResult::Int(1));
@@ -673,7 +674,7 @@ fn test_incr_decr() {
 #[test]
 fn test_mget_mset() {
     let (server, _) = setup();
-    let mut client = TestClient::connect(&server.addr(), &server);
+    let client = TestClient::connect(&server.addr(), &server);
 
     assert_eq!(
         client.command(&["MSET", "k1", "v1", "k2", "v2", "k3", "v3"]),
@@ -693,7 +694,7 @@ fn test_mget_mset() {
 #[test]
 fn test_append_strlen() {
     let (server, _) = setup();
-    let mut client = TestClient::connect(&server.addr(), &server);
+    let client = TestClient::connect(&server.addr(), &server);
 
     assert_eq!(
         client.command(&["APPEND", "greeting", "Hello"]),
@@ -713,7 +714,7 @@ fn test_append_strlen() {
 #[test]
 fn test_expire_ttl() {
     let (server, _) = setup();
-    let mut client = TestClient::connect(&server.addr(), &server);
+    let client = TestClient::connect(&server.addr(), &server);
 
     client.command(&["SET", "temp", "data"]);
     // No expiry yet
@@ -731,7 +732,7 @@ fn test_expire_ttl() {
 #[test]
 fn test_set_with_ex() {
     let (server, _) = setup();
-    let mut client = TestClient::connect(&server.addr(), &server);
+    let client = TestClient::connect(&server.addr(), &server);
 
     assert_eq!(
         client.command(&["SET", "expiring", "data", "EX", "10"]),
@@ -743,7 +744,7 @@ fn test_set_with_ex() {
     );
     let ttl = client.command(&["TTL", "expiring"]);
     match ttl {
-        TestResult::Int(v) => assert!(v >= 0 && v <= 10, "TTL should be 0..=10, got {v}"),
+        TestResult::Int(v) => assert!((0..=10).contains(&v), "TTL should be 0..=10, got {v}"),
         other => panic!("expected Int, got {other:?}"),
     }
 }
@@ -751,7 +752,7 @@ fn test_set_with_ex() {
 #[test]
 fn test_setnx() {
     let (server, _) = setup();
-    let mut client = TestClient::connect(&server.addr(), &server);
+    let client = TestClient::connect(&server.addr(), &server);
 
     // SETNX on new key succeeds
     assert_eq!(
@@ -777,7 +778,7 @@ fn test_setnx() {
 #[test]
 fn test_list_operations() {
     let (server, _) = setup();
-    let mut client = TestClient::connect(&server.addr(), &server);
+    let client = TestClient::connect(&server.addr(), &server);
 
     // LPUSH adds to head
     assert_eq!(
@@ -810,7 +811,7 @@ fn test_list_operations() {
 #[test]
 fn test_hash_operations() {
     let (server, _) = setup();
-    let mut client = TestClient::connect(&server.addr(), &server);
+    let client = TestClient::connect(&server.addr(), &server);
 
     assert_eq!(
         client.command(&["HSET", "user:1", "name", "Alice"]),
@@ -845,7 +846,7 @@ fn test_hash_operations() {
 #[test]
 fn test_set_operations() {
     let (server, _) = setup();
-    let mut client = TestClient::connect(&server.addr(), &server);
+    let client = TestClient::connect(&server.addr(), &server);
 
     assert_eq!(
         client.command(&["SADD", "fruits", "apple", "banana", "cherry"]),
@@ -937,7 +938,7 @@ fn test_sorted_set_operations() {
 #[test]
 fn test_dbsize() {
     let (server, _) = setup();
-    let mut client = TestClient::connect(&server.addr(), &server);
+    let client = TestClient::connect(&server.addr(), &server);
 
     assert_eq!(client.command(&["DBSIZE"]), TestResult::Int(0));
     client.command(&["SET", "a", "1"]);
@@ -950,7 +951,7 @@ fn test_dbsize() {
 #[test]
 fn test_flushdb() {
     let (server, _) = setup();
-    let mut client = TestClient::connect(&server.addr(), &server);
+    let client = TestClient::connect(&server.addr(), &server);
 
     client.command(&["SET", "x", "1"]);
     client.command(&["SET", "y", "2"]);
@@ -962,7 +963,7 @@ fn test_flushdb() {
 #[test]
 fn test_info() {
     let (server, _) = setup();
-    let mut client = TestClient::connect(&server.addr(), &server);
+    let client = TestClient::connect(&server.addr(), &server);
 
     let result = client.command(&["INFO"]);
     // INFO should return a bulk string with server stats
@@ -997,7 +998,7 @@ fn test_select_database() {
 #[test]
 fn test_type_command() {
     let (server, _) = setup();
-    let mut client = TestClient::connect(&server.addr(), &server);
+    let client = TestClient::connect(&server.addr(), &server);
 
     // Non-existent key
     assert_eq!(
@@ -1037,7 +1038,7 @@ fn test_type_command() {
 #[test]
 fn test_rename() {
     let (server, _) = setup();
-    let mut client = TestClient::connect(&server.addr(), &server);
+    let client = TestClient::connect(&server.addr(), &server);
 
     client.command(&["SET", "old_name", "data"]);
     assert_eq!(
@@ -1058,7 +1059,7 @@ fn test_rename() {
 #[test]
 fn test_pipeline_execution() {
     let (server, _) = setup();
-    let mut client = TestClient::connect(&server.addr(), &server);
+    let client = TestClient::connect(&server.addr(), &server);
 
     let results = client.pipeline(vec![
         vec!["SET", "p1", "val1"],
@@ -1085,7 +1086,7 @@ fn test_pipeline_execution() {
 #[test]
 fn test_get_nonexistent_key() {
     let (server, _) = setup();
-    let mut client = TestClient::connect(&server.addr(), &server);
+    let client = TestClient::connect(&server.addr(), &server);
 
     assert_eq!(client.command(&["GET", "no_such_key"]), TestResult::Nil);
 }
@@ -1093,7 +1094,7 @@ fn test_get_nonexistent_key() {
 #[test]
 fn test_del_multiple_keys() {
     let (server, _) = setup();
-    let mut client = TestClient::connect(&server.addr(), &server);
+    let client = TestClient::connect(&server.addr(), &server);
 
     client.command(&["SET", "a", "1"]);
     client.command(&["SET", "b", "2"]);
@@ -1108,7 +1109,7 @@ fn test_del_multiple_keys() {
 #[test]
 fn test_overwrite_value() {
     let (server, _) = setup();
-    let mut client = TestClient::connect(&server.addr(), &server);
+    let client = TestClient::connect(&server.addr(), &server);
 
     client.command(&["SET", "key", "first"]);
     assert_eq!(

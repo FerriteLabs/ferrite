@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout)]
 //! Semantic Caching Demo
 //!
 //! Demonstrates how Ferrite's semantic caching can reduce LLM API costs

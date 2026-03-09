@@ -2,10 +2,14 @@
 //!
 //! Executes trigger actions when events occur.
 
+#[cfg(feature = "cloud")]
+use std::time::Duration;
 use std::time::Instant;
 
 use bytes::Bytes;
 
+#[cfg(feature = "cloud")]
+use super::actions::HttpMethod;
 use super::actions::{Action, ActionResult, BuiltinAction, TemplateRenderer};
 use super::conditions::EventType;
 use super::{Trigger, TriggerConfig, TriggerError};
@@ -269,10 +273,10 @@ impl TriggerEngine {
                 #[cfg(not(feature = "cloud"))]
                 {
                     let _ = http;
-                    return Ok(ActionResult::err(
+                    Ok(ActionResult::err(
                         "http",
                         "HTTP actions require the 'cloud' feature".to_string(),
-                    ));
+                    ))
                 }
 
                 #[cfg(feature = "cloud")]

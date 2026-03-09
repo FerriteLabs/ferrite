@@ -716,9 +716,9 @@ impl Config {
                 Ok(true)
             }
             ConfigKey::ServerMaxMemoryRejectThreshold => {
-                let v = value.parse::<f64>().map_err(|_| {
-                    FerriteError::Config(format!("Invalid float value: {}", value))
-                })?;
+                let v = value
+                    .parse::<f64>()
+                    .map_err(|_| FerriteError::Config(format!("Invalid float value: {}", value)))?;
                 if !(0.0..=1.0).contains(&v) {
                     return Err(FerriteError::Config(
                         "max_memory_reject_threshold must be between 0.0 and 1.0".to_string(),
@@ -946,10 +946,10 @@ impl Default for ServerConfig {
             slowlog_max_len: 128,           // Redis default
             hz: 10,                         // Redis default
             notify_keyspace_events: String::new(), // Disabled by default
-            rate_limit_per_sec: 0,                     // Unlimited by default
-            rate_limit_burst: 100,                     // Default burst size
-            max_memory: 0,                             // Unlimited by default
-            max_memory_reject_threshold: 0.9,          // Reject writes at 90% capacity
+            rate_limit_per_sec: 0,          // Unlimited by default
+            rate_limit_burst: 100,          // Default burst size
+            max_memory: 0,                  // Unlimited by default
+            max_memory_reject_threshold: 0.9, // Reject writes at 90% capacity
         }
     }
 }

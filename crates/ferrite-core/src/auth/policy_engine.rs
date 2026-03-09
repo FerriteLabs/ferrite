@@ -641,15 +641,15 @@ fn apply_operator(
     match op {
         ConditionOp::Eq => field_val == cond_val,
         ConditionOp::Ne => field_val != cond_val,
-        ConditionOp::Gt => compare_numbers(field_val, cond_val).map_or(false, |o| o > 0),
-        ConditionOp::Lt => compare_numbers(field_val, cond_val).map_or(false, |o| o < 0),
-        ConditionOp::Gte => compare_numbers(field_val, cond_val).map_or(false, |o| o >= 0),
-        ConditionOp::Lte => compare_numbers(field_val, cond_val).map_or(false, |o| o <= 0),
+        ConditionOp::Gt => compare_numbers(field_val, cond_val).is_some_and(|o| o > 0),
+        ConditionOp::Lt => compare_numbers(field_val, cond_val).is_some_and(|o| o < 0),
+        ConditionOp::Gte => compare_numbers(field_val, cond_val).is_some_and(|o| o >= 0),
+        ConditionOp::Lte => compare_numbers(field_val, cond_val).is_some_and(|o| o <= 0),
         ConditionOp::Between => {
             if let serde_json::Value::Array(arr) = cond_val {
                 if arr.len() == 2 {
-                    let gte_min = compare_numbers(field_val, &arr[0]).map_or(false, |o| o >= 0);
-                    let lte_max = compare_numbers(field_val, &arr[1]).map_or(false, |o| o <= 0);
+                    let gte_min = compare_numbers(field_val, &arr[0]).is_some_and(|o| o >= 0);
+                    let lte_max = compare_numbers(field_val, &arr[1]).is_some_and(|o| o <= 0);
                     return gte_min && lte_max;
                 }
             }

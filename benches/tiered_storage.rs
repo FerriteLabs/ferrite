@@ -1,4 +1,4 @@
-#![allow(clippy::unwrap_used, unused_must_use)]
+#![allow(clippy::unwrap_used, unused_must_use, missing_docs)]
 //! Tiered Storage Benchmarks for Ferrite
 //!
 //! Proves the core value proposition of Ferrite's three-tier HybridLog

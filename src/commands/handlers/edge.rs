@@ -43,7 +43,10 @@ fn edge_status() -> Frame {
 
     let mut map = std::collections::HashMap::new();
     for (k, v) in &summary {
-        map.insert(Bytes::from(k.clone()), Frame::Bulk(Bytes::from(v.clone())));
+        map.insert(
+            Bytes::from(k.clone()),
+            Frame::Bulk(Some(Bytes::from(v.clone()))),
+        );
     }
     Frame::Map(map)
 }
@@ -93,7 +96,7 @@ fn edge_config() -> Frame {
     let mut map = std::collections::HashMap::new();
     map.insert(
         Bytes::from_static(b"node_id"),
-        Frame::Bulk(Bytes::from(cfg.node_id.clone())),
+        Frame::Bulk(Some(Bytes::from(cfg.node_id.clone()))),
     );
     map.insert(
         Bytes::from_static(b"max_memory"),
@@ -109,11 +112,11 @@ fn edge_config() -> Frame {
     );
     map.insert(
         Bytes::from_static(b"sync_policy"),
-        Frame::Bulk(Bytes::from(format!("{:?}", cfg.sync_policy))),
+        Frame::Bulk(Some(Bytes::from(format!("{:?}", cfg.sync_policy)))),
     );
     map.insert(
         Bytes::from_static(b"conflict_resolution"),
-        Frame::Bulk(Bytes::from(format!("{:?}", cfg.conflict_resolution))),
+        Frame::Bulk(Some(Bytes::from(format!("{:?}", cfg.conflict_resolution)))),
     );
     map.insert(
         Bytes::from_static(b"compression"),
@@ -139,7 +142,7 @@ fn edge_sync(args: &[Bytes]) -> Frame {
 
     // Determine which prefixes to sync
     let prefixes: Vec<String> = if args.is_empty() {
-        rt.replicated_prefixes().clone()
+        rt.replicated_prefixes().to_vec()
     } else {
         args.iter()
             .map(|a| String::from_utf8_lossy(a).to_string())
@@ -165,15 +168,16 @@ fn edge_sync(args: &[Bytes]) -> Frame {
     let duration = start.elapsed();
     rt.record_sync(bytes_estimate, 0, keys_count, duration);
 
-    let mut items = Vec::new();
-    items.push(Frame::Bulk(Bytes::from("keys_synced")));
-    items.push(Frame::Integer(keys_count as i64));
-    items.push(Frame::Bulk(Bytes::from("bytes_sent")));
-    items.push(Frame::Integer(bytes_estimate as i64));
-    items.push(Frame::Bulk(Bytes::from("duration_ms")));
-    items.push(Frame::Integer(duration.as_millis() as i64));
-    items.push(Frame::Bulk(Bytes::from("prefixes")));
-    items.push(Frame::Integer(prefixes.len() as i64));
+    let items = vec![
+        Frame::Bulk(Some(Bytes::from("keys_synced"))),
+        Frame::Integer(keys_count as i64),
+        Frame::Bulk(Some(Bytes::from("bytes_sent"))),
+        Frame::Integer(bytes_estimate as i64),
+        Frame::Bulk(Some(Bytes::from("duration_ms"))),
+        Frame::Integer(duration.as_millis() as i64),
+        Frame::Bulk(Some(Bytes::from("prefixes"))),
+        Frame::Integer(prefixes.len() as i64),
+    ];
     Frame::array(items)
 }
 
@@ -184,7 +188,7 @@ fn edge_prefixes() -> Frame {
     Frame::array(
         prefixes
             .iter()
-            .map(|p| Frame::Bulk(Bytes::from(p.clone())))
+            .map(|p| Frame::Bulk(Some(Bytes::from(p.clone()))))
             .collect(),
     )
 }

@@ -532,14 +532,14 @@ impl KeyBrowser {
                 "user:1002",
                 KeyType::Hash,
                 1024,
-                Some(3600_000),
+                Some(3_600_000),
                 "hashtable",
             ),
             (
                 "session:abc123",
                 KeyType::String,
                 128,
-                Some(1800_000),
+                Some(1_800_000),
                 "raw",
             ),
             (

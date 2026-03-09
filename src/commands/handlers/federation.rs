@@ -58,9 +58,8 @@ fn source_add(args: &[String]) -> Frame {
     }
 
     let name = &args[0];
-    let source_type = match parse_source_type(&args[1]) {
-        Some(t) => t,
-        None => return err_frame(&format!("unknown source type: {}", args[1])),
+    let Some(source_type) = parse_source_type(&args[1]) else {
+        return err_frame(&format!("unknown source type: {}", args[1]));
     };
     let connection_string = &args[2];
 
@@ -177,9 +176,8 @@ fn federate_cross(args: &[String]) -> Frame {
     let join_idx = args.iter().position(|a| a.to_uppercase() == "JOIN");
     let on_idx = args.iter().position(|a| a.to_uppercase() == "ON");
 
-    let (join_idx, on_idx) = match (join_idx, on_idx) {
-        (Some(j), Some(o)) => (j, o),
-        _ => return err_frame("FEDERATE CROSS requires JOIN ... ON ... syntax"),
+    let (Some(join_idx), Some(on_idx)) = (join_idx, on_idx) else {
+        return err_frame("FEDERATE CROSS requires JOIN ... ON ... syntax");
     };
 
     if on_idx + 1 >= args.len() || join_idx + 2 > on_idx {

@@ -541,14 +541,11 @@ impl BatchProcessor {
             limiter.acquire().await;
         }
 
-        let _permit = match self.semaphore.acquire().await {
-            Ok(p) => p,
-            Err(_) => {
-                let _ = request
-                    .response_tx
-                    .send(Err(SemanticError::Internal("Semaphore closed".to_string())));
-                return;
-            }
+        let Ok(_permit) = self.semaphore.acquire().await else {
+            let _ = request
+                .response_tx
+                .send(Err(SemanticError::Internal("Semaphore closed".to_string())));
+            return;
         };
 
         let latency = request.submitted_at.elapsed();
@@ -589,16 +586,13 @@ impl BatchProcessor {
             limiter.acquire().await;
         }
 
-        let _permit = match self.semaphore.acquire().await {
-            Ok(p) => p,
-            Err(_) => {
-                for req in batch {
-                    let _ = req
-                        .response_tx
-                        .send(Err(SemanticError::Internal("Semaphore closed".to_string())));
-                }
-                return;
+        let Ok(_permit) = self.semaphore.acquire().await else {
+            for req in batch {
+                let _ = req
+                    .response_tx
+                    .send(Err(SemanticError::Internal("Semaphore closed".to_string())));
             }
+            return;
         };
 
         let texts: Vec<&str> = batch.iter().map(|r| r.text.as_str()).collect();

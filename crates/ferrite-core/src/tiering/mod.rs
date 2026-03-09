@@ -41,6 +41,8 @@ mod engine;
 /// Smart data lifecycle manager with automated tier transitions.
 pub mod lifecycle;
 mod migration;
+/// ML-based tiering engine for data placement optimization.
+pub mod ml_engine;
 mod optimizer;
 pub mod pipeline;
 pub mod predictor;
@@ -65,6 +67,7 @@ pub use config::{
 pub use cost::{TierCostBreakdown, TierCostCalculator};
 pub use engine::{TierDistribution, TieringEngine, TieringInfo};
 pub use migration::{Migration, MigrationDirection, MigrationExecutor, MigrationState};
+pub use ml_engine::{MlTieringConfig, OnlineLearningModel};
 pub use optimizer::PlacementOptimizer;
 pub use predictor::{
     AdaptivePredictor, AdaptivePredictorConfig, KeyAccessProfile, PredictorStats,

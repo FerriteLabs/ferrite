@@ -1,3 +1,5 @@
+#![allow(clippy::print_stdout)]
+#![allow(clippy::print_stdout)]
 //! Persistence Configuration Example
 //!
 //! Demonstrates Ferrite's embedded database configuration options:
@@ -38,7 +40,7 @@ fn main() -> ferrite::embedded::core::Result<()> {
     {
         let persistent_db = Database::open(&db_path)?;
         persistent_db.set("persistent_key", "This data survives restarts")?;
-        println!("Created persistent database at: {:?}", db_path);
+        println!("Created persistent database at: {}", db_path.display());
         println!(
             "Data written: {:?}",
             persistent_db.get_str("persistent_key")?
@@ -240,7 +242,7 @@ fn main() -> ferrite::embedded::core::Result<()> {
     println!("  Smaller memory limit, fewer databases");
 
     println!("\nCaching (Speed Priority):");
-    let _cache_config = EmbeddedConfig {
+    let _ = EmbeddedConfig {
         path: None, // In-memory
         sync_mode: SyncMode::None,
         wal_enabled: false,

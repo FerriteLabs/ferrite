@@ -1,4 +1,4 @@
-#![allow(clippy::unwrap_used)]
+#![allow(clippy::unwrap_used, clippy::float_cmp, clippy::print_stderr)]
 //! Redis Compatibility Test Suite
 //!
 //! Automated validation framework that tests Ferrite's compatibility with Redis

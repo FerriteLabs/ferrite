@@ -214,9 +214,8 @@ pub fn xtrim(store: &Arc<Store>, db: u8, key: &Bytes, maxlen: usize) -> Frame {
 
 /// Execute XTRIM command (MINID strategy)
 pub fn xtrim_by_minid(store: &Arc<Store>, db: u8, key: &Bytes, minid_str: &str) -> Frame {
-    let minid = match StreamEntryId::parse(minid_str) {
-        Some(id) => id,
-        None => return Frame::error("ERR Invalid stream ID specified as stream command argument"),
+    let Some(minid) = StreamEntryId::parse(minid_str) else {
+        return Frame::error("ERR Invalid stream ID specified as stream command argument");
     };
 
     match store.get(db, key) {
@@ -1020,9 +1019,8 @@ pub fn xreadgroup(
                     )
                 });
 
-                let (last_delivered_id, consumer_pending) = match group_info {
-                    Some((lid, cp)) => (lid, cp),
-                    None => continue, // Skip streams without this consumer group
+                let Some((last_delivered_id, consumer_pending)) = group_info else {
+                    continue; // Skip streams without this consumer group
                 };
 
                 let entries = if id_str == ">" {

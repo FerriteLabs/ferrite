@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout)]
 //! Edge case tests for replication subsystem
 //!
 //! Tests PSYNC2 protocol edge cases, failover scenarios, and lag monitoring.

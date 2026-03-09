@@ -346,8 +346,7 @@ impl MemcachedTextParser {
                     *value = input[data_start..data_start + take].to_vec();
                 }
             }
-            MemcachedCommand::Add { value, .. }
-            | MemcachedCommand::Replace { value, .. } => {
+            MemcachedCommand::Add { value, .. } | MemcachedCommand::Replace { value, .. } => {
                 let available = input.len().saturating_sub(data_start);
                 if available > 0 {
                     // Trim trailing \r\n from value
@@ -471,10 +470,8 @@ impl MemcachedHandler {
                 let key_bytes = Bytes::from(key);
                 let val = Value::String(Bytes::from(value));
                 if exptime > 0 {
-                    let expires_at =
-                        SystemTime::now() + Duration::from_secs(u64::from(exptime));
-                    self.store
-                        .set_with_expiry(0, key_bytes, val, expires_at);
+                    let expires_at = SystemTime::now() + Duration::from_secs(u64::from(exptime));
+                    self.store.set_with_expiry(0, key_bytes, val, expires_at);
                 } else {
                     self.store.set(0, key_bytes, val);
                 }
@@ -492,10 +489,8 @@ impl MemcachedHandler {
                 }
                 let val = Value::String(Bytes::from(value));
                 if exptime > 0 {
-                    let expires_at =
-                        SystemTime::now() + Duration::from_secs(u64::from(exptime));
-                    self.store
-                        .set_with_expiry(0, key_bytes, val, expires_at);
+                    let expires_at = SystemTime::now() + Duration::from_secs(u64::from(exptime));
+                    self.store.set_with_expiry(0, key_bytes, val, expires_at);
                 } else {
                     self.store.set(0, key_bytes, val);
                 }
@@ -513,10 +508,8 @@ impl MemcachedHandler {
                 }
                 let val = Value::String(Bytes::from(value));
                 if exptime > 0 {
-                    let expires_at =
-                        SystemTime::now() + Duration::from_secs(u64::from(exptime));
-                    self.store
-                        .set_with_expiry(0, key_bytes, val, expires_at);
+                    let expires_at = SystemTime::now() + Duration::from_secs(u64::from(exptime));
+                    self.store.set_with_expiry(0, key_bytes, val, expires_at);
                 } else {
                     self.store.set(0, key_bytes, val);
                 }
@@ -861,11 +854,7 @@ mod tests {
     #[test]
     fn test_handler_incr_decr() {
         let store = Arc::new(Store::new(16));
-        store.set(
-            0,
-            Bytes::from("counter"),
-            Value::String(Bytes::from("10")),
-        );
+        store.set(0, Bytes::from("counter"), Value::String(Bytes::from("10")));
         let handler = MemcachedHandler::new(store);
 
         let resp = handler.execute(MemcachedCommand::Incr {

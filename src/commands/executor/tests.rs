@@ -2,7 +2,8 @@
 use super::*;
 use crate::auth::Acl;
 use crate::commands::blocking;
-use crate::commands::parser::Command;
+use crate::commands::parser::{Command, SetOptions};
+use crate::commands::sorted_sets::ZAddOptions;
 use crate::commands::BlockingListManager;
 use crate::protocol::Frame;
 use crate::runtime::SubscriptionManager;
@@ -38,7 +39,7 @@ async fn test_get_set() {
             Command::Set {
                 key: Bytes::from("key"),
                 value: Bytes::from("value"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -70,7 +71,7 @@ async fn test_del() {
             Command::Set {
                 key: Bytes::from("key"),
                 value: Bytes::from("value"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -132,7 +133,7 @@ async fn test_set_nx() {
                 value: Bytes::from("value1"),
                 options: crate::commands::parser::SetOptions {
                     nx: true,
-                    ..Default::default()
+                    ..SetOptions::default()
                 },
             },
             0,
@@ -148,7 +149,7 @@ async fn test_set_nx() {
                 value: Bytes::from("value2"),
                 options: crate::commands::parser::SetOptions {
                     nx: true,
-                    ..Default::default()
+                    ..SetOptions::default()
                 },
             },
             0,
@@ -781,7 +782,7 @@ async fn test_execute_with_acl_default_user() {
             Command::Set {
                 key: Bytes::from("key"),
                 value: Bytes::from("value"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
             "default",
@@ -841,7 +842,7 @@ async fn test_execute_with_acl_restricted_user() {
             Command::Set {
                 key: Bytes::from("key"),
                 value: Bytes::from("value"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
             "readonly",
@@ -861,7 +862,7 @@ async fn test_execute_with_acl_restricted_user() {
             Command::Set {
                 key: Bytes::from("key"),
                 value: Bytes::from("value"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
             "default",
@@ -920,7 +921,7 @@ async fn test_execute_with_acl_key_pattern() {
             Command::Set {
                 key: Bytes::from("user:123"),
                 value: Bytes::from("data"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
             "app",
@@ -934,7 +935,7 @@ async fn test_execute_with_acl_key_pattern() {
             Command::Set {
                 key: Bytes::from("admin:settings"),
                 value: Bytes::from("data"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
             "app",
@@ -987,7 +988,7 @@ async fn test_command_meta_correctness() {
     let set_cmd = Command::Set {
         key: Bytes::from("mykey"),
         value: Bytes::from("value"),
-        options: Default::default(),
+        options: SetOptions::default(),
     };
     let meta = set_cmd.meta();
     assert_eq!(meta.name, "SET");
@@ -1004,7 +1005,7 @@ async fn test_command_meta_correctness() {
 
     let zadd_cmd = Command::ZAdd {
         key: Bytes::from("myset"),
-        options: Default::default(),
+        options: ZAddOptions::default(),
         pairs: vec![(1.0, Bytes::from("member"))],
     };
     let meta = zadd_cmd.meta();
@@ -1316,7 +1317,7 @@ async fn test_zset_zadd_zrange() {
         .execute(
             Command::ZAdd {
                 key: Bytes::from("myzset"),
-                options: Default::default(),
+                options: ZAddOptions::default(),
                 pairs: vec![
                     (1.0, Bytes::from("one")),
                     (2.0, Bytes::from("two")),
@@ -1356,7 +1357,7 @@ async fn test_zset_zscore() {
         .execute(
             Command::ZAdd {
                 key: Bytes::from("myzset"),
-                options: Default::default(),
+                options: ZAddOptions::default(),
                 pairs: vec![(1.5, Bytes::from("member"))],
             },
             0,
@@ -1394,7 +1395,7 @@ async fn test_database_isolation() {
             Command::Set {
                 key: Bytes::from("key"),
                 value: Bytes::from("db0-value"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -1406,7 +1407,7 @@ async fn test_database_isolation() {
             Command::Set {
                 key: Bytes::from("key"),
                 value: Bytes::from("db1-value"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             1,
         )
@@ -1464,7 +1465,7 @@ async fn test_incr_decr() {
             Command::Set {
                 key: Bytes::from("counter"),
                 value: Bytes::from("10"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -1527,7 +1528,7 @@ async fn test_incr_non_integer() {
             Command::Set {
                 key: Bytes::from("str"),
                 value: Bytes::from("hello"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -1562,7 +1563,7 @@ async fn test_expire_ttl() {
             Command::Set {
                 key: Bytes::from("key"),
                 value: Bytes::from("value"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -1678,7 +1679,7 @@ async fn test_exists_multiple_keys() {
             Command::Set {
                 key: Bytes::from("k1"),
                 value: Bytes::from("v1"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -1688,7 +1689,7 @@ async fn test_exists_multiple_keys() {
             Command::Set {
                 key: Bytes::from("k2"),
                 value: Bytes::from("v2"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -1718,7 +1719,7 @@ async fn test_type_command() {
             Command::Set {
                 key: Bytes::from("str"),
                 value: Bytes::from("value"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -1801,7 +1802,7 @@ async fn test_dbsize() {
             Command::Set {
                 key: Bytes::from("k1"),
                 value: Bytes::from("v1"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -1811,7 +1812,7 @@ async fn test_dbsize() {
             Command::Set {
                 key: Bytes::from("k2"),
                 value: Bytes::from("v2"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -1852,7 +1853,7 @@ async fn test_rename() {
             Command::Set {
                 key: Bytes::from("oldkey"),
                 value: Bytes::from("value"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -1962,7 +1963,7 @@ async fn test_strlen() {
             Command::Set {
                 key: Bytes::from("mykey"),
                 value: Bytes::from("Hello World"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -1988,7 +1989,7 @@ async fn test_getrange() {
             Command::Set {
                 key: Bytes::from("mykey"),
                 value: Bytes::from("Hello World"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -2035,7 +2036,7 @@ async fn test_setrange() {
             Command::Set {
                 key: Bytes::from("key"),
                 value: Bytes::from("Hello World"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -2076,7 +2077,7 @@ async fn test_incrby_decrby() {
             Command::Set {
                 key: Bytes::from("counter"),
                 value: Bytes::from("10"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -2116,7 +2117,7 @@ async fn test_incrbyfloat() {
             Command::Set {
                 key: Bytes::from("mykey"),
                 value: Bytes::from("10.5"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -2149,7 +2150,7 @@ async fn test_getdel() {
             Command::Set {
                 key: Bytes::from("mykey"),
                 value: Bytes::from("value"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -2297,7 +2298,7 @@ async fn test_bitcount() {
             Command::Set {
                 key: Bytes::from("mykey"),
                 value: Bytes::from("foobar"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -2347,7 +2348,7 @@ async fn test_bitop_and() {
             Command::Set {
                 key: Bytes::from("key1"),
                 value: Bytes::from("foof"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -2357,7 +2358,7 @@ async fn test_bitop_and() {
             Command::Set {
                 key: Bytes::from("key2"),
                 value: Bytes::from("foof"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -2388,7 +2389,7 @@ async fn test_bitop_or() {
             Command::Set {
                 key: Bytes::from("key1"),
                 value: Bytes::from("foof"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -2398,7 +2399,7 @@ async fn test_bitop_or() {
             Command::Set {
                 key: Bytes::from("key2"),
                 value: Bytes::from("foof"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -2430,7 +2431,7 @@ async fn test_bitpos() {
             Command::Set {
                 key: Bytes::from("mykey"),
                 value: Bytes::from_static(&[0xff, 0xf0, 0x00]),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -3227,7 +3228,7 @@ async fn test_zcard() {
         .execute(
             Command::ZAdd {
                 key: Bytes::from("myzset"),
-                options: Default::default(),
+                options: ZAddOptions::default(),
                 pairs: vec![
                     (1.0, Bytes::from("a")),
                     (2.0, Bytes::from("b")),
@@ -3257,7 +3258,7 @@ async fn test_zcount() {
         .execute(
             Command::ZAdd {
                 key: Bytes::from("myzset"),
-                options: Default::default(),
+                options: ZAddOptions::default(),
                 pairs: vec![
                     (1.0, Bytes::from("a")),
                     (2.0, Bytes::from("b")),
@@ -3289,7 +3290,7 @@ async fn test_zrem() {
         .execute(
             Command::ZAdd {
                 key: Bytes::from("myzset"),
-                options: Default::default(),
+                options: ZAddOptions::default(),
                 pairs: vec![
                     (1.0, Bytes::from("a")),
                     (2.0, Bytes::from("b")),
@@ -3330,7 +3331,7 @@ async fn test_zrank() {
         .execute(
             Command::ZAdd {
                 key: Bytes::from("myzset"),
-                options: Default::default(),
+                options: ZAddOptions::default(),
                 pairs: vec![
                     (1.0, Bytes::from("a")),
                     (2.0, Bytes::from("b")),
@@ -3373,7 +3374,7 @@ async fn test_zrevrank() {
         .execute(
             Command::ZAdd {
                 key: Bytes::from("myzset"),
-                options: Default::default(),
+                options: ZAddOptions::default(),
                 pairs: vec![
                     (1.0, Bytes::from("a")),
                     (2.0, Bytes::from("b")),
@@ -3404,7 +3405,7 @@ async fn test_zincrby() {
         .execute(
             Command::ZAdd {
                 key: Bytes::from("myzset"),
-                options: Default::default(),
+                options: ZAddOptions::default(),
                 pairs: vec![(1.0, Bytes::from("member"))],
             },
             0,
@@ -3441,7 +3442,7 @@ async fn test_unlink() {
             Command::Set {
                 key: Bytes::from("key1"),
                 value: Bytes::from("value1"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -3451,7 +3452,7 @@ async fn test_unlink() {
             Command::Set {
                 key: Bytes::from("key2"),
                 value: Bytes::from("value2"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -3562,7 +3563,7 @@ async fn test_touch() {
             Command::Set {
                 key: Bytes::from("key1"),
                 value: Bytes::from("value1"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -3572,7 +3573,7 @@ async fn test_touch() {
             Command::Set {
                 key: Bytes::from("key2"),
                 value: Bytes::from("value2"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -3602,7 +3603,7 @@ async fn test_keys_pattern() {
             Command::Set {
                 key: Bytes::from("hello"),
                 value: Bytes::from("value"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -3612,7 +3613,7 @@ async fn test_keys_pattern() {
             Command::Set {
                 key: Bytes::from("hallo"),
                 value: Bytes::from("value"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -3622,7 +3623,7 @@ async fn test_keys_pattern() {
             Command::Set {
                 key: Bytes::from("world"),
                 value: Bytes::from("value"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -3653,7 +3654,7 @@ async fn test_scan() {
                 Command::Set {
                     key: Bytes::from(format!("key{}", i)),
                     value: Bytes::from("value"),
-                    options: Default::default(),
+                    options: SetOptions::default(),
                 },
                 0,
             )
@@ -3953,7 +3954,7 @@ async fn test_xadd() {
         Frame::Bulk(Some(id)) => {
             // Auto-generated ID contains timestamp
             let id_str = String::from_utf8_lossy(&id);
-            assert!(id_str.contains("-"));
+            assert!(id_str.contains('-'));
         }
         other => panic!("Expected bulk string with stream ID, got {:?}", other),
     }
@@ -4062,7 +4063,7 @@ async fn test_object_encoding() {
             Command::Set {
                 key: Bytes::from("mykey"),
                 value: Bytes::from("hello"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -4092,7 +4093,7 @@ async fn test_copy() {
             Command::Set {
                 key: Bytes::from("source"),
                 value: Bytes::from("value"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -4135,7 +4136,7 @@ async fn test_renamenx() {
             Command::Set {
                 key: Bytes::from("oldkey"),
                 value: Bytes::from("value"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -4159,7 +4160,7 @@ async fn test_renamenx() {
             Command::Set {
                 key: Bytes::from("anotherkey"),
                 value: Bytes::from("value2"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -4187,7 +4188,7 @@ async fn test_expireat() {
             Command::Set {
                 key: Bytes::from("mykey"),
                 value: Bytes::from("value"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -4554,7 +4555,7 @@ async fn test_bzpopmin_pops_minimum() {
         .execute(
             Command::ZAdd {
                 key: Bytes::from("myzset"),
-                options: Default::default(),
+                options: ZAddOptions::default(),
                 pairs: vec![(1.0, Bytes::from("one")), (2.0, Bytes::from("two"))],
             },
             0,
@@ -4587,7 +4588,7 @@ async fn test_bzpopmax_pops_maximum() {
         .execute(
             Command::ZAdd {
                 key: Bytes::from("myzset"),
-                options: Default::default(),
+                options: ZAddOptions::default(),
                 pairs: vec![(1.0, Bytes::from("one")), (2.0, Bytes::from("two"))],
             },
             0,
@@ -4708,7 +4709,7 @@ async fn test_wrongtype_error_list_command_on_string() {
             Command::Set {
                 key: Bytes::from("mykey"),
                 value: Bytes::from("stringvalue"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -4744,7 +4745,7 @@ async fn test_wrongtype_error_hash_command_on_string() {
             Command::Set {
                 key: Bytes::from("mykey"),
                 value: Bytes::from("stringvalue"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -4815,7 +4816,7 @@ async fn test_incr_integer_overflow() {
             Command::Set {
                 key: Bytes::from("counter"),
                 value: Bytes::from(i64::MAX.to_string()),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -4914,7 +4915,7 @@ async fn test_getex_sets_expiration() {
             Command::Set {
                 key: Bytes::from("mykey"),
                 value: Bytes::from("myvalue"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -5017,7 +5018,7 @@ async fn test_lcs_returns_longest_common_substring() {
             Command::Set {
                 key: Bytes::from("key1"),
                 value: Bytes::from("ohmytext"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -5028,7 +5029,7 @@ async fn test_lcs_returns_longest_common_substring() {
             Command::Set {
                 key: Bytes::from("key2"),
                 value: Bytes::from("mynewtext"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -5063,7 +5064,7 @@ async fn test_lcs_len_only_returns_integer() {
             Command::Set {
                 key: Bytes::from("key1"),
                 value: Bytes::from("ohmytext"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -5074,7 +5075,7 @@ async fn test_lcs_len_only_returns_integer() {
             Command::Set {
                 key: Bytes::from("key2"),
                 value: Bytes::from("mynewtext"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -5149,7 +5150,7 @@ async fn test_msetnx_fails_when_one_key_exists() {
             Command::Set {
                 key: Bytes::from("key1"),
                 value: Bytes::from("existing"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -5197,7 +5198,7 @@ async fn test_setrange_modifies_string_at_offset() {
             Command::Set {
                 key: Bytes::from("mykey"),
                 value: Bytes::from("Hello World"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -5248,7 +5249,7 @@ async fn test_getrange_with_positive_indices() {
             Command::Set {
                 key: Bytes::from("mykey"),
                 value: Bytes::from("This is a string"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -5282,7 +5283,7 @@ async fn test_getrange_with_negative_indices() {
             Command::Set {
                 key: Bytes::from("mykey"),
                 value: Bytes::from("This is a string"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -5316,7 +5317,7 @@ async fn test_getset_atomically_replaces_value() {
             Command::Set {
                 key: Bytes::from("mykey"),
                 value: Bytes::from("old"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -5366,7 +5367,7 @@ async fn test_incrbyfloat_with_positive_delta() {
             Command::Set {
                 key: Bytes::from("mykey"),
                 value: Bytes::from("10.5"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -5397,7 +5398,7 @@ async fn test_incrbyfloat_with_negative_delta() {
             Command::Set {
                 key: Bytes::from("mykey"),
                 value: Bytes::from("10.5"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -5990,7 +5991,7 @@ async fn test_cluster_countkeysinslot_with_real_keys() {
             Command::Set {
                 key: key.clone(),
                 value: Bytes::from("value"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -6032,7 +6033,7 @@ async fn test_cluster_getkeysinslot_with_real_keys() {
             Command::Set {
                 key: key.clone(),
                 value: Bytes::from("val"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -6758,7 +6759,7 @@ async fn test_cluster_getkeysinslot_count_limit() {
                 Command::Set {
                     key: Bytes::from(format!("{{sameSlot}}:key{}", i)),
                     value: Bytes::from("val"),
-                    options: Default::default(),
+                    options: SetOptions::default(),
                 },
                 0,
             )
@@ -6848,7 +6849,7 @@ async fn test_randomkey_with_keys() {
             Command::Set {
                 key: Bytes::from("a"),
                 value: Bytes::from("1"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -6858,7 +6859,7 @@ async fn test_randomkey_with_keys() {
             Command::Set {
                 key: Bytes::from("b"),
                 value: Bytes::from("2"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -6881,7 +6882,7 @@ async fn test_object_refcount() {
             Command::Set {
                 key: Bytes::from("k"),
                 value: Bytes::from("v"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -6922,7 +6923,7 @@ async fn test_object_idletime() {
             Command::Set {
                 key: Bytes::from("k"),
                 value: Bytes::from("v"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -6956,7 +6957,7 @@ async fn test_object_freq() {
             Command::Set {
                 key: Bytes::from("k"),
                 value: Bytes::from("v"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -7006,7 +7007,7 @@ async fn test_object_encoding_int() {
             Command::Set {
                 key: Bytes::from("intkey"),
                 value: Bytes::from("12345"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -7035,7 +7036,7 @@ async fn test_object_encoding_embstr() {
             Command::Set {
                 key: Bytes::from("strkey"),
                 value: Bytes::from("hello"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -7104,7 +7105,7 @@ async fn test_scan_with_pattern() {
                 Command::Set {
                     key: Bytes::from(format!("user:{}", i)),
                     value: Bytes::from("v"),
-                    options: Default::default(),
+                    options: SetOptions::default(),
                 },
                 0,
             )
@@ -7115,7 +7116,7 @@ async fn test_scan_with_pattern() {
             Command::Set {
                 key: Bytes::from("other"),
                 value: Bytes::from("v"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -7166,7 +7167,7 @@ async fn test_scan_with_type_filter() {
             Command::Set {
                 key: Bytes::from("str1"),
                 value: Bytes::from("v"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -7226,7 +7227,7 @@ async fn test_flushdb_clears_data() {
             Command::Set {
                 key: Bytes::from("a"),
                 value: Bytes::from("1"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -7236,7 +7237,7 @@ async fn test_flushdb_clears_data() {
             Command::Set {
                 key: Bytes::from("b"),
                 value: Bytes::from("2"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -7262,7 +7263,7 @@ async fn test_flushall_clears_all_dbs() {
             Command::Set {
                 key: Bytes::from("a"),
                 value: Bytes::from("1"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -7272,7 +7273,7 @@ async fn test_flushall_clears_all_dbs() {
             Command::Set {
                 key: Bytes::from("b"),
                 value: Bytes::from("2"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             1,
         )
@@ -7297,7 +7298,7 @@ async fn test_flushdb_async_option() {
             Command::Set {
                 key: Bytes::from("x"),
                 value: Bytes::from("y"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -7396,7 +7397,7 @@ async fn test_command_list() {
         .await;
     match response {
         Frame::Array(Some(arr)) => {
-            assert!(arr.len() > 50, "COMMAND LIST should list many commands")
+            assert!(arr.len() > 50, "COMMAND LIST should list many commands");
         }
         other => panic!("Expected array from COMMAND LIST, got {:?}", other),
     }
@@ -7563,7 +7564,7 @@ async fn test_dbsize_multiple_databases() {
             Command::Set {
                 key: Bytes::from("a"),
                 value: Bytes::from("1"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             0,
         )
@@ -7573,7 +7574,7 @@ async fn test_dbsize_multiple_databases() {
             Command::Set {
                 key: Bytes::from("b"),
                 value: Bytes::from("2"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             1,
         )
@@ -7583,7 +7584,7 @@ async fn test_dbsize_multiple_databases() {
             Command::Set {
                 key: Bytes::from("c"),
                 value: Bytes::from("3"),
-                options: Default::default(),
+                options: SetOptions::default(),
             },
             1,
         )
@@ -7604,7 +7605,7 @@ async fn test_zadd_rejects_nan_score() {
         .execute(
             Command::ZAdd {
                 key: Bytes::from("myzset"),
-                options: Default::default(),
+                options: ZAddOptions::default(),
                 pairs: vec![(f64::NAN, Bytes::from("member"))],
             },
             0,
@@ -7625,7 +7626,7 @@ async fn test_zadd_allows_infinity_scores() {
         .execute(
             Command::ZAdd {
                 key: Bytes::from("myzset"),
-                options: Default::default(),
+                options: ZAddOptions::default(),
                 pairs: vec![
                     (f64::NEG_INFINITY, Bytes::from("lowest")),
                     (f64::INFINITY, Bytes::from("highest")),
@@ -7645,7 +7646,7 @@ async fn test_zrangestore_by_rank() {
         .execute(
             Command::ZAdd {
                 key: Bytes::from("src"),
-                options: Default::default(),
+                options: ZAddOptions::default(),
                 pairs: vec![
                     (1.0, Bytes::from("a")),
                     (2.0, Bytes::from("b")),
@@ -7678,7 +7679,12 @@ async fn test_zrangestore_by_rank() {
     assert!(matches!(response, Frame::Integer(3)));
 
     let response = executor
-        .execute(Command::ZCard { key: Bytes::from("dst") }, 0)
+        .execute(
+            Command::ZCard {
+                key: Bytes::from("dst"),
+            },
+            0,
+        )
         .await;
     assert!(matches!(response, Frame::Integer(3)));
 }

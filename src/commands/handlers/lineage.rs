@@ -45,18 +45,15 @@ fn handle_record(args: &[String]) -> Frame {
         );
     }
 
-    let source_type = match NodeType::from_str_loose(&args[0]) {
-        Some(t) => t,
-        None => return err_frame(&format!("unknown source node type '{}'", args[0])),
+    let Some(source_type) = NodeType::from_str_loose(&args[0]) else {
+        return err_frame(&format!("unknown source node type '{}'", args[0]));
     };
     let source_name = &args[1];
-    let edge_type = match EdgeType::from_str_loose(&args[2]) {
-        Some(t) => t,
-        None => return err_frame(&format!("unknown edge type '{}'", args[2])),
+    let Some(edge_type) = EdgeType::from_str_loose(&args[2]) else {
+        return err_frame(&format!("unknown edge type '{}'", args[2]));
     };
-    let target_type = match NodeType::from_str_loose(&args[3]) {
-        Some(t) => t,
-        None => return err_frame(&format!("unknown target node type '{}'", args[3])),
+    let Some(target_type) = NodeType::from_str_loose(&args[3]) else {
+        return err_frame(&format!("unknown target node type '{}'", args[3]));
     };
     let target_name = &args[4];
 
@@ -88,9 +85,8 @@ fn handle_ancestors(args: &[String]) -> Frame {
         return err_frame("LINEAGE.ANCESTORS requires: node_type name [DEPTH n]");
     }
 
-    let node_type = match NodeType::from_str_loose(&args[0]) {
-        Some(t) => t,
-        None => return err_frame(&format!("unknown node type '{}'", args[0])),
+    let Some(node_type) = NodeType::from_str_loose(&args[0]) else {
+        return err_frame(&format!("unknown node type '{}'", args[0]));
     };
     let name = &args[1];
     let depth = parse_depth_arg(args, 2);
@@ -106,9 +102,8 @@ fn handle_descendants(args: &[String]) -> Frame {
         return err_frame("LINEAGE.DESCENDANTS requires: node_type name [DEPTH n]");
     }
 
-    let node_type = match NodeType::from_str_loose(&args[0]) {
-        Some(t) => t,
-        None => return err_frame(&format!("unknown node type '{}'", args[0])),
+    let Some(node_type) = NodeType::from_str_loose(&args[0]) else {
+        return err_frame(&format!("unknown node type '{}'", args[0]));
     };
     let name = &args[1];
     let depth = parse_depth_arg(args, 2);
@@ -151,14 +146,12 @@ fn handle_path(args: &[String]) -> Frame {
         return err_frame("LINEAGE.PATH requires: from_type from_name to_type to_name");
     }
 
-    let from_type = match NodeType::from_str_loose(&args[0]) {
-        Some(t) => t,
-        None => return err_frame(&format!("unknown from node type '{}'", args[0])),
+    let Some(from_type) = NodeType::from_str_loose(&args[0]) else {
+        return err_frame(&format!("unknown from node type '{}'", args[0]));
     };
     let from_name = &args[1];
-    let to_type = match NodeType::from_str_loose(&args[2]) {
-        Some(t) => t,
-        None => return err_frame(&format!("unknown to node type '{}'", args[2])),
+    let Some(to_type) = NodeType::from_str_loose(&args[2]) else {
+        return err_frame(&format!("unknown to node type '{}'", args[2]));
     };
     let to_name = &args[3];
 

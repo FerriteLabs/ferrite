@@ -190,7 +190,7 @@ async fn test_list_operations() {
     assert!(resp.contains(":3"), "LLEN should return 3");
 
     let resp = send_command(&mut stream, &["LPOP", "mylist"]).await;
-    assert!(resp.contains("a"), "LPOP should return first element");
+    assert!(resp.contains('a'), "LPOP should return first element");
 }
 
 #[tokio::test]

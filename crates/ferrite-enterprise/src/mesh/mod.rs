@@ -211,8 +211,7 @@ impl MeshOrchestrator {
             if !unhealthy.is_empty() {
                 plan.steps
                     .retain(|step| !unhealthy.contains(&step.source_id));
-                plan.sources_involved
-                    .retain(|id| !unhealthy.contains(id));
+                plan.sources_involved.retain(|id| !unhealthy.contains(id));
                 plan.estimated_latency_ms = 10 * plan.steps.len() as u64;
             }
         }

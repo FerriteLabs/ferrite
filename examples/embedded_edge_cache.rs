@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout)]
 //! Edge caching with periodic cloud sync
 //!
 //! Demonstrates the edge-to-cloud sync pattern commonly used in IoT and edge

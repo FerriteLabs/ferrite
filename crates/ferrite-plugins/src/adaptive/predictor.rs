@@ -256,9 +256,8 @@ impl PredictionModel {
         let confidence = (1.0 - recent_error.min(1.0)).max(0.0);
 
         // Predict other metrics based on correlations
-        let current = match samples.back() {
-            Some(s) => s,
-            None => return PredictionResult::default(),
+        let Some(current) = samples.back() else {
+            return PredictionResult::default();
         };
         let ops_ratio = if current.ops_per_second > 0.0 {
             predicted_ops / current.ops_per_second
@@ -336,9 +335,8 @@ impl PredictionModel {
             return 0.0;
         }
 
-        let latest = match ops.last() {
-            Some(v) => v,
-            None => return 0.0,
+        let Some(latest) = ops.last() else {
+            return 0.0;
         };
         let z_score = ((latest - mean) / std_dev).abs();
 

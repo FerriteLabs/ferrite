@@ -196,11 +196,11 @@ fn version_branch_create(args: &[String]) -> Frame {
     }
 
     let name = &args[0];
-    let mut from = "main".to_string();
-
-    if args.len() >= 3 && args[1].to_uppercase() == "FROM" {
-        from = args[2].clone();
-    }
+    let from = if args.len() >= 3 && args[1].to_uppercase() == "FROM" {
+        args[2].clone()
+    } else {
+        "main".to_string()
+    };
 
     match get_manager().create_branch(name, &from) {
         Ok(_) => Frame::Simple(Bytes::from("OK")),
@@ -312,11 +312,11 @@ fn version_compact(args: &[String]) -> Frame {
     }
 
     let key = &args[0];
-    let mut keep = 10usize;
-
-    if args.len() >= 3 && args[1].to_uppercase() == "KEEP" {
-        keep = args[2].parse().unwrap_or(10);
-    }
+    let keep = if args.len() >= 3 && args[1].to_uppercase() == "KEEP" {
+        args[2].parse().unwrap_or(10)
+    } else {
+        10usize
+    };
 
     let removed = get_manager().compact(key, keep);
     Frame::Integer(removed as i64)

@@ -1,6 +1,5 @@
 //! Migration state tracking for zero-downtime live migration.
 
-
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 

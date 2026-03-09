@@ -309,7 +309,10 @@ impl Server {
                     }
                 }
             });
-            info!("Auto-save task started (every 60s, threshold: {} changes)", save_threshold);
+            info!(
+                "Auto-save task started (every 60s, threshold: {} changes)",
+                save_threshold
+            );
         }
 
         self.accept_loop().await
@@ -448,9 +451,19 @@ fn estimate_rss_bytes() -> u64 {
             policy: i32,
         }
         const MACH_TASK_BASIC_INFO: u32 = 20;
+        // SAFETY: zeroed memory is valid for libc_task_basic_info (all-integer POD struct)
         let mut info: libc_task_basic_info = unsafe { mem::zeroed() };
         let mut count = (mem::size_of::<libc_task_basic_info>() / mem::size_of::<u32>()) as u32;
-        let kr = unsafe { task_info(mach_task_self(), MACH_TASK_BASIC_INFO, &mut info, &mut count) };
+        // SAFETY: task_info is a stable macOS Mach API; we pass correctly-sized buffer
+        // and count. mach_task_self() always returns the current task port.
+        let kr = unsafe {
+            task_info(
+                mach_task_self(),
+                MACH_TASK_BASIC_INFO,
+                &mut info,
+                &mut count,
+            )
+        };
         if kr == 0 {
             return info.resident_size;
         }

@@ -86,7 +86,7 @@ fn handle_create(args: &[String]) -> Frame {
     };
 
     // CLUSTER
-    let clusters = parse_clusters(&args, &args_upper);
+    let clusters = parse_clusters(args, &args_upper);
 
     let def = GlobalIndexDefinition {
         name,

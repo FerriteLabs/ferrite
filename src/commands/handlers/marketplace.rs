@@ -322,7 +322,7 @@ fn handle_stats() -> Frame {
 // ---------------------------------------------------------------------------
 
 fn handle_help() -> Frame {
-    let help = vec![
+    let help = [
         "MARKETPLACE.INSTALL <name> [version]",
         "MARKETPLACE.UNINSTALL <name>",
         "MARKETPLACE.ENABLE <name>",

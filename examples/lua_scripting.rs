@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout)]
 //! Lua Scripting Example
 //!
 //! Demonstrates Ferrite's Lua scripting support via EVAL/EVALSHA:
@@ -109,7 +110,11 @@ async fn main() -> anyhow::Result<()> {
         let allowed = resp.contains(":1");
         println!(
             "  Request {i}: {}",
-            if allowed { "✅ allowed" } else { "❌ rate-limited" }
+            if allowed {
+                "✅ allowed"
+            } else {
+                "❌ rate-limited"
+            }
         );
     }
 

@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout)]
 //! Basic Operations Example
 //!
 //! Demonstrates core Ferrite embedded database operations:

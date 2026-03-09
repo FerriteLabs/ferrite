@@ -3,7 +3,6 @@
 //! Enhanced observability diagnostics including slow query analysis,
 //! adaptive sampling, hot key detection, and bottleneck analysis.
 
-
 pub mod bottleneck;
 pub mod engine;
 pub mod hotkeys;

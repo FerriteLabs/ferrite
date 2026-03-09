@@ -33,9 +33,8 @@ pub fn handle_cloud_provider_add(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> F
     let name = String::from_utf8_lossy(&args[0]).to_string();
     let type_str = String::from_utf8_lossy(&args[1]).to_lowercase();
 
-    let provider_type = match ProviderType::from_str(&type_str) {
-        Some(pt) => pt,
-        None => return err_frame("invalid provider type (aws, gcp, azure, custom)"),
+    let Some(provider_type) = ProviderType::from_str(&type_str) else {
+        return err_frame("invalid provider type (aws, gcp, azure, custom)");
     };
 
     let mut config = ProviderConfig::new(provider_type);
@@ -288,14 +287,12 @@ pub fn handle_cloud_conflict_resolve(_ctx: &HandlerContext<'_>, args: &[Bytes]) 
     }
 
     let local_value = args[0].to_vec();
-    let local_ts = match String::from_utf8_lossy(&args[1]).parse::<u64>() {
-        Ok(ts) => ts,
-        Err(_) => return err_frame("invalid local timestamp"),
+    let Ok(local_ts) = String::from_utf8_lossy(&args[1]).parse::<u64>() else {
+        return err_frame("invalid local timestamp");
     };
     let remote_value = args[2].to_vec();
-    let remote_ts = match String::from_utf8_lossy(&args[3]).parse::<u64>() {
-        Ok(ts) => ts,
-        Err(_) => return err_frame("invalid remote timestamp"),
+    let Ok(remote_ts) = String::from_utf8_lossy(&args[3]).parse::<u64>() else {
+        return err_frame("invalid remote timestamp");
     };
 
     let resolved =

@@ -884,6 +884,6 @@ mod tests {
         let value_str = "42.5";
         let value: Result<f64, _> = value_str.parse();
         assert!(value.is_ok());
-        assert_eq!(value.unwrap(), 42.5);
+        assert!((value.unwrap() - 42.5).abs() < f64::EPSILON);
     }
 }

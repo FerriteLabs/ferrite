@@ -200,7 +200,9 @@ impl Bucket {
                 // Verify all parts
                 for (part_num, etag) in parts {
                     if !upload.has_part(*part_num, etag) {
-                        return Err(BucketError::InvalidPart { part_number: *part_num });
+                        return Err(BucketError::InvalidPart {
+                            part_number: *part_num,
+                        });
                     }
                 }
 

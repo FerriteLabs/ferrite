@@ -294,9 +294,8 @@ impl TypeSafeGenerator {
         let repo_name = format!("{}Repository", schema.name);
         content.push_str(&format!("export class {} {{\n", repo_name));
         content.push_str("  private client: FerriteClient;\n\n");
-        content.push_str(&format!(
-            "  constructor(client: FerriteClient) {{\n    this.client = client;\n  }}\n\n"
-        ));
+        content
+            .push_str("  constructor(client: FerriteClient) {\n    this.client = client;\n  }\n\n");
 
         // get method
         content.push_str(&format!(
@@ -806,6 +805,7 @@ impl TypeSafeGenerator {
     }
 
     /// Map a field type to its TypeScript representation.
+    #[allow(clippy::only_used_in_recursion)]
     fn field_type_typescript(&self, ft: &FieldType) -> String {
         match ft {
             FieldType::String => "string".to_string(),
@@ -829,6 +829,7 @@ impl TypeSafeGenerator {
     }
 
     /// Map a field type to its Python representation.
+    #[allow(clippy::only_used_in_recursion)]
     fn field_type_python(&self, ft: &FieldType) -> String {
         match ft {
             FieldType::String => "str".to_string(),
@@ -851,6 +852,7 @@ impl TypeSafeGenerator {
     }
 
     /// Map a field type to its Rust representation.
+    #[allow(clippy::only_used_in_recursion)]
     fn field_type_rust(&self, ft: &FieldType) -> String {
         match ft {
             FieldType::String => "String".to_string(),
@@ -873,6 +875,7 @@ impl TypeSafeGenerator {
     }
 
     /// Map a field type to its Go representation.
+    #[allow(clippy::only_used_in_recursion)]
     fn field_type_go(&self, ft: &FieldType) -> String {
         match ft {
             FieldType::String => "string".to_string(),
@@ -908,16 +911,16 @@ impl TypeSafeGenerator {
              }});\n",
             name = schema.name,
             snake = snake,
-            fields = schema
-                .fields
-                .iter()
-                .map(|f| format!(
-                    "      {}: {},\n",
+            fields = schema.fields.iter().fold(String::new(), |mut acc, f| {
+                use std::fmt::Write;
+                let _ = writeln!(
+                    acc,
+                    "      {}: {},",
                     f.name,
                     self.typescript_default_value(&f.field_type)
-                ))
-                .collect::<Vec<_>>()
-                .join("")
+                );
+                acc
+            })
         );
         CodeFile {
             path: format!("{}/{}.test.ts", self.config.output_dir, snake),
@@ -1206,7 +1209,9 @@ mod tests {
         assert!(!result.files.is_empty());
 
         let main_file = &result.files[0];
-        assert!(main_file.path.ends_with(".ts"));
+        assert!(std::path::Path::new(&main_file.path)
+            .extension()
+            .is_some_and(|ext| ext == "ts"));
         assert!(!main_file.is_test);
         assert!(main_file.content.contains("export interface User"));
         assert!(main_file.content.contains("id: string"));
@@ -1271,7 +1276,9 @@ mod tests {
 
         assert_eq!(result.language, Language::Python);
         let main_file = &result.files[0];
-        assert!(main_file.path.ends_with(".py"));
+        assert!(std::path::Path::new(&main_file.path)
+            .extension()
+            .is_some_and(|ext| ext == "py"));
         assert!(main_file.content.contains("@dataclass"));
         assert!(main_file.content.contains("class User:"));
         assert!(main_file.content.contains("id: str"));
@@ -1312,7 +1319,9 @@ mod tests {
 
         assert_eq!(result.language, Language::Rust);
         let main_file = &result.files[0];
-        assert!(main_file.path.ends_with(".rs"));
+        assert!(std::path::Path::new(&main_file.path)
+            .extension()
+            .is_some_and(|ext| ext == "rs"));
         assert!(main_file
             .content
             .contains("#[derive(Clone, Debug, Serialize, Deserialize)]"));
@@ -1353,7 +1362,9 @@ mod tests {
 
         assert_eq!(result.language, Language::Go);
         let main_file = &result.files[0];
-        assert!(main_file.path.ends_with(".go"));
+        assert!(std::path::Path::new(&main_file.path)
+            .extension()
+            .is_some_and(|ext| ext == "go"));
         assert!(main_file.content.contains("package app"));
         assert!(main_file.content.contains("type User struct"));
         assert!(main_file.content.contains("`json:\"id\"`"));
@@ -1637,7 +1648,7 @@ mod tests {
 
     #[test]
     fn test_all_index_types() {
-        let types = vec![
+        let types = [
             IndexType::BTree,
             IndexType::Hash,
             IndexType::FullText,

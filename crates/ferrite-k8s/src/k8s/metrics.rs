@@ -287,6 +287,7 @@ impl ClusterMetrics {
     }
 
     /// Update replica counts
+    #[allow(dead_code)]
     pub fn update_replicas(&self, replicas: u64, ready: u64) {
         self.replicas.store(replicas, Ordering::Release);
         self.ready_replicas.store(ready, Ordering::Release);
@@ -373,8 +374,7 @@ impl Default for AlertConfig {
         }
     }
 }
-    #[allow(dead_code)]
-
+#[allow(dead_code)]
 /// Check alerts and return any that are firing
 pub fn check_alerts(metrics: &OperatorMetrics, config: &AlertConfig) -> Vec<Alert> {
     let mut alerts = Vec::new();
@@ -421,8 +421,7 @@ pub fn check_alerts(metrics: &OperatorMetrics, config: &AlertConfig) -> Vec<Aler
 
     alerts
 }
-    #[allow(dead_code)]
-
+#[allow(dead_code)]
 /// Alert
 #[derive(Debug, Clone)]
 pub struct Alert {
@@ -434,7 +433,7 @@ pub struct Alert {
     pub message: String,
 }
 
-    #[allow(dead_code)]
+#[allow(dead_code)]
 /// Alert severity
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AlertSeverity {

@@ -66,11 +66,14 @@ pub struct ExecutionContext {
     pub metadata: Vec<(String, String)>,
 }
 
+/// Per-function log entries: function name and its log lines.
+type FunctionLogs = Vec<(String, Vec<String>)>;
+
 /// Manages sandboxed function execution.
 pub struct FunctionRuntime {
     limits: FaaSResourceLimits,
     total_invocations: AtomicU64,
-    logs: Arc<Mutex<Vec<(String, Vec<String>)>>>,
+    logs: Arc<Mutex<FunctionLogs>>,
 }
 
 impl FunctionRuntime {

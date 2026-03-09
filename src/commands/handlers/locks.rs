@@ -55,23 +55,23 @@ fn lock_acquire(args: &[String]) -> Frame {
 
     match get_lock_manager().acquire(key, owner, ttl, lock_type) {
         Ok(grant) => {
-            let mut items = Vec::new();
-            items.push(bulk("token"));
-            items.push(Frame::Integer(grant.token as i64));
-            items.push(bulk("expires_in_ms"));
-            items.push(Frame::Integer(
-                grant
-                    .expires_at
-                    .duration_since(std::time::Instant::now())
-                    .as_millis() as i64,
-            ));
+            let mut items = vec![
+                bulk("token"),
+                Frame::Integer(grant.token as i64),
+                bulk("expires_in_ms"),
+                Frame::Integer(
+                    grant
+                        .expires_at
+                        .duration_since(std::time::Instant::now())
+                        .as_millis() as i64,
+                ),
+                bulk("status"),
+            ];
             if let Some(pos) = grant.queue_position {
-                items.push(bulk("status"));
                 items.push(bulk("QUEUED"));
                 items.push(bulk("queue_position"));
                 items.push(Frame::Integer(pos as i64));
             } else {
-                items.push(bulk("status"));
                 items.push(bulk("OK"));
             }
             Frame::Array(Some(items))
@@ -87,9 +87,8 @@ fn lock_release(args: &[String]) -> Frame {
     }
 
     let key = &args[0];
-    let token: u64 = match args[1].parse() {
-        Ok(t) => t,
-        Err(_) => return err_frame("invalid token: must be a positive integer"),
+    let Ok(token) = args[1].parse::<u64>() else {
+        return err_frame("invalid token: must be a positive integer");
     };
 
     match get_lock_manager().release(key, token) {
@@ -105,27 +104,26 @@ fn lock_extend(args: &[String]) -> Frame {
     }
 
     let key = &args[0];
-    let token: u64 = match args[1].parse() {
-        Ok(t) => t,
-        Err(_) => return err_frame("invalid token"),
+    let Ok(token) = args[1].parse::<u64>() else {
+        return err_frame("invalid token");
     };
-    let ttl_ms: u64 = match args[2].parse() {
-        Ok(t) => t,
-        Err(_) => return err_frame("invalid TTL"),
+    let Ok(ttl_ms) = args[2].parse::<u64>() else {
+        return err_frame("invalid TTL");
     };
 
     match get_lock_manager().extend(key, token, Duration::from_millis(ttl_ms)) {
         Ok(grant) => {
-            let mut items = Vec::new();
-            items.push(bulk("token"));
-            items.push(Frame::Integer(grant.token as i64));
-            items.push(bulk("new_expires_in_ms"));
-            items.push(Frame::Integer(
-                grant
-                    .expires_at
-                    .duration_since(std::time::Instant::now())
-                    .as_millis() as i64,
-            ));
+            let items = vec![
+                bulk("token"),
+                Frame::Integer(grant.token as i64),
+                bulk("new_expires_in_ms"),
+                Frame::Integer(
+                    grant
+                        .expires_at
+                        .duration_since(std::time::Instant::now())
+                        .as_millis() as i64,
+                ),
+            ];
             Frame::Array(Some(items))
         }
         Err(e) => err_frame(&e.to_string()),
@@ -144,9 +142,7 @@ fn lock_try(args: &[String]) -> Frame {
 
     match get_lock_manager().try_acquire(key, owner, ttl) {
         Ok(Some(grant)) => {
-            let mut items = Vec::new();
-            items.push(bulk("token"));
-            items.push(Frame::Integer(grant.token as i64));
+            let items = vec![bulk("token"), Frame::Integer(grant.token as i64)];
             Frame::Array(Some(items))
         }
         Ok(None) => Frame::Null,
@@ -162,21 +158,22 @@ fn lock_info(args: &[String]) -> Frame {
 
     match get_lock_manager().lock_info(&args[0]) {
         Some(info) => {
-            let mut items = Vec::new();
-            items.push(bulk("key"));
-            items.push(bulk(info.key));
-            items.push(bulk("owner"));
-            items.push(bulk(info.owner));
-            items.push(bulk("token"));
-            items.push(Frame::Integer(info.token as i64));
-            items.push(bulk("held_for_ms"));
-            items.push(Frame::Integer(info.held_for_ms as i64));
-            items.push(bulk("expires_in_ms"));
-            items.push(Frame::Integer(info.expires_in_ms as i64));
-            items.push(bulk("lock_type"));
-            items.push(bulk(info.lock_type));
-            items.push(bulk("queue_depth"));
-            items.push(Frame::Integer(info.queue_depth as i64));
+            let items = vec![
+                bulk("key"),
+                bulk(info.key),
+                bulk("owner"),
+                bulk(info.owner),
+                bulk("token"),
+                Frame::Integer(info.token as i64),
+                bulk("held_for_ms"),
+                Frame::Integer(info.held_for_ms as i64),
+                bulk("expires_in_ms"),
+                Frame::Integer(info.expires_in_ms as i64),
+                bulk("lock_type"),
+                bulk(info.lock_type),
+                bulk("queue_depth"),
+                Frame::Integer(info.queue_depth as i64),
+            ];
             Frame::Array(Some(items))
         }
         None => Frame::Null,
@@ -193,10 +190,11 @@ fn lock_owner(args: &[String]) -> Frame {
     let items: Vec<Frame> = locks
         .into_iter()
         .map(|info| {
-            let mut entry = Vec::new();
-            entry.push(bulk(info.key));
-            entry.push(Frame::Integer(info.token as i64));
-            entry.push(bulk(info.lock_type));
+            let entry = vec![
+                bulk(info.key),
+                Frame::Integer(info.token as i64),
+                bulk(info.lock_type),
+            ];
             Frame::Array(Some(entry))
         })
         .collect();
@@ -213,11 +211,12 @@ fn lock_deadlocks() -> Frame {
     let items: Vec<Frame> = cycles
         .iter()
         .map(|c| {
-            let mut entry = Vec::new();
-            entry.push(bulk("participants"));
-            entry.push(bulk(c.participants.join(", ")));
-            entry.push(bulk("keys"));
-            entry.push(bulk(c.keys.join(", ")));
+            let entry = vec![
+                bulk("participants"),
+                bulk(c.participants.join(", ")),
+                bulk("keys"),
+                bulk(c.keys.join(", ")),
+            ];
             Frame::Array(Some(entry))
         })
         .collect();
@@ -257,7 +256,7 @@ fn lock_stats() -> Frame {
 
 /// LOCK.HELP
 fn lock_help() -> Frame {
-    let help = vec![
+    let help = [
         "LOCK.ACQUIRE key owner [TTL ms] [TYPE exclusive|read|write] [TIMEOUT ms] - Acquire a lock",
         "LOCK.RELEASE key token - Release a lock by fencing token",
         "LOCK.EXTEND key token ttl_ms - Extend lock TTL",

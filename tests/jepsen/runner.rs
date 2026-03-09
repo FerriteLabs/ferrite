@@ -11,9 +11,7 @@ use std::time::{Duration, Instant};
 use super::fault_injection::{FaultEvent, FaultInjector};
 use super::report::{ReportGenerator, TestResult, TimelineEvent};
 use super::workloads::{CounterWorkload, RegisterWorkload, SetWorkload};
-use super::{
-    ConsistencyModel, HistoryEntry, JepsenConfig, NodeConfig, OpResult, Operation, Workload,
-};
+use super::{ConsistencyModel, HistoryEntry, NodeConfig, OpResult, Workload};
 
 use super::scheduler::{FaultSchedule, ScheduledFault};
 
@@ -109,33 +107,21 @@ impl JepsenRunner {
     /// Run the register linearizability test.
     pub fn run_register_test(&self) -> TestReport {
         let workload = Box::new(RegisterWorkload::new(5));
-        let schedule = self
-            .config
-            .fault_schedule
-            .clone()
-            .unwrap_or_else(FaultSchedule::new);
+        let schedule = self.config.fault_schedule.clone().unwrap_or_default();
         self.run_with_custom_workload(workload, schedule)
     }
 
     /// Run the counter increment test.
     pub fn run_counter_test(&self) -> TestReport {
         let workload = Box::new(CounterWorkload::new(3));
-        let schedule = self
-            .config
-            .fault_schedule
-            .clone()
-            .unwrap_or_else(FaultSchedule::new);
+        let schedule = self.config.fault_schedule.clone().unwrap_or_default();
         self.run_with_custom_workload(workload, schedule)
     }
 
     /// Run the set membership test.
     pub fn run_set_test(&self) -> TestReport {
         let workload = Box::new(SetWorkload::new(3));
-        let schedule = self
-            .config
-            .fault_schedule
-            .clone()
-            .unwrap_or_else(FaultSchedule::new);
+        let schedule = self.config.fault_schedule.clone().unwrap_or_default();
         self.run_with_custom_workload(workload, schedule)
     }
 

@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout)]
 //! Basic embedded Ferrite usage
 //!
 //! Demonstrates the high-level [`Ferrite`] embedded API for strings, counters,

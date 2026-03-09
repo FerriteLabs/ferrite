@@ -120,6 +120,12 @@ pub struct FerritGrpcService {
     store: Option<Arc<Store>>,
 }
 
+impl Default for FerritGrpcService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FerritGrpcService {
     /// Create a new gRPC service instance (without store — for testing/metadata only).
     pub fn new() -> Self {
@@ -311,10 +317,7 @@ impl FerritGrpcService {
     }
 
     fn handle_scan(&self, payload: &serde_json::Value) -> GrpcResponse {
-        let count = payload
-            .get("count")
-            .and_then(|v| v.as_u64())
-            .unwrap_or(10) as usize;
+        let count = payload.get("count").and_then(|v| v.as_u64()).unwrap_or(10) as usize;
 
         if let Some(ref store) = self.store {
             let all_keys = store.keys(0);
@@ -508,11 +511,7 @@ mod tests {
     #[test]
     fn test_del_with_store() {
         let store = Arc::new(Store::new(16));
-        store.set(
-            0,
-            Bytes::from("k1"),
-            Value::String(Bytes::from("v1")),
-        );
+        store.set(0, Bytes::from("k1"), Value::String(Bytes::from("v1")));
         let service = FerritGrpcService::with_store(store);
 
         let resp = service.handle_request("Del", &serde_json::json!({"keys": ["k1", "k2"]}));
@@ -523,16 +522,8 @@ mod tests {
     #[test]
     fn test_scan_with_store() {
         let store = Arc::new(Store::new(16));
-        store.set(
-            0,
-            Bytes::from("a"),
-            Value::String(Bytes::from("1")),
-        );
-        store.set(
-            0,
-            Bytes::from("b"),
-            Value::String(Bytes::from("2")),
-        );
+        store.set(0, Bytes::from("a"), Value::String(Bytes::from("1")));
+        store.set(0, Bytes::from("b"), Value::String(Bytes::from("2")));
         let service = FerritGrpcService::with_store(store);
 
         let resp = service.handle_request("Scan", &serde_json::json!({"count": 10}));
@@ -546,10 +537,7 @@ mod tests {
         let store = Arc::new(Store::new(16));
         let service = FerritGrpcService::with_store(store);
 
-        let resp = service.handle_request(
-            "Execute",
-            &serde_json::json!({"command": "PING"}),
-        );
+        let resp = service.handle_request("Execute", &serde_json::json!({"command": "PING"}));
         assert_eq!(resp.status, 0);
     }
 }

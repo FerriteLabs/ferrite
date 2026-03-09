@@ -93,9 +93,8 @@ pub fn register_host_functions(linker: &mut Linker<HostState>) -> Result<(), Was
             |mut caller: wasmtime::Caller<'_, HostState>, level: i32, ptr: i32, len: i32| {
                 caller.data_mut().host_call_count += 1;
 
-                let memory = match caller.get_export("memory") {
-                    Some(wasmtime::Extern::Memory(mem)) => mem,
-                    _ => return,
+                let Some(wasmtime::Extern::Memory(memory)) = caller.get_export("memory") else {
+                    return;
                 };
 
                 let data = memory.data(&caller);
@@ -151,9 +150,8 @@ pub fn register_host_functions(linker: &mut Linker<HostState>) -> Result<(), Was
                 let db = caller.data().db;
                 let store = caller.data().store_backend.clone();
 
-                let memory = match caller.get_export("memory") {
-                    Some(wasmtime::Extern::Memory(mem)) => mem,
-                    _ => return -2,
+                let Some(wasmtime::Extern::Memory(memory)) = caller.get_export("memory") else {
+                    return -2;
                 };
 
                 // Read key from WASM memory
@@ -220,9 +218,8 @@ pub fn register_host_functions(linker: &mut Linker<HostState>) -> Result<(), Was
                     return -1;
                 }
 
-                let memory = match caller.get_export("memory") {
-                    Some(wasmtime::Extern::Memory(mem)) => mem,
-                    _ => return -1,
+                let Some(wasmtime::Extern::Memory(memory)) = caller.get_export("memory") else {
+                    return -1;
                 };
 
                 let data = memory.data(&caller);
@@ -274,9 +271,8 @@ pub fn register_host_functions(linker: &mut Linker<HostState>) -> Result<(), Was
                     return -1;
                 }
 
-                let memory = match caller.get_export("memory") {
-                    Some(wasmtime::Extern::Memory(mem)) => mem,
-                    _ => return -1,
+                let Some(wasmtime::Extern::Memory(memory)) = caller.get_export("memory") else {
+                    return -1;
                 };
 
                 let data = memory.data(&caller);
@@ -313,9 +309,8 @@ pub fn register_host_functions(linker: &mut Linker<HostState>) -> Result<(), Was
                 let db = caller.data().db;
                 let store = caller.data().store_backend.clone();
 
-                let memory = match caller.get_export("memory") {
-                    Some(wasmtime::Extern::Memory(mem)) => mem,
-                    _ => return -1,
+                let Some(wasmtime::Extern::Memory(memory)) = caller.get_export("memory") else {
+                    return -1;
                 };
 
                 let data = memory.data(&caller);
@@ -349,9 +344,8 @@ pub fn register_host_functions(linker: &mut Linker<HostState>) -> Result<(), Was
                     return i64::MIN;
                 }
 
-                let memory = match caller.get_export("memory") {
-                    Some(wasmtime::Extern::Memory(mem)) => mem,
-                    _ => return i64::MIN,
+                let Some(wasmtime::Extern::Memory(memory)) = caller.get_export("memory") else {
+                    return i64::MIN;
                 };
 
                 let data = memory.data(&caller);
@@ -390,9 +384,8 @@ pub fn register_host_functions(linker: &mut Linker<HostState>) -> Result<(), Was
                 let db = caller.data().db;
                 let store = caller.data().store_backend.clone();
 
-                let memory = match caller.get_export("memory") {
-                    Some(wasmtime::Extern::Memory(mem)) => mem,
-                    _ => return -2,
+                let Some(wasmtime::Extern::Memory(memory)) = caller.get_export("memory") else {
+                    return -2;
                 };
 
                 let data = memory.data(&caller);
@@ -452,9 +445,8 @@ pub fn register_host_functions(linker: &mut Linker<HostState>) -> Result<(), Was
                     return -1;
                 }
 
-                let memory = match caller.get_export("memory") {
-                    Some(wasmtime::Extern::Memory(mem)) => mem,
-                    _ => return -1,
+                let Some(wasmtime::Extern::Memory(memory)) = caller.get_export("memory") else {
+                    return -1;
                 };
 
                 let data = memory.data(&caller);

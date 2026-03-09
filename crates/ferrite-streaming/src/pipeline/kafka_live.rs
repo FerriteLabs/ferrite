@@ -4,13 +4,11 @@
 //! compatible with the vector ingest pipeline. Connects to real Kafka
 //! brokers over TCP, fetches metadata, polls messages, and tracks offsets.
 
-
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
 use super::kafka_wire::{
-    FetchRecord, KafkaWireClient, KafkaWireConfig, KafkaWireError,
-    PartitionMetadata,
+    FetchRecord, KafkaWireClient, KafkaWireConfig, KafkaWireError, PartitionMetadata,
 };
 
 // ---------------------------------------------------------------------------

@@ -1,0 +1,144 @@
+# Ferrite Example Configuration
+#
+# Copy this file to ferrite.toml and customize for your environment:
+#   cp ferrite.example.toml ferrite.toml
+#
+# All values shown are the defaults. Uncomment and modify as needed.
+# For advanced configurations, see docs/EXAMPLE_CONFIGURATIONS.md
+
+# ─── Server ──────────────────────────────────────────────────────────────
+
+[server]
+# Address to listen on. Use "0.0.0.0" for all interfaces.
+bind = "127.0.0.1"
+
+# Redis protocol port.
+port = 6379
+
+# Maximum concurrent client connections.
+max_connections = 10000
+
+# TCP keepalive interval in seconds (0 to disable).
+tcp_keepalive = 300
+
+# Client idle timeout in seconds (0 = no timeout).
+timeout = 0
+
+# Server tick rate in Hz (background tasks frequency).
+# hz = 10
+
+# Maximum bulk string length in bytes.
+# proto_max_bulk_len = 536870912
+
+# Per-connection command rate limit in commands/sec (0 = unlimited).
+# rate_limit_per_sec = 0
+
+# Burst allowance above the sustained rate limit.
+# rate_limit_burst = 100
+
+# Slowlog threshold in microseconds (-1 = disabled).
+# slowlog_log_slower_than = 10000
+
+# Maximum number of slowlog entries.
+# slowlog_max_len = 128
+
+# Keyspace notification events (empty = disabled).
+# See https://redis.io/docs/manual/keyspace-notifications/
+# notify_keyspace_events = ""
+
+# ─── Storage ─────────────────────────────────────────────────────────────
+
+[storage]
+# Storage backend: "hybridlog" (tiered) or "memory" (in-memory only).
+backend = "hybridlog"
+
+# Number of databases (like Redis DB 0-15).
+databases = 16
+
+# Maximum memory for the hot tier. Accepts bytes or human-readable units.
+# Examples: 1073741824, "1GB", "512MB"
+max_memory = "1GB"
+
+# Eviction policy when max_memory is reached.
+# Options: noeviction, allkeys-lru, volatile-lru, allkeys-random,
+#          volatile-random, volatile-ttl
+eviction_policy = "noeviction"
+
+# Maximum key size in bytes.
+# max_key_size = 512
+
+# Maximum value size in bytes.
+# max_value_size = 536870912
+
+# ─── Persistence ─────────────────────────────────────────────────────────
+
+[persistence]
+# Enable the Append-Only File for write durability.
+aof_enabled = true
+
+# AOF sync policy: "always", "everysec", or "no".
+#   always   — fsync every write (safest, slowest)
+#   everysec — fsync once per second (recommended)
+#   no       — let the OS decide (fastest, up to 30s data loss)
+aof_sync = "everysec"
+
+# Enable periodic RDB checkpoints for fast recovery.
+checkpoint_enabled = true
+
+# Checkpoint interval in seconds (0 = disabled).
+checkpoint_interval = 3600
+
+# ─── Logging ─────────────────────────────────────────────────────────────
+
+[logging]
+# Log level: "trace", "debug", "info", "warn", "error".
+level = "info"
+
+# Log format: "text" or "json".
+format = "text"
+
+# ─── Metrics ─────────────────────────────────────────────────────────────
+
+[metrics]
+# Enable the Prometheus metrics endpoint.
+enabled = true
+
+# Metrics endpoint bind address.
+bind = "127.0.0.1"
+
+# Metrics endpoint port.
+port = 9090
+
+# ─── TLS ─────────────────────────────────────────────────────────────────
+
+[tls]
+# Enable TLS encryption.
+enabled = false
+
+# TLS listening port (separate from the plain TCP port).
+# port = 6380
+
+# Path to the TLS certificate file (PEM format).
+# cert_file = "/path/to/cert.pem"
+
+# Path to the TLS private key file (PEM format).
+# key_file = "/path/to/key.pem"
+
+# ─── Cluster ─────────────────────────────────────────────────────────────
+
+# [cluster]
+# enabled = false
+# node_id = ""              # Auto-generated if empty
+# cluster_port = 16379      # Inter-node communication port
+
+# ─── Encryption at Rest ─────────────────────────────────────────────────
+
+# [encryption]
+# enabled = false
+# algorithm = "aes-256-gcm"
+# key_file = "/path/to/encryption.key"
+
+# ─── Audit Logging ──────────────────────────────────────────────────────
+
+# [audit]
+# enabled = false

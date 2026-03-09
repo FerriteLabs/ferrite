@@ -33,7 +33,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 /// Current SDK version string.
-pub const SDK_VERSION: &str = "0.1.0";
+pub const SDK_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// Current API version number. Incremented on breaking changes.
 pub const API_VERSION: u32 = 1;
@@ -115,7 +115,7 @@ impl Default for PluginManifest {
     fn default() -> Self {
         Self {
             name: String::new(),
-            version: "0.1.0".into(),
+            version: env!("CARGO_PKG_VERSION").into(),
             description: String::new(),
             author: String::new(),
             license: "MIT".into(),
@@ -654,7 +654,7 @@ mod tests {
 
     #[test]
     fn test_sdk_version_constants() {
-        assert_eq!(SDK_VERSION, "0.1.0");
+        assert_eq!(SDK_VERSION, env!("CARGO_PKG_VERSION"));
         assert_eq!(API_VERSION, 1);
     }
 
@@ -673,7 +673,7 @@ mod tests {
     fn test_manifest_default() {
         let m = PluginManifest::default();
         assert!(m.name.is_empty());
-        assert_eq!(m.version, "0.1.0");
+        assert_eq!(m.version, env!("CARGO_PKG_VERSION"));
         assert_eq!(m.runtime, RuntimeType::Native);
     }
 

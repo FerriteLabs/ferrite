@@ -508,8 +508,6 @@ impl AccessPredictor {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
-    
 
     fn create_test_pattern(access_count: u64, read_count: u64, write_count: u64) -> QueryPattern {
         QueryPattern {

@@ -8,20 +8,20 @@ pub mod clients;
 pub mod config_manager;
 /// Systematic error recovery and backpressure management.
 pub mod error_recovery;
+/// Redis-compatible keyspace notifications
+pub mod keyspace_notify;
+/// Latency event tracking for LATENCY command family
+pub mod latency;
 /// Graceful shutdown coordinator and crash recovery engine.
 pub mod shutdown;
 /// Slow query log for debugging
 pub mod slowlog;
-/// Latency event tracking for LATENCY command family
-pub mod latency;
 /// Pub/Sub subscription management
 pub mod subscription;
-/// WATCH registry for optimistic locking
-pub mod watch;
 /// Client-side caching via server-assisted key invalidation
 pub mod tracking;
-/// Redis-compatible keyspace notifications
-pub mod keyspace_notify;
+/// WATCH registry for optimistic locking
+pub mod watch;
 
 pub use clients::{ClientInfo, ClientRegistry, PauseMode, SharedClientRegistry};
 pub use keyspace_notify::{KeyspaceNotifier, SharedKeyspaceNotifier};

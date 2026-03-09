@@ -638,9 +638,6 @@ pub fn acl_dryrun(args: &[String]) -> Frame {
         return Frame::error("ERR wrong number of arguments for 'acl|dryrun' command");
     }
 
-    let _username = &args[0];
-    let _command = &args[1];
-
     // In a full implementation, we'd check the ACL rules for the user.
     // For now, the default user has full access.
     Frame::simple("OK")

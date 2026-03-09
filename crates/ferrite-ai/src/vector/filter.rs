@@ -90,9 +90,8 @@ impl FilterCondition {
 
     /// Evaluate this condition against an attribute map
     pub fn matches(&self, attributes: &HashMap<String, AttributeValue>) -> bool {
-        let value = match attributes.get(&self.key) {
-            Some(v) => v,
-            None => return false,
+        let Some(value) = attributes.get(&self.key) else {
+            return false;
         };
 
         match &self.op {

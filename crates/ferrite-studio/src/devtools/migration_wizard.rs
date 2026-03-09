@@ -241,7 +241,7 @@ impl MigrationWizard {
             MigrationStep {
                 order: 2,
                 description: "Perform dry-run migration to detect issues".to_string(),
-                command: format!("MIGRATE.START redis://source:6379 DRY-RUN VERIFY"),
+                command: "MIGRATE.START redis://source:6379 DRY-RUN VERIFY".to_string(),
                 risk_level: RiskLevel::Low,
             },
             MigrationStep {

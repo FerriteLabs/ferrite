@@ -470,9 +470,8 @@ pub fn recover_hnsw<R: Read>(
         let mut cursor = &data[..];
         if let Ok(count) = read_u32(&mut cursor) {
             for _ in 0..count {
-                let internal_id = match read_u32(&mut cursor) {
-                    Ok(id) => id,
-                    Err(_) => break,
+                let Ok(internal_id) = read_u32(&mut cursor) else {
+                    break;
                 };
                 let mut vec = Vec::with_capacity(dim);
                 let mut ok = true;

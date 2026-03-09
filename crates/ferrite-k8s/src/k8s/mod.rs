@@ -49,7 +49,7 @@
 //!   name: my-ferrite-cluster
 //! spec:
 //!   replicas: 3
-//!   version: "0.1.0"
+//!   version: "0.3.0"
 //!   resources:
 //!     memory: "4Gi"
 //!     cpu: "2"

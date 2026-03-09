@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout)]
 //! Server Mode Example
 //!
 //! Demonstrates running Ferrite as a standalone Redis-compatible server:

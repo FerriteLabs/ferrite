@@ -492,9 +492,9 @@ mod tests {
             status: MigrationStatus::Running,
         };
 
-        assert_eq!(progress.overall_percent(), 50.0);
-        assert_eq!(progress.keys_per_second(), 500.0);
-        assert_eq!(progress.bytes_per_second(), 50000.0);
+        assert!((progress.overall_percent() - 50.0).abs() < f64::EPSILON);
+        assert!((progress.keys_per_second() - 500.0).abs() < f64::EPSILON);
+        assert!((progress.bytes_per_second() - 50000.0).abs() < f64::EPSILON);
     }
 
     #[test]

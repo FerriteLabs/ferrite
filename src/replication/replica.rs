@@ -1671,9 +1671,9 @@ mod tests {
     #[test]
     fn test_fullresync_invalid_format() {
         let response = "FULLRESYNC abc123"; // Missing offset
-        let parts: Vec<&str> = response.split_whitespace().collect();
+        let count = response.split_whitespace().count();
 
-        assert_eq!(parts.len(), 2); // Should detect invalid format
+        assert_eq!(count, 2); // Should detect invalid format
     }
 
     // ============================================================================

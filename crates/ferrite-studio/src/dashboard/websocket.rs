@@ -60,9 +60,8 @@ impl DashboardWebSocket {
     /// Broadcast a snapshot to all connected WebSocket clients.
     pub fn broadcast_snapshot(&self, snapshot: &DashboardSnapshot) {
         // Serialize the snapshot to JSON for transmission
-        let _json = match serde_json::to_string(snapshot) {
-            Ok(j) => j,
-            Err(_) => return,
+        let Ok(_json) = serde_json::to_string(snapshot) else {
+            return;
         };
 
         // Stub: in production, iterate over connected clients and send

@@ -107,14 +107,11 @@ impl AdaptiveEngine {
 
         // Detect current workload pattern
         let mut detector = self.detector.write().await;
-        let pattern = match detector.detect() {
-            Some(p) => p,
-            None => {
-                return Err(AdaptiveError::InsufficientData {
-                    needed: 10,
-                    have: 0,
-                });
-            }
+        let Some(pattern) = detector.detect() else {
+            return Err(AdaptiveError::InsufficientData {
+                needed: 10,
+                have: 0,
+            });
         };
         drop(detector);
 

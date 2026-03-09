@@ -3,12 +3,9 @@
 
 use std::sync::OnceLock;
 
-use bytes::Bytes;
-
 use crate::protocol::Frame;
 use ferrite_cloud::multicloud::active_active::{
-    ActiveActiveConfig, ActiveActiveManager, CloudProvider, ConflictResolution, PeerState,
-    RegionPeer, VectorClock,
+    ActiveActiveConfig, ActiveActiveManager, CloudProvider, PeerState, RegionPeer,
 };
 
 use super::{err_frame, ok_frame};
@@ -181,7 +178,6 @@ fn handle_resolve(args: &[String]) -> Frame {
     if args.len() < 2 {
         return err_frame("REPLICATE.RESOLVE requires conflict_id and action (KEEP|ACCEPT|MERGE)");
     }
-    let _conflict_id = &args[0];
     let action = args[1].to_uppercase();
     match action.as_str() {
         "KEEP" | "ACCEPT" | "MERGE" => ok_frame(),

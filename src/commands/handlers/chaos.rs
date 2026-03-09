@@ -289,8 +289,7 @@ fn handle_stats() -> Frame {
 // ---------------------------------------------------------------------------
 
 fn handle_help() -> Frame {
-    let help = vec![
-        "CHAOS.INJECT LATENCY delay_ms [JITTER ms] [KEY pattern] [COMMAND cmd] [DURATION secs] [PROBABILITY 0.0-1.0]",
+    let help = ["CHAOS.INJECT LATENCY delay_ms [JITTER ms] [KEY pattern] [COMMAND cmd] [DURATION secs] [PROBABILITY 0.0-1.0]",
         "CHAOS.INJECT ERROR rate [COMMAND cmd] [DURATION secs]",
         "CHAOS.INJECT SLOW_IO read_ms write_ms [DURATION secs]",
         "CHAOS.INJECT TIMEOUT timeout_ms [COMMAND cmd]",
@@ -299,8 +298,7 @@ fn handle_help() -> Frame {
         "CHAOS.LIST",
         "CHAOS.SCENARIO PARTITION|CASCADE|DEGRADE [params]",
         "CHAOS.STATS",
-        "CHAOS.HELP",
-    ];
+        "CHAOS.HELP"];
     Frame::Array(Some(
         help.iter()
             .map(|s| Frame::Bulk(Some(Bytes::from(*s))))

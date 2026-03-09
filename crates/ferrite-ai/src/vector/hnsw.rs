@@ -307,9 +307,8 @@ impl HnswIndex {
         layer: usize,
     ) -> Vec<Candidate> {
         let layers = self.layers.read();
-        let layer_graph = match layers.get(layer) {
-            Some(g) => g,
-            None => return Vec::new(),
+        let Some(layer_graph) = layers.get(layer) else {
+            return Vec::new();
         };
 
         let mut visited: HashSet<usize> = HashSet::new();
@@ -526,9 +525,8 @@ impl VectorIndex for HnswIndex {
     }
 
     fn remove(&self, id: &VectorId) -> Result<bool, VectorError> {
-        let internal_id = match self.id_to_internal.read().get(id).copied() {
-            Some(id) => id,
-            None => return Ok(false),
+        let Some(internal_id) = self.id_to_internal.read().get(id).copied() else {
+            return Ok(false);
         };
 
         // Remove from mappings
@@ -592,9 +590,8 @@ impl VectorIndex for HnswIndex {
             });
         }
 
-        let entry_point = match *self.entry_point.read() {
-            Some(ep) => ep,
-            None => return Ok(Vec::new()),
+        let Some(entry_point) = *self.entry_point.read() else {
+            return Ok(Vec::new());
         };
 
         let max_level = *self.max_level.read();

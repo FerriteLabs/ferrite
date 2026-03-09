@@ -485,9 +485,8 @@ impl EventHookRegistry {
         event: EventType,
         context: HookContext,
     ) -> Result<HookResult, PluginError> {
-        let hooks = match self.hooks.get(&event) {
-            Some(h) => h,
-            None => return Ok(HookResult::Continue),
+        let Some(hooks) = self.hooks.get(&event) else {
+            return Ok(HookResult::Continue);
         };
 
         for hook in hooks {

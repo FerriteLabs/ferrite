@@ -259,13 +259,8 @@ pub fn xautoclaim(store: &Arc<Store>, db: u8, args: &[Bytes]) -> Frame {
     match store.get(db, key) {
         Some(Value::Stream(mut s)) => {
             let now = now_ms();
-            let start = match parse_stream_id(start_id_str) {
-                Some(id) => id,
-                None => {
-                    return Frame::error(
-                        "ERR Invalid stream ID specified as stream command argument",
-                    )
-                }
+            let Some(start) = parse_stream_id(start_id_str) else {
+                return Frame::error("ERR Invalid stream ID specified as stream command argument");
             };
 
             // Collect entry existence and field data before mutable borrow

@@ -202,9 +202,8 @@ impl MigrationProgressTracker {
         if samples.len() < 2 {
             return 0.0;
         }
-        let (first, last) = match (samples.front(), samples.back()) {
-            (Some(f), Some(l)) => (f, l),
-            _ => return 0.0,
+        let (Some(first), Some(last)) = (samples.front(), samples.back()) else {
+            return 0.0;
         };
         let elapsed = last.0.duration_since(first.0).as_secs_f64();
         if elapsed < f64::EPSILON {
@@ -527,7 +526,7 @@ mod tests {
         assert_eq!(snap.phase, MigrationPhase::Analyzing);
         assert_eq!(snap.total_keys, 0);
         assert_eq!(snap.synced_keys, 0);
-        assert_eq!(snap.percentage, 0.0);
+        assert!(snap.percentage.abs() < f64::EPSILON);
     }
 
     #[test]

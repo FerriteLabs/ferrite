@@ -45,16 +45,13 @@ impl SchemaValidator {
     pub fn validate(&self, value: &serde_json::Value, schema: &Schema) -> ValidationResult {
         let mut errors = Vec::new();
 
-        let obj = match value {
-            serde_json::Value::Object(o) => o,
-            _ => {
-                return ValidationResult {
-                    valid: false,
-                    errors: vec![ValidationError::NotAnObject],
-                    warnings: vec![],
-                    coerced_value: None,
-                };
-            }
+        let serde_json::Value::Object(obj) = value else {
+            return ValidationResult {
+                valid: false,
+                errors: vec![ValidationError::NotAnObject],
+                warnings: vec![],
+                coerced_value: None,
+            };
         };
 
         // Check required fields

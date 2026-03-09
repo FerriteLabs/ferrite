@@ -88,8 +88,8 @@ pub(crate) fn parse_tenant(command_name: &str, args: &[Frame]) -> Result<Command
     if command_name.contains('.') {
         // TENANT.CREATE, TENANT.LIST, etc.
         let subcommand = command_name
-            .splitn(2, '.')
-            .nth(1)
+            .split_once('.')
+            .map(|x| x.1)
             .unwrap_or("HELP")
             .to_uppercase();
         let tenant_args: Vec<String> = args.iter().filter_map(|f| get_string(f).ok()).collect();

@@ -474,9 +474,8 @@ impl PatternMatcher {
 
         for binding in bindings {
             // Get from vertex
-            let from_vertex = match binding.get(&pattern.from) {
-                Some(MatchedElement::Vertex(v)) => v,
-                _ => continue,
+            let Some(MatchedElement::Vertex(from_vertex)) = binding.get(&pattern.from) else {
+                continue;
             };
 
             // Handle variable-length paths
@@ -545,13 +544,10 @@ impl PatternMatcher {
         let mut new_bindings = Vec::new();
 
         for binding in bindings {
-            let from_vertex = match binding.get(&pattern.from) {
-                Some(MatchedElement::Vertex(v)) => v,
-                _ => {
-                    // Keep the binding as-is if 'from' isn't bound
-                    new_bindings.push(binding.clone());
-                    continue;
-                }
+            let Some(MatchedElement::Vertex(from_vertex)) = binding.get(&pattern.from) else {
+                // Keep the binding as-is if 'from' isn't bound
+                new_bindings.push(binding.clone());
+                continue;
             };
 
             let edge_ids = match pattern.direction {

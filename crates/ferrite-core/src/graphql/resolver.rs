@@ -151,7 +151,7 @@ impl GraphQLEngine {
                 }
                 "serverInfo" => {
                     let info = serde_json::json!({
-                        "version": "0.1.0",
+                        "version": env!("CARGO_PKG_VERSION"),
                         "connected_clients": 0,
                         "used_memory_bytes": 0,
                     });
@@ -205,11 +205,7 @@ impl GraphQLEngine {
                             }
                         })
                         .take(count)
-                        .map(|k| {
-                            serde_json::Value::String(
-                                String::from_utf8_lossy(&k).to_string(),
-                            )
-                        })
+                        .map(|k| serde_json::Value::String(String::from_utf8_lossy(&k).to_string()))
                         .collect();
                     result.insert(field.alias_or_name(), serde_json::Value::Array(matched));
                 }
@@ -233,10 +229,7 @@ impl GraphQLEngine {
                                 );
                             }
                             _ => {
-                                result.insert(
-                                    field.alias_or_name(),
-                                    serde_json::Value::Null,
-                                );
+                                result.insert(field.alias_or_name(), serde_json::Value::Null);
                             }
                         }
                     }
@@ -340,13 +333,8 @@ impl GraphQLEngine {
                             let key_bytes = Bytes::from(key);
                             let expires_at = std::time::SystemTime::now()
                                 + std::time::Duration::from_secs(seconds);
-                            let ok = self
-                                .store
-                                .expire(self.default_db, &key_bytes, expires_at);
-                            result.insert(
-                                field.alias_or_name(),
-                                serde_json::Value::Bool(ok),
-                            );
+                            let ok = self.store.expire(self.default_db, &key_bytes, expires_at);
+                            result.insert(field.alias_or_name(), serde_json::Value::Bool(ok));
                         }
                     }
                 }
@@ -365,10 +353,7 @@ impl GraphQLEngine {
                         hash.insert(Bytes::from(field_name), Bytes::from(value));
                         self.store
                             .set(self.default_db, key_bytes, Value::Hash(hash));
-                        result.insert(
-                            field.alias_or_name(),
-                            serde_json::Value::Bool(true),
-                        );
+                        result.insert(field.alias_or_name(), serde_json::Value::Bool(true));
                     }
                 }
                 other => {
@@ -488,10 +473,10 @@ impl ParsedField {
     ) -> Option<String> {
         if let Some(val) = self.arguments.get(name) {
             // Check if it's a variable reference
-            if val.starts_with('$') {
+            if let Some(var_name) = val.strip_prefix('$') {
                 if let Some(vars) = variables {
                     return vars
-                        .get(&val[1..])
+                        .get(var_name)
                         .and_then(|v| v.as_str().map(|s| s.to_string()));
                 }
                 return None;
@@ -834,7 +819,10 @@ mod tests {
         };
         let resp = engine.execute(req);
         assert!(resp.errors.is_none());
-        assert_eq!(resp.data.unwrap()["serverInfo"]["version"], "0.1.0");
+        assert_eq!(
+            resp.data.unwrap()["serverInfo"]["version"],
+            env!("CARGO_PKG_VERSION")
+        );
     }
 
     #[test]

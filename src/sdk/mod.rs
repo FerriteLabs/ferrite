@@ -88,7 +88,7 @@ impl Default for SdkMetadata {
     fn default() -> Self {
         Self {
             name: "ferrite-client".to_string(),
-            version: "0.1.0".to_string(),
+            version: env!("CARGO_PKG_VERSION").to_string(),
             description: "Ferrite client SDK".to_string(),
             license: "MIT".to_string(),
             repository: None,

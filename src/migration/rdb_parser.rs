@@ -984,13 +984,14 @@ mod tests {
 
     #[test]
     fn test_parse_single_string_key() {
-        let mut body = Vec::new();
-        body.push(RDB_OPCODE_SELECTDB);
-        body.push(0x00); // db 0
-        body.push(RDB_OPCODE_RESIZEDB);
-        body.push(0x01); // 1 key
-        body.push(0x00); // 0 expires
-        body.push(RDB_TYPE_STRING);
+        let mut body = vec![
+            RDB_OPCODE_SELECTDB,
+            0x00, // db 0
+            RDB_OPCODE_RESIZEDB,
+            0x01, // 1 key
+            0x00, // 0 expires
+            RDB_TYPE_STRING,
+        ];
         body.extend_from_slice(&encode_string(b"mykey"));
         body.extend_from_slice(&encode_string(b"myval"));
         body.push(RDB_OPCODE_EOF);
@@ -1149,7 +1150,7 @@ mod tests {
         match &entry.value {
             RdbValue::SortedSet(entries) => {
                 assert_eq!(entries.len(), 2);
-                assert_eq!(entries[0].0, 1.5);
+                assert!((entries[0].0 - 1.5).abs() < f64::EPSILON);
                 assert_eq!(entries[0].1, b"alice");
             }
             _ => panic!("expected SortedSet"),
@@ -1250,7 +1251,7 @@ mod tests {
         input.push(0x02); // literal run of 3 bytes
         input.extend_from_slice(b"abc");
         // Back reference: len=(1<<5) means len_base=1, +2=3; offset=(0<<8)|2 = 2 → +1=3
-        input.push(0x20 | 0x00); // ctrl: len_base=1, high_offset=0
+        input.push(0x20); // ctrl: len_base=1, high_offset=0
         input.push(0x02); // low_offset=2, so offset=2+1=3
         let result = lzf_decompress(&input, 6).unwrap();
         assert_eq!(result, b"abcabc");

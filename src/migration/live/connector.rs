@@ -4,7 +4,6 @@
 //! metadata, scanning keys, dumping values, and subscribing to keyspace
 //! notifications.
 
-
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use tokio::sync::mpsc;
@@ -196,6 +195,7 @@ impl RedisConnector {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used)]
     use super::*;
 
     #[tokio::test]

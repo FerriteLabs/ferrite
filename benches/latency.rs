@@ -1,3 +1,8 @@
+#![allow(
+    clippy::print_stdout,
+    clippy::semicolon_if_nothing_returned,
+    missing_docs
+)]
 //! Latency benchmarks for Ferrite
 //!
 //! Measures latency distributions (P50, P99, P99.9) for core Redis commands.

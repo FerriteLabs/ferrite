@@ -39,7 +39,7 @@ impl Bm25Scorer {
         // IDF component: log((N - n + 0.5) / (n + 0.5) + 1)
         let n = df as f64;
         let big_n = total_docs as f64;
-        let idf = ((big_n - n + 0.5) / (n + 0.5) + 1.0).ln();
+        let idf = ((big_n - n + 0.5) / (n + 0.5)).ln_1p();
 
         // TF component with length normalization
         let dl = doc_len as f64;

@@ -1,4 +1,4 @@
-#![allow(clippy::unwrap_used)]
+#![allow(clippy::unwrap_used, clippy::print_stdout)]
 //! Client Connection Example
 //!
 //! Demonstrates connecting to a Ferrite server over TCP using the RESP

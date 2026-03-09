@@ -297,9 +297,8 @@ impl WasmHotReloader {
     pub fn check_for_changes(&self) -> Vec<String> {
         let mut changed = Vec::new();
 
-        let dir = match std::fs::read_dir(&self.watch_dir) {
-            Ok(d) => d,
-            Err(_) => return changed,
+        let Ok(dir) = std::fs::read_dir(&self.watch_dir) else {
+            return changed;
         };
 
         let mut new_states = HashMap::new();

@@ -998,9 +998,8 @@ impl PlaygroundServer {
     ///
     /// Returns the number of sessions removed.
     pub fn cleanup_expired_sessions(&self) -> usize {
-        let mut sessions = match self.sessions.write() {
-            Ok(s) => s,
-            Err(_) => return 0,
+        let Ok(mut sessions) = self.sessions.write() else {
+            return 0;
         };
 
         let now = Utc::now();

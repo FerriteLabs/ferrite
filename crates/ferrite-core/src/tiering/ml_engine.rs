@@ -122,8 +122,8 @@ impl FeatureExtractor {
         let secs_since_access = current_secs.saturating_sub(stats.last_access_secs) as f64;
         let recency_score = 1.0 / (1.0 + secs_since_access / 3600.0);
 
-        let accesses_per_hour = stats.access_counts.reads_per_hour()
-            + stats.access_counts.writes_per_hour();
+        let accesses_per_hour =
+            stats.access_counts.reads_per_hour() + stats.access_counts.writes_per_hour();
         let frequency_score = (1.0 + accesses_per_hour).log2();
 
         let size_score = (1.0 + stats.size as f64).log2() / 30.0;
@@ -133,13 +133,7 @@ impl FeatureExtractor {
         let read_write_ratio = reads / (reads + writes + 1.0);
 
         let periodicity_score = profile
-            .map(|p| {
-                if p.is_periodic {
-                    p.confidence
-                } else {
-                    0.0
-                }
-            })
+            .map(|p| if p.is_periodic { p.confidence } else { 0.0 })
             .unwrap_or(0.0);
 
         let total_age_hours = current_secs as f64 / 3600.0;
@@ -713,7 +707,9 @@ mod tests {
     fn test_migration_residency_enforcement() {
         let mut config = MlTieringConfig::default();
         // Set a long residency so the test can verify blocking
-        config.min_residency.insert(StorageTier::Memory, Duration::from_secs(9999));
+        config
+            .min_residency
+            .insert(StorageTier::Memory, Duration::from_secs(9999));
 
         let controller = AdaptiveMigrationController::new(config);
         let stats = make_stats(1024, StorageTier::Memory, 100, 0, 0);

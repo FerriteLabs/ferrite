@@ -225,9 +225,8 @@ pub fn rag_ingest(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     let store = get_rag_store();
     let pipelines = store.read();
 
-    let pipeline = match pipelines.get(&name) {
-        Some(p) => p,
-        None => return err_frame(&format!("RAG pipeline '{}' not found", name)),
+    let Some(pipeline) = pipelines.get(&name) else {
+        return err_frame(&format!("RAG pipeline '{}' not found", name));
     };
 
     // Create document
@@ -277,9 +276,8 @@ pub fn rag_ingestbatch(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     let store = get_rag_store();
     let pipelines = store.read();
 
-    let pipeline = match pipelines.get(&name) {
-        Some(p) => p,
-        None => return err_frame(&format!("RAG pipeline '{}' not found", name)),
+    let Some(pipeline) = pipelines.get(&name) else {
+        return err_frame(&format!("RAG pipeline '{}' not found", name));
     };
 
     // Convert JSON to Documents
@@ -365,9 +363,8 @@ pub fn rag_retrieve(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     let store = get_rag_store();
     let pipelines = store.read();
 
-    let pipeline = match pipelines.get(&name) {
-        Some(p) => p,
-        None => return err_frame(&format!("RAG pipeline '{}' not found", name)),
+    let Some(pipeline) = pipelines.get(&name) else {
+        return err_frame(&format!("RAG pipeline '{}' not found", name));
     };
 
     // Run async retrieval
@@ -415,9 +412,8 @@ pub fn rag_context(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     let store = get_rag_store();
     let pipelines = store.read();
 
-    let pipeline = match pipelines.get(&name) {
-        Some(p) => p,
-        None => return err_frame(&format!("RAG pipeline '{}' not found", name)),
+    let Some(pipeline) = pipelines.get(&name) else {
+        return err_frame(&format!("RAG pipeline '{}' not found", name));
     };
 
     // Run async query
@@ -480,9 +476,8 @@ pub fn rag_search(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     let store = get_rag_store();
     let pipelines = store.read();
 
-    let pipeline = match pipelines.get(&name) {
-        Some(p) => p,
-        None => return err_frame(&format!("RAG pipeline '{}' not found", name)),
+    let Some(pipeline) = pipelines.get(&name) else {
+        return err_frame(&format!("RAG pipeline '{}' not found", name));
     };
 
     // Build filter
@@ -540,9 +535,8 @@ pub fn rag_chunk(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     let store = get_rag_store();
     let pipelines = store.read();
 
-    let pipeline = match pipelines.get(&name) {
-        Some(p) => p,
-        None => return err_frame(&format!("RAG pipeline '{}' not found", name)),
+    let Some(pipeline) = pipelines.get(&name) else {
+        return err_frame(&format!("RAG pipeline '{}' not found", name));
     };
 
     // Parse optional overrides
@@ -678,9 +672,8 @@ pub fn rag_embed(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     let store = get_rag_store();
     let pipelines = store.read();
 
-    let pipeline = match pipelines.get(&name) {
-        Some(p) => p,
-        None => return err_frame(&format!("RAG pipeline '{}' not found", name)),
+    let Some(pipeline) = pipelines.get(&name) else {
+        return err_frame(&format!("RAG pipeline '{}' not found", name));
     };
 
     // Return dimension info since we can't easily expose embeddings
@@ -734,9 +727,8 @@ pub fn rag_info(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     let store = get_rag_store();
     let pipelines = store.read();
 
-    let pipeline = match pipelines.get(&name) {
-        Some(p) => p,
-        None => return err_frame(&format!("RAG pipeline '{}' not found", name)),
+    let Some(pipeline) = pipelines.get(&name) else {
+        return err_frame(&format!("RAG pipeline '{}' not found", name));
     };
 
     let config = pipeline.config();
@@ -810,9 +802,8 @@ pub fn rag_stats(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     let store = get_rag_store();
     let pipelines = store.read();
 
-    let pipeline = match pipelines.get(&name) {
-        Some(p) => p,
-        None => return err_frame(&format!("RAG pipeline '{}' not found", name)),
+    let Some(pipeline) = pipelines.get(&name) else {
+        return err_frame(&format!("RAG pipeline '{}' not found", name));
     };
 
     let stats = pipeline.stats();
@@ -858,9 +849,8 @@ pub fn rag_clear(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     let store = get_rag_store();
     let pipelines = store.read();
 
-    let pipeline = match pipelines.get(&name) {
-        Some(p) => p,
-        None => return err_frame(&format!("RAG pipeline '{}' not found", name)),
+    let Some(pipeline) = pipelines.get(&name) else {
+        return err_frame(&format!("RAG pipeline '{}' not found", name));
     };
 
     let doc_count = pipeline.document_count();
@@ -925,9 +915,8 @@ pub fn rag_orchestrate(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     let store = get_rag_store();
     let pipelines = store.read();
 
-    let pipeline = match pipelines.get(&name) {
-        Some(p) => p,
-        None => return err_frame(&format!("RAG pipeline '{}' not found", name)),
+    let Some(pipeline) = pipelines.get(&name) else {
+        return err_frame(&format!("RAG pipeline '{}' not found", name));
     };
 
     // Build search filter with prefetch
@@ -1054,9 +1043,8 @@ pub fn rag_rerank(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     let store = get_rag_store();
     let pipelines = store.read();
 
-    let pipeline = match pipelines.get(&name) {
-        Some(p) => p,
-        None => return err_frame(&format!("RAG pipeline '{}' not found", name)),
+    let Some(pipeline) = pipelines.get(&name) else {
+        return err_frame(&format!("RAG pipeline '{}' not found", name));
     };
 
     // First retrieve

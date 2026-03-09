@@ -478,9 +478,7 @@ impl Handler {
                         "ON" => true,
                         "OFF" => false,
                         _ => {
-                            let result = Frame::error(
-                                "ERR argument must be 'ON' or 'OFF'",
-                            );
+                            let result = Frame::error("ERR argument must be 'ON' or 'OFF'");
                             self.log_audit_result(audit_entry, start_time, &result)
                                 .await;
                             return result;
@@ -508,9 +506,7 @@ impl Handler {
                         "ON" => true,
                         "OFF" => false,
                         _ => {
-                            let result = Frame::error(
-                                "ERR argument must be 'ON' or 'OFF'",
-                            );
+                            let result = Frame::error("ERR argument must be 'ON' or 'OFF'");
                             self.log_audit_result(audit_entry, start_time, &result)
                                 .await;
                             return result;
@@ -537,9 +533,8 @@ impl Handler {
         {
             if subcommand == "SETINFO" {
                 if args.len() < 2 {
-                    let result = Frame::error(
-                        "ERR wrong number of arguments for 'CLIENT SETINFO' command",
-                    );
+                    let result =
+                        Frame::error("ERR wrong number of arguments for 'CLIENT SETINFO' command");
                     self.log_audit_result(audit_entry, start_time, &result)
                         .await;
                     return result;
@@ -592,10 +587,7 @@ impl Handler {
                 }
                 "USERS" => {
                     let users = self.acl.list_users().await;
-                    let names: Vec<Frame> = users
-                        .iter()
-                        .map(|u| Frame::bulk(u.clone()))
-                        .collect();
+                    let names: Vec<Frame> = users.iter().map(|u| Frame::bulk(u.clone())).collect();
                     Frame::array(names)
                 }
                 "GETUSER" => {
@@ -814,9 +806,8 @@ fn array_to_map(frame: Frame) -> Frame {
             let mut map = std::collections::HashMap::new();
             let mut iter = arr.into_iter();
             while let (Some(key_frame), Some(value_frame)) = (iter.next(), iter.next()) {
-                let key = match key_frame {
-                    Frame::Bulk(Some(b)) | Frame::Simple(b) => b,
-                    _ => continue,
+                let (Frame::Bulk(Some(key)) | Frame::Simple(key)) = key_frame else {
+                    continue;
                 };
                 map.insert(key, value_frame);
             }
@@ -1198,9 +1189,8 @@ impl Handler {
         let proto = protocol_version.unwrap_or(2);
 
         // Validate and set protocol version
-        let version = match ProtocolVersion::from_version(proto) {
-            Some(v) => v,
-            None => return Frame::error("NOPROTO unsupported protocol version"),
+        let Some(version) = ProtocolVersion::from_version(proto) else {
+            return Frame::error("NOPROTO unsupported protocol version");
         };
 
         // Handle authentication if provided

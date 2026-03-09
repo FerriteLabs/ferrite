@@ -323,14 +323,12 @@ impl Database {
     /// Called periodically by the active expiration background task.
     pub fn sweep_expired(&self, max_keys: usize) -> usize {
         let mut removed = 0;
-        let mut checked = 0;
         // Collect expired keys (can't remove during DashMap iteration)
         let mut expired_keys = Vec::new();
-        for entry in self.data.iter() {
+        for (checked, entry) in self.data.iter().enumerate() {
             if checked >= max_keys {
                 break;
             }
-            checked += 1;
             if entry.is_expired() {
                 expired_keys.push(entry.key().clone());
             }
@@ -381,7 +379,9 @@ impl Database {
                 .map(|entry| {
                     let key = entry.key().clone();
                     let access = entry.last_access.load(std::sync::atomic::Ordering::Relaxed);
-                    let freq = entry.access_count.load(std::sync::atomic::Ordering::Relaxed);
+                    let freq = entry
+                        .access_count
+                        .load(std::sync::atomic::Ordering::Relaxed);
                     let expires = entry.expires_at;
                     (key, access, freq, expires)
                 })
@@ -399,20 +399,27 @@ impl Database {
                 }
                 EvictionPolicy::VolatileLru => {
                     // Evict the volatile key with the oldest last_access
-                    let volatile: Vec<_> =
-                        sample.iter().filter(|(_, _, _, exp)| exp.is_some()).collect();
+                    let volatile: Vec<_> = sample
+                        .iter()
+                        .filter(|(_, _, _, exp)| exp.is_some())
+                        .collect();
                     if volatile.is_empty() {
                         break; // No volatile keys available
                     }
-                    volatile.iter().min_by_key(|(_, access, _, _)| *access).copied()
+                    volatile
+                        .iter()
+                        .min_by_key(|(_, access, _, _)| *access)
+                        .copied()
                 }
                 EvictionPolicy::AllKeysLfu => {
                     // Evict the key with the lowest access_count
                     sample.iter().min_by_key(|(_, _, freq, _)| *freq)
                 }
                 EvictionPolicy::VolatileLfu => {
-                    let volatile: Vec<_> =
-                        sample.iter().filter(|(_, _, _, exp)| exp.is_some()).collect();
+                    let volatile: Vec<_> = sample
+                        .iter()
+                        .filter(|(_, _, _, exp)| exp.is_some())
+                        .collect();
                     if volatile.is_empty() {
                         break;
                     }
@@ -420,8 +427,10 @@ impl Database {
                 }
                 EvictionPolicy::AllKeysRandom => sample.first(),
                 EvictionPolicy::VolatileRandom => {
-                    let volatile: Vec<_> =
-                        sample.iter().filter(|(_, _, _, exp)| exp.is_some()).collect();
+                    let volatile: Vec<_> = sample
+                        .iter()
+                        .filter(|(_, _, _, exp)| exp.is_some())
+                        .collect();
                     if volatile.is_empty() {
                         break;
                     }
@@ -429,8 +438,10 @@ impl Database {
                 }
                 EvictionPolicy::VolatileTtl => {
                     // Evict the volatile key with the nearest TTL
-                    let volatile: Vec<_> =
-                        sample.iter().filter(|(_, _, _, exp)| exp.is_some()).collect();
+                    let volatile: Vec<_> = sample
+                        .iter()
+                        .filter(|(_, _, _, exp)| exp.is_some())
+                        .collect();
                     if volatile.is_empty() {
                         break;
                     }
@@ -636,10 +647,7 @@ impl Store {
         match &self.backend {
             StorageBackend::Memory(databases) => {
                 // Count total keys to distribute eviction proportionally
-                let total_keys: u64 = databases
-                    .iter()
-                    .map(|db| db.read().len() as u64)
-                    .sum();
+                let total_keys: u64 = databases.iter().map(|db| db.read().len() as u64).sum();
 
                 if total_keys == 0 {
                     return (0, 0);
@@ -992,17 +1000,20 @@ impl Store {
 
     /// Increment the write counter (called on every mutation).
     pub fn record_change(&self) {
-        self.changes_since_save.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        self.changes_since_save
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     }
 
     /// Get the number of changes since the last save and optionally reset.
     pub fn changes_since_save(&self) -> u64 {
-        self.changes_since_save.load(std::sync::atomic::Ordering::Relaxed)
+        self.changes_since_save
+            .load(std::sync::atomic::Ordering::Relaxed)
     }
 
     /// Reset the change counter (called after a successful save).
     pub fn reset_changes_since_save(&self) {
-        self.changes_since_save.store(0, std::sync::atomic::Ordering::Relaxed);
+        self.changes_since_save
+            .store(0, std::sync::atomic::Ordering::Relaxed);
     }
 
     /// Atomically swap two databases (SWAPDB)
@@ -1112,10 +1123,26 @@ mod tests {
         let past = SystemTime::now() - Duration::from_secs(1);
         let future = SystemTime::now() + Duration::from_secs(3600);
 
-        db.set_with_expiry(Bytes::from("expired1"), Value::String(Bytes::from("v")), past);
-        db.set_with_expiry(Bytes::from("expired2"), Value::String(Bytes::from("v")), past);
-        db.set_with_expiry(Bytes::from("expired3"), Value::String(Bytes::from("v")), past);
-        db.set_with_expiry(Bytes::from("live1"), Value::String(Bytes::from("v")), future);
+        db.set_with_expiry(
+            Bytes::from("expired1"),
+            Value::String(Bytes::from("v")),
+            past,
+        );
+        db.set_with_expiry(
+            Bytes::from("expired2"),
+            Value::String(Bytes::from("v")),
+            past,
+        );
+        db.set_with_expiry(
+            Bytes::from("expired3"),
+            Value::String(Bytes::from("v")),
+            past,
+        );
+        db.set_with_expiry(
+            Bytes::from("live1"),
+            Value::String(Bytes::from("v")),
+            future,
+        );
         db.set(Bytes::from("live2"), Value::String(Bytes::from("v")));
 
         // raw len includes expired keys

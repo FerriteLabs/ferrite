@@ -6,6 +6,7 @@
 //! 3. BloomFilter false positive rate bounds
 //! 4. IncrementalAggregator commutativity — insert order doesn't matter
 //! 5. OnlineLearningModel monotonicity — more data = better predictions
+#![allow(clippy::unwrap_used)]
 
 use proptest::prelude::*;
 
@@ -464,6 +465,7 @@ proptest! {
         f5 in -10.0f64..10.0,
     ) {
         let model = OnlineLearningModel::new(MlTieringConfig::default());
+        #[allow(clippy::tuple_array_conversions)]
         let features = [f0, f1, f2, f3, f4, f5];
         let prediction = model.predict(&features);
         prop_assert!(

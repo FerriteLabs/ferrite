@@ -235,9 +235,8 @@ pub fn hincrby(store: &Arc<Store>, db: u8, key: &Bytes, field: &Bytes, delta: i6
         None => 0,
     };
 
-    let new_value = match current.checked_add(delta) {
-        Some(n) => n,
-        None => return Frame::error("ERR increment or decrement would overflow"),
+    let Some(new_value) = current.checked_add(delta) else {
+        return Frame::error("ERR increment or decrement would overflow");
     };
 
     hash.insert(field.clone(), Bytes::from(new_value.to_string()));

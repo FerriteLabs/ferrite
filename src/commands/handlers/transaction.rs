@@ -207,9 +207,8 @@ pub async fn handle_tx_exec(
         Err(e) => return err_frame(&e),
     };
 
-    let txn = match tx_manager.get(txn_id).await {
-        Some(t) => t,
-        None => return err_frame("Transaction not found"),
+    let Some(txn) = tx_manager.get(txn_id).await else {
+        return err_frame("Transaction not found");
     };
 
     let command = String::from_utf8_lossy(&args[1]).to_uppercase();
@@ -267,9 +266,8 @@ pub async fn handle_tx_exec(
             if cmd_args.len() < 2 {
                 return err_frame("INCRBY requires key and increment");
             }
-            let delta = match String::from_utf8_lossy(&cmd_args[1]).parse::<i64>() {
-                Ok(d) => d,
-                Err(_) => return err_frame("Invalid increment value"),
+            let Ok(delta) = String::from_utf8_lossy(&cmd_args[1]).parse::<i64>() else {
+                return err_frame("Invalid increment value");
             };
             match txn.incr(cmd_args[0].clone(), delta).await {
                 Ok(val) => Frame::Integer(val),
@@ -409,9 +407,8 @@ pub async fn handle_tx_watch(
         Err(e) => return err_frame(&e),
     };
 
-    let txn = match tx_manager.get(txn_id).await {
-        Some(t) => t,
-        None => return err_frame("Transaction not found"),
+    let Some(txn) = tx_manager.get(txn_id).await else {
+        return err_frame("Transaction not found");
     };
 
     // Read each key to add to read set (for conflict detection)
@@ -441,9 +438,8 @@ pub async fn handle_tx_prepare(
         Err(e) => return err_frame(&e),
     };
 
-    let txn = match tx_manager.get(txn_id).await {
-        Some(t) => t,
-        None => return err_frame("Transaction not found"),
+    let Some(txn) = tx_manager.get(txn_id).await else {
+        return err_frame("Transaction not found");
     };
 
     match txn.prepare().await {

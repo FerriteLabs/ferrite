@@ -2488,9 +2488,8 @@ impl CommandExecutor {
         let pattern_str = String::from_utf8_lossy(pattern).to_string();
 
         // Parse event type
-        let event = match EventType::parse_str(&event_str) {
-            Some(e) => e,
-            None => return Frame::error(format!("ERR Unknown event type: {}", event_str)),
+        let Some(event) = EventType::parse_str(&event_str) else {
+            return Frame::error(format!("ERR Unknown event type: {}", event_str));
         };
 
         // Parse pattern
@@ -2986,12 +2985,7 @@ impl CommandExecutor {
     /// Routes JSON operations to Ferrite's native store using JSON path semantics.
     /// Supports: JSON.SET, JSON.GET, JSON.DEL, JSON.MGET, JSON.TYPE, JSON.NUMINCRBY,
     /// JSON.STRLEN, JSON.ARRAPPEND, JSON.ARRLEN, JSON.ARRPOP, JSON.OBJLEN, JSON.OBJKEYS.
-    pub(super) fn handle_json_command(
-        &self,
-        db: u8,
-        subcommand: &str,
-        args: &[Bytes],
-    ) -> Frame {
+    pub(super) fn handle_json_command(&self, db: u8, subcommand: &str, args: &[Bytes]) -> Frame {
         match subcommand.to_uppercase().as_str() {
             "SET" => {
                 // JSON.SET key path value [NX | XX]
@@ -3098,9 +3092,8 @@ impl CommandExecutor {
                     );
                 }
                 let key = &args[0];
-                let incr: f64 = match String::from_utf8_lossy(&args[2]).parse() {
-                    Ok(v) => v,
-                    Err(_) => return Frame::error("ERR could not perform this operation on a key that doesn't exist"),
+                let Ok(incr) = String::from_utf8_lossy(&args[2]).parse::<f64>() else {
+                    return Frame::error("ERR could not perform this operation on a key that doesn't exist");
                 };
                 match self.store.get(db, key) {
                     Some(crate::storage::Value::String(data)) => {
@@ -3181,12 +3174,7 @@ impl CommandExecutor {
     /// in the store as a simple backing implementation. A production-grade
     /// Bloom filter would use a dedicated bit-array, but this provides
     /// API compatibility for migration purposes.
-    pub(super) fn handle_bloom_command(
-        &self,
-        db: u8,
-        subcommand: &str,
-        args: &[Bytes],
-    ) -> Frame {
+    pub(super) fn handle_bloom_command(&self, db: u8, subcommand: &str, args: &[Bytes]) -> Frame {
         use crate::storage::Value;
         use std::collections::HashSet;
 
@@ -3194,9 +3182,7 @@ impl CommandExecutor {
             "RESERVE" => {
                 // BF.RESERVE key error_rate capacity
                 if args.len() < 3 {
-                    return Frame::error(
-                        "ERR wrong number of arguments for 'BF.RESERVE' command",
-                    );
+                    return Frame::error("ERR wrong number of arguments for 'BF.RESERVE' command");
                 }
                 let key = &args[0];
                 if self.store.get(db, key).is_some() {
@@ -3213,8 +3199,7 @@ impl CommandExecutor {
                 };
 
                 // Create an empty set to back the bloom filter
-                self.store
-                    .set(db, key.clone(), Value::Set(HashSet::new()));
+                self.store.set(db, key.clone(), Value::Set(HashSet::new()));
                 Frame::simple("OK")
             }
             "ADD" => {
@@ -3233,7 +3218,12 @@ impl CommandExecutor {
                 let results: Vec<Frame> = args[1..]
                     .iter()
                     .map(|item| {
-                        crate::commands::sets::sadd(&self.store, db, key, std::slice::from_ref(item))
+                        crate::commands::sets::sadd(
+                            &self.store,
+                            db,
+                            key,
+                            std::slice::from_ref(item),
+                        )
                     })
                     .collect();
                 Frame::array(results)
@@ -3241,25 +3231,19 @@ impl CommandExecutor {
             "EXISTS" => {
                 // BF.EXISTS key item
                 if args.len() < 2 {
-                    return Frame::error(
-                        "ERR wrong number of arguments for 'BF.EXISTS' command",
-                    );
+                    return Frame::error("ERR wrong number of arguments for 'BF.EXISTS' command");
                 }
                 crate::commands::sets::sismember(&self.store, db, &args[0], &args[1])
             }
             "MEXISTS" => {
                 // BF.MEXISTS key item [item ...]
                 if args.len() < 2 {
-                    return Frame::error(
-                        "ERR wrong number of arguments for 'BF.MEXISTS' command",
-                    );
+                    return Frame::error("ERR wrong number of arguments for 'BF.MEXISTS' command");
                 }
                 let key = &args[0];
                 let results: Vec<Frame> = args[1..]
                     .iter()
-                    .map(|item| {
-                        crate::commands::sets::sismember(&self.store, db, key, item)
-                    })
+                    .map(|item| crate::commands::sets::sismember(&self.store, db, key, item))
                     .collect();
                 Frame::array(results)
             }
@@ -3390,33 +3374,35 @@ impl CommandExecutor {
             }
             "ANALYZE" => {
                 let plan = tuner.run_cycle(&profiler);
-                let mut items = Vec::new();
-                items.push(Frame::bulk("recommendations"));
-                items.push(Frame::Integer(plan.len() as i64));
-                items.push(Frame::bulk("overall_estimated_impact"));
-                items.push(Frame::Double(plan.overall_estimated_impact));
-                items.push(Frame::bulk("generated_at"));
-                items.push(Frame::bulk(plan.generated_at.clone()));
+                let mut items = vec![
+                    Frame::bulk("recommendations"),
+                    Frame::Integer(plan.len() as i64),
+                    Frame::bulk("overall_estimated_impact"),
+                    Frame::Double(plan.overall_estimated_impact),
+                    Frame::bulk("generated_at"),
+                    Frame::bulk(plan.generated_at.clone()),
+                ];
 
                 if !plan.recommendations.is_empty() {
                     items.push(Frame::bulk("details"));
                     let mut details = Vec::new();
                     for rec in &plan.recommendations {
-                        let mut entry = Vec::new();
-                        entry.push(Frame::bulk("id"));
-                        entry.push(Frame::bulk(rec.id.clone()));
-                        entry.push(Frame::bulk("rule"));
-                        entry.push(Frame::bulk(rec.rule_name.clone()));
-                        entry.push(Frame::bulk("priority"));
-                        entry.push(Frame::bulk(rec.priority.to_string()));
-                        entry.push(Frame::bulk("confidence"));
-                        entry.push(Frame::Double(rec.confidence));
-                        entry.push(Frame::bulk("impact"));
-                        entry.push(Frame::Double(rec.estimated_impact));
-                        entry.push(Frame::bulk("description"));
-                        entry.push(Frame::bulk(rec.description.clone()));
-                        entry.push(Frame::bulk("action"));
-                        entry.push(Frame::bulk(rec.action.to_string()));
+                        let entry = vec![
+                            Frame::bulk("id"),
+                            Frame::bulk(rec.id.clone()),
+                            Frame::bulk("rule"),
+                            Frame::bulk(rec.rule_name.clone()),
+                            Frame::bulk("priority"),
+                            Frame::bulk(rec.priority.to_string()),
+                            Frame::bulk("confidence"),
+                            Frame::Double(rec.confidence),
+                            Frame::bulk("impact"),
+                            Frame::Double(rec.estimated_impact),
+                            Frame::bulk("description"),
+                            Frame::bulk(rec.description.clone()),
+                            Frame::bulk("action"),
+                            Frame::bulk(rec.action.to_string()),
+                        ];
                         details.push(Frame::Array(Some(entry)));
                     }
                     items.push(Frame::Array(Some(details)));
@@ -3497,9 +3483,7 @@ impl CommandExecutor {
                 let rules = optimizer.rules();
                 let mut items = Vec::new();
                 for (name, desc) in &rules {
-                    let mut row = Vec::new();
-                    row.push(Frame::bulk(*name));
-                    row.push(Frame::bulk(*desc));
+                    let row = vec![Frame::bulk(*name), Frame::bulk(*desc)];
                     items.push(Frame::Array(Some(row)));
                 }
                 Frame::Array(Some(items))
@@ -3519,37 +3503,39 @@ impl CommandExecutor {
                 };
 
                 let report = profiler.tuning_report(&thresholds);
-                let mut items = Vec::new();
-                items.push(Frame::bulk("total_keys_analyzed"));
-                items.push(Frame::Integer(report.total_keys_analyzed as i64));
-                items.push(Frame::bulk("hot_keys"));
-                items.push(Frame::Integer(report.hot_keys as i64));
-                items.push(Frame::bulk("warm_keys"));
-                items.push(Frame::Integer(report.warm_keys as i64));
-                items.push(Frame::bulk("cold_keys"));
-                items.push(Frame::Integer(report.cold_keys as i64));
-                items.push(Frame::bulk("estimated_memory_savings_pct"));
-                items.push(Frame::Double(report.estimated_memory_savings_pct));
-                items.push(Frame::bulk("read_write_ratio"));
-                items.push(Frame::Double(report.read_write_ratio));
-                items.push(Frame::bulk("throughput_ops_per_sec"));
-                items.push(Frame::Double(report.throughput_ops_per_sec));
+                let mut items = vec![
+                    Frame::bulk("total_keys_analyzed"),
+                    Frame::Integer(report.total_keys_analyzed as i64),
+                    Frame::bulk("hot_keys"),
+                    Frame::Integer(report.hot_keys as i64),
+                    Frame::bulk("warm_keys"),
+                    Frame::Integer(report.warm_keys as i64),
+                    Frame::bulk("cold_keys"),
+                    Frame::Integer(report.cold_keys as i64),
+                    Frame::bulk("estimated_memory_savings_pct"),
+                    Frame::Double(report.estimated_memory_savings_pct),
+                    Frame::bulk("read_write_ratio"),
+                    Frame::Double(report.read_write_ratio),
+                    Frame::bulk("throughput_ops_per_sec"),
+                    Frame::Double(report.throughput_ops_per_sec),
+                ];
 
                 if !report.recommendations.is_empty() {
                     items.push(Frame::bulk("tier_moves"));
                     let mut moves = Vec::new();
                     for tm in &report.recommendations {
-                        let mut entry = Vec::new();
-                        entry.push(Frame::bulk("key_pattern"));
-                        entry.push(Frame::bulk(tm.key_pattern.clone()));
-                        entry.push(Frame::bulk("current_tier"));
-                        entry.push(Frame::bulk(tm.current_tier.to_string()));
-                        entry.push(Frame::bulk("recommended_tier"));
-                        entry.push(Frame::bulk(tm.recommended_tier.to_string()));
-                        entry.push(Frame::bulk("access_frequency"));
-                        entry.push(Frame::Double(tm.access_frequency));
-                        entry.push(Frame::bulk("last_access_secs_ago"));
-                        entry.push(Frame::Integer(tm.last_access_secs_ago as i64));
+                        let entry = vec![
+                            Frame::bulk("key_pattern"),
+                            Frame::bulk(tm.key_pattern.clone()),
+                            Frame::bulk("current_tier"),
+                            Frame::bulk(tm.current_tier.to_string()),
+                            Frame::bulk("recommended_tier"),
+                            Frame::bulk(tm.recommended_tier.to_string()),
+                            Frame::bulk("access_frequency"),
+                            Frame::Double(tm.access_frequency),
+                            Frame::bulk("last_access_secs_ago"),
+                            Frame::Integer(tm.last_access_secs_ago as i64),
+                        ];
                         moves.push(Frame::Array(Some(entry)));
                     }
                     items.push(Frame::Array(Some(moves)));
@@ -4063,16 +4049,17 @@ impl CommandExecutor {
 
         match engine.start_bulk_sync().await {
             Ok(state) => {
-                let mut items = Vec::new();
-                items.push(Frame::bulk("id"));
-                items.push(Frame::bulk(Bytes::from(state.id)));
-                items.push(Frame::bulk("status"));
-                items.push(Frame::bulk(Bytes::from(state.status.to_string())));
-                items.push(Frame::bulk("phase"));
-                items.push(Frame::bulk(Bytes::from(state.phase.to_string())));
-                items.push(Frame::bulk("keys_synced"));
-                items.push(Frame::Integer(state.keys_synced as i64));
-                items.push(Frame::bulk("keys_total"));
+                let mut items = vec![
+                    Frame::bulk("id"),
+                    Frame::bulk(Bytes::from(state.id)),
+                    Frame::bulk("status"),
+                    Frame::bulk(Bytes::from(state.status.to_string())),
+                    Frame::bulk("phase"),
+                    Frame::bulk(Bytes::from(state.phase.to_string())),
+                    Frame::bulk("keys_synced"),
+                    Frame::Integer(state.keys_synced as i64),
+                    Frame::bulk("keys_total"),
+                ];
                 match state.keys_total {
                     Some(t) => items.push(Frame::Integer(t as i64)),
                     None => items.push(Frame::Null),
@@ -4087,9 +4074,7 @@ impl CommandExecutor {
 
     pub(super) async fn handle_migrate_status(&self) -> Frame {
         // Without a persistent engine reference, return a placeholder.
-        let mut items = Vec::new();
-        items.push(Frame::bulk("status"));
-        items.push(Frame::bulk("no active migration"));
+        let items = vec![Frame::bulk("status"), Frame::bulk("no active migration")];
         Frame::Array(Some(items))
     }
 
@@ -4297,7 +4282,7 @@ impl CommandExecutor {
     pub(super) async fn handle_stream_groups(&self, topic: Option<&str>) -> Frame {
         let broker = streaming_broker();
         let groups = broker.list_groups(topic);
-        let items: Vec<Frame> = groups.into_iter().map(|g| Frame::bulk(g)).collect();
+        let items: Vec<Frame> = groups.into_iter().map(Frame::bulk).collect();
         Frame::Array(Some(items))
     }
 
@@ -4549,16 +4534,17 @@ impl CommandExecutor {
                     }
                     Some("ANALYZE") => {
                         let report = slow_analyzer.analyze();
-                        let mut items = Vec::new();
-                        items.push(Frame::bulk("total"));
-                        items.push(Frame::Integer(report.total as i64));
-                        items.push(Frame::bulk("avg_duration_us"));
-                        items.push(Frame::Integer(report.avg_duration_us as i64));
-                        items.push(Frame::bulk("p50_us"));
-                        items.push(Frame::Integer(report.p50_us as i64));
-                        items.push(Frame::bulk("p99_us"));
-                        items.push(Frame::Integer(report.p99_us as i64));
-                        items.push(Frame::bulk("top_commands"));
+                        let mut items = vec![
+                            Frame::bulk("total"),
+                            Frame::Integer(report.total as i64),
+                            Frame::bulk("avg_duration_us"),
+                            Frame::Integer(report.avg_duration_us as i64),
+                            Frame::bulk("p50_us"),
+                            Frame::Integer(report.p50_us as i64),
+                            Frame::bulk("p99_us"),
+                            Frame::Integer(report.p99_us as i64),
+                            Frame::bulk("top_commands"),
+                        ];
                         let cmd_frames: Vec<Frame> = report
                             .top_commands
                             .into_iter()
@@ -4776,9 +4762,8 @@ impl CommandExecutor {
     ) -> Frame {
         use ferrite_enterprise::mesh::datasource::{DataSourceConfig, DataSourceType};
 
-        let stype = match DataSourceType::from_str_ci(source_type) {
-            Some(t) => t,
-            None => return Frame::error(format!("ERR unknown source type '{source_type}'")),
+        let Some(stype) = DataSourceType::from_str_ci(source_type) else {
+            return Frame::error(format!("ERR unknown source type '{source_type}'"));
         };
 
         let display_name = name.unwrap_or(id).to_string();
@@ -4930,8 +4915,9 @@ impl CommandExecutor {
         use ferrite_enterprise::mesh::query_router::QueryRouter;
         use std::sync::Arc;
 
-        let gw = mesh_gateway();
-        let router = QueryRouter::new(Arc::from(gw));
+        let router = QueryRouter::new(Arc::new(
+            ferrite_enterprise::mesh::DataMeshGateway::with_defaults(),
+        ));
         match router.route_query(query) {
             Ok(plan) => {
                 let steps: Vec<Frame> = plan
@@ -4960,7 +4946,7 @@ impl CommandExecutor {
                 ])
             }
             Err(e) => {
-                gw.record_error();
+                mesh_gateway().record_error();
                 Frame::error(format!("ERR {e}"))
             }
         }
@@ -5084,18 +5070,18 @@ impl CommandExecutor {
             Some(n) => match registry.get(n) {
                 Some(tpl) => Frame::array(vec![
                     Frame::bulk("name"),
-                    Frame::bulk(tpl.name.as_str()),
+                    Frame::bulk(tpl.name.clone()),
                     Frame::bulk("description"),
-                    Frame::bulk(tpl.description.as_str()),
+                    Frame::bulk(tpl.description.clone()),
                     Frame::bulk("category"),
                     Frame::bulk(tpl.category.to_string()),
                     Frame::bulk("documentation"),
-                    Frame::bulk(tpl.documentation.as_str()),
+                    Frame::bulk(tpl.documentation.clone()),
                     Frame::bulk("setup_commands"),
                     Frame::array(
                         tpl.setup_commands
                             .iter()
-                            .map(|c| Frame::bulk(c.as_str()))
+                            .map(|c| Frame::bulk(c.clone()))
                             .collect(),
                     ),
                 ]),
@@ -5105,7 +5091,9 @@ impl CommandExecutor {
                 let items = registry.list();
                 let entries: Vec<Frame> = items
                     .iter()
-                    .map(|(n, d)| Frame::array(vec![Frame::bulk(*n), Frame::bulk(*d)]))
+                    .map(|(n, d)| {
+                        Frame::array(vec![Frame::bulk(n.to_string()), Frame::bulk(d.to_string())])
+                    })
                     .collect();
                 Frame::array(entries)
             }
@@ -5121,7 +5109,7 @@ impl CommandExecutor {
     pub(super) async fn handle_studio_setup(&self, template: &str) -> Frame {
         let registry = ferrite_studio::devtools::TemplateRegistry::new();
         match registry.setup_commands(template) {
-            Some(cmds) => Frame::array(cmds.iter().map(|c| Frame::bulk(c.as_str())).collect()),
+            Some(cmds) => Frame::array(cmds.iter().map(|c| Frame::bulk(c.to_string())).collect()),
             None => Frame::error("ERR template not found"),
         }
     }
@@ -5140,10 +5128,10 @@ impl CommandExecutor {
             .iter()
             .map(|c| {
                 Frame::array(vec![
-                    Frame::bulk(c.name.as_str()),
-                    Frame::bulk(c.reason.as_str()),
+                    Frame::bulk(c.name.clone()),
+                    Frame::bulk(c.reason.clone()),
                     match &c.workaround {
-                        Some(w) => Frame::bulk(w.as_str()),
+                        Some(w) => Frame::bulk(w.clone()),
                         None => Frame::Null,
                     },
                 ])
@@ -5151,7 +5139,7 @@ impl CommandExecutor {
             .collect();
         Frame::array(vec![
             Frame::bulk("redis_version"),
-            Frame::bulk(report.redis_version.as_str()),
+            Frame::bulk(report.redis_version.clone()),
             Frame::bulk("total_commands"),
             Frame::Integer(report.total_commands_used as i64),
             Frame::bulk("compatible"),
@@ -5165,7 +5153,7 @@ impl CommandExecutor {
                 report
                     .warnings
                     .iter()
-                    .map(|w| Frame::bulk(w.as_str()))
+                    .map(|w| Frame::bulk(w.clone()))
                     .collect(),
             ),
             Frame::bulk("recommendations"),
@@ -5173,11 +5161,11 @@ impl CommandExecutor {
                 report
                     .recommendations
                     .iter()
-                    .map(|r| Frame::bulk(r.as_str()))
+                    .map(|r| Frame::bulk(r.clone()))
                     .collect(),
             ),
             Frame::bulk("estimated_migration_time"),
-            Frame::bulk(report.estimated_migration_time.as_str()),
+            Frame::bulk(report.estimated_migration_time.clone()),
         ])
     }
 
@@ -5191,20 +5179,20 @@ impl CommandExecutor {
         match ferrite_studio::devtools::QueryBuilder::explain_command(command) {
             Some(help) => Frame::array(vec![
                 Frame::bulk("name"),
-                Frame::bulk(help.name.as_str()),
+                Frame::bulk(help.name.clone()),
                 Frame::bulk("syntax"),
-                Frame::bulk(help.syntax.as_str()),
+                Frame::bulk(help.syntax.clone()),
                 Frame::bulk("description"),
-                Frame::bulk(help.description.as_str()),
+                Frame::bulk(help.description.clone()),
                 Frame::bulk("complexity"),
-                Frame::bulk(help.complexity.as_str()),
+                Frame::bulk(help.complexity.clone()),
                 Frame::bulk("since"),
-                Frame::bulk(help.since_version.as_str()),
+                Frame::bulk(help.since_version.clone()),
                 Frame::bulk("examples"),
                 Frame::array(
                     help.examples
                         .iter()
-                        .map(|e| Frame::bulk(e.as_str()))
+                        .map(|e| Frame::bulk(e.clone()))
                         .collect(),
                 ),
             ]),
@@ -5225,9 +5213,9 @@ impl CommandExecutor {
             .iter()
             .map(|s| {
                 Frame::array(vec![
-                    Frame::bulk(s.query.as_str()),
-                    Frame::bulk(s.description.as_str()),
-                    Frame::bulk(s.category.as_str()),
+                    Frame::bulk(s.query.clone()),
+                    Frame::bulk(s.description.clone()),
+                    Frame::bulk(s.category.clone()),
                 ])
             })
             .collect();
@@ -5342,9 +5330,8 @@ impl CommandExecutor {
                     );
                 }
                 let namespace = &args[0];
-                let limit: u64 = match args[1].parse() {
-                    Ok(v) => v,
-                    Err(_) => return Frame::error("ERR monthly_limit_cents must be an integer"),
+                let Ok(limit) = args[1].parse::<u64>() else {
+                    return Frame::error("ERR monthly_limit_cents must be an integer");
                 };
 
                 let mut threshold: u8 = 80;
@@ -5461,23 +5448,24 @@ impl CommandExecutor {
                 if let Some(profiler) = self.store.profiler() {
                     let thresholds = TierThresholds::default();
                     let report = profiler.report(&thresholds);
-                    let mut items = Vec::new();
-                    items.push(Frame::bulk("total_keys_analyzed"));
-                    items.push(Frame::Integer(report.total_keys_analyzed as i64));
-                    items.push(Frame::bulk("hot_keys"));
-                    items.push(Frame::Integer(report.hot_keys as i64));
-                    items.push(Frame::bulk("warm_keys"));
-                    items.push(Frame::Integer(report.warm_keys as i64));
-                    items.push(Frame::bulk("cold_keys"));
-                    items.push(Frame::Integer(report.cold_keys as i64));
-                    items.push(Frame::bulk("read_write_ratio"));
-                    items.push(Frame::Double(report.read_write_ratio));
-                    items.push(Frame::bulk("throughput_ops_per_sec"));
-                    items.push(Frame::Double(report.throughput_ops_per_sec));
-                    items.push(Frame::bulk("avg_value_size"));
-                    items.push(Frame::Double(report.avg_value_size));
-                    items.push(Frame::bulk("memory_usage_fraction"));
-                    items.push(Frame::Double(report.memory_usage_fraction));
+                    let items = vec![
+                        Frame::bulk("total_keys_analyzed"),
+                        Frame::Integer(report.total_keys_analyzed as i64),
+                        Frame::bulk("hot_keys"),
+                        Frame::Integer(report.hot_keys as i64),
+                        Frame::bulk("warm_keys"),
+                        Frame::Integer(report.warm_keys as i64),
+                        Frame::bulk("cold_keys"),
+                        Frame::Integer(report.cold_keys as i64),
+                        Frame::bulk("read_write_ratio"),
+                        Frame::Double(report.read_write_ratio),
+                        Frame::bulk("throughput_ops_per_sec"),
+                        Frame::Double(report.throughput_ops_per_sec),
+                        Frame::bulk("avg_value_size"),
+                        Frame::Double(report.avg_value_size),
+                        Frame::bulk("memory_usage_fraction"),
+                        Frame::Double(report.memory_usage_fraction),
+                    ];
                     Frame::Array(Some(items))
                 } else {
                     Frame::error("ERR profiler is not active. Run AUTOTUNE ENABLE first")
@@ -5522,7 +5510,7 @@ fn extract_source_patterns(query: &str) -> Vec<String> {
     for (i, token) in upper_tokens.iter().enumerate() {
         if *token == "FROM" {
             if let Some(next) = tokens.get(i + 1) {
-                let pattern = next.trim_end_matches(|c: char| c == ';' || c == ',');
+                let pattern = next.trim_end_matches([';', ',']);
                 if !pattern.is_empty() {
                     patterns.push(pattern.to_string());
                 }

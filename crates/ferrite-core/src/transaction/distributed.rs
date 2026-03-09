@@ -424,16 +424,13 @@ impl DistributedLockManager {
                     .fetch_add(waited_us, Ordering::Relaxed);
                 self.stats_total_waited.fetch_add(1, Ordering::Relaxed);
 
-                match &result {
-                    Ok(_grant) => {
-                        self.stats_total_acquisitions
-                            .fetch_add(1, Ordering::Relaxed);
-                        self.tx_locks
-                            .entry(*tx_id)
-                            .or_default()
-                            .insert(resource.to_string());
-                    }
-                    Err(_) => {}
+                if let Ok(_grant) = &result {
+                    self.stats_total_acquisitions
+                        .fetch_add(1, Ordering::Relaxed);
+                    self.tx_locks
+                        .entry(*tx_id)
+                        .or_default()
+                        .insert(resource.to_string());
                 }
                 self.clear_wait_for(tx_id).await;
                 result
@@ -839,6 +836,7 @@ impl DistributedLockManager {
     }
 
     /// DFS helper that records the path and returns `true` on first cycle.
+    #[allow(clippy::only_used_in_recursion)]
     fn dfs_find_cycle(
         &self,
         graph: &HashMap<TxId, HashSet<TxId>>,

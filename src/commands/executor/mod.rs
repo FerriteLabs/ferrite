@@ -45,8 +45,8 @@ use crate::cluster::ClusterStateManager;
 use crate::config::SharedConfig;
 use crate::protocol::Frame;
 use crate::runtime::{
-    ClientRegistry, LatencyTracker, SharedClientRegistry, SharedSlowLog,
-    SharedSubscriptionManager, SlowLog,
+    ClientRegistry, LatencyTracker, SharedClientRegistry, SharedSlowLog, SharedSubscriptionManager,
+    SlowLog,
 };
 use crate::storage::Store;
 
@@ -1341,7 +1341,17 @@ impl CommandExecutor {
                 offset,
                 count,
             } => sorted_sets::zrangestore(
-                &self.store, db, &dst, &src, &min, &max, by_score, by_lex, rev, offset, count,
+                &self.store,
+                db,
+                &dst,
+                &src,
+                &min,
+                &max,
+                by_score,
+                by_lex,
+                rev,
+                offset,
+                count,
             ),
             Command::ZMPop {
                 keys,
@@ -2197,9 +2207,7 @@ impl CommandExecutor {
                 data,
                 replace,
             } => self.restore(db, &key, ttl, &data, replace),
-            Command::Sort { key, options } => {
-                self.sort(db, &key, &options)
-            }
+            Command::Sort { key, options } => self.sort(db, &key, &options),
 
             // Time-Series commands
             Command::TimeSeries { subcommand, args } => {
@@ -2217,9 +2225,7 @@ impl CommandExecutor {
             }
 
             // RedisJSON compatibility commands
-            Command::Json { subcommand, args } => {
-                self.handle_json_command(db, &subcommand, &args)
-            }
+            Command::Json { subcommand, args } => self.handle_json_command(db, &subcommand, &args),
 
             // Bloom filter commands
             Command::BloomFilter { subcommand, args } => {

@@ -1800,8 +1800,8 @@ impl Command {
                     vec![args[0].clone()]
                 },
                 permission: match subcommand.as_str() {
-                    "GET" | "MGET" | "TYPE" | "STRLEN" | "OBJLEN" | "OBJKEYS"
-                    | "ARRLEN" | "ARRINDEX" | "RESP" | "DEBUG" => Permission::Read,
+                    "GET" | "MGET" | "TYPE" | "STRLEN" | "OBJLEN" | "OBJKEYS" | "ARRLEN"
+                    | "ARRINDEX" | "RESP" | "DEBUG" => Permission::Read,
                     _ => Permission::Write,
                 },
             },

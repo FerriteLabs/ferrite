@@ -271,16 +271,13 @@ impl WasmRuntime {
         };
 
         // Look up the exported function
-        let func = match instance.get_func(&mut store, function_name) {
-            Some(f) => f,
-            None => {
-                self.record_execution(false, start.elapsed());
-                return ExecutionResult::failure(
-                    format!("function '{}' not found in module", function_name),
-                    usage,
-                    start.elapsed(),
-                );
-            }
+        let Some(func) = instance.get_func(&mut store, function_name) else {
+            self.record_execution(false, start.elapsed());
+            return ExecutionResult::failure(
+                format!("function '{}' not found in module", function_name),
+                usage,
+                start.elapsed(),
+            );
         };
 
         // Convert arguments to wasmtime Val

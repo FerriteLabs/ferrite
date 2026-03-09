@@ -160,9 +160,8 @@ pub fn client(client_registry: &ClientRegistry, subcommand: &str, args: Vec<Byte
             if args.is_empty() {
                 return Frame::error("ERR wrong number of arguments for CLIENT PAUSE");
             }
-            let timeout_ms = match String::from_utf8_lossy(&args[0]).parse::<u64>() {
-                Ok(t) => t,
-                Err(_) => return Frame::error("ERR timeout is not an integer or out of range"),
+            let Ok(timeout_ms) = String::from_utf8_lossy(&args[0]).parse::<u64>() else {
+                return Frame::error("ERR timeout is not an integer or out of range");
             };
             let mode = if args.len() > 1 {
                 match String::from_utf8_lossy(&args[1]).to_uppercase().as_str() {
@@ -436,7 +435,7 @@ pub fn hello(protocol_version: Option<u8>) -> Frame {
             Frame::bulk("server"),
             Frame::bulk("ferrite"),
             Frame::bulk("version"),
-            Frame::bulk("0.1.0"),
+            Frame::bulk(env!("CARGO_PKG_VERSION")),
             Frame::bulk("proto"),
             Frame::Integer(proto as i64),
             Frame::bulk("id"),
@@ -451,7 +450,10 @@ pub fn hello(protocol_version: Option<u8>) -> Frame {
     } else {
         let mut info = HashMap::new();
         info.insert(Bytes::from_static(b"server"), Frame::bulk("ferrite"));
-        info.insert(Bytes::from_static(b"version"), Frame::bulk("0.1.0"));
+        info.insert(
+            Bytes::from_static(b"version"),
+            Frame::bulk(env!("CARGO_PKG_VERSION")),
+        );
         info.insert(Bytes::from_static(b"proto"), Frame::Integer(proto as i64));
         info.insert(Bytes::from_static(b"id"), Frame::Integer(1));
         info.insert(Bytes::from_static(b"mode"), Frame::bulk("standalone"));

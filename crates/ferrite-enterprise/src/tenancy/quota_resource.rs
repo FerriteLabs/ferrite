@@ -3,7 +3,6 @@
 //! Provides memory limits, connection caps, ops/sec throttling,
 //! and storage quotas with configurable burst allowances.
 
-
 use serde::{Deserialize, Serialize};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;

@@ -14,7 +14,10 @@ use super::ast::*;
 use super::planner::QueryPlan;
 
 /// Execute a Cypher statement against a graph storage.
-pub fn execute(stmt: &CypherStatement, storage: &mut GraphStorage) -> Result<QueryResult, super::CypherError> {
+pub fn execute(
+    stmt: &CypherStatement,
+    storage: &mut GraphStorage,
+) -> Result<QueryResult, super::CypherError> {
     match stmt {
         CypherStatement::Query(query) => execute_query(query, storage),
         CypherStatement::Create(create) => execute_create(create, storage, &HashMap::new()),
@@ -49,7 +52,10 @@ pub fn execute_read_only(
 }
 
 /// Execute a query plan.
-pub fn execute_plan(plan: &QueryPlan, storage: &GraphStorage) -> Result<QueryResult, super::CypherError> {
+pub fn execute_plan(
+    plan: &QueryPlan,
+    storage: &GraphStorage,
+) -> Result<QueryResult, super::CypherError> {
     execute_query(&plan.query, storage)
 }
 
@@ -62,7 +68,10 @@ enum BoundValue {
     Edge(Edge),
 }
 
-fn execute_query(query: &CypherQuery, storage: &GraphStorage) -> Result<QueryResult, super::CypherError> {
+fn execute_query(
+    query: &CypherQuery,
+    storage: &GraphStorage,
+) -> Result<QueryResult, super::CypherError> {
     let start = std::time::Instant::now();
 
     // 1. Expand MATCH patterns into bindings
@@ -72,7 +81,8 @@ fn execute_query(query: &CypherQuery, storage: &GraphStorage) -> Result<QueryRes
     if let Some(ref optional) = query.optional_match {
         let mut new_bindings = Vec::new();
         for binding in &bindings {
-            let optional_results = expand_match_with_bindings(optional, &[binding.clone()], storage)?;
+            let optional_results =
+                expand_match_with_bindings(optional, &[binding.clone()], storage)?;
             if optional_results.is_empty() {
                 new_bindings.push(binding.clone());
             } else {
@@ -386,10 +396,8 @@ fn expand_relationship(
     for binding in bindings {
         // We need the previously bound node (the last node pattern's variable)
         // Find the source vertex from the most recently bound node variable
-        let source_id = find_last_bound_vertex(binding);
-        let source_id = match source_id {
-            Some(id) => id,
-            None => continue,
+        let Some(source_id) = find_last_bound_vertex(binding) else {
+            continue;
         };
 
         if let Some((min, max)) = rel.var_length {
@@ -729,7 +737,9 @@ fn execute_create(
                 if let Some(ref props) = node_pattern.properties {
                     vertex.properties = props.clone();
                 }
-                storage.add_vertex(vertex).map_err(|e| super::CypherError::Execution(format!("{}", e)))?;
+                storage
+                    .add_vertex(vertex)
+                    .map_err(|e| super::CypherError::Execution(format!("{}", e)))?;
 
                 if let Some(ref var) = node_pattern.variable {
                     if let Some(v) = storage.get_vertex(id) {
@@ -745,11 +755,21 @@ fn execute_create(
             } => {
                 let from_id = match created_bindings.get(from) {
                     Some(BoundValue::Vertex(v)) => v.id,
-                    _ => return Err(super::CypherError::Execution(format!("variable '{}' not bound to a node", from))),
+                    _ => {
+                        return Err(super::CypherError::Execution(format!(
+                            "variable '{}' not bound to a node",
+                            from
+                        )))
+                    }
                 };
                 let to_id = match created_bindings.get(to) {
                     Some(BoundValue::Vertex(v)) => v.id,
-                    _ => return Err(super::CypherError::Execution(format!("variable '{}' not bound to a node", to))),
+                    _ => {
+                        return Err(super::CypherError::Execution(format!(
+                            "variable '{}' not bound to a node",
+                            to
+                        )))
+                    }
                 };
 
                 let id = next_edge_id();
@@ -757,7 +777,9 @@ fn execute_create(
                 if let Some(props) = properties {
                     edge.properties = props.clone();
                 }
-                storage.add_edge(edge).map_err(|e| super::CypherError::Execution(format!("{}", e)))?;
+                storage
+                    .add_edge(edge)
+                    .map_err(|e| super::CypherError::Execution(format!("{}", e)))?;
             }
         }
     }
@@ -824,25 +846,22 @@ fn execute_match_delete(
         for var in &delete_clause.variables {
             match binding.get(var) {
                 Some(BoundValue::Vertex(v)) => {
-                    if !deleted_vertices.contains(&v.id) {
+                    if deleted_vertices.insert(v.id) {
                         if delete_clause.detach {
                             // Remove all connected edges first
                             let edge_ids = storage.get_edges(v.id);
                             for eid in edge_ids {
-                                if !deleted_edges.contains(&eid) {
+                                if deleted_edges.insert(eid) {
                                     let _ = storage.remove_edge(eid);
-                                    deleted_edges.insert(eid);
                                 }
                             }
                         }
                         let _ = storage.remove_vertex(v.id);
-                        deleted_vertices.insert(v.id);
                     }
                 }
                 Some(BoundValue::Edge(e)) => {
-                    if !deleted_edges.contains(&e.id) {
+                    if deleted_edges.insert(e.id) {
                         let _ = storage.remove_edge(e.id);
-                        deleted_edges.insert(e.id);
                     }
                 }
                 None => {
@@ -875,7 +894,11 @@ fn execute_match_set(
     for binding in &bindings {
         for item in &set_clause.items {
             match item {
-                SetItem::Property { variable, property, value } => {
+                SetItem::Property {
+                    variable,
+                    property,
+                    value,
+                } => {
                     let prop_value = match value {
                         Expr::Literal(v) => v.clone(),
                         Expr::Property(pa) => {
@@ -901,18 +924,19 @@ fn execute_match_set(
                         None => return Err(super::CypherError::UnboundVariable(variable.clone())),
                     }
                 }
-                SetItem::Label { variable, label } => {
-                    match binding.get(variable) {
-                        Some(BoundValue::Vertex(v)) => {
-                            if let Some(vertex) = storage.get_vertex_mut(v.id) {
-                                vertex.add_label(label);
-                            }
+                SetItem::Label { variable, label } => match binding.get(variable) {
+                    Some(BoundValue::Vertex(v)) => {
+                        if let Some(vertex) = storage.get_vertex_mut(v.id) {
+                            vertex.add_label(label);
                         }
-                        _ => return Err(super::CypherError::Execution(
-                            format!("cannot add label to non-node variable '{}'", variable),
-                        )),
                     }
-                }
+                    _ => {
+                        return Err(super::CypherError::Execution(format!(
+                            "cannot add label to non-node variable '{}'",
+                            variable
+                        )))
+                    }
+                },
             }
         }
     }
@@ -940,33 +964,32 @@ fn execute_match_remove(
     for binding in &bindings {
         for item in &remove_clause.items {
             match item {
-                RemoveItem::Property { variable, property } => {
-                    match binding.get(variable) {
-                        Some(BoundValue::Vertex(v)) => {
-                            if let Some(vertex) = storage.get_vertex_mut(v.id) {
-                                vertex.remove(property);
-                            }
+                RemoveItem::Property { variable, property } => match binding.get(variable) {
+                    Some(BoundValue::Vertex(v)) => {
+                        if let Some(vertex) = storage.get_vertex_mut(v.id) {
+                            vertex.remove(property);
                         }
-                        Some(BoundValue::Edge(e)) => {
-                            if let Some(edge) = storage.get_edge_mut(e.id) {
-                                edge.properties.remove(property);
-                            }
-                        }
-                        None => return Err(super::CypherError::UnboundVariable(variable.clone())),
                     }
-                }
-                RemoveItem::Label { variable, label } => {
-                    match binding.get(variable) {
-                        Some(BoundValue::Vertex(v)) => {
-                            if let Some(vertex) = storage.get_vertex_mut(v.id) {
-                                vertex.remove_label(label);
-                            }
+                    Some(BoundValue::Edge(e)) => {
+                        if let Some(edge) = storage.get_edge_mut(e.id) {
+                            edge.properties.remove(property);
                         }
-                        _ => return Err(super::CypherError::Execution(
-                            format!("cannot remove label from non-node variable '{}'", variable),
-                        )),
                     }
-                }
+                    None => return Err(super::CypherError::UnboundVariable(variable.clone())),
+                },
+                RemoveItem::Label { variable, label } => match binding.get(variable) {
+                    Some(BoundValue::Vertex(v)) => {
+                        if let Some(vertex) = storage.get_vertex_mut(v.id) {
+                            vertex.remove_label(label);
+                        }
+                    }
+                    _ => {
+                        return Err(super::CypherError::Execution(format!(
+                            "cannot remove label from non-node variable '{}'",
+                            variable
+                        )))
+                    }
+                },
             }
         }
     }
@@ -1299,10 +1322,7 @@ mod tests {
         assert_eq!(storage.vertex_count(), 4);
 
         // DETACH DELETE removes node and its edges
-        run_mutation(
-            &mut storage,
-            "MATCH (n:Company) DETACH DELETE n",
-        );
+        run_mutation(&mut storage, "MATCH (n:Company) DETACH DELETE n");
 
         assert_eq!(storage.vertex_count(), 3);
         assert!(storage.get_vertex(VertexId::new(103)).is_none());
@@ -1361,9 +1381,8 @@ mod tests {
 
     #[test]
     fn test_parse_remove_multiple() {
-        let stmt = CypherParser::parse(
-            "MATCH (n:Person) WHERE n.name = 'Alice' REMOVE n.age, n:Person",
-        );
+        let stmt =
+            CypherParser::parse("MATCH (n:Person) WHERE n.name = 'Alice' REMOVE n.age, n:Person");
         assert!(stmt.is_ok());
     }
 }

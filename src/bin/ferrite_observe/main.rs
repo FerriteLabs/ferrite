@@ -297,7 +297,7 @@ fn display_heatmap(rows: usize, host: &str, port: u16) {
     let intensity = [' ', '░', '▒', '▓', '█'];
 
     // Generate mock slot data with some hot regions.
-    let mut slot_data = [0u32; 16384];
+    let mut slot_data = vec![0u32; 16384];
     for (i, slot) in slot_data.iter_mut().enumerate() {
         // Simulate hot spots around slots 0-1000 and 8000-9000.
         *slot = if i < 1000 {

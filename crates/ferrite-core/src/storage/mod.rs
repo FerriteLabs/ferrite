@@ -25,6 +25,7 @@ mod memory;
 /// Memory allocator management, fragmentation tracking, and active defragmentation.
 pub mod memory_manager;
 pub mod streams;
+pub mod version_store;
 
 pub use backend::{HybridLogBackendConfig, SerializableEntry, ValueType};
 pub use hybridlog::{
@@ -61,3 +62,4 @@ pub use memory::{Database, Entry, StorageBackend, Store, Value};
 pub use streams::{
     Stream, StreamConsumer, StreamConsumerGroup, StreamEntry, StreamEntryId, StreamPendingEntry,
 };
+pub use version_store::{VersionStore, VersionStoreConfig};

@@ -428,7 +428,7 @@ impl SmartProxy {
         let addr = self.config.upstream_addr;
         let timeout = Duration::from_secs(2);
 
-        match std::net::TcpStream::connect_timeout(&addr.into(), timeout) {
+        match std::net::TcpStream::connect_timeout(&addr, timeout) {
             Ok(mut stream) => {
                 use std::io::{Read, Write};
                 let _ = stream.set_read_timeout(Some(timeout));

@@ -5,6 +5,8 @@
 
 use std::io::{Read, Write};
 use std::path::PathBuf;
+#[cfg(any(feature = "cloud", test))]
+use std::sync::Arc;
 
 use async_trait::async_trait;
 use bytes::Bytes;

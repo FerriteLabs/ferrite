@@ -897,41 +897,74 @@ mod tests {
     fn test_compare_json_values_numbers() {
         let a = serde_json::json!(1);
         let b = serde_json::json!(2);
-        assert_eq!(compare_json_values(Some(&a), Some(&b)), std::cmp::Ordering::Less);
-        assert_eq!(compare_json_values(Some(&b), Some(&a)), std::cmp::Ordering::Greater);
-        assert_eq!(compare_json_values(Some(&a), Some(&a)), std::cmp::Ordering::Equal);
+        assert_eq!(
+            compare_json_values(Some(&a), Some(&b)),
+            std::cmp::Ordering::Less
+        );
+        assert_eq!(
+            compare_json_values(Some(&b), Some(&a)),
+            std::cmp::Ordering::Greater
+        );
+        assert_eq!(
+            compare_json_values(Some(&a), Some(&a)),
+            std::cmp::Ordering::Equal
+        );
     }
 
     #[test]
     fn test_compare_json_values_strings() {
         let a = serde_json::json!("apple");
         let b = serde_json::json!("banana");
-        assert_eq!(compare_json_values(Some(&a), Some(&b)), std::cmp::Ordering::Less);
-        assert_eq!(compare_json_values(Some(&b), Some(&a)), std::cmp::Ordering::Greater);
+        assert_eq!(
+            compare_json_values(Some(&a), Some(&b)),
+            std::cmp::Ordering::Less
+        );
+        assert_eq!(
+            compare_json_values(Some(&b), Some(&a)),
+            std::cmp::Ordering::Greater
+        );
     }
 
     #[test]
     fn test_compare_json_values_nulls_sort_last() {
         let a = serde_json::json!(1);
         let null = serde_json::Value::Null;
-        assert_eq!(compare_json_values(Some(&a), Some(&null)), std::cmp::Ordering::Less);
-        assert_eq!(compare_json_values(Some(&null), Some(&a)), std::cmp::Ordering::Greater);
-        assert_eq!(compare_json_values(None, Some(&a)), std::cmp::Ordering::Greater);
-        assert_eq!(compare_json_values(Some(&a), None), std::cmp::Ordering::Less);
+        assert_eq!(
+            compare_json_values(Some(&a), Some(&null)),
+            std::cmp::Ordering::Less
+        );
+        assert_eq!(
+            compare_json_values(Some(&null), Some(&a)),
+            std::cmp::Ordering::Greater
+        );
+        assert_eq!(
+            compare_json_values(None, Some(&a)),
+            std::cmp::Ordering::Greater
+        );
+        assert_eq!(
+            compare_json_values(Some(&a), None),
+            std::cmp::Ordering::Less
+        );
     }
 
     #[test]
     fn test_compare_json_values_missing_equal() {
         assert_eq!(compare_json_values(None, None), std::cmp::Ordering::Equal);
         let null = serde_json::Value::Null;
-        assert_eq!(compare_json_values(Some(&null), None), std::cmp::Ordering::Equal);
+        assert_eq!(
+            compare_json_values(Some(&null), None),
+            std::cmp::Ordering::Equal
+        );
     }
 
     #[test]
     fn test_compare_json_values_booleans() {
         let t = serde_json::json!(true);
         let f = serde_json::json!(false);
-        assert_eq!(compare_json_values(Some(&f), Some(&t)), std::cmp::Ordering::Less);
+        assert_eq!(
+            compare_json_values(Some(&f), Some(&t)),
+            std::cmp::Ordering::Less
+        );
     }
 
     #[test]

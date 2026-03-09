@@ -235,12 +235,7 @@ impl VersionStore {
     /// Record a new version for `key`.
     ///
     /// If version tracking is disabled via config this is a no-op.
-    pub fn record_version(
-        &self,
-        key: &str,
-        value: Option<Vec<u8>>,
-        operation: VersionOperation,
-    ) {
+    pub fn record_version(&self, key: &str, value: Option<Vec<u8>>, operation: VersionOperation) {
         if !self.config.enabled {
             return;
         }
@@ -400,9 +395,7 @@ impl VersionStore {
 
             let removed = (before_len - chain.entries.len()) as u64;
             if removed > 0 {
-                chain.total_size_bytes = chain
-                    .total_size_bytes
-                    .saturating_sub(bytes_freed);
+                chain.total_size_bytes = chain.total_size_bytes.saturating_sub(bytes_freed);
                 versions_removed += removed;
                 keys_affected += 1;
             }
@@ -413,8 +406,7 @@ impl VersionStore {
         // Update global counters.
         self.total_versions
             .fetch_sub(versions_removed, Ordering::Relaxed);
-        self.total_bytes
-            .fetch_sub(bytes_freed, Ordering::Relaxed);
+        self.total_bytes.fetch_sub(bytes_freed, Ordering::Relaxed);
 
         // Update GC stats.
         self.gc_stats.gc_runs.fetch_add(1, Ordering::Relaxed);
@@ -499,7 +491,9 @@ mod tests {
         chain.total_size_bytes += size_bytes as u64;
 
         store.total_versions.fetch_add(1, Ordering::Relaxed);
-        store.total_bytes.fetch_add(size_bytes as u64, Ordering::Relaxed);
+        store
+            .total_bytes
+            .fetch_add(size_bytes as u64, Ordering::Relaxed);
     }
 
     #[test]
@@ -542,7 +536,9 @@ mod tests {
 
         let range = store.get_range("k1", 150, 350);
         assert_eq!(range.len(), 2);
-        assert!(range.iter().all(|e| e.timestamp >= 150 && e.timestamp <= 350));
+        assert!(range
+            .iter()
+            .all(|e| e.timestamp >= 150 && e.timestamp <= 350));
     }
 
     #[test]

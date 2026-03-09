@@ -80,9 +80,10 @@ pub enum WasmStoreError {
 // ---------------------------------------------------------------------------
 
 /// Persistence backend for the WASM store.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub enum WasmPersistence {
     /// In-memory only – no persistence.
+    #[default]
     None,
     /// Browser IndexedDB backend.
     IndexedDb {
@@ -104,12 +105,6 @@ pub enum WasmPersistence {
         /// Adapter identifier.
         adapter_name: String,
     },
-}
-
-impl Default for WasmPersistence {
-    fn default() -> Self {
-        WasmPersistence::None
-    }
 }
 
 // ---------------------------------------------------------------------------

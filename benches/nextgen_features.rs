@@ -1,4 +1,4 @@
-#![allow(clippy::unwrap_used, unused_must_use)]
+#![allow(clippy::unwrap_used, unused_must_use, missing_docs)]
 //! Benchmarks for Next-Gen Feature Modules
 //!
 //! Covers the core algorithms added in the next-gen feature set:

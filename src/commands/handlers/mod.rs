@@ -294,8 +294,8 @@ pub fn pong_frame() -> Frame {
 #[cold]
 pub fn warn_experimental(command_family: &str) {
     // tracing::warn_once is not available; use a static set to deduplicate.
-    use std::sync::Mutex;
     use std::collections::HashSet;
+    use std::sync::Mutex;
 
     static WARNED: std::sync::LazyLock<Mutex<HashSet<String>>> =
         std::sync::LazyLock::new(|| Mutex::new(HashSet::new()));

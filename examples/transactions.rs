@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout)]
 //! Transactions Example
 //!
 //! Demonstrates Ferrite's transaction support for atomic operations:

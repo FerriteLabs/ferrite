@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout)]
 //! IoT sensor data caching with embedded Ferrite
 //!
 //! Demonstrates patterns commonly found in edge / IoT deployments where an

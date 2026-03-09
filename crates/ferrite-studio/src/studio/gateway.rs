@@ -114,7 +114,7 @@ impl fmt::Display for HttpMethod {
 
 impl HttpMethod {
     /// Parse an HTTP method string (case-insensitive).
-    pub fn from_str(s: &str) -> Option<Self> {
+    pub fn parse_method(s: &str) -> Option<Self> {
         match s.to_uppercase().as_str() {
             "GET" => Some(HttpMethod::Get),
             "POST" => Some(HttpMethod::Post),
@@ -634,20 +634,17 @@ impl ApiGateway {
         self.stats.rest_requests.fetch_add(1, Ordering::Relaxed);
         let start = Instant::now();
 
-        let http_method = match HttpMethod::from_str(method) {
-            Some(m) => m,
-            None => {
-                self.stats.errors.fetch_add(1, Ordering::Relaxed);
-                return RestResponse {
-                    status: 405,
-                    data: serde_json::json!({"error": "Method not allowed"}),
-                    meta: Some(ResponseMeta {
-                        total: None,
-                        cursor: None,
-                        took_ms: start.elapsed().as_millis() as u64,
-                    }),
-                };
-            }
+        let Some(http_method) = HttpMethod::parse_method(method) else {
+            self.stats.errors.fetch_add(1, Ordering::Relaxed);
+            return RestResponse {
+                status: 405,
+                data: serde_json::json!({"error": "Method not allowed"}),
+                meta: Some(ResponseMeta {
+                    total: None,
+                    cursor: None,
+                    took_ms: start.elapsed().as_millis() as u64,
+                }),
+            };
         };
 
         // Find matching route
@@ -1737,13 +1734,16 @@ mod tests {
 
     #[test]
     fn test_http_method_from_str() {
-        assert_eq!(HttpMethod::from_str("GET"), Some(HttpMethod::Get));
-        assert_eq!(HttpMethod::from_str("post"), Some(HttpMethod::Post));
-        assert_eq!(HttpMethod::from_str("Put"), Some(HttpMethod::Put));
-        assert_eq!(HttpMethod::from_str("DELETE"), Some(HttpMethod::Delete));
-        assert_eq!(HttpMethod::from_str("PATCH"), Some(HttpMethod::Patch));
-        assert_eq!(HttpMethod::from_str("OPTIONS"), Some(HttpMethod::Options));
-        assert_eq!(HttpMethod::from_str("UNKNOWN"), None);
+        assert_eq!(HttpMethod::parse_method("GET"), Some(HttpMethod::Get));
+        assert_eq!(HttpMethod::parse_method("post"), Some(HttpMethod::Post));
+        assert_eq!(HttpMethod::parse_method("Put"), Some(HttpMethod::Put));
+        assert_eq!(HttpMethod::parse_method("DELETE"), Some(HttpMethod::Delete));
+        assert_eq!(HttpMethod::parse_method("PATCH"), Some(HttpMethod::Patch));
+        assert_eq!(
+            HttpMethod::parse_method("OPTIONS"),
+            Some(HttpMethod::Options)
+        );
+        assert_eq!(HttpMethod::parse_method("UNKNOWN"), None);
     }
 
     #[test]

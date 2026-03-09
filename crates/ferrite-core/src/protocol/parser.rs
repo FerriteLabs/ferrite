@@ -399,6 +399,9 @@ fn parse_frame_internal(
     limits: &ParserLimits,
     depth: usize,
 ) -> Result<Frame, ParseError> {
+    if depth > limits.max_nesting_depth {
+        return Err(nesting_too_deep_error(depth, limits.max_nesting_depth));
+    }
     match get_byte(cursor)? {
         b'+' => {
             // Simple string

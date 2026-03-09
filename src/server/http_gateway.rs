@@ -189,12 +189,12 @@ async fn handle_request(
         // Health check
         (Method::GET, "/health") => json_response(
             StatusCode::OK,
-            serde_json::json!({ "status": "ok", "version": "0.1.0" }),
+            serde_json::json!({ "status": "ok", "version": env!("CARGO_PKG_VERSION") }),
         ),
 
         // REST endpoints
         (Method::GET, p) if p.starts_with("/api/v1/string/") && config.enable_rest => {
-            handle_get_string(&p, &store)
+            handle_get_string(p, &store)
         }
 
         (Method::PUT, p) if p.starts_with("/api/v1/string/") && config.enable_rest => {
@@ -241,9 +241,8 @@ async fn handle_request(
 // ---------------------------------------------------------------------------
 
 fn handle_get_string(path: &str, store: &Store) -> Response<Full<Bytes>> {
-    let key = match extract_path_param(path, "/api/v1/string/") {
-        Some(k) => k,
-        None => return error_response(StatusCode::BAD_REQUEST, "Missing key parameter"),
+    let Some(key) = extract_path_param(path, "/api/v1/string/") else {
+        return error_response(StatusCode::BAD_REQUEST, "Missing key parameter");
     };
 
     match store.get(0, &Bytes::from(key.clone())) {
@@ -308,9 +307,8 @@ fn handle_put_string(
 }
 
 fn handle_delete_key(path: &str, store: &Store) -> Response<Full<Bytes>> {
-    let key = match extract_path_param(path, "/api/v1/keys/") {
-        Some(k) => k,
-        None => return error_response(StatusCode::BAD_REQUEST, "Missing key parameter"),
+    let Some(key) = extract_path_param(path, "/api/v1/keys/") else {
+        return error_response(StatusCode::BAD_REQUEST, "Missing key parameter");
     };
 
     let deleted = store.del(0, &[Bytes::from(key.clone())]);
@@ -363,7 +361,7 @@ fn handle_info(store: &Store) -> Response<Full<Bytes>> {
         StatusCode::OK,
         serde_json::json!({
             "server": "ferrite",
-            "version": "0.1.0",
+            "version": env!("CARGO_PKG_VERSION"),
             "keys": key_count,
             "backend": format!("{:?}", store.backend_type()),
         }),
@@ -462,11 +460,10 @@ fn handle_query(body: &[u8], store: &Store) -> Result<Response<Full<Bytes>>, Gat
                     "EXPIRE requires key and seconds arguments".into(),
                 ));
             }
-            let seconds: u64 = args[1].parse().map_err(|_| {
-                GatewayError::InvalidRequest("Invalid seconds value".into())
-            })?;
-            let expires_at = std::time::SystemTime::now()
-                + std::time::Duration::from_secs(seconds);
+            let seconds: u64 = args[1]
+                .parse()
+                .map_err(|_| GatewayError::InvalidRequest("Invalid seconds value".into()))?;
+            let expires_at = std::time::SystemTime::now() + std::time::Duration::from_secs(seconds);
             let result = store.expire(0, &Bytes::from(args[0].clone()), expires_at);
             serde_json::json!({ "result": if result { 1 } else { 0 } })
         }
@@ -546,9 +543,7 @@ fn handle_query(body: &[u8], store: &Store) -> Result<Response<Full<Bytes>>, Gat
             }
             let key = Bytes::from(args[0].clone());
             let current = match store.get(0, &key) {
-                Some(Value::String(v)) => {
-                    String::from_utf8_lossy(&v).parse::<i64>().unwrap_or(0)
-                }
+                Some(Value::String(v)) => String::from_utf8_lossy(&v).parse::<i64>().unwrap_or(0),
                 None => 0,
                 _ => {
                     return Ok(json_response(
@@ -577,7 +572,7 @@ fn handle_openapi_docs() -> Response<Full<Bytes>> {
         "openapi": "3.0.3",
         "info": {
             "title": "Ferrite API",
-            "version": "0.1.0",
+            "version": env!("CARGO_PKG_VERSION"),
             "description": "REST API for the Ferrite key-value store"
         },
         "paths": {
@@ -728,7 +723,8 @@ type DelResult {
 /// Build a JSON response with the given status code and body.
 fn json_response(status: StatusCode, body: serde_json::Value) -> Response<Full<Bytes>> {
     let json = serde_json::to_vec(&body).unwrap_or_default();
-    let resp = Response::builder()
+
+    Response::builder()
         .status(status)
         .header("Content-Type", "application/json")
         .body(Full::new(Bytes::from(json)))
@@ -736,8 +732,7 @@ fn json_response(status: StatusCode, body: serde_json::Value) -> Response<Full<B
             Response::new(Full::new(Bytes::from(
                 r#"{"error":"Failed to build response"}"#,
             )))
-        });
-    resp
+        })
 }
 
 /// Build a JSON error response.
@@ -838,11 +833,8 @@ fn matches_pattern(s: &str, pattern: &str) -> bool {
         return true;
     }
 
-    let _si = s.chars().peekable();
-    let _pi = pattern.chars().peekable();
-
     matches_pattern_inner(
-        &mut s.chars().collect::<Vec<_>>(),
+        &s.chars().collect::<Vec<_>>(),
         &pattern.chars().collect::<Vec<_>>(),
         0,
         0,

@@ -11,6 +11,7 @@ use bytes::Bytes;
 use std::sync::Arc;
 
 /// Check whether a command should be redirected to another node.
+///
 /// Returns `Some(Frame)` with a MOVED/ASK error if the command targets
 /// a slot not owned by this node, or `None` if it should be handled locally.
 pub fn check_slot_redirect(

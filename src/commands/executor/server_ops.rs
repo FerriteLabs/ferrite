@@ -29,10 +29,7 @@ static BGSAVE_IN_PROGRESS: std::sync::atomic::AtomicBool =
 
 /// Get the server uptime in seconds.
 fn server_uptime_secs() -> u64 {
-    SERVER_START
-        .get_or_init(Instant::now)
-        .elapsed()
-        .as_secs()
+    SERVER_START.get_or_init(Instant::now).elapsed().as_secs()
 }
 
 /// Record a successful save by updating the last-save timestamp.
@@ -765,13 +762,9 @@ impl CommandExecutor {
             output.push_str("# Clients\r\n");
             let client_count = self.client_registry.count();
             output.push_str(&format!("connected_clients:{}\r\n", client_count));
-            output.push_str(&format!(
-                "blocked_clients:0\r\n"
-            ));
-            output.push_str(&format!(
-                "tracking_clients:0\r\n"
-            ));
-            output.push_str(&format!("maxclients:10000\r\n"));
+            output.push_str("blocked_clients:0\r\n");
+            output.push_str("tracking_clients:0\r\n");
+            output.push_str("maxclients:10000\r\n");
             output.push_str("\r\n");
         }
 
@@ -792,10 +785,7 @@ impl CommandExecutor {
                 if aof_enabled { 1 } else { 0 }
             ));
             output.push_str("rdb_changes_since_last_save:0\r\n");
-            output.push_str(&format!(
-                "rdb_last_save_time:{}\r\n",
-                last_save_time()
-            ));
+            output.push_str(&format!("rdb_last_save_time:{}\r\n", last_save_time()));
             output.push_str("rdb_last_bgsave_status:ok\r\n");
             output.push_str("aof_last_bgrewrite_status:ok\r\n");
             output.push_str("\r\n");
@@ -814,14 +804,8 @@ impl CommandExecutor {
         // CPU section
         if include("cpu") {
             output.push_str("# CPU\r\n");
-            output.push_str(&format!(
-                "used_cpu_sys:{:.6}\r\n",
-                0.0f64
-            ));
-            output.push_str(&format!(
-                "used_cpu_user:{:.6}\r\n",
-                0.0f64
-            ));
+            output.push_str(&format!("used_cpu_sys:{:.6}\r\n", 0.0f64));
+            output.push_str(&format!("used_cpu_user:{:.6}\r\n", 0.0f64));
             output.push_str("\r\n");
         }
 
@@ -1109,7 +1093,7 @@ impl CommandExecutor {
                 let seconds_str = String::from_utf8_lossy(&args[0]);
                 if let Ok(seconds) = seconds_str.parse::<f64>() {
                     // Use spawn_blocking to avoid stalling the tokio runtime
-                    let _ = tokio::task::block_in_place(|| {
+                    tokio::task::block_in_place(|| {
                         std::thread::sleep(std::time::Duration::from_secs_f64(seconds));
                     });
                     Frame::simple("OK")
@@ -1195,17 +1179,14 @@ impl CommandExecutor {
                                 Value::SortedSet { by_member, .. } => {
                                     // Two indexes: BTreeMap + HashMap
                                     // Per member: key in both + score (f64)
-                                    128 + by_member
-                                        .iter()
-                                        .map(|(m, _)| 56 + m.len())
-                                        .sum::<usize>()
+                                    128 + by_member.keys().map(|m| 56 + m.len()).sum::<usize>()
                                 }
                                 Value::Stream(s) => {
                                     // Stream struct + per-entry (id + field pairs)
                                     128 + s
                                         .entries
-                                        .iter()
-                                        .map(|(_, fields)| {
+                                        .values()
+                                        .map(|fields| {
                                             48 + fields
                                                 .iter()
                                                 .map(|(fk, fv)| 48 + fk.len() + fv.len())
@@ -1485,9 +1466,8 @@ impl CommandExecutor {
                 }
 
                 // Parse timeout in milliseconds
-                let timeout_ms = match String::from_utf8_lossy(&args[0]).parse::<u64>() {
-                    Ok(t) => t,
-                    Err(_) => return Frame::error("ERR timeout is not an integer or out of range"),
+                let Ok(timeout_ms) = String::from_utf8_lossy(&args[0]).parse::<u64>() else {
+                    return Frame::error("ERR timeout is not an integer or out of range");
                 };
 
                 // Parse mode (default is ALL for backwards compatibility)
@@ -1821,11 +1801,8 @@ impl CommandExecutor {
                             Err(e) => return Frame::error(format!("ERR {}", e)),
                         }
                     }
-                    Frame::simple("OK")
-                } else {
-                    // No config available, just acknowledge
-                    Frame::simple("OK")
                 }
+                Frame::simple("OK")
             }
             "RESETSTAT" => {
                 // CONFIG RESETSTAT - reset server statistics
@@ -1846,7 +1823,9 @@ impl CommandExecutor {
             "HELP" => Frame::array(vec![
                 Frame::bulk("CONFIG GET <pattern>"),
                 Frame::bulk("    Return parameters matching the glob-like <pattern>."),
-                Frame::bulk("    Supports both Ferrite paths (server.port) and Redis names (maxclients)."),
+                Frame::bulk(
+                    "    Supports both Ferrite paths (server.port) and Redis names (maxclients).",
+                ),
                 Frame::bulk("CONFIG SET <parameter> <value> [parameter value ...]"),
                 Frame::bulk("    Set one or more configuration parameters to values."),
                 Frame::bulk("CONFIG RESETSTAT"),
@@ -2224,7 +2203,7 @@ impl CommandExecutor {
                 Frame::bulk("server"),
                 Frame::bulk("ferrite"),
                 Frame::bulk("version"),
-                Frame::bulk("0.1.0"),
+                Frame::bulk(env!("CARGO_PKG_VERSION")),
                 Frame::bulk("proto"),
                 Frame::Integer(proto as i64),
                 Frame::bulk("id"),
@@ -2240,7 +2219,10 @@ impl CommandExecutor {
             // RESP3: Return server info as a Map
             let mut info = HashMap::new();
             info.insert(Bytes::from_static(b"server"), Frame::bulk("ferrite"));
-            info.insert(Bytes::from_static(b"version"), Frame::bulk("0.1.0"));
+            info.insert(
+                Bytes::from_static(b"version"),
+                Frame::bulk(env!("CARGO_PKG_VERSION")),
+            );
             info.insert(Bytes::from_static(b"proto"), Frame::Integer(proto as i64));
             info.insert(Bytes::from_static(b"id"), Frame::Integer(1)); // Connection ID placeholder
             info.insert(Bytes::from_static(b"mode"), Frame::bulk("standalone"));
@@ -2510,8 +2492,12 @@ impl CommandExecutor {
                     report.push_str("I have no latency reports to show you at this time.\n");
                     report.push_str("No slow commands were logged. This is good.\n");
                     report.push_str("\nTips:\n");
-                    report.push_str("- Set slowlog-log-slower-than to a lower value to catch more commands.\n");
-                    report.push_str("- Use LATENCY LATEST and LATENCY HISTORY for event-level tracking.\n");
+                    report.push_str(
+                        "- Set slowlog-log-slower-than to a lower value to catch more commands.\n",
+                    );
+                    report.push_str(
+                        "- Use LATENCY LATEST and LATENCY HISTORY for event-level tracking.\n",
+                    );
                 } else {
                     report.push_str(&format!(
                         "{} slow commands logged in the slow log.\n",
@@ -2539,8 +2525,8 @@ impl CommandExecutor {
                         report.push_str(&format!("  ... and {} more\n", entries.len() - 5));
                     }
 
-                    let avg_us: u64 =
-                        entries.iter().map(|e| e.duration_us).sum::<u64>() / entries.len().max(1) as u64;
+                    let avg_us: u64 = entries.iter().map(|e| e.duration_us).sum::<u64>()
+                        / entries.len().max(1) as u64;
                     let max_us = entries.first().map(|e| e.duration_us).unwrap_or(0);
 
                     report.push_str(&format!(
@@ -2559,14 +2545,18 @@ impl CommandExecutor {
             "GRAPH" => {
                 // LATENCY GRAPH event
                 if args.is_empty() {
-                    return Frame::error("ERR wrong number of arguments for 'latency|graph' command");
+                    return Frame::error(
+                        "ERR wrong number of arguments for 'latency|graph' command",
+                    );
                 }
                 Frame::bulk("")
             }
             "HISTORY" => {
                 // LATENCY HISTORY event — return timestamped latency samples
                 if args.is_empty() {
-                    return Frame::error("ERR wrong number of arguments for 'latency|history' command");
+                    return Frame::error(
+                        "ERR wrong number of arguments for 'latency|history' command",
+                    );
                 }
                 let event = String::from_utf8_lossy(&args[0]).to_string();
                 let samples = self.latency_tracker.history(&event);
@@ -2636,7 +2626,10 @@ impl CommandExecutor {
                     }
 
                     let mut buckets = Vec::new();
-                    let bucket_boundaries = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536];
+                    let bucket_boundaries = [
+                        1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384,
+                        32768, 65536,
+                    ];
                     for &boundary in &bucket_boundaries {
                         let count = latencies.iter().filter(|&&l| l <= boundary).count();
                         buckets.push(Frame::Integer(boundary as i64));
@@ -2701,7 +2694,11 @@ impl CommandExecutor {
                     .get_param("appendonly")
                     .map(|v| v == "yes")
                     .unwrap_or(false);
-                if aof_enabled { 1i64 } else { 0i64 }
+                if aof_enabled {
+                    1i64
+                } else {
+                    0i64
+                }
             } else {
                 0i64
             }
@@ -2761,11 +2758,10 @@ impl CommandExecutor {
         if let Some(ref tx) = self.shutdown_tx {
             let _ = tx.send(());
             // SHUTDOWN doesn't return — the connection will close
-            Frame::simple("OK")
         } else {
             tracing::warn!("SHUTDOWN called but no shutdown channel configured");
-            Frame::simple("OK")
         }
+        Frame::simple("OK")
     }
 
     /// SWAPDB index1 index2

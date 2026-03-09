@@ -571,10 +571,7 @@ impl EdgeMeshManager {
         let mut current = target_id;
         while current != self.self_id {
             path.push(current.to_string());
-            current = match prev.get(current) {
-                Some(p) => p,
-                None => return None,
-            };
+            current = prev.get(current)?;
         }
         path.push(self.self_id.clone());
         path.reverse();

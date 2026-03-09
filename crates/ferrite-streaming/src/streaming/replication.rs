@@ -245,7 +245,7 @@ struct ConsumerMember {
 }
 
 /// Consumer group coordinator.
-    #[allow(dead_code)]
+#[allow(dead_code)]
 struct ConsumerGroup {
     group_id: String,
     state: RwLock<ConsumerGroupState>,

@@ -112,9 +112,8 @@ pub fn graph_query(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     let store = get_graph_store();
     let graphs = store.read();
 
-    let graph = match graphs.get(&name) {
-        Some(g) => g,
-        None => return err_frame(&format!("graph '{}' not found", name)),
+    let Some(graph) = graphs.get(&name) else {
+        return err_frame(&format!("graph '{}' not found", name));
     };
 
     // Execute the query
@@ -245,9 +244,8 @@ pub fn graph_addnode(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     let store = get_graph_store();
     let graphs = store.read();
 
-    let graph = match graphs.get(&name) {
-        Some(g) => g,
-        None => return err_frame(&format!("graph '{}' not found", name)),
+    let Some(graph) = graphs.get(&name) else {
+        return err_frame(&format!("graph '{}' not found", name));
     };
 
     // Parse optional properties
@@ -329,9 +327,8 @@ pub fn graph_addedge(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     let store = get_graph_store();
     let graphs = store.read();
 
-    let graph = match graphs.get(&name) {
-        Some(g) => g,
-        None => return err_frame(&format!("graph '{}' not found", name)),
+    let Some(graph) = graphs.get(&name) else {
+        return err_frame(&format!("graph '{}' not found", name));
     };
 
     // Parse optional properties
@@ -380,9 +377,8 @@ pub fn graph_getnode(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     let store = get_graph_store();
     let graphs = store.read();
 
-    let graph = match graphs.get(&name) {
-        Some(g) => g,
-        None => return err_frame(&format!("graph '{}' not found", name)),
+    let Some(graph) = graphs.get(&name) else {
+        return err_frame(&format!("graph '{}' not found", name));
     };
 
     match graph.get_vertex(VertexId(node_id)) {
@@ -418,9 +414,8 @@ pub fn graph_getedge(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     let store = get_graph_store();
     let graphs = store.read();
 
-    let graph = match graphs.get(&name) {
-        Some(g) => g,
-        None => return err_frame(&format!("graph '{}' not found", name)),
+    let Some(graph) = graphs.get(&name) else {
+        return err_frame(&format!("graph '{}' not found", name));
     };
 
     match graph.get_edge(EdgeId(edge_id)) {
@@ -458,9 +453,8 @@ pub fn graph_deletenode(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     let store = get_graph_store();
     let graphs = store.read();
 
-    let graph = match graphs.get(&name) {
-        Some(g) => g,
-        None => return err_frame(&format!("graph '{}' not found", name)),
+    let Some(graph) = graphs.get(&name) else {
+        return err_frame(&format!("graph '{}' not found", name));
     };
 
     match graph.remove_vertex(VertexId(node_id)) {
@@ -492,9 +486,8 @@ pub fn graph_deleteedge(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     let store = get_graph_store();
     let graphs = store.read();
 
-    let graph = match graphs.get(&name) {
-        Some(g) => g,
-        None => return err_frame(&format!("graph '{}' not found", name)),
+    let Some(graph) = graphs.get(&name) else {
+        return err_frame(&format!("graph '{}' not found", name));
     };
 
     match graph.remove_edge(EdgeId(edge_id)) {
@@ -552,9 +545,8 @@ pub fn graph_neighbors(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     let store = get_graph_store();
     let graphs = store.read();
 
-    let graph = match graphs.get(&name) {
-        Some(g) => g,
-        None => return err_frame(&format!("graph '{}' not found", name)),
+    let Some(graph) = graphs.get(&name) else {
+        return err_frame(&format!("graph '{}' not found", name));
     };
 
     // Use traversal to get neighbors
@@ -623,9 +615,8 @@ pub fn graph_shortestpath(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     let store = get_graph_store();
     let graphs = store.read();
 
-    let graph = match graphs.get(&name) {
-        Some(g) => g,
-        None => return err_frame(&format!("graph '{}' not found", name)),
+    let Some(graph) = graphs.get(&name) else {
+        return err_frame(&format!("graph '{}' not found", name));
     };
 
     match graph.shortest_path(VertexId(from_id), VertexId(to_id)) {
@@ -689,9 +680,8 @@ pub fn graph_pagerank(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     let store = get_graph_store();
     let graphs = store.read();
 
-    let graph = match graphs.get(&name) {
-        Some(g) => g,
-        None => return err_frame(&format!("graph '{}' not found", name)),
+    let Some(graph) = graphs.get(&name) else {
+        return err_frame(&format!("graph '{}' not found", name));
     };
 
     let ranks = graph.pagerank(iterations, damping);
@@ -754,9 +744,8 @@ pub fn graph_info(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     let store = get_graph_store();
     let graphs = store.read();
 
-    let graph = match graphs.get(&name) {
-        Some(g) => g,
-        None => return err_frame(&format!("graph '{}' not found", name)),
+    let Some(graph) = graphs.get(&name) else {
+        return err_frame(&format!("graph '{}' not found", name));
     };
 
     let vertex_count = graph.vertex_count();

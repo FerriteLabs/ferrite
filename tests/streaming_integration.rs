@@ -3,7 +3,7 @@
 //! Validates the stream engine, event construction, CDC capture,
 //! and pipeline builder APIs.
 
-use ferrite_streaming::cdc::CdcEngine;
+use ferrite_streaming::cdc::{CdcEngine, SubscribeOptions};
 use ferrite_streaming::streaming::{StreamConfig, StreamEngine, StreamEvent};
 
 #[test]
@@ -52,7 +52,11 @@ async fn test_cdc_engine_creation() {
 async fn test_cdc_subscribe() {
     let engine = CdcEngine::default();
     let result = engine
-        .subscribe("test_sub", vec!["user:*".to_string()], Default::default())
+        .subscribe(
+            "test_sub",
+            vec!["user:*".to_string()],
+            SubscribeOptions::default(),
+        )
         .await;
     assert!(result.is_ok(), "subscribe should succeed");
 

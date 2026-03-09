@@ -122,7 +122,7 @@ pub struct CommandSpan {
 /// 4 → [10_000, 100_000) µs  (100 ms)
 /// 5 → [100_000, 1_000_000) µs  (1 s)
 /// 6 → [1_000_000, ∞) µs
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct LatencyHistogram {
     /// Counts per bucket.
     buckets: [u64; 7],
@@ -229,7 +229,8 @@ impl CommandProfile {
 
     fn record(&self, latency_us: u64) {
         self.total_calls.fetch_add(1, Ordering::Relaxed);
-        self.total_latency_us.fetch_add(latency_us, Ordering::Relaxed);
+        self.total_latency_us
+            .fetch_add(latency_us, Ordering::Relaxed);
         self.latency_histogram.write().record(latency_us);
 
         // Update min (CAS loop)
@@ -439,8 +440,12 @@ impl QueryProfiler {
                 .entry(span.client_id.clone())
                 .or_insert_with(|| ClientProfile::new(span.client_id.clone()));
             profile.total_commands.fetch_add(1, Ordering::Relaxed);
-            profile.total_latency_us.fetch_add(latency_us, Ordering::Relaxed);
-            profile.last_command_time.store(latency_us, Ordering::Relaxed);
+            profile
+                .total_latency_us
+                .fetch_add(latency_us, Ordering::Relaxed);
+            profile
+                .last_command_time
+                .store(latency_us, Ordering::Relaxed);
         }
 
         // SLO check
@@ -462,17 +467,14 @@ impl QueryProfiler {
             .map(|entry| entry.value().snapshot())
             .collect();
 
-        snapshots.sort_by(|a, b| {
-            let cmp = match sort_by {
-                SortBy::TotalCalls => b.total_calls.cmp(&a.total_calls),
-                SortBy::AvgLatency => b
-                    .avg_latency_us
-                    .partial_cmp(&a.avg_latency_us)
-                    .unwrap_or(std::cmp::Ordering::Equal),
-                SortBy::MaxLatency => b.max_latency_us.cmp(&a.max_latency_us),
-                SortBy::Errors => b.errors.cmp(&a.errors),
-            };
-            cmp
+        snapshots.sort_by(|a, b| match sort_by {
+            SortBy::TotalCalls => b.total_calls.cmp(&a.total_calls),
+            SortBy::AvgLatency => b
+                .avg_latency_us
+                .partial_cmp(&a.avg_latency_us)
+                .unwrap_or(std::cmp::Ordering::Equal),
+            SortBy::MaxLatency => b.max_latency_us.cmp(&a.max_latency_us),
+            SortBy::Errors => b.errors.cmp(&a.errors),
         });
 
         snapshots.truncate(n);
@@ -481,12 +483,14 @@ impl QueryProfiler {
 
     /// Return a snapshot of statistics for the given client, if tracked.
     pub fn get_client_stats(&self, client_id: &str) -> Option<ClientStatsSnapshot> {
-        self.client_stats.get(client_id).map(|p| ClientStatsSnapshot {
-            client_id: p.client_id.clone(),
-            total_commands: p.total_commands.load(Ordering::Relaxed),
-            total_latency_us: p.total_latency_us.load(Ordering::Relaxed),
-            last_command_time: p.last_command_time.load(Ordering::Relaxed),
-        })
+        self.client_stats
+            .get(client_id)
+            .map(|p| ClientStatsSnapshot {
+                client_id: p.client_id.clone(),
+                total_commands: p.total_commands.load(Ordering::Relaxed),
+                total_latency_us: p.total_latency_us.load(Ordering::Relaxed),
+                last_command_time: p.last_command_time.load(Ordering::Relaxed),
+            })
     }
 
     /// Check if the given latency violates the SLO for the specified command.

@@ -200,7 +200,9 @@ fn tokenize(input: &str) -> Result<Vec<Token>, super::CypherError> {
                     i += 1;
                 }
                 if i >= len {
-                    return Err(super::CypherError::Parse("unterminated string literal".to_string()));
+                    return Err(super::CypherError::Parse(
+                        "unterminated string literal".to_string(),
+                    ));
                 }
                 let s: String = chars[start..i].iter().collect();
                 tokens.push(Token::StringLit(s));
@@ -221,13 +223,23 @@ fn tokenize(input: &str) -> Result<Vec<Token>, super::CypherError> {
                     let num_str: String = chars[start..i].iter().collect();
                     match num_str.parse::<f64>() {
                         Ok(f) => tokens.push(Token::FloatLit(f)),
-                        Err(_) => return Err(super::CypherError::Parse(format!("invalid float: {}", num_str))),
+                        Err(_) => {
+                            return Err(super::CypherError::Parse(format!(
+                                "invalid float: {}",
+                                num_str
+                            )))
+                        }
                     }
                 } else {
                     let num_str: String = chars[start..i].iter().collect();
                     match num_str.parse::<i64>() {
                         Ok(n) => tokens.push(Token::IntLit(n)),
-                        Err(_) => return Err(super::CypherError::Parse(format!("invalid integer: {}", num_str))),
+                        Err(_) => {
+                            return Err(super::CypherError::Parse(format!(
+                                "invalid integer: {}",
+                                num_str
+                            )))
+                        }
                     }
                 }
             }
@@ -298,7 +310,12 @@ fn tokenize(input: &str) -> Result<Vec<Token>, super::CypherError> {
                 };
                 tokens.push(tok);
             }
-            c => return Err(super::CypherError::Parse(format!("unexpected character: '{}'", c))),
+            c => {
+                return Err(super::CypherError::Parse(format!(
+                    "unexpected character: '{}'",
+                    c
+                )))
+            }
         }
     }
 
@@ -335,7 +352,10 @@ impl CypherParser {
         if &tok == expected {
             Ok(())
         } else {
-            Err(super::CypherError::Parse(format!("expected {:?}, got {:?}", expected, tok)))
+            Err(super::CypherError::Parse(format!(
+                "expected {:?}, got {:?}",
+                expected, tok
+            )))
         }
     }
 
@@ -440,18 +460,28 @@ impl CypherParser {
                 let create_clause = self.parse_create_clause()?;
                 Ok(CypherStatement::Create(create_clause))
             }
-            _ => Err(super::CypherError::Parse(format!("expected MATCH, OPTIONAL MATCH, or CREATE, got {:?}", self.peek()))),
+            _ => Err(super::CypherError::Parse(format!(
+                "expected MATCH, OPTIONAL MATCH, or CREATE, got {:?}",
+                self.peek()
+            ))),
         }
     }
 
     /// Parse MATCH with possible OPTIONAL MATCH following.
-    fn parse_match_with_optional(&mut self) -> Result<(MatchPattern, Option<MatchPattern>), super::CypherError> {
+    fn parse_match_with_optional(
+        &mut self,
+    ) -> Result<(MatchPattern, Option<MatchPattern>), super::CypherError> {
         // Handle OPTIONAL MATCH as the primary
         if *self.peek() == Token::Optional {
             self.advance(); // consume OPTIONAL
             self.expect(&Token::Match)?;
             let optional = self.parse_match_pattern()?;
-            return Ok((MatchPattern { patterns: Vec::new() }, Some(optional)));
+            return Ok((
+                MatchPattern {
+                    patterns: Vec::new(),
+                },
+                Some(optional),
+            ));
         }
 
         self.expect(&Token::Match)?;
@@ -483,14 +513,24 @@ impl CypherParser {
         let mut variables = Vec::new();
         match self.advance() {
             Token::Ident(name) => variables.push(name),
-            other => return Err(super::CypherError::Parse(format!("expected variable name after DELETE, got {:?}", other))),
+            other => {
+                return Err(super::CypherError::Parse(format!(
+                    "expected variable name after DELETE, got {:?}",
+                    other
+                )))
+            }
         }
 
         while *self.peek() == Token::Comma {
             self.advance();
             match self.advance() {
                 Token::Ident(name) => variables.push(name),
-                other => return Err(super::CypherError::Parse(format!("expected variable name, got {:?}", other))),
+                other => {
+                    return Err(super::CypherError::Parse(format!(
+                        "expected variable name, got {:?}",
+                        other
+                    )))
+                }
             }
         }
 
@@ -516,7 +556,12 @@ impl CypherParser {
     fn parse_set_item(&mut self) -> Result<SetItem, super::CypherError> {
         let variable = match self.advance() {
             Token::Ident(name) => name,
-            other => return Err(super::CypherError::Parse(format!("expected variable name in SET, got {:?}", other))),
+            other => {
+                return Err(super::CypherError::Parse(format!(
+                    "expected variable name in SET, got {:?}",
+                    other
+                )))
+            }
         };
 
         match self.peek().clone() {
@@ -524,21 +569,38 @@ impl CypherParser {
                 self.advance(); // consume dot
                 let property = match self.advance() {
                     Token::Ident(name) => name,
-                    other => return Err(super::CypherError::Parse(format!("expected property name, got {:?}", other))),
+                    other => {
+                        return Err(super::CypherError::Parse(format!(
+                            "expected property name, got {:?}",
+                            other
+                        )))
+                    }
                 };
                 self.expect(&Token::Eq)?;
                 let value = self.parse_expr()?;
-                Ok(SetItem::Property { variable, property, value })
+                Ok(SetItem::Property {
+                    variable,
+                    property,
+                    value,
+                })
             }
             Token::Colon => {
                 self.advance(); // consume colon
                 let label = match self.advance() {
                     Token::Ident(name) => name,
-                    other => return Err(super::CypherError::Parse(format!("expected label name, got {:?}", other))),
+                    other => {
+                        return Err(super::CypherError::Parse(format!(
+                            "expected label name, got {:?}",
+                            other
+                        )))
+                    }
                 };
                 Ok(SetItem::Label { variable, label })
             }
-            other => Err(super::CypherError::Parse(format!("expected '.' or ':' after variable in SET, got {:?}", other))),
+            other => Err(super::CypherError::Parse(format!(
+                "expected '.' or ':' after variable in SET, got {:?}",
+                other
+            ))),
         }
     }
 
@@ -561,7 +623,12 @@ impl CypherParser {
     fn parse_remove_item(&mut self) -> Result<RemoveItem, super::CypherError> {
         let variable = match self.advance() {
             Token::Ident(name) => name,
-            other => return Err(super::CypherError::Parse(format!("expected variable name in REMOVE, got {:?}", other))),
+            other => {
+                return Err(super::CypherError::Parse(format!(
+                    "expected variable name in REMOVE, got {:?}",
+                    other
+                )))
+            }
         };
 
         match self.peek().clone() {
@@ -569,7 +636,12 @@ impl CypherParser {
                 self.advance();
                 let property = match self.advance() {
                     Token::Ident(name) => name,
-                    other => return Err(super::CypherError::Parse(format!("expected property name, got {:?}", other))),
+                    other => {
+                        return Err(super::CypherError::Parse(format!(
+                            "expected property name, got {:?}",
+                            other
+                        )))
+                    }
                 };
                 Ok(RemoveItem::Property { variable, property })
             }
@@ -577,11 +649,19 @@ impl CypherParser {
                 self.advance();
                 let label = match self.advance() {
                     Token::Ident(name) => name,
-                    other => return Err(super::CypherError::Parse(format!("expected label name, got {:?}", other))),
+                    other => {
+                        return Err(super::CypherError::Parse(format!(
+                            "expected label name, got {:?}",
+                            other
+                        )))
+                    }
                 };
                 Ok(RemoveItem::Label { variable, label })
             }
-            other => Err(super::CypherError::Parse(format!("expected '.' or ':' after variable in REMOVE, got {:?}", other))),
+            other => Err(super::CypherError::Parse(format!(
+                "expected '.' or ':' after variable in REMOVE, got {:?}",
+                other
+            ))),
         }
     }
 
@@ -628,7 +708,9 @@ impl CypherParser {
             if let Token::Ident(label) = self.advance() {
                 labels.push(label);
             } else {
-                return Err(super::CypherError::Parse("expected label name after ':'".to_string()));
+                return Err(super::CypherError::Parse(
+                    "expected label name after ':'".to_string(),
+                ));
             }
         }
 
@@ -677,7 +759,9 @@ impl CypherParser {
                 if let Token::Ident(rt) = self.advance() {
                     rel_type = Some(rt);
                 } else {
-                    return Err(super::CypherError::Parse("expected relationship type after ':'".to_string()));
+                    return Err(super::CypherError::Parse(
+                        "expected relationship type after ':'".to_string(),
+                    ));
                 }
             }
 
@@ -748,7 +832,12 @@ impl CypherParser {
             loop {
                 let key = match self.advance() {
                     Token::Ident(k) => k,
-                    tok => return Err(super::CypherError::Parse(format!("expected property key, got {:?}", tok))),
+                    tok => {
+                        return Err(super::CypherError::Parse(format!(
+                            "expected property key, got {:?}",
+                            tok
+                        )))
+                    }
                 };
                 self.expect(&Token::Colon)?;
                 let value = self.parse_literal_value()?;
@@ -772,7 +861,10 @@ impl CypherParser {
             Token::FloatLit(f) => Ok(PropertyValue::Float(f)),
             Token::BoolLit(b) => Ok(PropertyValue::Boolean(b)),
             Token::Null => Ok(PropertyValue::Null),
-            tok => Err(super::CypherError::Parse(format!("expected literal value, got {:?}", tok))),
+            tok => Err(super::CypherError::Parse(format!(
+                "expected literal value, got {:?}",
+                tok
+            ))),
         }
     }
 
@@ -811,12 +903,22 @@ impl CypherParser {
         // variable.property op value
         let variable = match self.advance() {
             Token::Ident(v) => v,
-            tok => return Err(super::CypherError::Parse(format!("expected variable in WHERE, got {:?}", tok))),
+            tok => {
+                return Err(super::CypherError::Parse(format!(
+                    "expected variable in WHERE, got {:?}",
+                    tok
+                )))
+            }
         };
         self.expect(&Token::Dot)?;
         let property = match self.advance() {
             Token::Ident(p) => p,
-            tok => return Err(super::CypherError::Parse(format!("expected property name, got {:?}", tok))),
+            tok => {
+                return Err(super::CypherError::Parse(format!(
+                    "expected property name, got {:?}",
+                    tok
+                )))
+            }
         };
 
         let op = self.parse_comparison_op()?;
@@ -840,7 +942,10 @@ impl CypherParser {
             Token::Contains => Ok(CypherOp::Contains),
             Token::StartsWith => Ok(CypherOp::StartsWith),
             Token::EndsWith => Ok(CypherOp::EndsWith),
-            tok => Err(super::CypherError::Parse(format!("expected comparison operator, got {:?}", tok))),
+            tok => Err(super::CypherError::Parse(format!(
+                "expected comparison operator, got {:?}",
+                tok
+            ))),
         }
     }
 
@@ -870,7 +975,12 @@ impl CypherParser {
             self.advance();
             match self.advance() {
                 Token::Ident(a) => Some(a),
-                tok => return Err(super::CypherError::Parse(format!("expected alias name, got {:?}", tok))),
+                tok => {
+                    return Err(super::CypherError::Parse(format!(
+                        "expected alias name, got {:?}",
+                        tok
+                    )))
+                }
             }
         } else {
             None
@@ -914,16 +1024,20 @@ impl CypherParser {
 
         // Identifier — could be variable or variable.property
         if let Token::Ident(_) = self.peek() {
-            let name = match self.advance() {
-                Token::Ident(n) => n,
-                _ => unreachable!(),
+            let Token::Ident(name) = self.advance() else {
+                unreachable!()
             };
 
             if *self.peek() == Token::Dot {
                 self.advance();
                 let prop = match self.advance() {
                     Token::Ident(p) => p,
-                    tok => return Err(super::CypherError::Parse(format!("expected property name, got {:?}", tok))),
+                    tok => {
+                        return Err(super::CypherError::Parse(format!(
+                            "expected property name, got {:?}",
+                            tok
+                        )))
+                    }
                 };
                 return Ok(Expr::Property(PropertyAccess {
                     variable: name,
@@ -934,7 +1048,10 @@ impl CypherParser {
             return Ok(Expr::Variable(name));
         }
 
-        Err(super::CypherError::Parse(format!("expected expression, got {:?}", self.peek())))
+        Err(super::CypherError::Parse(format!(
+            "expected expression, got {:?}",
+            self.peek()
+        )))
     }
 
     fn parse_order_by(&mut self) -> Result<Option<Vec<OrderByItem>>, super::CypherError> {
@@ -980,7 +1097,10 @@ impl CypherParser {
         self.advance();
         match self.advance() {
             Token::IntLit(n) => Ok(Some(n as usize)),
-            tok => Err(super::CypherError::Parse(format!("expected integer after LIMIT, got {:?}", tok))),
+            tok => Err(super::CypherError::Parse(format!(
+                "expected integer after LIMIT, got {:?}",
+                tok
+            ))),
         }
     }
 
@@ -991,7 +1111,10 @@ impl CypherParser {
         self.advance();
         match self.advance() {
             Token::IntLit(n) => Ok(Some(n as usize)),
-            tok => Err(super::CypherError::Parse(format!("expected integer after SKIP, got {:?}", tok))),
+            tok => Err(super::CypherError::Parse(format!(
+                "expected integer after SKIP, got {:?}",
+                tok
+            ))),
         }
     }
 

@@ -560,8 +560,8 @@ fn parse_bulk_string(resp: &str) -> Option<String> {
         return lines.next().map(|s| s.to_string());
     }
     // Inline response (e.g. +OK)
-    if header.starts_with('+') {
-        return Some(header[1..].to_string());
+    if let Some(stripped) = header.strip_prefix('+') {
+        return Some(stripped.to_string());
     }
     None
 }

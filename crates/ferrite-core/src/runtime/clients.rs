@@ -523,6 +523,8 @@ mod tests {
         let client = registry.get(id).unwrap();
         assert_eq!(client.lib_name.as_deref(), Some("redis-py"));
         assert_eq!(client.lib_ver.as_deref(), Some("5.0.1"));
-        assert!(client.to_info_string().contains("lib-name=redis-py lib-ver=5.0.1"));
+        assert!(client
+            .to_info_string()
+            .contains("lib-name=redis-py lib-ver=5.0.1"));
     }
 }

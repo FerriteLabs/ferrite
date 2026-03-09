@@ -129,10 +129,7 @@ impl ActiveActiveReplicator {
 
     /// Record a local write and update the vector clock.
     pub fn record_write(&self, key: &str, _value: &[u8], _region_id: &str) {
-        let mut entry = self
-            .vector_clocks
-            .entry(key.to_string())
-            .or_insert_with(VectorClock::new);
+        let mut entry = self.vector_clocks.entry(key.to_string()).or_default();
         entry.increment(&self.local_region);
     }
 

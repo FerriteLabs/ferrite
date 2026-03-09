@@ -562,7 +562,7 @@ impl Dashboard {
             .unwrap_or(0.0) as u64;
         let memory_total = self
             .latest_metric_value(&metrics, "memory_total_bytes")
-            .unwrap_or(16u64 as f64 * 1024.0 * 1024.0 * 1024.0) as u64;
+            .unwrap_or(16_f64 * 1024.0 * 1024.0 * 1024.0) as u64;
         let keys_total = self
             .latest_metric_value(&metrics, "keys_total")
             .unwrap_or(0.0) as u64;

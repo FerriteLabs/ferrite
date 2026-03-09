@@ -96,9 +96,13 @@ async fn handle_request(
     let method = req.method().clone();
 
     let response = match (method, path.as_str()) {
-        (Method::GET, "/api/v1/health") => {
-            json_response(StatusCode::OK, r#"{"status":"ok","version":"0.1.0"}"#)
-        }
+        (Method::GET, "/api/v1/health") => json_response(
+            StatusCode::OK,
+            &format!(
+                r#"{{"status":"ok","version":"{}"}}"#,
+                env!("CARGO_PKG_VERSION")
+            ),
+        ),
         (Method::GET, p) if p.starts_with("/api/v1/keys/") => {
             let key = &p["/api/v1/keys/".len()..];
             handle_get_key(key)

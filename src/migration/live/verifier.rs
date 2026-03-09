@@ -1,7 +1,6 @@
 //! Migration verifier — compares keys between source and target to
 //! ensure consistency after a sync.
 
-
 use serde::{Deserialize, Serialize};
 
 /// Report produced by the verification step.

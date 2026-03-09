@@ -83,11 +83,7 @@ pub fn generate_plan(query: &str, node_ids: &[String], hint: PlanHint) -> Vec<Pl
 }
 
 /// Generates a [`FederatedPlan`] with full cost metadata.
-pub fn generate_federated_plan(
-    query: &str,
-    node_ids: &[String],
-    hint: PlanHint,
-) -> FederatedPlan {
+pub fn generate_federated_plan(query: &str, node_ids: &[String], hint: PlanHint) -> FederatedPlan {
     let mut steps = Vec::new();
     let mut step_id = 0u32;
 
@@ -250,7 +246,10 @@ mod tests {
         let plan = generate_federated_plan("query", &nodes, PlanHint::Parallel);
 
         // 3 scans × 100 + 1 merge × 30 = 330
-        assert_eq!(plan.total_estimated_cost, 3 * COST_REMOTE_SCAN + 3 * COST_MERGE);
+        assert_eq!(
+            plan.total_estimated_cost,
+            3 * COST_REMOTE_SCAN + 3 * COST_MERGE
+        );
     }
 
     #[test]
@@ -267,7 +266,10 @@ mod tests {
         let filter_id = append_filter(&mut steps, "age > 21", merge_id);
         assert_eq!(steps.len(), 3);
         assert_eq!(steps.last().map(|s| s.step_id), Some(filter_id));
-        assert_eq!(steps.last().map(|s| s.depends_on.clone()), Some(vec![merge_id]));
+        assert_eq!(
+            steps.last().map(|s| s.depends_on.clone()),
+            Some(vec![merge_id])
+        );
     }
 
     #[test]

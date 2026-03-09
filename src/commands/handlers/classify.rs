@@ -41,9 +41,8 @@ pub fn classify_command(subcommand: &str, args: &[String]) -> Frame {
 
 /// CLASSIFY.KEY key [value_hint] — classify a single key.
 fn handle_key(args: &[String]) -> Frame {
-    let key = match args.first() {
-        Some(k) => k,
-        None => return err_frame("CLASSIFY.KEY requires a key"),
+    let Some(key) = args.first() else {
+        return err_frame("CLASSIFY.KEY requires a key");
     };
     let value_hint = args.get(1).map(|s| s.as_bytes()).unwrap_or(b"");
     let classes = get_classifier().classify_key(key, value_hint);
@@ -132,9 +131,8 @@ fn handle_tag(args: &[String]) -> Frame {
 
 /// CLASSIFY.TAGS key — get classifications for a key.
 fn handle_tags(args: &[String]) -> Frame {
-    let key = match args.first() {
-        Some(k) => k,
-        None => return err_frame("CLASSIFY.TAGS requires a key"),
+    let Some(key) = args.first() else {
+        return err_frame("CLASSIFY.TAGS requires a key");
     };
     let tags = get_classifier().get_tags(key);
     if tags.is_empty() {

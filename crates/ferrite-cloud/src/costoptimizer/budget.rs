@@ -25,7 +25,7 @@ impl Default for BudgetConfig {
     fn default() -> Self {
         Self {
             namespace: "default".to_string(),
-            monthly_limit_cents: 100_00, // $100
+            monthly_limit_cents: 10_000, // $100
             alert_threshold_pct: 80,
             auto_optimize: true,
             latency_sla_ms: 10.0,
@@ -126,7 +126,7 @@ mod tests {
     fn test_default_budget_config() {
         let cfg = BudgetConfig::default();
         assert_eq!(cfg.namespace, "default");
-        assert_eq!(cfg.monthly_limit_cents, 100_00);
+        assert_eq!(cfg.monthly_limit_cents, 10_000);
         assert_eq!(cfg.alert_threshold_pct, 80);
     }
 
@@ -140,7 +140,7 @@ mod tests {
     #[test]
     fn test_budget_status_on_track() {
         assert_eq!(
-            BudgetStatus::from_spend(50_00, 100_00, 80),
+            BudgetStatus::from_spend(50_00, 10_000, 80),
             BudgetStatus::OnTrack
         );
     }
@@ -148,7 +148,7 @@ mod tests {
     #[test]
     fn test_budget_status_warning() {
         assert_eq!(
-            BudgetStatus::from_spend(85_00, 100_00, 80),
+            BudgetStatus::from_spend(85_00, 10_000, 80),
             BudgetStatus::Warning
         );
     }
@@ -156,7 +156,7 @@ mod tests {
     #[test]
     fn test_budget_status_over_budget() {
         assert_eq!(
-            BudgetStatus::from_spend(110_00, 100_00, 80),
+            BudgetStatus::from_spend(110_00, 10_000, 80),
             BudgetStatus::OverBudget
         );
     }

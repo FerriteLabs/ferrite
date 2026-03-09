@@ -67,9 +67,8 @@ fn view_create(args: &[String]) -> Frame {
                     return err_frame("WHERE requires: field op value");
                 }
                 let field = args[i + 1].clone();
-                let op = match parse_filter_op(&args[i + 2]) {
-                    Some(op) => op,
-                    None => return err_frame(&format!("unknown filter op '{}'", args[i + 2])),
+                let Some(op) = parse_filter_op(&args[i + 2]) else {
+                    return err_frame(&format!("unknown filter op '{}'", args[i + 2]));
                 };
                 let value = parse_json_value(&args[i + 3]);
                 filter = Some(ViewFilter { field, op, value });

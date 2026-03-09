@@ -4,7 +4,6 @@
 //! that wire to the `AutoTierEngine` and `SavingsCalculator` from
 //! `ferrite-core`.
 
-
 use crate::commands::executor::CommandExecutor;
 use crate::protocol::Frame;
 use bytes::Bytes;
@@ -106,11 +105,8 @@ impl CommandExecutor {
 
     /// TIERING COMPARE-REDIS <total_data_gb> [ops_per_sec]
     pub(super) fn tiering_compare_redis(&self, args: &[String]) -> Frame {
-        let total_data_gb = match args.first().and_then(|s| s.parse::<f64>().ok()) {
-            Some(v) => v,
-            None => {
-                return Frame::error("ERR TIERING COMPARE-REDIS requires <total_data_gb> argument");
-            }
+        let Some(total_data_gb) = args.first().and_then(|s| s.parse::<f64>().ok()) else {
+            return Frame::error("ERR TIERING COMPARE-REDIS requires <total_data_gb> argument");
         };
         let ops_per_sec = args
             .get(1)

@@ -70,11 +70,8 @@ fn function_deploy(args: &[String]) -> Frame {
                 i += 2;
             }
             "TRIGGER" if i + 1 < args.len() => {
-                let event = match TriggerEvent::from_str_name(&args[i + 1]) {
-                    Some(e) => e,
-                    None => {
-                        return err_frame(&format!("unknown trigger event: {}", args[i + 1]));
-                    }
+                let Some(event) = TriggerEvent::from_str_name(&args[i + 1]) else {
+                    return err_frame(&format!("unknown trigger event: {}", args[i + 1]));
                 };
                 let mut pattern = None;
                 i += 2;
@@ -107,13 +104,11 @@ fn function_deploy(args: &[String]) -> Frame {
         }
     }
 
-    let runtime = match runtime {
-        Some(r) => r,
-        None => return err_frame("RUNTIME is required"),
+    let Some(runtime) = runtime else {
+        return err_frame("RUNTIME is required");
     };
-    let source = match source {
-        Some(s) => s,
-        None => return err_frame("SOURCE is required"),
+    let Some(source) = source else {
+        return err_frame("SOURCE is required");
     };
 
     if triggers.is_empty() {
@@ -181,7 +176,7 @@ fn function_invoke(args: &[String]) -> Frame {
                 .unwrap_or_else(|| "null".to_string());
             Frame::array(vec![
                 Frame::bulk(format!("execution_id:{}", result.execution_id)),
-                Frame::bulk(format!("status:success")),
+                Frame::bulk("status:success".to_string()),
                 Frame::bulk(format!("output:{}", output_str)),
                 Frame::bulk(format!("duration_ms:{}", result.duration_ms)),
             ])
@@ -202,9 +197,8 @@ fn function_invoke_async(args: &[String]) -> Frame {
     let mut i = 1;
     while i < args.len() {
         if args[i].to_uppercase() == "EVENT" && i + 1 < args.len() {
-            match serde_json::from_str(&args[i + 1]) {
-                Ok(v) => event = v,
-                Err(_) => {}
+            if let Ok(v) = serde_json::from_str(&args[i + 1]) {
+                event = v;
             }
             i += 2;
         } else {
@@ -299,11 +293,11 @@ fn function_history(args: &[String]) -> Frame {
     }
 
     let name = &args[0];
-    let mut limit = 20usize;
-
-    if args.len() >= 3 && args[1].to_uppercase() == "LIMIT" {
-        limit = args[2].parse().unwrap_or(20);
-    }
+    let limit = if args.len() >= 3 && args[1].to_uppercase() == "LIMIT" {
+        args[2].parse().unwrap_or(20)
+    } else {
+        20usize
+    };
 
     let results = get_runtime().recent_executions(name, limit);
     let items: Vec<Frame> = results

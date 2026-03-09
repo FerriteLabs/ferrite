@@ -379,18 +379,15 @@ impl ShutdownCoordinator {
         if mode != ShutdownMode::NoSave && self.config.save_on_shutdown {
             self.set_phase(ShutdownPhase::SavingState);
 
-            let mut progress = SaveProgress::default();
-
-            // Flush AOF.
-            progress.aof_flushed = true;
-
-            // Write checkpoint.
-            if self.config.checkpoint_on_shutdown {
-                progress.checkpoint_written = true;
-            }
-
-            // Save indices.
-            progress.indices_saved = true;
+            let progress = SaveProgress {
+                // Flush AOF.
+                aof_flushed: true,
+                // Write checkpoint.
+                checkpoint_written: self.config.checkpoint_on_shutdown,
+                // Save indices.
+                indices_saved: true,
+                ..SaveProgress::default()
+            };
 
             {
                 let mut state = self.state.write().unwrap_or_else(|e| e.into_inner());

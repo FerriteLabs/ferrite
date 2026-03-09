@@ -254,7 +254,7 @@ pub struct LlmCacheStats {
 }
 
 /// Embedding request for async processing
-    #[allow(dead_code)]
+#[allow(dead_code)]
 struct EmbeddingRequest {
     text: String,
     response_tx: oneshot::Sender<Result<Vec<f32>, SemanticError>>,

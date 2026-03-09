@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout)]
 //! FerriteQL Query Language Demo
 //!
 //! Demonstrates FerriteQL's SQL-like query capabilities over key-value data:

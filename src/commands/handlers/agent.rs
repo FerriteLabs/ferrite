@@ -10,8 +10,7 @@ use bytes::Bytes;
 
 use crate::protocol::Frame;
 use ferrite_ai::agent_memory::store::{
-    AgentMemoryConfig, PersistentAgentMemoryStore, StoreMemoryEntry,
-    StoreMemoryType,
+    AgentMemoryConfig, PersistentAgentMemoryStore, StoreMemoryEntry, StoreMemoryType,
 };
 
 use super::err_frame;
@@ -179,11 +178,11 @@ fn agent_recall_recent(args: &[String]) -> Frame {
     }
 
     let agent_id = &args[0];
-    let mut limit = 10usize;
-
-    if args.len() >= 3 && args[1].to_uppercase() == "LIMIT" {
-        limit = args[2].parse().unwrap_or(10);
-    }
+    let limit = if args.len() >= 3 && args[1].to_uppercase() == "LIMIT" {
+        args[2].parse().unwrap_or(10)
+    } else {
+        10usize
+    };
 
     let store = get_store();
     let results = store.recall_recent(agent_id, limit);

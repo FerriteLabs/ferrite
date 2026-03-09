@@ -647,7 +647,7 @@ impl AnalyticsEngine {
             FilterOp::IsNotNull => {
                 field_val.is_some() && field_val != Some(&serde_json::Value::Null)
             }
-            FilterOp::Eq => field_val.map_or(false, |v| *v == filter.value),
+            FilterOp::Eq => field_val.is_some_and(|v| *v == filter.value),
             FilterOp::Ne => field_val.map_or(true, |v| *v != filter.value),
             FilterOp::Gt => self.compare_values(field_val, &filter.value, |a, b| a > b),
             FilterOp::Lt => self.compare_values(field_val, &filter.value, |a, b| a < b),
@@ -658,15 +658,14 @@ impl AnalyticsEngine {
                     (field_val, &filter.value)
                 {
                     let regex_pat = pat.replace('%', ".*").replace('_', ".");
-                    regex::Regex::new(&format!("^{}$", regex_pat))
-                        .map_or(false, |re| re.is_match(v))
+                    regex::Regex::new(&format!("^{}$", regex_pat)).is_ok_and(|re| re.is_match(v))
                 } else {
                     false
                 }
             }
             FilterOp::In => {
                 if let serde_json::Value::Array(arr) = &filter.value {
-                    field_val.map_or(false, |v| arr.contains(v))
+                    field_val.is_some_and(|v| arr.contains(v))
                 } else {
                     false
                 }
@@ -854,7 +853,7 @@ impl AnalyticsEngine {
                 } else {
                     let count = rows
                         .iter()
-                        .filter(|r| r.get(field).map_or(false, |v| !v.is_null()))
+                        .filter(|r| r.get(field).is_some_and(|v| !v.is_null()))
                         .count();
                     serde_json::json!(count)
                 }

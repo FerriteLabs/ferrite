@@ -174,7 +174,11 @@ impl ChangeTracker {
     ) -> (Arc<ChangeSubscription>, mpsc::Receiver<ChangeEvent>) {
         let (tx, rx) = mpsc::channel(self.config.batch_size.max(64));
         let sub = Arc::new(ChangeSubscription {
-            id: format!("sub-{}-{}", view_name, self.next_sequence.load(Ordering::Relaxed)),
+            id: format!(
+                "sub-{}-{}",
+                view_name,
+                self.next_sequence.load(Ordering::Relaxed)
+            ),
             view_name: view_name.to_string(),
             pattern: pattern.to_string(),
             sender: tx,
@@ -382,7 +386,9 @@ impl IncrementalAggregator {
     /// Registers a column and aggregate operation to track.
     pub fn add_aggregate(&mut self, column: &str, op: AggregateOperation) {
         let key = format!("{}:{:?}", column, op);
-        self.states.entry(key).or_insert_with(|| AggregateState::new(op));
+        self.states
+            .entry(key)
+            .or_insert_with(|| AggregateState::new(op));
     }
 
     /// Applies an insert by incorporating `value` into all aggregates

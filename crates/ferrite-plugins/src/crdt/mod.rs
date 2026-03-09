@@ -223,6 +223,7 @@
 mod clock;
 mod counter;
 pub mod geo_replication;
+pub mod gossip;
 mod map;
 mod register;
 mod set;

@@ -539,7 +539,7 @@ mod tests {
                 MigrationStep {
                     order: 0,
                     name: "Step 1".to_string(),
-                    description: "".to_string(),
+                    description: String::new(),
                     phase: MigrationPhase::PreMigration,
                     estimated_duration_secs: 10,
                     status: StepStatus::Completed,
@@ -551,7 +551,7 @@ mod tests {
                 MigrationStep {
                     order: 1,
                     name: "Step 2".to_string(),
-                    description: "".to_string(),
+                    description: String::new(),
                     phase: MigrationPhase::DataTransfer,
                     estimated_duration_secs: 10,
                     status: StepStatus::Pending,
@@ -568,6 +568,6 @@ mod tests {
             status: PlanStatus::InProgress,
         };
 
-        assert_eq!(plan.progress_percent(), 50.0);
+        assert!((plan.progress_percent() - 50.0).abs() < f64::EPSILON);
     }
 }

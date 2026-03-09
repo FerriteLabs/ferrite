@@ -1149,9 +1149,9 @@ impl RuntimeChaosEngine {
     ) -> bool {
         match target {
             FaultTarget::All => true,
-            FaultTarget::KeyPattern(pat) => key.map_or(false, |k| k.contains(pat.as_str())),
+            FaultTarget::KeyPattern(pat) => key.is_some_and(|k| k.contains(pat.as_str())),
             FaultTarget::Command(cmd) => command.eq_ignore_ascii_case(cmd),
-            FaultTarget::Client(c) => client.map_or(false, |cl| cl == c),
+            FaultTarget::Client(c) => client.is_some_and(|cl| cl == c),
             FaultTarget::Database(d) => db == *d,
         }
     }

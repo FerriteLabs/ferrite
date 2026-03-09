@@ -145,7 +145,7 @@ impl AsyncEmbedder {
 }
 
 /// Batch processor for embedding requests
-    #[allow(dead_code)]
+#[allow(dead_code)]
 pub struct EmbeddingBatchProcessor {
     embedder: Arc<AsyncEmbedder>,
     request_tx: mpsc::Sender<EmbeddingRequest>,

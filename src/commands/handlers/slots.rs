@@ -220,9 +220,8 @@ pub fn handle_slot_confirm(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
     let name = String::from_utf8_lossy(&args[0]);
     let lsn_str = String::from_utf8_lossy(&args[1]);
 
-    let lsn = match lsn_str.parse::<u64>() {
-        Ok(l) => l,
-        Err(_) => return err_frame("invalid LSN"),
+    let Ok(lsn) = lsn_str.parse::<u64>() else {
+        return err_frame("invalid LSN");
     };
 
     match slot_manager().confirm_flush(&name, lsn) {

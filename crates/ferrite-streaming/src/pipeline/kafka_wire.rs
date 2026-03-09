@@ -11,7 +11,6 @@
 //! - OffsetCommit (API key 8)
 //! - Heartbeat (API key 12)
 
-
 use std::io;
 use std::net::SocketAddr;
 use std::sync::atomic::{AtomicI32, Ordering};

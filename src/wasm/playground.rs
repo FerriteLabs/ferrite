@@ -150,7 +150,7 @@ impl PlaygroundInstance {
         // 1 hash (config:app with 4 fields)
         let mut app_config = HashMap::new();
         app_config.insert("name".into(), "Ferrite Demo".into());
-        app_config.insert("version".into(), "0.1.0".into());
+        app_config.insert("version".into(), env!("CARGO_PKG_VERSION").into());
         app_config.insert("max_connections".into(), "100".into());
         app_config.insert("timeout_ms".into(), "5000".into());
         self.data
@@ -215,7 +215,7 @@ impl PlaygroundInstance {
                     }
                 }
                 StoredValue::SortedSet(z) => {
-                    for (m, _) in z {
+                    for m in z.keys() {
                         bytes += m.len() as u64 + 8;
                     }
                 }
@@ -849,9 +849,9 @@ fn parse_tokens(input: &str) -> Vec<String> {
     let mut tokens = Vec::new();
     let mut current = String::new();
     let mut in_quotes = false;
-    let mut chars = input.chars().peekable();
+    let chars = input.chars();
 
-    while let Some(ch) = chars.next() {
+    for ch in chars {
         if ch == '"' {
             in_quotes = !in_quotes;
         } else if ch.is_whitespace() && !in_quotes {

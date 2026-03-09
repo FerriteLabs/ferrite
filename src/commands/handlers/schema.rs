@@ -56,10 +56,10 @@ pub fn create(args: &[Bytes]) -> Frame {
                 if i + 1 >= args.len() {
                     return err_frame("VERSION requires a value");
                 }
-                version = match String::from_utf8_lossy(&args[i + 1]).parse() {
-                    Ok(v) => v,
-                    Err(_) => return err_frame("Invalid version number"),
+                let Ok(v) = String::from_utf8_lossy(&args[i + 1]).parse() else {
+                    return err_frame("Invalid version number");
                 };
+                version = v;
                 i += 2;
             }
             "PATTERN" => {
@@ -99,9 +99,8 @@ pub fn create(args: &[Bytes]) -> Frame {
         }
 
         let field_name = parts[0];
-        let field_type = match FieldType::parse(parts[1]) {
-            Some(t) => t,
-            None => return err_frame(&format!("Unknown type '{}'", parts[1])),
+        let Some(field_type) = FieldType::parse(parts[1]) else {
+            return err_frame(&format!("Unknown type '{}'", parts[1]));
         };
 
         let required = parts.len() > 2 && parts[2].eq_ignore_ascii_case("required");
@@ -209,9 +208,8 @@ pub fn version(args: &[Bytes]) -> Frame {
     if args.len() >= 3 {
         let arg = String::from_utf8_lossy(&args[1]).to_uppercase();
         if arg == "SET" {
-            let new_version: u32 = match String::from_utf8_lossy(&args[2]).parse() {
-                Ok(v) => v,
-                Err(_) => return err_frame("Invalid version number"),
+            let Ok(new_version) = String::from_utf8_lossy(&args[2]).parse::<u32>() else {
+                return err_frame("Invalid version number");
             };
 
             match SCHEMA_REGISTRY.set_current_version(&name, new_version) {
@@ -240,9 +238,8 @@ pub fn delete(args: &[Bytes]) -> Frame {
     if args.len() >= 3 {
         let arg = String::from_utf8_lossy(&args[1]).to_uppercase();
         if arg == "VERSION" {
-            let version: u32 = match String::from_utf8_lossy(&args[2]).parse() {
-                Ok(v) => v,
-                Err(_) => return err_frame("Invalid version number"),
+            let Ok(version) = String::from_utf8_lossy(&args[2]).parse::<u32>() else {
+                return err_frame("Invalid version number");
             };
 
             match SCHEMA_REGISTRY.delete_version(&name, version) {
@@ -272,9 +269,8 @@ pub fn evolve(args: &[Bytes]) -> Frame {
     let name = String::from_utf8_lossy(&args[0]).to_string();
 
     // Get current version
-    let from_version = match SCHEMA_REGISTRY.current_version(&name) {
-        Some(v) => v,
-        None => return err_frame(&format!("Schema '{}' not found", name)),
+    let Some(from_version) = SCHEMA_REGISTRY.current_version(&name) else {
+        return err_frame(&format!("Schema '{}' not found", name));
     };
 
     // Parse TO version
@@ -310,9 +306,8 @@ pub fn evolve(args: &[Bytes]) -> Frame {
                     return err_frame("ADD field must be name:type");
                 }
                 let field_name = parts[0];
-                let field_type = match FieldType::parse(parts[1]) {
-                    Some(t) => t,
-                    None => return err_frame(&format!("Unknown type '{}'", parts[1])),
+                let Some(field_type) = FieldType::parse(parts[1]) else {
+                    return err_frame(&format!("Unknown type '{}'", parts[1]));
                 };
                 builder = builder.add_field(field_name, field_type, None);
                 i += 2;
@@ -360,9 +355,8 @@ pub fn evolve(args: &[Bytes]) -> Frame {
     let evolution = builder.build();
 
     // Apply evolution to get new schema
-    let current_schema = match SCHEMA_REGISTRY.get(&name, Some(from_version)) {
-        Some(s) => s,
-        None => return err_frame("Current schema version not found"),
+    let Some(current_schema) = SCHEMA_REGISTRY.get(&name, Some(from_version)) else {
+        return err_frame("Current schema version not found");
     };
 
     match evolution.apply(&current_schema) {
@@ -440,14 +434,12 @@ pub fn migrate(args: &[Bytes]) -> Frame {
     let to = to_version.unwrap_or(from + 1);
 
     // Build evolution from registered versions
-    let from_schema = match SCHEMA_REGISTRY.get(&name, Some(from)) {
-        Some(s) => s,
-        None => return err_frame(&format!("Schema version {} not found", from)),
+    let Some(from_schema) = SCHEMA_REGISTRY.get(&name, Some(from)) else {
+        return err_frame(&format!("Schema version {} not found", from));
     };
 
-    let to_schema = match SCHEMA_REGISTRY.get(&name, Some(to)) {
-        Some(s) => s,
-        None => return err_frame(&format!("Schema version {} not found", to)),
+    let Some(to_schema) = SCHEMA_REGISTRY.get(&name, Some(to)) else {
+        return err_frame(&format!("Schema version {} not found", to));
     };
 
     // Create a simple evolution (field additions/removals)
@@ -586,9 +578,8 @@ pub fn infer(args: &[Bytes], store: &crate::storage::Store) -> Frame {
         if values.len() >= sample_size {
             break;
         }
-        let key_str = match std::str::from_utf8(&key) {
-            Ok(s) => s,
-            Err(_) => continue,
+        let Ok(key_str) = std::str::from_utf8(&key) else {
+            continue;
         };
         if !key_str.contains(&pattern) {
             continue;
@@ -665,15 +656,13 @@ pub fn validate(args: &[Bytes], store: &crate::storage::Store) -> Frame {
         .any(|a| String::from_utf8_lossy(a).to_uppercase() == "COERCE");
 
     // Get schema
-    let schema = match SCHEMA_REGISTRY.get_current(&schema_name) {
-        Some(s) => s,
-        None => return err_frame(&format!("Schema '{}' not found", schema_name)),
+    let Some(schema) = SCHEMA_REGISTRY.get_current(&schema_name) else {
+        return err_frame(&format!("Schema '{}' not found", schema_name));
     };
 
     // Get value
-    let value_bytes = match store.get(0, &Bytes::from(key)) {
-        Some(v) => v,
-        None => return err_frame("Key not found"),
+    let Some(value_bytes) = store.get(0, &Bytes::from(key)) else {
+        return err_frame("Key not found");
     };
 
     let value: serde_json::Value = match value_bytes {
@@ -762,14 +751,12 @@ pub fn diff(args: &[Bytes]) -> Frame {
     let from_v = v1.unwrap_or(current.saturating_sub(1).max(1));
     let to_v = v2.unwrap_or(current);
 
-    let from_schema = match SCHEMA_REGISTRY.get(&name, Some(from_v)) {
-        Some(s) => s,
-        None => return err_frame(&format!("Version {} not found", from_v)),
+    let Some(from_schema) = SCHEMA_REGISTRY.get(&name, Some(from_v)) else {
+        return err_frame(&format!("Version {} not found", from_v));
     };
 
-    let to_schema = match SCHEMA_REGISTRY.get(&name, Some(to_v)) {
-        Some(s) => s,
-        None => return err_frame(&format!("Version {} not found", to_v)),
+    let Some(to_schema) = SCHEMA_REGISTRY.get(&name, Some(to_v)) else {
+        return err_frame(&format!("Version {} not found", to_v));
     };
 
     // Calculate differences

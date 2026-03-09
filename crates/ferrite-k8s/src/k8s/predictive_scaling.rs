@@ -392,11 +392,7 @@ impl PredictiveScaler {
         let cutoff =
             metrics.timestamp - Duration::minutes(self.config.lookback_window_minutes as i64);
         state.history.push_back(metrics);
-        while state
-            .history
-            .front()
-            .map_or(false, |m| m.timestamp < cutoff)
-        {
+        while state.history.front().is_some_and(|m| m.timestamp < cutoff) {
             state.history.pop_front();
         }
     }
@@ -417,8 +413,7 @@ impl PredictiveScaler {
         let trend = self.detect_trend(&state);
 
         // Seasonal adjustment: look at the target hour's historical average
-        let target_hour =
-            ((now.hour() as u32 + (horizon_minutes / 60)) % HOURLY_BUCKETS as u32) as usize;
+        let target_hour = ((now.hour() + (horizon_minutes / 60)) % HOURLY_BUCKETS as u32) as usize;
         let seasonal_factor = state.hourly_ops[target_hour].average().and_then(|avg| {
             if base_ops > 0.0 {
                 Some(avg / base_ops)

@@ -116,9 +116,8 @@ pub fn copy(
     let dest_db = dest_db.unwrap_or(src_db);
 
     // Get source value
-    let entry = match store.get_entry(src_db, key) {
-        Some(entry) => entry,
-        None => return Frame::Integer(0),
+    let Some(entry) = store.get_entry(src_db, key) else {
+        return Frame::Integer(0);
     };
 
     let (value, expires_at) = entry;

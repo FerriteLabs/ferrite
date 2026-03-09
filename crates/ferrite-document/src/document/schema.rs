@@ -74,9 +74,8 @@ fn validate_value(
         _ => {}
     }
 
-    let schema_obj = match schema.as_object() {
-        Some(obj) => obj,
-        None => return,
+    let Some(schema_obj) = schema.as_object() else {
+        return;
     };
 
     // Handle $ref

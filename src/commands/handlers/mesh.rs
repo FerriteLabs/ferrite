@@ -90,13 +90,11 @@ fn handle_peers() -> Frame {
 
 /// MESH.PEER.ADD addr [ROLE full|readonly|relay] — manually add a peer.
 fn handle_peer_add(args: &[String]) -> Frame {
-    let addr_str = match args.first() {
-        Some(a) => a,
-        None => return err_frame("MESH.PEER.ADD requires an address"),
+    let Some(addr_str) = args.first() else {
+        return err_frame("MESH.PEER.ADD requires an address");
     };
-    let addr = match addr_str.parse() {
-        Ok(a) => a,
-        Err(_) => return err_frame(&format!("invalid address: {}", addr_str)),
+    let Ok(addr) = addr_str.parse() else {
+        return err_frame(&format!("invalid address: {}", addr_str));
     };
     let role = args
         .iter()
@@ -132,9 +130,8 @@ fn handle_peer_add(args: &[String]) -> Frame {
 
 /// MESH.PEER.REMOVE peer_id — remove a peer.
 fn handle_peer_remove(args: &[String]) -> Frame {
-    let peer_id = match args.first() {
-        Some(id) => id,
-        None => return err_frame("MESH.PEER.REMOVE requires a peer_id"),
+    let Some(peer_id) = args.first() else {
+        return err_frame("MESH.PEER.REMOVE requires a peer_id");
     };
     match get_manager().remove_peer(peer_id) {
         Ok(()) => Frame::Simple(Bytes::from("OK")),
@@ -157,9 +154,8 @@ fn handle_peer_ban(args: &[String]) -> Frame {
 
 /// MESH.PEER.INFO peer_id — peer details.
 fn handle_peer_info(args: &[String]) -> Frame {
-    let peer_id = match args.first() {
-        Some(id) => id,
-        None => return err_frame("MESH.PEER.INFO requires a peer_id"),
+    let Some(peer_id) = args.first() else {
+        return err_frame("MESH.PEER.INFO requires a peer_id");
     };
     match get_manager().peer_info(peer_id) {
         Some(p) => {
@@ -249,36 +245,33 @@ fn handle_topology() -> Frame {
 
 /// MESH.SYNC [peer_id] — force sync.
 fn handle_sync(args: &[String]) -> Frame {
-    let peer_id = match args.first() {
-        Some(id) => id.clone(),
-        None => {
-            // Sync with all active peers
-            let peers = get_manager().peers();
-            let mut total_sent = 0u64;
-            let mut total_recv = 0u64;
-            let mut syncs = 0usize;
-            for p in &peers {
-                if let Ok(r) = get_manager().sync_with(&p.id) {
-                    total_sent += r.keys_sent;
-                    total_recv += r.keys_received;
-                    syncs += 1;
-                }
+    let Some(peer_id) = args.first().cloned() else {
+        // Sync with all active peers
+        let peers = get_manager().peers();
+        let mut total_sent = 0u64;
+        let mut total_recv = 0u64;
+        let mut syncs = 0usize;
+        for p in &peers {
+            if let Ok(r) = get_manager().sync_with(&p.id) {
+                total_sent += r.keys_sent;
+                total_recv += r.keys_received;
+                syncs += 1;
             }
-            let mut map = HashMap::new();
-            map.insert(
-                Bytes::from_static(b"peers_synced"),
-                Frame::Integer(syncs as i64),
-            );
-            map.insert(
-                Bytes::from_static(b"keys_sent"),
-                Frame::Integer(total_sent as i64),
-            );
-            map.insert(
-                Bytes::from_static(b"keys_received"),
-                Frame::Integer(total_recv as i64),
-            );
-            return Frame::Map(map);
         }
+        let mut map = HashMap::new();
+        map.insert(
+            Bytes::from_static(b"peers_synced"),
+            Frame::Integer(syncs as i64),
+        );
+        map.insert(
+            Bytes::from_static(b"keys_sent"),
+            Frame::Integer(total_sent as i64),
+        );
+        map.insert(
+            Bytes::from_static(b"keys_received"),
+            Frame::Integer(total_recv as i64),
+        );
+        return Frame::Map(map);
     };
     match get_manager().sync_with(&peer_id) {
         Ok(r) => {
@@ -311,9 +304,8 @@ fn handle_sync(args: &[String]) -> Frame {
 
 /// MESH.BROADCAST message — broadcast to all peers.
 fn handle_broadcast(args: &[String]) -> Frame {
-    let msg = match args.first() {
-        Some(m) => m,
-        None => return err_frame("MESH.BROADCAST requires a message"),
+    let Some(msg) = args.first() else {
+        return err_frame("MESH.BROADCAST requires a message");
     };
     match get_manager().broadcast(msg.as_bytes()) {
         Ok(r) => {
@@ -338,9 +330,8 @@ fn handle_broadcast(args: &[String]) -> Frame {
 
 /// MESH.ROUTE target_peer_id — optimal route.
 fn handle_route(args: &[String]) -> Frame {
-    let target = match args.first() {
-        Some(t) => t,
-        None => return err_frame("MESH.ROUTE requires a target peer_id"),
+    let Some(target) = args.first() else {
+        return err_frame("MESH.ROUTE requires a target peer_id");
     };
     match get_manager().optimal_route(target) {
         Some(path) => {

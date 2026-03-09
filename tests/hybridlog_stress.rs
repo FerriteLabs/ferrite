@@ -1,4 +1,4 @@
-#![allow(clippy::unwrap_used)]
+#![allow(clippy::unwrap_used, clippy::print_stdout)]
 //! Stress tests for HybridLog storage engine
 //!
 //! These tests exercise the storage engine under extreme conditions:

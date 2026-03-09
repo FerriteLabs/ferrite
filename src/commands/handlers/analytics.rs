@@ -312,8 +312,8 @@ static KEYWORDS: &[&str] = &[
 ];
 
 fn find_keyword_after(args: &[String], start: usize) -> usize {
-    for i in start..args.len() {
-        if KEYWORDS.contains(&args[i].as_str()) {
+    for (i, arg) in args.iter().enumerate().skip(start) {
+        if KEYWORDS.contains(&arg.as_str()) {
             return i;
         }
     }
@@ -379,8 +379,7 @@ fn parse_filter(tokens: &[String]) -> Option<FilterExpr> {
         _ => return None,
     };
 
-    let value =
-        serde_json::from_str(&value_str).unwrap_or_else(|_| serde_json::Value::String(value_str));
+    let value = serde_json::from_str(&value_str).unwrap_or(serde_json::Value::String(value_str));
 
     Some(FilterExpr { field, op, value })
 }

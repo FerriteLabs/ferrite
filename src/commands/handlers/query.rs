@@ -21,7 +21,7 @@ use crate::query::{QueryConfig, QueryEngine};
 use super::HandlerContext;
 
 /// FerriteQL version
-const FERRITEQL_VERSION: &str = "0.1.0";
+const FERRITEQL_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// Generate helpful error messages for FerriteQL syntax errors
 fn ferriteql_syntax_help(query: &str) -> String {
@@ -54,9 +54,8 @@ pub async fn query_run(ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
         );
     }
 
-    let sql = match std::str::from_utf8(&args[0]) {
-        Ok(s) => s,
-        Err(_) => return Frame::error("ERR query must be a valid UTF-8 string"),
+    let Ok(sql) = std::str::from_utf8(&args[0]) else {
+        return Frame::error("ERR query must be a valid UTF-8 string");
     };
 
     if sql.trim().is_empty() {
@@ -81,9 +80,8 @@ pub async fn query_json(ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
         );
     }
 
-    let sql = match std::str::from_utf8(&args[0]) {
-        Ok(s) => s,
-        Err(_) => return Frame::error("ERR query must be a valid UTF-8 string"),
+    let Ok(sql) = std::str::from_utf8(&args[0]) else {
+        return Frame::error("ERR query must be a valid UTF-8 string");
     };
 
     if sql.trim().is_empty() {
@@ -131,9 +129,8 @@ pub fn query_explain(ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
         );
     }
 
-    let sql = match std::str::from_utf8(&args[0]) {
-        Ok(s) => s,
-        Err(_) => return Frame::error("ERR query must be a valid UTF-8 string"),
+    let Ok(sql) = std::str::from_utf8(&args[0]) else {
+        return Frame::error("ERR query must be a valid UTF-8 string");
     };
 
     if sql.trim().is_empty() {
@@ -158,14 +155,12 @@ pub async fn query_prepare(ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
         );
     }
 
-    let name = match std::str::from_utf8(&args[0]) {
-        Ok(s) => s,
-        Err(_) => return Frame::error("ERR statement name must be a valid UTF-8 string"),
+    let Ok(name) = std::str::from_utf8(&args[0]) else {
+        return Frame::error("ERR statement name must be a valid UTF-8 string");
     };
 
-    let sql = match std::str::from_utf8(&args[1]) {
-        Ok(s) => s,
-        Err(_) => return Frame::error("ERR query must be a valid UTF-8 string"),
+    let Ok(sql) = std::str::from_utf8(&args[1]) else {
+        return Frame::error("ERR query must be a valid UTF-8 string");
     };
 
     if name.is_empty() {
@@ -191,9 +186,8 @@ pub async fn query_exec(ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
         );
     }
 
-    let name = match std::str::from_utf8(&args[0]) {
-        Ok(s) => s,
-        Err(_) => return Frame::error("ERR statement name must be a valid UTF-8 string"),
+    let Ok(name) = std::str::from_utf8(&args[0]) else {
+        return Frame::error("ERR statement name must be a valid UTF-8 string");
     };
 
     let params: Vec<crate::query::Value> = args[1..]

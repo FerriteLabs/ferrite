@@ -3,7 +3,6 @@
 //! Provides automatic key prefixing, namespace-scoped commands,
 //! and cross-tenant data leak prevention.
 
-
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 

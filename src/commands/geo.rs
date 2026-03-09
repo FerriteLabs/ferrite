@@ -213,9 +213,8 @@ pub fn geoadd(
 
     for (lon, lat, member) in items {
         // Validate coordinates
-        let coord = match GeoCoord::new(lon, lat) {
-            Some(c) => c,
-            None => return Frame::error("ERR invalid longitude,latitude pair, out of valid range"),
+        let Some(coord) = GeoCoord::new(lon, lat) else {
+            return Frame::error("ERR invalid longitude,latitude pair, out of valid range");
         };
 
         let score = geohash_encode(&coord);

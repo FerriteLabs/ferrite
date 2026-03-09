@@ -347,18 +347,14 @@ impl GossipProtocol {
         let local_version = self.local_version.read().clone();
 
         let delta_count = deltas.len() as u64;
-        self.stats
-            .messages_sent
-            .fetch_add(1, Ordering::Relaxed);
+        self.stats.messages_sent.fetch_add(1, Ordering::Relaxed);
         self.stats
             .deltas_sent
             .fetch_add(delta_count, Ordering::Relaxed);
         self.stats
             .bytes_sent
             .fetch_add(total_size as u64, Ordering::Relaxed);
-        self.stats
-            .rounds_completed
-            .fetch_add(1, Ordering::Relaxed);
+        self.stats.rounds_completed.fetch_add(1, Ordering::Relaxed);
 
         // Update peer state
         let mut peers = self.peers.write();
@@ -443,9 +439,7 @@ impl GossipProtocol {
         }
 
         // Update stats
-        self.stats
-            .messages_received
-            .fetch_add(1, Ordering::Relaxed);
+        self.stats.messages_received.fetch_add(1, Ordering::Relaxed);
         self.stats
             .deltas_received
             .fetch_add(message.deltas.len() as u64, Ordering::Relaxed);

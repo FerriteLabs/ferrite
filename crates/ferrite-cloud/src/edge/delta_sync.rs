@@ -47,13 +47,12 @@ impl BloomFilter {
 
         // Optimal number of bits: m = -n * ln(p) / (ln(2))^2
         let ln2 = std::f64::consts::LN_2;
-        let num_bits = (-(expected_items as f64) * false_positive_rate.ln() / (ln2 * ln2))
-            .ceil() as usize;
+        let num_bits =
+            (-(expected_items as f64) * false_positive_rate.ln() / (ln2 * ln2)).ceil() as usize;
         let num_bits = num_bits.max(64); // minimum 1 word
 
         // Optimal number of hashes: k = (m / n) * ln(2)
-        let num_hashes =
-            ((num_bits as f64 / expected_items as f64) * ln2).ceil() as u32;
+        let num_hashes = ((num_bits as f64 / expected_items as f64) * ln2).ceil() as u32;
         let num_hashes = num_hashes.max(1);
 
         let num_words = num_bits.div_ceil(64);
@@ -444,10 +443,7 @@ mod tests {
 
         // Every inserted key must be reported as present.
         for key in &keys {
-            assert!(
-                bloom.contains(key.as_bytes()),
-                "false negative for {key}"
-            );
+            assert!(bloom.contains(key.as_bytes()), "false negative for {key}");
         }
     }
 

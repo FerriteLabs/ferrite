@@ -97,7 +97,10 @@ impl TrackingTable {
         redirect: i64,
         prefixes: Vec<Bytes>,
     ) {
-        let mut states = self.client_states.write().unwrap_or_else(|e| e.into_inner());
+        let mut states = self
+            .client_states
+            .write()
+            .unwrap_or_else(|e| e.into_inner());
         states.insert(
             client_id,
             ClientTrackingState {
@@ -115,7 +118,10 @@ impl TrackingTable {
     pub fn disable_tracking(&self, client_id: u64) {
         // Remove client state
         {
-            let mut states = self.client_states.write().unwrap_or_else(|e| e.into_inner());
+            let mut states = self
+                .client_states
+                .write()
+                .unwrap_or_else(|e| e.into_inner());
             states.remove(&client_id);
         }
 
@@ -200,7 +206,10 @@ impl TrackingTable {
                 .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
             // Increment per-client count
-            let mut states = self.client_states.write().unwrap_or_else(|e| e.into_inner());
+            let mut states = self
+                .client_states
+                .write()
+                .unwrap_or_else(|e| e.into_inner());
             if let Some(state) = states.get_mut(&client_id) {
                 state.tracked_key_count += 1;
                 // Reset caching_next flag for opt-in mode
@@ -213,7 +222,10 @@ impl TrackingTable {
 
     /// Set the CLIENT CACHING YES flag for opt-in tracking mode
     pub fn set_caching(&self, client_id: u64, yes: bool) {
-        let mut states = self.client_states.write().unwrap_or_else(|e| e.into_inner());
+        let mut states = self
+            .client_states
+            .write()
+            .unwrap_or_else(|e| e.into_inner());
         if let Some(state) = states.get_mut(&client_id) {
             state.caching_next = yes;
         }
@@ -254,7 +266,10 @@ impl TrackingTable {
 
                 // Decrement per-client counts
                 drop(states);
-                let mut states = self.client_states.write().unwrap_or_else(|e| e.into_inner());
+                let mut states = self
+                    .client_states
+                    .write()
+                    .unwrap_or_else(|e| e.into_inner());
                 for target in &targets {
                     if let Some(state) = states.get_mut(&target.client_id) {
                         state.tracked_key_count = state.tracked_key_count.saturating_sub(1);
@@ -411,12 +426,7 @@ mod tests {
         let key = Bytes::from("user:123");
 
         // Client 1 in broadcast mode with prefix "user:"
-        table.enable_tracking(
-            1,
-            TrackingMode::Broadcast,
-            -1,
-            vec![Bytes::from("user:")],
-        );
+        table.enable_tracking(1, TrackingMode::Broadcast, -1, vec![Bytes::from("user:")]);
 
         // Should get invalidation for matching key
         let targets = table.get_invalidations(&key);

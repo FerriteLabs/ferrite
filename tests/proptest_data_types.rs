@@ -2,7 +2,7 @@
 //!
 //! Uses proptest to verify invariants across randomly generated inputs
 //! for Strings, Lists, Hashes, Sets, and Sorted Sets.
-#![allow(clippy::unwrap_used)]
+#![allow(clippy::unwrap_used, clippy::float_cmp)]
 
 use proptest::prelude::*;
 
@@ -664,7 +664,7 @@ proptest! {
         }
 
         // Verify no items outside range are missing
-        for ((score, member), _) in &by_score {
+        for (score, member) in by_score.keys() {
             let s = score.0;
             if s >= min_score && s <= max_score {
                 prop_assert!(

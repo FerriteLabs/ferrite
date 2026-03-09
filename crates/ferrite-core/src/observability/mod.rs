@@ -48,6 +48,8 @@ pub mod ebpf_linux;
 pub mod heatmap;
 pub mod key_heatmap;
 pub mod profiler;
+/// Query profiler with latency histograms and execution analysis.
+pub mod query_profiler;
 pub mod recommendations;
 pub mod slow_query_log;
 pub mod trace;

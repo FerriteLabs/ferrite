@@ -1,3 +1,4 @@
+#![allow(clippy::print_stdout)]
 //! WASM Playground example
 //!
 //! Demonstrates using the Ferrite playground as a standalone REPL

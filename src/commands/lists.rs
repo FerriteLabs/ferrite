@@ -436,9 +436,8 @@ pub fn lmove(
         ListDirection::Right => source_list.pop_back(),
     };
 
-    let element = match element {
-        Some(e) => e,
-        None => return Frame::null(),
+    let Some(element) = element else {
+        return Frame::null();
     };
 
     // Get destination list (could be same as source)

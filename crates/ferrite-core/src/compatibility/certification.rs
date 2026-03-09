@@ -247,7 +247,7 @@ mod tests {
             overall_score: 96.5,
             grade: CertificationGrade::Platinum,
             category_scores: HashMap::new(),
-            ferrite_version: "0.1.0".to_string(),
+            ferrite_version: env!("CARGO_PKG_VERSION").to_string(),
             redis_version: "7.2".to_string(),
             timestamp: chrono::Utc::now(),
             total_commands_tested: 200,
@@ -293,7 +293,8 @@ mod tests {
             is_intentional_divergence: true,
         }];
 
-        let result = compute_certification(categories, "0.1.0", "7.2", &divergences);
+        let result =
+            compute_certification(categories, env!("CARGO_PKG_VERSION"), "7.2", &divergences);
         assert!(result.overall_score > 90.0);
         assert!(result.grade >= CertificationGrade::Gold);
         assert_eq!(result.intentional_divergences, 1);
@@ -318,7 +319,7 @@ mod tests {
             overall_score: 100.0,
             grade: CertificationGrade::Platinum,
             category_scores: categories,
-            ferrite_version: "0.1.0".to_string(),
+            ferrite_version: env!("CARGO_PKG_VERSION").to_string(),
             redis_version: "7.2".to_string(),
             timestamp: chrono::Utc::now(),
             total_commands_tested: 10,

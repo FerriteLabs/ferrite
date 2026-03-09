@@ -106,9 +106,8 @@ pub fn incrby(store: &Arc<Store>, db: u8, key: &Bytes, delta: i64) -> Frame {
     };
 
     // Check for overflow
-    let new_value = match current.checked_add(delta) {
-        Some(n) => n,
-        None => return handle_overflow_error(),
+    let Some(new_value) = current.checked_add(delta) else {
+        return handle_overflow_error();
     };
 
     // Store new value - use cached Bytes for common small integers

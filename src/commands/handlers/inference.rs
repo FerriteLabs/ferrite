@@ -48,14 +48,12 @@ pub async fn ml_model_load(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
         return err_frame("wrong number of arguments for 'ML.MODEL.LOAD' command");
     }
 
-    let model_name = match std::str::from_utf8(&args[0]) {
-        Ok(s) => s,
-        Err(_) => return err_frame("invalid model name"),
+    let Ok(model_name) = std::str::from_utf8(&args[0]) else {
+        return err_frame("invalid model name");
     };
 
-    let path = match std::str::from_utf8(&args[1]) {
-        Ok(s) => s,
-        Err(_) => return err_frame("invalid model path"),
+    let Ok(path) = std::str::from_utf8(&args[1]) else {
+        return err_frame("invalid model path");
     };
 
     // Parse optional arguments
@@ -65,10 +63,10 @@ pub async fn ml_model_load(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
 
     let mut i = 2;
     while i < args.len() {
-        let arg = match std::str::from_utf8(&args[i]) {
-            Ok(s) => s.to_uppercase(),
-            Err(_) => return err_frame("invalid argument"),
+        let Ok(arg_str) = std::str::from_utf8(&args[i]) else {
+            return err_frame("invalid argument");
         };
+        let arg = arg_str.to_uppercase();
 
         match arg.as_str() {
             "FORMAT" => {
@@ -76,10 +74,10 @@ pub async fn ml_model_load(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
                 if i >= args.len() {
                     return err_frame("FORMAT requires a value");
                 }
-                let fmt = match std::str::from_utf8(&args[i]) {
-                    Ok(s) => s.to_uppercase(),
-                    Err(_) => return err_frame("invalid format value"),
+                let Ok(fmt_str) = std::str::from_utf8(&args[i]) else {
+                    return err_frame("invalid format value");
                 };
+                let fmt = fmt_str.to_uppercase();
                 format = match fmt.as_str() {
                     "ONNX" => ModelFormat::ONNX,
                     "TFLITE" => ModelFormat::TFLite,
@@ -95,14 +93,13 @@ pub async fn ml_model_load(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
                 if i >= args.len() {
                     return err_frame("BATCH requires a value");
                 }
-                let batch_str = match std::str::from_utf8(&args[i]) {
-                    Ok(s) => s,
-                    Err(_) => return err_frame("invalid batch size"),
+                let Ok(batch_str) = std::str::from_utf8(&args[i]) else {
+                    return err_frame("invalid batch size");
                 };
-                max_batch_size = match batch_str.parse() {
-                    Ok(v) => v,
-                    Err(_) => return err_frame("invalid batch size value"),
+                let Ok(v) = batch_str.parse() else {
+                    return err_frame("invalid batch size value");
                 };
+                max_batch_size = v;
             }
             _ => {
                 return err_frame(&format!("unknown argument: {}", arg));
@@ -136,9 +133,8 @@ pub async fn ml_model_unload(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame
         return err_frame("wrong number of arguments for 'ML.MODEL.UNLOAD' command");
     }
 
-    let model_name = match std::str::from_utf8(&args[0]) {
-        Ok(s) => s,
-        Err(_) => return err_frame("invalid model name"),
+    let Ok(model_name) = std::str::from_utf8(&args[0]) else {
+        return err_frame("invalid model name");
     };
 
     if get_engine().unload_model(model_name) {
@@ -156,9 +152,8 @@ pub async fn ml_model_info(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
         return err_frame("wrong number of arguments for 'ML.MODEL.INFO' command");
     }
 
-    let model_name = match std::str::from_utf8(&args[0]) {
-        Ok(s) => s,
-        Err(_) => return err_frame("invalid model name"),
+    let Ok(model_name) = std::str::from_utf8(&args[0]) else {
+        return err_frame("invalid model name");
     };
 
     match get_engine().model_info(model_name) {
@@ -221,29 +216,26 @@ pub async fn ml_predict(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
         return err_frame("wrong number of arguments for 'ML.PREDICT' command");
     }
 
-    let model_name = match std::str::from_utf8(&args[0]) {
-        Ok(s) => s,
-        Err(_) => return err_frame("invalid model name"),
+    let Ok(model_name) = std::str::from_utf8(&args[0]) else {
+        return err_frame("invalid model name");
     };
 
-    let input_type = match std::str::from_utf8(&args[1]) {
-        Ok(s) => s.to_uppercase(),
-        Err(_) => return err_frame("invalid input type"),
+    let Ok(input_type_str) = std::str::from_utf8(&args[1]) else {
+        return err_frame("invalid input type");
     };
+    let input_type = input_type_str.to_uppercase();
 
     let input = match input_type.as_str() {
         "TEXT" => {
-            let text = match std::str::from_utf8(&args[2]) {
-                Ok(s) => s.to_string(),
-                Err(_) => return err_frame("invalid text input"),
+            let Ok(text_str) = std::str::from_utf8(&args[2]) else {
+                return err_frame("invalid text input");
             };
-            InferenceInput::Text(text)
+            InferenceInput::Text(text_str.to_string())
         }
         "VECTOR" => {
             // Parse comma-separated values or JSON array
-            let vec_str = match std::str::from_utf8(&args[2]) {
-                Ok(s) => s,
-                Err(_) => return err_frame("invalid vector input"),
+            let Ok(vec_str) = std::str::from_utf8(&args[2]) else {
+                return err_frame("invalid vector input");
             };
             let values: Result<Vec<f32>, _> = vec_str
                 .trim_matches(|c| c == '[' || c == ']')
@@ -256,14 +248,13 @@ pub async fn ml_predict(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame {
             }
         }
         "SCALAR" => {
-            let scalar_str = match std::str::from_utf8(&args[2]) {
-                Ok(s) => s,
-                Err(_) => return err_frame("invalid scalar input"),
+            let Ok(scalar_str) = std::str::from_utf8(&args[2]) else {
+                return err_frame("invalid scalar input");
             };
-            match scalar_str.parse() {
-                Ok(v) => InferenceInput::Scalar(v),
-                Err(_) => return err_frame("failed to parse scalar value"),
-            }
+            let Ok(v) = scalar_str.parse() else {
+                return err_frame("failed to parse scalar value");
+            };
+            InferenceInput::Scalar(v)
         }
         "IMAGE" | "RAW" => InferenceInput::Raw(args[2].to_vec()),
         _ => return err_frame("unknown input type (use TEXT, VECTOR, SCALAR, IMAGE, or RAW)"),
@@ -301,36 +292,33 @@ pub async fn ml_predict_batch(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Fram
         return err_frame("wrong number of arguments for 'ML.PREDICT.BATCH' command");
     }
 
-    let model_name = match std::str::from_utf8(&args[0]) {
-        Ok(s) => s,
-        Err(_) => return err_frame("invalid model name"),
+    let Ok(model_name) = std::str::from_utf8(&args[0]) else {
+        return err_frame("invalid model name");
     };
 
-    let input_type = match std::str::from_utf8(&args[1]) {
-        Ok(s) => s.to_uppercase(),
-        Err(_) => return err_frame("invalid input type"),
+    let Ok(input_type_str) = std::str::from_utf8(&args[1]) else {
+        return err_frame("invalid input type");
     };
+    let input_type = input_type_str.to_uppercase();
 
     // Parse all inputs
     let mut inputs = Vec::new();
     for arg in args.iter().skip(2) {
         let input = match input_type.as_str() {
             "TEXT" => {
-                let text = match std::str::from_utf8(arg) {
-                    Ok(s) => s.to_string(),
-                    Err(_) => return err_frame("invalid text input"),
+                let Ok(text_str) = std::str::from_utf8(arg) else {
+                    return err_frame("invalid text input");
                 };
-                InferenceInput::Text(text)
+                InferenceInput::Text(text_str.to_string())
             }
             "SCALAR" => {
-                let scalar_str = match std::str::from_utf8(arg) {
-                    Ok(s) => s,
-                    Err(_) => return err_frame("invalid scalar input"),
+                let Ok(scalar_str) = std::str::from_utf8(arg) else {
+                    return err_frame("invalid scalar input");
                 };
-                match scalar_str.parse() {
-                    Ok(v) => InferenceInput::Scalar(v),
-                    Err(_) => return err_frame("failed to parse scalar value"),
-                }
+                let Ok(v) = scalar_str.parse() else {
+                    return err_frame("failed to parse scalar value");
+                };
+                InferenceInput::Scalar(v)
             }
             _ => return err_frame("batch only supports TEXT and SCALAR input types"),
         };
@@ -365,30 +353,30 @@ pub async fn ml_trigger_register(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> F
         return err_frame("wrong number of arguments for 'ML.TRIGGER.REGISTER' command");
     }
 
-    let name = match std::str::from_utf8(&args[0]) {
-        Ok(s) => s.to_string(),
-        Err(_) => return err_frame("invalid trigger name"),
+    let Ok(name_str) = std::str::from_utf8(&args[0]) else {
+        return err_frame("invalid trigger name");
     };
+    let name = name_str.to_string();
 
-    let pattern = match std::str::from_utf8(&args[1]) {
-        Ok(s) => s.to_string(),
-        Err(_) => return err_frame("invalid pattern"),
+    let Ok(pattern_str) = std::str::from_utf8(&args[1]) else {
+        return err_frame("invalid pattern");
     };
+    let pattern = pattern_str.to_string();
 
-    let model = match std::str::from_utf8(&args[2]) {
-        Ok(s) => s.to_string(),
-        Err(_) => return err_frame("invalid model name"),
+    let Ok(model_str) = std::str::from_utf8(&args[2]) else {
+        return err_frame("invalid model name");
     };
+    let model = model_str.to_string();
 
     let mut config = TriggerConfig::new(name, pattern, model);
 
     // Parse optional arguments
     let mut i = 3;
     while i < args.len() {
-        let arg = match std::str::from_utf8(&args[i]) {
-            Ok(s) => s.to_uppercase(),
-            Err(_) => return err_frame("invalid argument"),
+        let Ok(arg_str) = std::str::from_utf8(&args[i]) else {
+            return err_frame("invalid argument");
         };
+        let arg = arg_str.to_uppercase();
 
         match arg.as_str() {
             "INPUT_FIELD" => {
@@ -396,10 +384,10 @@ pub async fn ml_trigger_register(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> F
                 if i >= args.len() {
                     return err_frame("INPUT_FIELD requires a value");
                 }
-                let field = match std::str::from_utf8(&args[i]) {
-                    Ok(s) => s.to_string(),
-                    Err(_) => return err_frame("invalid input field"),
+                let Ok(field_str) = std::str::from_utf8(&args[i]) else {
+                    return err_frame("invalid input field");
                 };
+                let field = field_str.to_string();
                 config = config.with_input_field(field);
             }
             "OUTPUT_KEY" => {
@@ -407,10 +395,10 @@ pub async fn ml_trigger_register(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> F
                 if i >= args.len() {
                     return err_frame("OUTPUT_KEY requires a value");
                 }
-                let key = match std::str::from_utf8(&args[i]) {
-                    Ok(s) => s.to_string(),
-                    Err(_) => return err_frame("invalid output key"),
+                let Ok(key_str) = std::str::from_utf8(&args[i]) else {
+                    return err_frame("invalid output key");
                 };
+                let key = key_str.to_string();
                 config = config.with_output_key(key);
             }
             "DEBOUNCE" => {
@@ -418,13 +406,11 @@ pub async fn ml_trigger_register(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> F
                 if i >= args.len() {
                     return err_frame("DEBOUNCE requires a value");
                 }
-                let ms_str = match std::str::from_utf8(&args[i]) {
-                    Ok(s) => s,
-                    Err(_) => return err_frame("invalid debounce value"),
+                let Ok(ms_str) = std::str::from_utf8(&args[i]) else {
+                    return err_frame("invalid debounce value");
                 };
-                let ms: u64 = match ms_str.parse() {
-                    Ok(v) => v,
-                    Err(_) => return err_frame("invalid debounce milliseconds"),
+                let Ok(ms) = ms_str.parse::<u64>() else {
+                    return err_frame("invalid debounce milliseconds");
                 };
                 config = config.with_debounce(ms);
             }
@@ -471,9 +457,8 @@ pub async fn ml_trigger_unregister(_ctx: &HandlerContext<'_>, args: &[Bytes]) ->
         return err_frame("wrong number of arguments for 'ML.TRIGGER.UNREGISTER' command");
     }
 
-    let name = match std::str::from_utf8(&args[0]) {
-        Ok(s) => s,
-        Err(_) => return err_frame("invalid trigger name"),
+    let Ok(name) = std::str::from_utf8(&args[0]) else {
+        return err_frame("invalid trigger name");
     };
 
     if get_trigger_manager().unregister(name) {
@@ -500,9 +485,8 @@ pub async fn ml_trigger_info(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Frame
         return err_frame("wrong number of arguments for 'ML.TRIGGER.INFO' command");
     }
 
-    let name = match std::str::from_utf8(&args[0]) {
-        Ok(s) => s,
-        Err(_) => return err_frame("invalid trigger name"),
+    let Ok(name) = std::str::from_utf8(&args[0]) else {
+        return err_frame("invalid trigger name");
     };
 
     match get_trigger_manager().get(name) {
@@ -554,9 +538,8 @@ pub async fn ml_trigger_enable(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Fra
         return err_frame("wrong number of arguments for 'ML.TRIGGER.ENABLE' command");
     }
 
-    let name = match std::str::from_utf8(&args[0]) {
-        Ok(s) => s,
-        Err(_) => return err_frame("invalid trigger name"),
+    let Ok(name) = std::str::from_utf8(&args[0]) else {
+        return err_frame("invalid trigger name");
     };
 
     if get_trigger_manager().set_enabled(name, true) {
@@ -574,9 +557,8 @@ pub async fn ml_trigger_disable(_ctx: &HandlerContext<'_>, args: &[Bytes]) -> Fr
         return err_frame("wrong number of arguments for 'ML.TRIGGER.DISABLE' command");
     }
 
-    let name = match std::str::from_utf8(&args[0]) {
-        Ok(s) => s,
-        Err(_) => return err_frame("invalid trigger name"),
+    let Ok(name) = std::str::from_utf8(&args[0]) else {
+        return err_frame("invalid trigger name");
     };
 
     if get_trigger_manager().set_enabled(name, false) {

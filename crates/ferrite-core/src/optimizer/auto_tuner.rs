@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use tracing::{debug, info};
 
-use super::optimizer::AdaptiveOptimizer;
+use super::adaptive_optimizer::AdaptiveOptimizer;
 use super::profiler::{WorkloadProfiler, WorkloadSnapshot};
 use super::recommendation::{OptimizationPlan, Recommendation};
 

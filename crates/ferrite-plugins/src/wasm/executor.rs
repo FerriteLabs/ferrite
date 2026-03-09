@@ -231,17 +231,14 @@ impl WasmExecutor {
         };
 
         // Get the exported function
-        let func = match instance.get_func(&mut store, entry_point) {
-            Some(f) => f,
-            None => {
-                let duration = start.elapsed();
-                self.record_execution(false, duration);
-                return ExecutionResult::failure(
-                    format!("Entry point '{}' not found in module", entry_point),
-                    usage,
-                    duration,
-                );
-            }
+        let Some(func) = instance.get_func(&mut store, entry_point) else {
+            let duration = start.elapsed();
+            self.record_execution(false, duration);
+            return ExecutionResult::failure(
+                format!("Entry point '{}' not found in module", entry_point),
+                usage,
+                duration,
+            );
         };
 
         // Convert args to wasmtime values

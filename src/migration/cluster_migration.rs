@@ -708,7 +708,7 @@ mod tests {
         let sp = SlotProgress::new(42);
         assert_eq!(sp.slot, 42);
         assert_eq!(sp.phase, SlotMigrationPhase::Pending);
-        assert_eq!(sp.progress_pct(), 0.0);
+        assert!(sp.progress_pct().abs() < f64::EPSILON);
         assert!(!sp.is_done());
     }
 

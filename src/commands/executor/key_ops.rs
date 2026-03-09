@@ -298,7 +298,7 @@ impl CommandExecutor {
                 });
             }
         } else if options.alpha {
-            items.sort_by(|a, b| a.cmp(b));
+            items.sort();
         } else {
             items.sort_by(|a, b| {
                 let a_num = Self::parse_sort_float(a);

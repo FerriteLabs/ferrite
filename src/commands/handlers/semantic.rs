@@ -236,9 +236,8 @@ pub async fn fcache_set(
     let cache_lock = get_or_init_function_cache();
     let cache_opt = cache_lock.read();
 
-    let cache = match cache_opt.as_ref() {
-        Some(c) => c,
-        None => return Frame::error("ERR Function cache not initialized"),
+    let Some(cache) = cache_opt.as_ref() else {
+        return Frame::error("ERR Function cache not initialized");
     };
 
     // Parse function name
@@ -283,9 +282,8 @@ pub async fn fcache_get(
     let cache_lock = get_or_init_function_cache();
     let cache_opt = cache_lock.read();
 
-    let cache = match cache_opt.as_ref() {
-        Some(c) => c,
-        None => return Frame::error("ERR Function cache not initialized"),
+    let Some(cache) = cache_opt.as_ref() else {
+        return Frame::error("ERR Function cache not initialized");
     };
 
     // Parse function name
@@ -342,9 +340,8 @@ pub async fn fcache_invalidate(target: &Bytes, is_id: bool) -> Frame {
     let cache_lock = get_or_init_function_cache();
     let cache_opt = cache_lock.read();
 
-    let cache = match cache_opt.as_ref() {
-        Some(c) => c,
-        None => return Frame::error("ERR Function cache not initialized"),
+    let Some(cache) = cache_opt.as_ref() else {
+        return Frame::error("ERR Function cache not initialized");
     };
 
     if is_id {
@@ -373,9 +370,8 @@ pub async fn fcache_stats() -> Frame {
     let cache_lock = get_or_init_function_cache();
     let cache_opt = cache_lock.read();
 
-    let cache = match cache_opt.as_ref() {
-        Some(c) => c,
-        None => return Frame::error("ERR Function cache not initialized"),
+    let Some(cache) = cache_opt.as_ref() else {
+        return Frame::error("ERR Function cache not initialized");
     };
 
     let stats = cache.stats();

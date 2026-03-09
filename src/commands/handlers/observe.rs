@@ -266,9 +266,7 @@ impl LatencyTracker {
     /// Record a command latency in microseconds.
     fn record(&self, command: &str, latency_us: f64) {
         let mut map = self.samples.write();
-        let entry = map
-            .entry(command.to_uppercase())
-            .or_insert_with(Vec::new);
+        let entry = map.entry(command.to_uppercase()).or_default();
         if entry.len() >= MAX_SAMPLES_PER_COMMAND {
             entry.remove(0);
         }

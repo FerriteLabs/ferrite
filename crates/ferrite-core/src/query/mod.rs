@@ -335,6 +335,8 @@ pub mod ai_optimizer;
 pub mod analytics;
 /// Abstract syntax tree definitions for FerriteQL.
 pub mod ast;
+/// Change tracking and incremental aggregation.
+pub mod change_tracker;
 /// Cross-model data source registry for querying across data models.
 pub mod datasource;
 /// Query plan executor against the storage engine.

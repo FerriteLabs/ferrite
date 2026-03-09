@@ -1,4 +1,8 @@
-#![allow(clippy::unwrap_used)]
+#![allow(
+    clippy::unwrap_used,
+    clippy::semicolon_if_nothing_returned,
+    missing_docs
+)]
 //! Throughput benchmarks for Ferrite
 //!
 //! Measures operations per second for core Redis commands.

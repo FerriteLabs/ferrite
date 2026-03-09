@@ -2255,8 +2255,10 @@ impl Command {
             // RedisJSON compatibility commands
             cmd if cmd.starts_with("JSON.") => {
                 let sub = cmd.strip_prefix("JSON.").unwrap_or(cmd);
-                let parsed_args: Vec<Bytes> =
-                    args.iter().filter_map(|f| parsers::get_bytes(f).ok()).collect();
+                let parsed_args: Vec<Bytes> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_bytes(f).ok())
+                    .collect();
                 Ok(Command::Json {
                     subcommand: sub.to_string(),
                     args: parsed_args,
@@ -2266,8 +2268,10 @@ impl Command {
             // Bloom filter commands
             cmd if cmd.starts_with("BF.") => {
                 let sub = cmd.strip_prefix("BF.").unwrap_or(cmd);
-                let parsed_args: Vec<Bytes> =
-                    args.iter().filter_map(|f| parsers::get_bytes(f).ok()).collect();
+                let parsed_args: Vec<Bytes> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_bytes(f).ok())
+                    .collect();
                 Ok(Command::BloomFilter {
                     subcommand: sub.to_string(),
                     args: parsed_args,

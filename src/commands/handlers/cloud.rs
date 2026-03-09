@@ -10,8 +10,8 @@ use bytes::Bytes;
 use crate::protocol::Frame;
 use ferrite_cloud::managed::billing::{BillingPeriod, CostEstimate, PricingTable, UsageMeter};
 use ferrite_cloud::managed::provisioner::{
-    InstanceFilter, InstanceRecord, InstanceState, InstanceType, ProvisionRequest, Provisioner,
-    ProvisionerConfig,
+    InstanceFilter, InstanceHealth, InstanceRecord, InstanceState, InstanceType, ProvisionRequest,
+    Provisioner, ProvisionerConfig,
 };
 use ferrite_cloud::managed::scaling::{AutoScaler, ScalingConfig};
 
@@ -24,6 +24,7 @@ static PROVISIONER: OnceLock<Provisioner> = OnceLock::new();
 static USAGE_METER: OnceLock<UsageMeter> = OnceLock::new();
 
 /// Global auto-scaler instance.
+#[allow(dead_code)]
 static AUTO_SCALER: OnceLock<AutoScaler> = OnceLock::new();
 
 fn provisioner() -> &'static Provisioner {
@@ -34,6 +35,7 @@ fn usage_meter() -> &'static UsageMeter {
     USAGE_METER.get_or_init(|| UsageMeter::new(PricingTable::default()))
 }
 
+#[allow(dead_code)]
 fn auto_scaler() -> &'static AutoScaler {
     AUTO_SCALER.get_or_init(|| AutoScaler::new(ScalingConfig::default()))
 }
@@ -141,7 +143,7 @@ fn cloud_list(args: &[String]) -> Frame {
     }
 
     let instances = provisioner().list_instances(filter);
-    let frames: Vec<Frame> = instances.iter().map(|r| instance_to_frame(r)).collect();
+    let frames: Vec<Frame> = instances.iter().map(instance_to_frame).collect();
     Frame::array(frames)
 }
 
@@ -178,9 +180,8 @@ fn cloud_scale(args: &[String]) -> Frame {
     let instance_id = &args[0];
 
     // Get current instance to use as defaults
-    let current = match provisioner().get_instance(instance_id) {
-        Some(r) => r,
-        None => return err_frame(&format!("instance not found: {}", instance_id)),
+    let Some(current) = provisioner().get_instance(instance_id) else {
+        return err_frame(&format!("instance not found: {}", instance_id));
     };
 
     let mut new_type = current.instance_type.clone();
@@ -231,7 +232,7 @@ fn cloud_cost(args: &[String]) -> Frame {
             replicas: 1,
             created_at: chrono::Utc::now(),
             region: String::new(),
-            health: Default::default(),
+            health: InstanceHealth::default(),
         };
         let estimate = usage_meter().estimate_monthly_cost(&dummy);
         return cost_to_frame(&estimate);

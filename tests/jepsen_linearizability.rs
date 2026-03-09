@@ -1,4 +1,4 @@
-#![allow(clippy::unwrap_used)]
+#![allow(clippy::unwrap_used, clippy::print_stdout)]
 //! Jepsen-style linearizability and consistency tests for Ferrite cluster mode
 //!
 //! These tests simulate network partitions, node failures, and clock skew

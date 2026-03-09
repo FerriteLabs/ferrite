@@ -635,9 +635,8 @@ impl SourceSyncManager {
 
     /// Check whether a file path matches any of the configured glob patterns.
     fn matches_patterns(path: &Path, patterns: &[String]) -> bool {
-        let file_name = match path.file_name().and_then(|n| n.to_str()) {
-            Some(n) => n,
-            None => return false,
+        let Some(file_name) = path.file_name().and_then(|n| n.to_str()) else {
+            return false;
         };
 
         for pattern in patterns {

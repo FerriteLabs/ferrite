@@ -46,9 +46,8 @@ pub async fn record(
     let engine_lock = get_or_init_engine();
     let engine_opt = engine_lock.read();
 
-    let engine = match engine_opt.as_ref() {
-        Some(e) => e,
-        None => return Frame::error("ERR Auto-index engine not initialized"),
+    let Some(engine) = engine_opt.as_ref() else {
+        return Frame::error("ERR Auto-index engine not initialized");
     };
 
     let pattern_str = String::from_utf8_lossy(pattern).to_string();
@@ -81,9 +80,8 @@ pub async fn analyze() -> Frame {
     let engine_lock = get_or_init_engine();
     let engine_opt = engine_lock.read();
 
-    let engine = match engine_opt.as_ref() {
-        Some(e) => e,
-        None => return Frame::error("ERR Auto-index engine not initialized"),
+    let Some(engine) = engine_opt.as_ref() else {
+        return Frame::error("ERR Auto-index engine not initialized");
     };
 
     let recommendations = engine.analyze();
@@ -106,9 +104,8 @@ pub async fn recommend(count: Option<usize>) -> Frame {
     let engine_lock = get_or_init_engine();
     let engine_opt = engine_lock.read();
 
-    let engine = match engine_opt.as_ref() {
-        Some(e) => e,
-        None => return Frame::error("ERR Auto-index engine not initialized"),
+    let Some(engine) = engine_opt.as_ref() else {
+        return Frame::error("ERR Auto-index engine not initialized");
     };
 
     let mut recommendations = engine.get_recommendations();
@@ -135,9 +132,8 @@ pub async fn apply(pattern: &Bytes, index_type: &Bytes, fields: Option<Vec<Strin
     let engine_lock = get_or_init_engine();
     let engine_opt = engine_lock.read();
 
-    let engine = match engine_opt.as_ref() {
-        Some(e) => e,
-        None => return Frame::error("ERR Auto-index engine not initialized"),
+    let Some(engine) = engine_opt.as_ref() else {
+        return Frame::error("ERR Auto-index engine not initialized");
     };
 
     let pattern_str = String::from_utf8_lossy(pattern).to_string();
@@ -169,9 +165,8 @@ pub async fn list() -> Frame {
     let engine_lock = get_or_init_engine();
     let engine_opt = engine_lock.read();
 
-    let engine = match engine_opt.as_ref() {
-        Some(e) => e,
-        None => return Frame::error("ERR Auto-index engine not initialized"),
+    let Some(engine) = engine_opt.as_ref() else {
+        return Frame::error("ERR Auto-index engine not initialized");
     };
 
     let indexes = engine.get_active_indexes();
@@ -218,9 +213,8 @@ pub async fn remove(pattern: &Bytes, index_type: &Bytes) -> Frame {
     let engine_lock = get_or_init_engine();
     let engine_opt = engine_lock.read();
 
-    let engine = match engine_opt.as_ref() {
-        Some(e) => e,
-        None => return Frame::error("ERR Auto-index engine not initialized"),
+    let Some(engine) = engine_opt.as_ref() else {
+        return Frame::error("ERR Auto-index engine not initialized");
     };
 
     let pattern_str = String::from_utf8_lossy(pattern).to_string();
@@ -244,9 +238,8 @@ pub async fn stats() -> Frame {
     let engine_lock = get_or_init_engine();
     let engine_opt = engine_lock.read();
 
-    let engine = match engine_opt.as_ref() {
-        Some(e) => e,
-        None => return Frame::error("ERR Auto-index engine not initialized"),
+    let Some(engine) = engine_opt.as_ref() else {
+        return Frame::error("ERR Auto-index engine not initialized");
     };
 
     let stats = engine.stats();
@@ -277,9 +270,8 @@ pub async fn info() -> Frame {
     let engine_lock = get_or_init_engine();
     let engine_opt = engine_lock.read();
 
-    let engine = match engine_opt.as_ref() {
-        Some(e) => e,
-        None => return Frame::error("ERR Auto-index engine not initialized"),
+    let Some(engine) = engine_opt.as_ref() else {
+        return Frame::error("ERR Auto-index engine not initialized");
     };
 
     let config = engine.config();
@@ -328,9 +320,8 @@ pub async fn cleanup(min_access_per_day: Option<u64>) -> Frame {
     let engine_lock = get_or_init_engine();
     let engine_opt = engine_lock.read();
 
-    let engine = match engine_opt.as_ref() {
-        Some(e) => e,
-        None => return Frame::error("ERR Auto-index engine not initialized"),
+    let Some(engine) = engine_opt.as_ref() else {
+        return Frame::error("ERR Auto-index engine not initialized");
     };
 
     let threshold = min_access_per_day.unwrap_or(10);
@@ -349,9 +340,8 @@ pub async fn abtest_start(
     let engine_lock = get_or_init_engine();
     let engine_opt = engine_lock.read();
 
-    let engine = match engine_opt.as_ref() {
-        Some(e) => e,
-        None => return Frame::error("ERR Auto-index engine not initialized"),
+    let Some(engine) = engine_opt.as_ref() else {
+        return Frame::error("ERR Auto-index engine not initialized");
     };
 
     let pattern_str = String::from_utf8_lossy(pattern).to_string();
@@ -383,9 +373,8 @@ pub async fn abtest_complete(test_id: &Bytes) -> Frame {
     let engine_lock = get_or_init_engine();
     let engine_opt = engine_lock.read();
 
-    let engine = match engine_opt.as_ref() {
-        Some(e) => e,
-        None => return Frame::error("ERR Auto-index engine not initialized"),
+    let Some(engine) = engine_opt.as_ref() else {
+        return Frame::error("ERR Auto-index engine not initialized");
     };
 
     let id = String::from_utf8_lossy(test_id).to_string();
@@ -405,9 +394,8 @@ pub async fn has(pattern: &Bytes, index_type: &Bytes) -> Frame {
     let engine_lock = get_or_init_engine();
     let engine_opt = engine_lock.read();
 
-    let engine = match engine_opt.as_ref() {
-        Some(e) => e,
-        None => return Frame::error("ERR Auto-index engine not initialized"),
+    let Some(engine) = engine_opt.as_ref() else {
+        return Frame::error("ERR Auto-index engine not initialized");
     };
 
     let pattern_str = String::from_utf8_lossy(pattern).to_string();
@@ -431,9 +419,8 @@ pub async fn usage(pattern: &Bytes, index_type: &Bytes) -> Frame {
     let engine_lock = get_or_init_engine();
     let engine_opt = engine_lock.read();
 
-    let engine = match engine_opt.as_ref() {
-        Some(e) => e,
-        None => return Frame::error("ERR Auto-index engine not initialized"),
+    let Some(engine) = engine_opt.as_ref() else {
+        return Frame::error("ERR Auto-index engine not initialized");
     };
 
     let pattern_str = String::from_utf8_lossy(pattern).to_string();

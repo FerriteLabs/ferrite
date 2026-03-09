@@ -4,6 +4,8 @@
 
 /// AMQP protocol adapter for RabbitMQ-compatible message consumption
 pub mod amqp_adapter;
+/// Graceful degradation and memory backpressure
+pub mod backpressure;
 pub mod cluster_redirect;
 mod connection;
 /// Native connection pooler and multiplexer
@@ -20,8 +22,6 @@ pub mod memcached_protocol;
 pub mod proxy;
 /// Server-level rate limiting using token bucket algorithm
 pub mod rate_limiter;
-/// Graceful degradation and memory backpressure
-pub mod backpressure;
 /// Zero-config smart proxy with Ferrite capability injection
 pub mod smart_proxy;
 /// TLS support for encrypted connections

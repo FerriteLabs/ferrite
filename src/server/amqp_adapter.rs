@@ -236,7 +236,7 @@ impl AmqpAdapter {
         let name = queue.name.clone();
         self.queues.write().insert(name.clone(), queue);
         // Initialize message buffer for this queue
-        self.messages.write().entry(name).or_insert_with(Vec::new);
+        self.messages.write().entry(name).or_default();
         Ok(())
     }
 

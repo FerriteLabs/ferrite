@@ -43,13 +43,14 @@ pub fn proxy_command(subcommand: &str, args: &[String]) -> Frame {
 fn proxy_status() -> Frame {
     let proxy = get_proxy();
     let stats = proxy.stats();
-    let mut items = Vec::new();
-    items.push(bulk("clients_connected"));
-    items.push(Frame::Integer(i64::from(stats.clients_connected)));
-    items.push(bulk("uptime_secs"));
-    items.push(Frame::Integer(stats.uptime_secs as i64));
-    items.push(bulk("topology"));
-    items.push(bulk(stats.discovered_topology));
+    let items = vec![
+        bulk("clients_connected"),
+        Frame::Integer(i64::from(stats.clients_connected)),
+        bulk("uptime_secs"),
+        Frame::Integer(stats.uptime_secs as i64),
+        bulk("topology"),
+        bulk(stats.discovered_topology),
+    ];
     Frame::Array(Some(items))
 }
 
@@ -57,13 +58,14 @@ fn proxy_status() -> Frame {
 fn proxy_upstream() -> Frame {
     let proxy = get_proxy();
     let stats = proxy.stats();
-    let mut items = Vec::new();
-    items.push(bulk("upstream_addr"));
-    items.push(bulk("127.0.0.1:6379"));
-    items.push(bulk("topology"));
-    items.push(bulk(stats.discovered_topology));
-    items.push(bulk("latency_avg_us"));
-    items.push(Frame::Integer(stats.upstream_latency_avg_us as i64));
+    let items = vec![
+        bulk("upstream_addr"),
+        bulk("127.0.0.1:6379"),
+        bulk("topology"),
+        bulk(stats.discovered_topology),
+        bulk("latency_avg_us"),
+        Frame::Integer(stats.upstream_latency_avg_us as i64),
+    ];
     Frame::Array(Some(items))
 }
 
@@ -81,11 +83,12 @@ fn proxy_features(args: &[String]) -> Frame {
     if args.is_empty() {
         let proxy = get_proxy();
         let stats = proxy.stats();
-        let mut items = Vec::new();
-        items.push(bulk("commands_intercepted"));
-        items.push(Frame::Integer(stats.commands_intercepted as i64));
-        items.push(bulk("commands_forwarded"));
-        items.push(Frame::Integer(stats.commands_forwarded as i64));
+        let items = vec![
+            bulk("commands_intercepted"),
+            Frame::Integer(stats.commands_intercepted as i64),
+            bulk("commands_forwarded"),
+            Frame::Integer(stats.commands_forwarded as i64),
+        ];
         return Frame::Array(Some(items));
     }
 
@@ -201,7 +204,7 @@ fn proxy_stats() -> Frame {
 
 /// PROXY.HELP — return help text.
 fn proxy_help() -> Frame {
-    let help = vec![
+    let help = [
         "PROXY.STATUS - Show proxy status",
         "PROXY.UPSTREAM - Show upstream info and topology",
         "PROXY.DISCOVER - Trigger upstream topology discovery",

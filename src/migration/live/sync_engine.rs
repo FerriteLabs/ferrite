@@ -1,7 +1,6 @@
 //! Migration engine — orchestrates bulk sync, continuous replication,
 //! verification, cutover, and rollback.
 
-
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
@@ -274,6 +273,7 @@ impl MigrationEngine {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::unwrap_used)]
     use super::*;
 
     #[tokio::test]
