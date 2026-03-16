@@ -19,7 +19,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -42,7 +42,7 @@ jobs:
     name: Chaos & Stress Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -59,10 +59,10 @@ jobs:
     name: MSRV Verification
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install MSRV toolchain
-        uses: dtolnay/rust-toolchain@1.80
+        uses: dtolnay/rust-toolchain@1.100
 
       - uses: Swatinem/rust-cache@v2
         with:
@@ -76,7 +76,7 @@ jobs:
     name: Mutation Testing (ferrite-core)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -100,7 +100,7 @@ jobs:
 
       - name: Upload mutation report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mutation-report
           path: mutants-output/
