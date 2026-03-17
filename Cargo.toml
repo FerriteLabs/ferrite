@@ -13,6 +13,13 @@ members = [
     "crates/ferrite-enterprise",
     "crates/ferrite-plugins",
     "crates/ferrite-studio",
+    "crates/ferrite-mnemo",
+    "crates/ferrite-forge",
+    "crates/ferrite-concord",
+    "crates/ferrite-chronicle",
+    "crates/ferrite-lucidity",
+    "crates/ferrite-pangea",
+    "crates/ferrite-spike-bridge",
 ]
 resolver = "2"
 
@@ -152,6 +159,13 @@ ferrite-k8s = { path = "crates/ferrite-k8s" }
 ferrite-enterprise = { path = "crates/ferrite-enterprise" }
 ferrite-plugins = { path = "crates/ferrite-plugins" }
 ferrite-studio = { path = "crates/ferrite-studio" }
+ferrite-mnemo = { path = "crates/ferrite-mnemo" }
+ferrite-forge = { path = "crates/ferrite-forge" }
+ferrite-concord = { path = "crates/ferrite-concord" }
+ferrite-chronicle = { path = "crates/ferrite-chronicle" }
+ferrite-lucidity = { path = "crates/ferrite-lucidity" }
+ferrite-pangea = { path = "crates/ferrite-pangea" }
+ferrite-spike-bridge = { path = "crates/ferrite-spike-bridge" }
 
 # ── Async runtime ─────────────────────────────────────────────────────────────
 tokio = { version = "1", features = ["full"] }
@@ -212,6 +226,7 @@ object_store = { version = "0.11", features = ["aws", "azure", "gcp"] }
 mlua = { version = "0.10", features = ["lua54", "vendored", "serialize"] }
 argon2 = { version = "0.5" }
 chacha20poly1305 = { version = "0.10" }
+sha2 = "0.10"
 wasmtime = { version = "27" }
 ort = { version = "2.0.0-rc.11" }
 ndarray = { version = "0.16" }
@@ -273,6 +288,12 @@ ferrite-k8s = { workspace = true, optional = true }
 ferrite-enterprise = { workspace = true, optional = true }
 ferrite-plugins.workspace = true
 ferrite-studio = { workspace = true, optional = true }
+ferrite-concord.workspace = true
+ferrite-chronicle.workspace = true
+ferrite-lucidity.workspace = true
+ferrite-pangea.workspace = true
+ferrite-forge.workspace = true
+ferrite-mnemo.workspace = true
 
 # Core deps
 tokio.workspace = true
@@ -364,6 +385,7 @@ tls = ["rustls", "tokio-rustls", "rustls-pemfile"]
 cloud = ["ferrite-cloud", "ferrite-core/cloud"]
 crypto = ["ferrite-core/crypto"]
 cli = ["rustyline", "colored", "atty", "clap_complete"]
+forge-runtime = ["ferrite-forge/runtime"]
 all = ["default", "experimental", "scripting", "cloud", "crypto", "otel", "tui", "wasm", "onnx", "io-uring"]
 
 [[bin]]
@@ -394,6 +416,10 @@ required-features = ["cli"]
 name = "ferrite-wasm"
 path = "src/bin/ferrite_wasm/main.rs"
 required-features = ["wasm"]
+
+[[bin]]
+name = "ferrite-fn"
+path = "src/bin/ferrite_fn/main.rs"
 
 [[bench]]
 name = "throughput"
