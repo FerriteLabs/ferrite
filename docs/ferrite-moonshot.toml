@@ -1,0 +1,45 @@
+# Moonshot feature configuration
+# Add this section to your ferrite.toml
+
+[moonshots.forge]
+enabled = true
+require_signing = false
+max_module_size_bytes = 16777216  # 16 MiB
+calls_per_second = 1000.0
+burst_capacity = 100
+default_fuel = 1000000
+default_wall_time_ms = 50
+max_memory_bytes = 67108864  # 64 MiB
+
+[moonshots.mnemo]
+enabled = true
+max_records_per_tenant = 1000000
+max_bytes_per_tenant = 1073741824  # 1 GiB
+sweep_interval_seconds = 300
+default_importance = 0.5
+
+[moonshots.chronicle]
+enabled = true
+max_total_branches = 1000
+max_branch_age_seconds = 2592000  # 30 days
+retention_max_entries_per_key = 100
+retention_max_age_seconds = 604800  # 7 days
+
+[moonshots.lucidity]
+enabled = true
+checkpoint_interval_epochs = 100
+require_pq_signing = false
+max_proof_size = 65536
+
+[moonshots.concord]
+enabled = true   # Wave 3 — not GA yet
+gossip_interval_ms = 1000
+gossip_fan_out = 3
+max_crdt_metadata_bytes = 1048576  # 1 MiB
+dvv_compaction_threshold = 1000
+
+[moonshots.pangea]
+enabled = true   # Wave 3 — requires CXL hardware
+promote_threshold = 10
+demote_after_seconds = 60
+dram_pressure_threshold = 0.8
