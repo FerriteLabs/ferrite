@@ -1,0 +1,36 @@
+[package]
+name = "ferrite-forge"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+description = "Forge — WASM in-DB functions for Ferrite (ADR-019)"
+license.workspace = true
+repository.workspace = true
+readme = "README.md"
+keywords = ["wasm", "wasmtime", "stored-procedure", "ferrite", "forge"]
+categories = ["database", "wasm"]
+
+[lib]
+
+[lints]
+workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+parking_lot.workspace = true
+sha2.workspace = true
+bincode.workspace = true
+wasmtime = { workspace = true, optional = true }
+
+[features]
+default = []
+runtime = ["wasmtime"]
+
+[dev-dependencies]
+tokio-test.workspace = true
+wat = "1"
+ferrite-mnemo = { path = "../ferrite-mnemo" }
