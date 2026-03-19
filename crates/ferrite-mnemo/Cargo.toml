@@ -1,0 +1,29 @@
+[package]
+name = "ferrite-mnemo"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+description = "Mnemo — Agent Memory OS facade for Ferrite (ADR-018)"
+license.workspace = true
+repository.workspace = true
+readme = "README.md"
+keywords = ["agent", "memory", "llm", "ferrite", "mnemo"]
+categories = ["database"]
+
+[lib]
+
+[lints]
+workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+parking_lot.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tokio-test.workspace = true
