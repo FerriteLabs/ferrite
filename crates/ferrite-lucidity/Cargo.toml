@@ -1,0 +1,27 @@
+[package]
+name = "ferrite-lucidity"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+description = "Lucidity — Verifiable audit plane for Ferrite (ADR-020)"
+license.workspace = true
+repository.workspace = true
+keywords = ["audit", "merkle", "transparency", "ferrite"]
+categories = ["cryptography", "database"]
+
+[lib]
+
+[lints]
+workspace = true
+
+[dependencies]
+serde.workspace = true
+thiserror.workspace = true
+parking_lot.workspace = true
+sha2.workspace = true
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+rand.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
