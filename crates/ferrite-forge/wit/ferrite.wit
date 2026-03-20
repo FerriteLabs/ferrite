@@ -1,0 +1,28 @@
+package ferrite:fn@0.1.0;
+
+interface kv {
+    get: func(key: list<u8>) -> option<list<u8>>;
+    set: func(key: list<u8>, value: list<u8>) -> result<_, string>;
+    del: func(key: list<u8>) -> bool;
+    scan: func(prefix: list<u8>, limit: u32) -> list<tuple<list<u8>, list<u8>>>;
+    incr: func(key: list<u8>, delta: s64) -> result<s64, string>;
+    expire: func(key: list<u8>, ttl-ms: u64) -> result<bool, string>;
+    ttl: func(key: list<u8>) -> s64;
+    persist: func(key: list<u8>) -> result<bool, string>;
+}
+
+interface time {
+    now-ms: func() -> u64;
+}
+
+interface log {
+    info: func(msg: string);
+    warn: func(msg: string);
+}
+
+world function {
+    import kv;
+    import time;
+    import log;
+    export process: func(input: list<u8>) -> result<list<u8>, string>;
+}
