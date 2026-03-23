@@ -1,0 +1,21 @@
+[package]
+name = "ferrite-chronicle"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+description = "Chronicle — Branchable state for Ferrite (ADR-021)"
+license.workspace = true
+repository.workspace = true
+keywords = ["branch", "fork", "ferrite", "copy-on-write"]
+categories = ["database"]
+
+[lib]
+
+[lints]
+workspace = true
+
+[dependencies]
+serde.workspace = true
+thiserror.workspace = true
+parking_lot.workspace = true
