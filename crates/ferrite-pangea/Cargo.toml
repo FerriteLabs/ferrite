@@ -1,0 +1,24 @@
+[package]
+name = "ferrite-pangea"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+description = "Pangea — CXL Tier-0 memory abstraction for Ferrite (ADR-023)"
+license.workspace = true
+repository.workspace = true
+keywords = ["cxl", "memory", "tier", "ferrite"]
+categories = ["memory-management", "database"]
+
+[lib]
+
+[lints]
+workspace = true
+
+[dependencies]
+serde.workspace = true
+thiserror.workspace = true
+parking_lot.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
