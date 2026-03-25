@@ -1,0 +1,28 @@
+[package]
+name = "ferrite-spike-bridge"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+description = "Cross-crate integration tests proving the Ferrite spike crates compose"
+license.workspace = true
+repository.workspace = true
+keywords = ["ferrite", "integration"]
+categories = ["database"]
+
+[lib]
+
+[lints]
+workspace = true
+
+[dependencies]
+ferrite-chronicle = { path = "../ferrite-chronicle" }
+ferrite-concord = { path = "../ferrite-concord" }
+ferrite-forge = { path = "../ferrite-forge", features = ["runtime"] }
+ferrite-lucidity = { path = "../ferrite-lucidity" }
+ferrite-mnemo = { path = "../ferrite-mnemo" }
+ferrite-pangea = { path = "../ferrite-pangea" }
+parking_lot.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
