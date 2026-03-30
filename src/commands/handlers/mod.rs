@@ -206,6 +206,34 @@ pub mod classify;
 #[cfg(feature = "cloud")]
 pub mod mesh;
 
+// Handler modules — moonshot extensions
+pub mod chronicle;
+pub mod concord;
+pub mod forge;
+pub mod lucidity;
+pub mod mnemo;
+pub mod moonshot_config;
+pub mod moonshot_limits;
+pub mod pangea;
+
+/// Track mutation count for debounced persistence.
+/// Persists to Store every `PERSIST_BATCH_SIZE` mutations, not on every write.
+pub const PERSIST_BATCH_SIZE: u64 = 1; // Start at 1 for correctness; increase for perf
+
+/// Check if persistence should happen based on mutation count.
+/// Returns true if the counter has reached the batch threshold.
+#[allow(clippy::modulo_one)]
+pub fn should_persist(counter: &std::sync::atomic::AtomicU64) -> bool {
+    let count = counter.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    (count + 1) % PERSIST_BATCH_SIZE == 0
+}
+
+/// Helper to create a bulk Frame from any string-like value.
+#[inline]
+pub fn bulk(s: impl Into<String>) -> Frame {
+    Frame::Bulk(Some(Bytes::from(s.into())))
+}
+
 /// Context passed to all handler functions
 ///
 /// This struct provides access to all shared state needed by command handlers.
