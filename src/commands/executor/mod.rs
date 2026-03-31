@@ -2557,6 +2557,26 @@ impl CommandExecutor {
             Command::Replicate { .. } => {
                 Frame::error("ERR replication commands require the 'experimental' feature")
             }
+
+            // Concord CRDTs (experimental, ADR-020)
+            Command::Concord { subcommand, args } => {
+                handlers::concord::concord_command_with_store(&self.store, &subcommand, &args)
+            }
+
+            // Pangea NUMA-tiered allocator (experimental, ADR-023)
+            Command::Pangea { subcommand, args } => {
+                handlers::pangea::pangea_command_with_store(&self.store, &subcommand, &args)
+            }
+
+            // Forge WASM in-DB functions (experimental, ADR-019)
+            Command::Forge { subcommand, args } => {
+                handlers::forge::forge_command_with_store(&self.store, &subcommand, &args, db)
+            }
+
+            // Mnemo agent memory OS (experimental, ADR-018)
+            Command::Mnemo { subcommand, args } => {
+                handlers::mnemo::mnemo_command_with_store(&self.store, &subcommand, &args)
+            }
         }
     }
 }
