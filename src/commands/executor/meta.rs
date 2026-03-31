@@ -2436,6 +2436,57 @@ impl Command {
                 keys: vec![],
                 permission: Permission::Write,
             },
+            Command::Concord { subcommand, .. } => {
+                let permission = match subcommand.to_uppercase().as_str() {
+                    "GINC" | "GMERGE" | "PNINC" | "PNMERGE" | "SADD" | "SREM" | "SMERGE"
+                    | "LWWSET" | "LWWMERGE" | "MVSET" | "MVMERGE" | "ADDRULE" => {
+                        Permission::ReadWrite
+                    }
+                    _ => Permission::Read,
+                };
+                CommandMeta {
+                    name: Box::leak(format!("CON.{}", subcommand).into_boxed_str()),
+                    category: "experimental",
+                    keys: vec![],
+                    permission,
+                }
+            }
+            Command::Forge { subcommand, .. } => {
+                let permission = match subcommand.to_uppercase().as_str() {
+                    "LOAD" | "DROP" | "CALL" | "PROMOTE" => Permission::ReadWrite,
+                    _ => Permission::Read,
+                };
+                CommandMeta {
+                    name: Box::leak(format!("FN.{}", subcommand).into_boxed_str()),
+                    category: "experimental",
+                    keys: vec![],
+                    permission,
+                }
+            }
+            Command::Pangea { subcommand, .. } => {
+                let permission = match subcommand.to_uppercase().as_str() {
+                    "ALLOC" | "FREE" | "MIGRATE" | "POLICY" | "TIERPOLICY" => Permission::ReadWrite,
+                    _ => Permission::Read,
+                };
+                CommandMeta {
+                    name: Box::leak(format!("PNG.{}", subcommand).into_boxed_str()),
+                    category: "experimental",
+                    keys: vec![],
+                    permission,
+                }
+            }
+            Command::Mnemo { subcommand, .. } => {
+                let permission = match subcommand.to_uppercase().as_str() {
+                    "PUT" | "FORGET" | "SUMMARIZE" => Permission::ReadWrite,
+                    _ => Permission::Read,
+                };
+                CommandMeta {
+                    name: Box::leak(format!("MEM.{}", subcommand).into_boxed_str()),
+                    category: "experimental",
+                    keys: vec![],
+                    permission,
+                }
+            }
         }
     }
 }
