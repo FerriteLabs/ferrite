@@ -1157,11 +1157,57 @@ impl Handler {
             }),
             Command::FlushAll { .. } => Some(ReplicationCommand::FlushAll),
             Command::Select { db } => Some(ReplicationCommand::Select { db: *db }),
+
+            // Moonshot extension families — replicate mutating subcommands
+            Command::Concord { subcommand, args } => spike_replication_raw(
+                "CON",
+                subcommand,
+                args,
+                &[
+                    "GINC", "GMERGE", "PNINC", "PNMERGE", "SADD", "SREM", "SMERGE", "LWWSET",
+                    "LWWMERGE", "MVSET", "MVMERGE",
+                ],
+            ),
+            Command::Forge { subcommand, args } => {
+                spike_replication_raw("FN", subcommand, args, &["LOAD", "DROP", "CALL"])
+            }
+            Command::Pangea { subcommand, args } => {
+                spike_replication_raw("PNG", subcommand, args, &["ALLOC", "FREE", "MIGRATE"])
+            }
+            Command::Mnemo { subcommand, args } => {
+                spike_replication_raw("MEM", subcommand, args, &["PUT", "FORGET"])
+            }
+
             // Other commands are not replicated (read commands, admin, etc.)
             _ => None,
         }
     }
+}
 
+/// Build a Raw replication command for moonshot spike handlers.
+///
+/// Only mutating subcommands (listed in `mutating`) are replicated;
+/// read-only subcommands return `None`.
+fn spike_replication_raw(
+    family: &'static str,
+    subcommand: &str,
+    args: &[String],
+    mutating: &[&str],
+) -> Option<ReplicationCommand> {
+    let upper = subcommand.to_ascii_uppercase();
+    if !mutating.iter().any(|m| *m == upper) {
+        return None;
+    }
+    let mut cmd: Vec<Bytes> = Vec::with_capacity(2 + args.len());
+    cmd.push(Bytes::from_static(family.as_bytes()));
+    cmd.push(Bytes::from(upper));
+    for a in args {
+        cmd.push(Bytes::from(a.clone().into_bytes()));
+    }
+    Some(ReplicationCommand::Raw { command: cmd })
+}
+
+impl Handler {
     /// Handle AUTH command for user authentication
     async fn handle_auth(&mut self, username: Option<&str>, password: &str) -> Frame {
         let username = username.unwrap_or("default");
