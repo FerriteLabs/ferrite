@@ -1921,6 +1921,38 @@ pub enum Command {
         /// Arguments
         args: Vec<String>,
     },
+
+    /// CON subcommand [args...] - Concord CRDTs (experimental, ADR-020)
+    Concord {
+        /// Subcommand (GINC, GVAL, GMERGE, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+
+    /// FN subcommand [args...] - Forge WASM in-DB functions (experimental, ADR-019)
+    Forge {
+        /// Subcommand (LOAD, LIST, INFO, DROP, STATS, SAVE, LOAD_FROM_STORE, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+
+    /// PNG subcommand [args...] - Pangea NUMA-tiered allocator (experimental, ADR-023)
+    Pangea {
+        /// Subcommand (ALLOC, READ, FREE, STATS, TOPOLOGY, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
+
+    /// MEM subcommand [args...] - Mnemo Agent Memory OS (experimental, ADR-018)
+    Mnemo {
+        /// Subcommand (PUT, GET, RECALL, FORGET, STATS, HELP)
+        subcommand: String,
+        /// Arguments
+        args: Vec<String>,
+    },
 }
 
 impl Command {
@@ -3085,6 +3117,74 @@ impl Command {
                     args: replicate_args,
                 })
             }
+
+            // Concord CRDTs (experimental, ADR-020)
+            cmd if cmd.starts_with("CON.") => {
+                let subcommand = cmd.strip_prefix("CON.").unwrap_or("").to_string();
+                let con_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Concord {
+                    subcommand,
+                    args: con_args,
+                })
+            }
+            "CON" => Ok(Command::Concord {
+                subcommand: "HELP".to_string(),
+                args: vec![],
+            }),
+
+            // Forge WASM in-DB functions (experimental, ADR-019)
+            cmd if cmd.starts_with("FN.") => {
+                let subcommand = cmd.strip_prefix("FN.").unwrap_or("").to_string();
+                let fn_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Forge {
+                    subcommand,
+                    args: fn_args,
+                })
+            }
+            "FN" => Ok(Command::Forge {
+                subcommand: "HELP".to_string(),
+                args: vec![],
+            }),
+
+            // Pangea NUMA-tiered allocator (experimental, ADR-023)
+            cmd if cmd.starts_with("PNG.") => {
+                let subcommand = cmd.strip_prefix("PNG.").unwrap_or("").to_string();
+                let png_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Pangea {
+                    subcommand,
+                    args: png_args,
+                })
+            }
+            "PNG" => Ok(Command::Pangea {
+                subcommand: "HELP".to_string(),
+                args: vec![],
+            }),
+
+            // Mnemo Agent Memory OS (experimental, ADR-018)
+            cmd if cmd.starts_with("MEM.") => {
+                let subcommand = cmd.strip_prefix("MEM.").unwrap_or("").to_string();
+                let mem_args: Vec<String> = args
+                    .iter()
+                    .filter_map(|f| parsers::get_string(f).ok())
+                    .collect();
+                Ok(Command::Mnemo {
+                    subcommand,
+                    args: mem_args,
+                })
+            }
+            "MEM" => Ok(Command::Mnemo {
+                subcommand: "HELP".to_string(),
+                args: vec![],
+            }),
 
             // Time-indexed data versioning commands
             "VERSION" => {
