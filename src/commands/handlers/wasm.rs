@@ -283,7 +283,7 @@ pub async fn call_ro(name: &str, keys: &[Bytes], args: &[Bytes]) -> Frame {
 /// Handle WASM.LIST command
 pub async fn list(with_stats: bool) -> Frame {
     let registry = get_registry();
-    let mut functions = registry.list();
+    let functions = registry.list();
 
     // Also include functions from UDF registry
     #[cfg(feature = "wasm")]
@@ -449,7 +449,7 @@ pub async fn stats() -> Frame {
 
     let config = WasmConfig::default();
     let registry = get_registry();
-    let mut function_count = registry.list().len();
+    let function_count = registry.list().len();
 
     #[cfg(feature = "wasm")]
     let mut extra_stats = Vec::new();
@@ -472,7 +472,7 @@ pub async fn stats() -> Frame {
         }
     }
 
-    let mut result = vec![
+    let result = vec![
         Frame::bulk("wasm_enabled"),
         Frame::bulk(if config.enabled { "yes" } else { "no" }),
         Frame::bulk("loaded_functions"),
