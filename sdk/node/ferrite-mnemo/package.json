@@ -1,0 +1,36 @@
+{
+  "name": "ferrite-mnemo",
+  "version": "0.1.0-alpha.1",
+  "description": "Ferrite Mnemo — Agent Memory SDK for Node.js / TypeScript",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": ["ferrite", "memory", "agent", "llm", "redis", "langchain"],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FerriteLabs/ferrite",
+    "directory": "sdk/node/ferrite-mnemo"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "ioredis": "^5.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0",
+    "@types/node": "^20.0.0"
+  },
+  "peerDependencies": {
+    "langchain": ">=0.2.0"
+  },
+  "peerDependenciesMeta": {
+    "langchain": { "optional": true }
+  }
+}
