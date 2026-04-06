@@ -1,0 +1,17 @@
+{
+  "name": "ferrite-forge-function",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ferrite Forge serverless function (TypeScript)",
+  "type": "module",
+  "scripts": {
+    "build": "tsc && npx jco componentize dist/index.js -w ../../../crates/ferrite-forge/wit -o function.wasm",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@anthropic-ai/jco": "^1.0.0",
+    "@bytecodealliance/jco": "^1.8.0",
+    "@bytecodealliance/componentize-js": "^0.14.0",
+    "typescript": "^5.7.0"
+  }
+}
