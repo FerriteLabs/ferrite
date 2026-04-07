@@ -1,0 +1,11 @@
+[package]
+name = "ferrite-fn-json-patch"
+version = "0.1.0"
+edition = "2021"
+description = "RFC 6902 JSON Patch on KV-stored JSON — Ferrite Forge WASM module"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# wit-bindgen = "0.36"  # Uncomment when building with cargo-component

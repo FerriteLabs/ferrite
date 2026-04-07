@@ -1,0 +1,11 @@
+[package]
+name = "ferrite-fn-jwt-verify"
+version = "0.1.0"
+edition = "2021"
+description = "RFC 7519 JWT verification with KV-cached JWKS — Ferrite Forge WASM module"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# wit-bindgen = "0.36"  # Uncomment when building with cargo-component

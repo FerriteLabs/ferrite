@@ -1,0 +1,11 @@
+[package]
+name = "ferrite-fn-rate-limit"
+version = "0.1.0"
+edition = "2021"
+description = "Token-bucket rate limiter — Ferrite Forge WASM module"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# wit-bindgen = "0.36"  # Uncomment when building with cargo-component
