@@ -1,0 +1,179 @@
+name: Moonshot CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -Dwarnings -Amissing-docs
+
+# Cancel in-progress runs for the same PR/branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Detect changed moonshot crates ──────────────────────────────────────────
+  changes:
+    name: Detect Moonshot Changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      mnemo: ${{ steps.filter.outputs.mnemo }}
+      forge: ${{ steps.filter.outputs.forge }}
+      chronicle: ${{ steps.filter.outputs.chronicle }}
+      concord: ${{ steps.filter.outputs.concord }}
+      lucidity: ${{ steps.filter.outputs.lucidity }}
+      pangea: ${{ steps.filter.outputs.pangea }}
+      spike-bridge: ${{ steps.filter.outputs.spike-bridge }}
+      top-level: ${{ steps.filter.outputs.top-level }}
+      any-moonshot: ${{ steps.filter.outputs.any-moonshot }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            mnemo:
+              - 'crates/ferrite-mnemo/**'
+            forge:
+              - 'crates/ferrite-forge/**'
+            chronicle:
+              - 'crates/ferrite-chronicle/**'
+            concord:
+              - 'crates/ferrite-concord/**'
+            lucidity:
+              - 'crates/ferrite-lucidity/**'
+            pangea:
+              - 'crates/ferrite-pangea/**'
+            spike-bridge:
+              - 'crates/ferrite-spike-bridge/**'
+            top-level:
+              - 'src/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+            any-moonshot:
+              - 'crates/ferrite-mnemo/**'
+              - 'crates/ferrite-forge/**'
+              - 'crates/ferrite-chronicle/**'
+              - 'crates/ferrite-concord/**'
+              - 'crates/ferrite-lucidity/**'
+              - 'crates/ferrite-pangea/**'
+              - 'crates/ferrite-spike-bridge/**'
+
+  # ── Test changed moonshot crates ────────────────────────────────────────────
+  moonshot-test:
+    name: Moonshot Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: changes
+    if: needs.changes.outputs.any-moonshot == 'true' || needs.changes.outputs.top-level == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: moonshot-test
+
+      - name: Test ferrite-mnemo
+        if: needs.changes.outputs.mnemo == 'true' || needs.changes.outputs.top-level == 'true'
+        run: |
+          echo "::group::Test ferrite-mnemo"
+          cargo test -p ferrite-mnemo
+          echo "::endgroup::"
+
+      - name: Test ferrite-forge
+        if: needs.changes.outputs.forge == 'true' || needs.changes.outputs.top-level == 'true'
+        run: |
+          echo "::group::Test ferrite-forge"
+          cargo test -p ferrite-forge
+          echo "::endgroup::"
+
+      - name: Test ferrite-chronicle
+        if: needs.changes.outputs.chronicle == 'true' || needs.changes.outputs.top-level == 'true'
+        run: |
+          echo "::group::Test ferrite-chronicle"
+          cargo test -p ferrite-chronicle
+          echo "::endgroup::"
+
+      - name: Test ferrite-concord
+        if: needs.changes.outputs.concord == 'true' || needs.changes.outputs.top-level == 'true'
+        run: |
+          echo "::group::Test ferrite-concord"
+          cargo test -p ferrite-concord
+          echo "::endgroup::"
+
+      - name: Test ferrite-lucidity
+        if: needs.changes.outputs.lucidity == 'true' || needs.changes.outputs.top-level == 'true'
+        run: |
+          echo "::group::Test ferrite-lucidity"
+          cargo test -p ferrite-lucidity
+          echo "::endgroup::"
+
+      - name: Test ferrite-pangea
+        if: needs.changes.outputs.pangea == 'true' || needs.changes.outputs.top-level == 'true'
+        run: |
+          echo "::group::Test ferrite-pangea"
+          cargo test -p ferrite-pangea
+          echo "::endgroup::"
+
+      - name: Test ferrite-spike-bridge
+        if: needs.changes.outputs.spike-bridge == 'true' || needs.changes.outputs.top-level == 'true'
+        run: |
+          echo "::group::Test ferrite-spike-bridge"
+          cargo test -p ferrite-spike-bridge
+          echo "::endgroup::"
+
+      - name: Test Forge integration (forge-runtime)
+        if: needs.changes.outputs.forge == 'true' || needs.changes.outputs.top-level == 'true'
+        run: |
+          echo "::group::Test forge-runtime integration"
+          cargo test --lib --features forge-runtime
+          echo "::endgroup::"
+
+  # ── Clippy on changed moonshot crates ───────────────────────────────────────
+  moonshot-clippy:
+    name: Moonshot Clippy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: changes
+    if: needs.changes.outputs.any-moonshot == 'true' || needs.changes.outputs.top-level == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: moonshot-clippy
+
+      - name: Clippy ferrite-mnemo
+        if: needs.changes.outputs.mnemo == 'true' || needs.changes.outputs.top-level == 'true'
+        run: cargo clippy -p ferrite-mnemo -- -D warnings
+
+      - name: Clippy ferrite-forge
+        if: needs.changes.outputs.forge == 'true' || needs.changes.outputs.top-level == 'true'
+        run: cargo clippy -p ferrite-forge -- -D warnings
+
+      - name: Clippy ferrite-chronicle
+        if: needs.changes.outputs.chronicle == 'true' || needs.changes.outputs.top-level == 'true'
+        run: cargo clippy -p ferrite-chronicle -- -D warnings
+
+      - name: Clippy ferrite-concord
+        if: needs.changes.outputs.concord == 'true' || needs.changes.outputs.top-level == 'true'
+        run: cargo clippy -p ferrite-concord -- -D warnings
+
+      - name: Clippy ferrite-lucidity
+        if: needs.changes.outputs.lucidity == 'true' || needs.changes.outputs.top-level == 'true'
+        run: cargo clippy -p ferrite-lucidity -- -D warnings
+
+      - name: Clippy ferrite-pangea
+        if: needs.changes.outputs.pangea == 'true' || needs.changes.outputs.top-level == 'true'
+        run: cargo clippy -p ferrite-pangea -- -D warnings
+
+      - name: Clippy ferrite-spike-bridge
+        if: needs.changes.outputs.spike-bridge == 'true' || needs.changes.outputs.top-level == 'true'
+        run: cargo clippy -p ferrite-spike-bridge -- -D warnings

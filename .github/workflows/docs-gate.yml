@@ -1,0 +1,60 @@
+name: Docs Gate
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  docs-gate:
+    name: Moonshot Docs Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check moonshot docs exist for changed crates
+        continue-on-error: true
+        run: |
+          BASE_SHA=${{ github.event.pull_request.base.sha }}
+          CHANGED_FILES=$(git diff --name-only "$BASE_SHA" HEAD)
+          MOONSHOTS="mnemo forge chronicle concord lucidity pangea spike-bridge"
+          MISSING=()
+
+          for crate in $MOONSHOTS; do
+            if echo "$CHANGED_FILES" | grep -q "^crates/ferrite-${crate}/"; then
+              # Check for a corresponding docs file (phase roadmap or dedicated doc)
+              DOCS_FOUND=false
+              for doc_path in \
+                "docs/phases/m*-${crate}*" \
+                "docs/${crate}.md" \
+                "docs/${crate}/README.md" \
+                "crates/ferrite-${crate}/README.md"; do
+                if ls $doc_path 1>/dev/null 2>&1; then
+                  DOCS_FOUND=true
+                  break
+                fi
+              done
+
+              if [ "$DOCS_FOUND" = false ]; then
+                MISSING+=("ferrite-${crate}")
+              fi
+            fi
+          done
+
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "::warning::Missing documentation for changed moonshot crates: ${MISSING[*]}"
+            echo "Each moonshot crate should have a corresponding doc file (e.g. docs/phases/m*-<crate>*, docs/<crate>.md, or crates/ferrite-<crate>/README.md)."
+            exit 1
+          else
+            echo "✅ All changed moonshot crates have documentation."
+          fi
+
+      - name: Check CHANGELOG has Unreleased section
+        run: |
+          if ! grep -q '## \[Unreleased\]' CHANGELOG.md; then
+            echo "::error::CHANGELOG.md is missing an [Unreleased] section."
+            exit 1
+          fi
+          echo "✅ CHANGELOG.md has an [Unreleased] section."
