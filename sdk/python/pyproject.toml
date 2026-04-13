@@ -39,7 +39,7 @@ langchain = ["langchain-core>=0.1.0"]
 llamaindex = ["llama-index-core>=0.10.0"]
 openai = ["openai>=1.0.0"]
 embeddings = ["numpy>=1.24.0"]
-test = ["pytest>=7.0", "pytest-asyncio>=0.21", "pytest-mock>=3.10"]
+test = ["pytest>=7.0", "pytest-asyncio>=0.21", "pytest-mock>=3.15.1"]
 all = ["redis[hiredis]>=5.0.0", "langchain-core>=0.1.0", "openai>=1.0.0", "numpy>=1.24.0"]
 
 [project.urls]
