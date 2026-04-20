@@ -7,6 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-04-20
+
+*Moonshot Extensions — six new experimental crates, four new command families, and AI agent SDK integrations.*
+
+### Added
+
+- **ferrite-mnemo** (M1): Agent memory OS crate — schema, key layout, scoring, summarization, and telemetry for persistent AI agent state (`MEM.*` commands)
+- **ferrite-forge** (M2): WASM in-DB functions crate — execution engine, module signing, rate limiting, host interface, and WIT interface definition (`FN.*` commands)
+- **ferrite-lucidity** (M3): Verifiable audit log crate — binary Merkle accumulator, ZK disclosure circuits, ed25519 signing, post-quantum support, and key rotation (`LUC.*` commands stub)
+- **ferrite-chronicle** (M4): Branchable state crate — HAMT-backed branch registry, overlay reader, and GC (`CHR.*` commands stub)
+- **ferrite-concord** (M5): Multi-master CRDT crate — G-counter, PN-counter, OR-Set, LWW/MV registers, gossip protocol, anti-entropy, delta sync, DVV causality, and TLA+ formal specs (`CON.*` commands)
+- **ferrite-pangea** (M6): CXL tier-0 memory management crate — NUMA-aware allocator, policy engine, cache eviction, and topology management (`PNG.*` commands)
+- **ferrite-spike-bridge**: Cross-moonshot integration crate with chronicle+lucidity, mnemo+forge, and pangea+concord integration test suites
+- `MEM.*` command family: PUT, GET, RECALL, FORGET, SUMMARIZE, STATS, SAVE, LOAD, HELP
+- `FN.*` command family: LOAD, DROP, CALL, CALL_RO, LIST, STATS, SHOW, VERSIONS, PROMOTE, BUDGET, SAVE, LOAD_FROM_STORE, HELP
+- `CON.*` command family: GINC, GVAL, GMERGE, PNINC, PNVAL, PNMERGE, SADD, SREM, SMEMBERS, SMERGE, LWWSET, LWWGET, LWWMERGE, MVSET, MVGET, MVMERGE, DVV, CLOCK, PEERS, SYNC, ENTROPY, ROUTE, ADDRULE, RULES
+- `PNG.*` command family: ALLOC, FREE, MIGRATE, POLICY, TIERPOLICY, STATS, TOPOLOGY, HELP
+- Replication support for all mutating moonshot subcommands via `spike_replication_raw`
+- `ferrite-fn` binary for standalone Forge WASM function runtime
+- Node.js Mnemo client SDK (`sdk/node/ferrite-mnemo`) with LangChain memory adapter
+- Python Mnemo client SDK (`sdk/python/ferrite_mnemo`) with LangChain, LlamaIndex, and Letta bindings
+- Multi-language Forge function starter templates (Rust, Go, TypeScript)
+- Agent-memory integration examples for LangGraph, LlamaIndex, and Letta
+- Forge function examples: `jwt_verify`, `rate_limit`, `json_patch`, `hot_keys`, `custom_merge`
+- Moonshot integration test harness (`tests/harness/`) with cross-crate smoke tests
+- ADR-017 through ADR-023 covering all moonshot architecture decisions
+- Moonshot phase roadmaps M1–M6 with wave gate criteria (`docs/phases/`)
+- Design partner program documentation and LOI/report templates
+- CXL cloud provider integration guides (AWS, Azure, GCP)
+- AI Act compliance mapping
+- Observability guide and moonshot docs pipeline specification
+- Moonshot CI workflow (`.github/workflows/moonshot-ci.yml`)
+- Docs gate action (`.github/workflows/docs-gate.yml`)
+- `forge-runtime` feature flag for opt-in Forge WASM runtime
+
+### Changed
+
+- `publish.yml` updated to include all 7 new moonshot crates in dependency order
+- `CommandExecutor` now routes `Concord`, `Forge`, `Pangea`, and `Mnemo` command variants
+- `CommandMeta` extended with entries for all moonshot command families
+- Command parser extended to dispatch moonshot command families
+- Handler module exposes shared `bulk()` helper and `should_persist()` debounce utility
+- Workspace version bumped to 0.4.0
+
 ## [0.3.0] - 2026-03-09
 
 *Observability, Operations & AI Integrations — see [ROADMAP.md](ROADMAP.md) for details.*
@@ -86,19 +130,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Resolved race condition in cluster node discovery
 - Resolved compatibility tracker initialization race
 - Fixed edge case in RESP3 parser for nested arrays
-
-## [0.4.0] — Planned
-
-*Target: Enterprise & Production Hardening — see [ROADMAP.md](ROADMAP.md) for details.*
-
-### Added
-- Cluster Mode graduation to Stable (automated failover testing)
-- Vector Search end-to-end server wiring and benchmarks
-- OpenTelemetry graduation to Stable
-- CDC / Event Streaming graduation to Stable
-- Full-Text Search graduation to Stable
-- Kubernetes Operator CRD scaffolding
-- Integration tests for extension crates (search, AI, streaming, cloud)
 
 ## [0.1.0] - 2025-01-23
 
