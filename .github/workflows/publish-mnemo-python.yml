@@ -1,0 +1,73 @@
+# Publish ferrite-mnemo Python SDK to PyPI
+#
+# Triggered on tag push matching 'sdk-mnemo-python-v*' or manually.
+# Prerequisites:
+#   - Uses PyPI Trusted Publisher (OIDC) — no token needed if configured on PyPI
+#   - Fallback: PYPI_TOKEN secret for manual token auth
+
+name: Publish ferrite-mnemo (Python)
+
+on:
+  push:
+    tags:
+      - 'sdk-mnemo-python-v*'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (build without uploading)'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build:
+    name: Build distribution
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdk/python
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install build tools
+        run: pip install build twine
+
+      - name: Build sdist and wheel
+        run: python -m build ferrite_mnemo/
+
+      - name: Check distribution
+        run: twine check dist/*
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: sdk/python/dist/
+
+  publish:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    if: ${{ !inputs.dry_run }}
+    environment:
+      name: pypi
+      url: https://pypi.org/project/ferrite-mnemo/
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish via Trusted Publisher (OIDC)
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/

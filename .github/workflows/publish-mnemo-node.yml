@@ -1,0 +1,56 @@
+# Publish ferrite-mnemo Node.js SDK to npm
+#
+# Triggered on tag push matching 'sdk-mnemo-node-v*' or manually.
+# Prerequisites:
+#   - NPM_TOKEN secret must be set in repo settings
+
+name: Publish ferrite-mnemo (Node.js)
+
+on:
+  push:
+    tags:
+      - 'sdk-mnemo-node-v*'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (pack without publishing)'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sdk/node/ferrite-mnemo
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+          cache-dependency-path: sdk/node/ferrite-mnemo/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Pack (dry run)
+        if: ${{ inputs.dry_run }}
+        run: npm pack --dry-run
+
+      - name: Publish
+        if: ${{ !inputs.dry_run }}
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

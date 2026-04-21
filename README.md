@@ -64,7 +64,7 @@ redis-cli INFO
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ferritelabs/ferrite/main/scripts/install.sh | bash
-# or: curl -fsSL https://raw.githubusercontent.com/ferritelabs/ferrite/main/scripts/install.sh | bash -s -- v0.3.0
+# or: curl -fsSL https://raw.githubusercontent.com/ferritelabs/ferrite/main/scripts/install.sh | bash -s -- v0.4.0
 ```
 
 The installer writes a default config to `~/.config/ferrite/ferrite.toml` (unless
@@ -231,6 +231,55 @@ Run custom WASM modules at the data layer with near-native performance:
 ```bash
 WASM.LOAD validate_user /path/to/validate.wasm
 TRIGGER.CREATE validate ON SET users:* WASM validate_user
+```
+
+### Moonshot Extensions 🔬
+
+Six experimental crates pushing the frontier of what a key-value store can do. Require `--features experimental`.
+
+#### Mnemo — Agent Memory OS (`MEM.*`)
+Persistent, queryable memory for AI agents. Drop-in backend for LangChain, LlamaIndex, and Letta:
+```bash
+MEM.PUT agent1 session1 episodic "User asked about Ferrite pricing"
+MEM.RECALL agent1 LIMIT 10 KIND episodic
+MEM.SUMMARIZE agent1 STRATEGY session
+```
+
+#### Forge — WASM In-DB Functions (`FN.*`)
+Load and call sandboxed WASM functions directly at the data layer:
+```bash
+FN.LOAD jwt_verify <hex_bytes>
+FN.CALL jwt_verify mykey <token>
+FN.BUDGET 100 1000   # rate/s, burst capacity
+```
+
+#### Concord — Multi-Master CRDTs (`CON.*`)
+Conflict-free replicated data types for geo-distributed deployments:
+```bash
+CON.GINC my_counter replica1 1     # G-counter increment
+CON.SADD my_set replica1 member    # OR-Set add
+CON.LWWSET my_reg value 1714000000 replica1  # LWW register
+```
+
+#### Chronicle — Branchable State (`CHR.*`)
+Git-style branching and point-in-time restore for any key namespace:
+```bash
+CHR.BRANCH feature-test FROM main
+CHR.RESTORE main AS OF -1h
+```
+
+#### Lucidity — Verifiable Audit Log (`LUC.*`)
+Tamper-evident audit trail with Merkle proofs and ZK disclosure circuits:
+```bash
+LUC.APPEND user:42 '{"action":"login","ip":"1.2.3.4"}'
+LUC.PROOF user:42 <leaf_index>
+```
+
+#### Pangea — CXL Tier-0 Memory (`PNG.*`)
+NUMA-aware allocator targeting CXL memory expansion hardware:
+```bash
+PNG.ALLOC hot_region 1073741824   # 1 GiB CXL allocation
+PNG.TIERPOLICY hot_region latency
 ```
 
 ### Multi-Model Database 🔬
@@ -741,7 +790,7 @@ Features:
 
 ## Crate Architecture
 
-Ferrite is organized as a Cargo workspace with 12 independent crates:
+Ferrite is organized as a Cargo workspace with 19 independent crates:
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
@@ -762,10 +811,15 @@ Ferrite is organized as a Cargo workspace with 12 independent crates:
 │ · transaction/   │ │ · ferrite-doc     │ │ · ferrite-plugins        │
 │ · auth/          │ │ · ferrite-stream  │ │                          │
 │ · tiering/       │ │                   │ │                          │
-│ · metrics/       │ │                   │ │                          │
-│ · observability/ │ │                   │ │                          │
-│ · runtime/       │ │                   │ │                          │
-└──────────────────┘ └───────────────────┘ └──────────────────────────┘
+│ · metrics/       │ │  Moonshot Crates  │ │                          │
+│ · observability/ │ │  (experimental)   │ │                          │
+│ · runtime/       │ │ · ferrite-mnemo   │ │                          │
+└──────────────────┘ │ · ferrite-forge   │ └──────────────────────────┘
+                     │ · ferrite-lucidity│
+                     │ · ferrite-chronicle│
+                     │ · ferrite-concord │
+                     │ · ferrite-pangea  │
+                     └───────────────────┘
 
 Key design rule: Extension crates have ZERO dependencies on ferrite-core
 or each other. Only the top-level crate integrates them.
