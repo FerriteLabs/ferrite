@@ -1188,7 +1188,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "argon2",
@@ -1238,7 +1238,7 @@ dependencies = [
  "metrics-exporter-prometheus",
  "mlua",
  "ndarray 0.16.1",
- "nix 0.31.2",
+ "nix 0.29.0",
  "num_cpus",
  "object_store",
  "opentelemetry",
@@ -1276,7 +1276,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-ai"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1305,7 +1305,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-chronicle"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "parking_lot",
  "serde",
@@ -1314,7 +1314,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-cloud"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1340,7 +1340,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-concord"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -1350,7 +1350,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-core"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "argon2",
@@ -1410,7 +1410,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-document"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1434,7 +1434,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-enterprise"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1458,7 +1458,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-forge"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "bincode",
  "ferrite-mnemo",
@@ -1475,7 +1475,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-graph"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1498,7 +1498,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-k8s"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1521,7 +1521,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-lucidity"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "ed25519-dalek",
  "parking_lot",
@@ -1534,7 +1534,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-mnemo"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "chrono",
  "parking_lot",
@@ -1548,7 +1548,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-pangea"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "parking_lot",
  "serde",
@@ -1558,7 +1558,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-plugins"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1586,7 +1586,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-search"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1610,7 +1610,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-spike-bridge"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "ferrite-chronicle",
  "ferrite-concord",
@@ -1626,7 +1626,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-streaming"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1654,7 +1654,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-studio"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "argon2",
@@ -1680,7 +1680,7 @@ dependencies = [
 
 [[package]]
 name = "ferrite-timeseries"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2891,6 +2891,18 @@ dependencies = [
  "bitflags 2.10.0",
  "cfg-if",
  "cfg_aliases 0.1.1",
+ "libc",
+]
+
+[[package]]
+name = "nix"
+version = "0.29.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "71e2746dc3a24dd78b3cfcb7be93368c6de9963d30f43a6a73998a9cf4b17b46"
+dependencies = [
+ "bitflags 2.10.0",
+ "cfg-if",
+ "cfg_aliases 0.2.1",
  "libc",
 ]
 

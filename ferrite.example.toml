@@ -64,11 +64,13 @@ max_memory = "1GB"
 #          volatile-random, volatile-ttl
 eviction_policy = "noeviction"
 
-# Maximum key size in bytes.
-# max_key_size = 512
+# Maximum key size in bytes (default: 512 bytes).
+# Prevents memory exhaustion from oversized keys.
+max_key_size = 512
 
-# Maximum value size in bytes.
-# max_value_size = 536870912
+# Maximum value size in bytes (default: 512MB).
+# Prevents memory exhaustion from oversized values.
+max_value_size = 536870912
 
 # ─── Persistence ─────────────────────────────────────────────────────────
 
