@@ -114,7 +114,7 @@ Metrics OK: 127.0.0.1:9090
 Memory OK: 15832MB available
 Disk space OK: 142GB available on ./data
 Ferrite version: 0.1.0
-Rust compiler: rustc 1.88.0 (e7e1dc158 2025-06-04)
+Rust compiler: rustc 1.80.0 (051478957 2024-07-21)
 Doctor checks passed
 ```
 

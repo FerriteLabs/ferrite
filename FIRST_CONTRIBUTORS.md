@@ -48,7 +48,7 @@ RUST_LOG=ferrite=debug cargo run          # Run server with debug logs
 
 ## 2. Architecture Overview
 
-Ferrite is organized as a Cargo workspace with 12 crates under `crates/` plus a top-level binary crate. The key design rule is a strict dependency DAG — no circular dependencies, and extension crates never depend on each other.
+Ferrite is organized as a Cargo workspace with 19 crates under `crates/` plus a top-level binary crate. The key design rule is a strict dependency DAG — no circular dependencies, and extension crates never depend on each other.
 
 ### Crate Dependency Diagram
 

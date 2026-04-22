@@ -43,7 +43,7 @@ cargo check -p ferrite-search
 
 ## Architecture Overview
 
-This is a **Cargo workspace** with 12 crates under `crates/` plus the top-level binary crate.
+This is a **Cargo workspace** with 19 crates under `crates/` plus the top-level binary crate.
 
 ```
 ferrite/                          ← Workspace root + top-level binary crate
