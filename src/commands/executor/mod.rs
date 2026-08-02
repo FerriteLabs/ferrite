@@ -25,16 +25,24 @@
 //! 5. Add unit and integration tests.
 
 mod advanced_ops;
+mod cdc_ops;
 mod cluster_ops;
+mod crdt_ops;
+mod federation_ops;
+mod geo_ops;
 mod key_ops;
 mod meta;
+mod search_ops;
 mod server_ops;
+mod stream_ops;
 mod string_ops;
+mod temporal_ops;
 #[cfg(feature = "experimental")]
 mod tenant_ops;
 #[cfg(test)]
 mod tests;
 mod tiering_ops;
+mod trigger_ops_extracted;
 
 use std::sync::Arc;
 
