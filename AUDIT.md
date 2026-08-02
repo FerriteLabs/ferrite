@@ -50,7 +50,7 @@ All six SRP refactoring items completed and committed:
 | SRP-02 | `d103011` | Split blocking.rs into blocking/{list,stream,sorted_set}.rs |
 | SRP-03 | `b382ae0`, `dc2b40c` | Extract backup codec.rs, then add the private BackupCodec actor |
 | SRP-04 | `557ac05` | Extract 6 parser submodules from advanced.rs + 1 from cluster.rs |
-| SRP-05 | `1faf2b0` | Delegate Config::set_param to leaf config struct owners |
+| SRP-05 | `1faf2b0`, `a91c123` | Delegate Config::set_param to leaf config struct owners and add table-driven contract coverage |
 | SRP-06 | `d957625`, `9265f05` | Extract AlertManager and ProbeRegistry, then compile and extend their characterization tests |
 
 All commits pass: `cargo fmt --all --check`, `cargo clippy --workspace --all-features -- -D warnings`, `cargo test --workspace --all-features --quiet`.
