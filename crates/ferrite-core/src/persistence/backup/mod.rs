@@ -7,6 +7,7 @@
 //! - Point-in-time recovery
 //! - Progress tracking for large backups
 
+mod codec;
 mod manager;
 mod storage;
 
