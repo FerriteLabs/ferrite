@@ -597,6 +597,193 @@ pub struct GlobalObsStatsSnapshot {
 ///
 /// Coordinates session-based tracing, slow query detection, anomaly detection,
 /// alert evaluation, probe management, and metric export through a single API.
+
+/// Private alert rule evaluation engine.
+///
+/// Owns the alert rule state, cooldown tracking, and condition evaluation.
+struct AlertManager {
+    rules: RwLock<Vec<AlertRule>>,
+}
+
+impl AlertManager {
+    fn new() -> Self {
+        Self {
+            rules: RwLock::new(Vec::new()),
+        }
+    }
+
+    fn add_rule(&self, mut rule: AlertRule) -> String {
+        if rule.id.is_empty() {
+            rule.id = Uuid::new_v4().to_string();
+        }
+        let id = rule.id.clone();
+        self.rules.write().push(rule);
+        id
+    }
+
+    fn remove_rule(&self, id: &str) -> bool {
+        let mut rules = self.rules.write();
+        let before = rules.len();
+        rules.retain(|r| r.id != id);
+        rules.len() < before
+    }
+
+    fn check(
+        &self,
+        global_stats: &GlobalObsStats,
+        sessions: &RwLock<HashMap<String, ObserveSession>>,
+    ) -> Vec<FiredAlert> {
+        let now = now_epoch_secs();
+        let total_cmds = global_stats.total_commands.load(Ordering::Relaxed);
+        let total_errs = global_stats.total_errors.load(Ordering::Relaxed);
+        let total_slow = global_stats.total_slow_queries.load(Ordering::Relaxed);
+        let total_lat = global_stats.total_latency_us.load(Ordering::Relaxed);
+
+        let first = global_stats.first_command_at.load(Ordering::Relaxed);
+        let last = global_stats.last_command_at.load(Ordering::Relaxed);
+        let elapsed_secs = if last > first { last - first } else { 1 };
+        let elapsed_min = elapsed_secs as f64 / 60.0;
+
+        let mut fired = Vec::new();
+        let mut rules = self.rules.write();
+
+        for rule in rules.iter_mut() {
+            if let Some(last_fired) = rule.last_fired {
+                if now.saturating_sub(last_fired) < rule.cooldown_secs {
+                    continue;
+                }
+            }
+
+            let (should_fire, metric_value, message) = match &rule.condition {
+                AlertCondition::SlowQueryRate { threshold_per_min } => {
+                    let rate = total_slow as f64 / elapsed_min.max(0.01);
+                    (
+                        rate > *threshold_per_min,
+                        rate,
+                        format!("Slow query rate {:.1}/min exceeds {:.1}/min", rate, threshold_per_min),
+                    )
+                }
+                AlertCondition::LatencyP99Above { threshold_us } => {
+                    let avg = if total_cmds > 0 {
+                        total_lat / total_cmds
+                    } else {
+                        0
+                    };
+                    (
+                        avg > *threshold_us,
+                        avg as f64,
+                        format!("Average latency {}µs exceeds {}µs threshold", avg, threshold_us),
+                    )
+                }
+                AlertCondition::ErrorRateAbove { threshold_pct } => {
+                    let rate = if total_cmds > 0 {
+                        total_errs as f64 / total_cmds as f64 * 100.0
+                    } else {
+                        0.0
+                    };
+                    (
+                        rate > *threshold_pct,
+                        rate,
+                        format!("Error rate {:.2}% exceeds {:.2}%", rate, threshold_pct),
+                    )
+                }
+                AlertCondition::ThroughputBelow { threshold_ops_sec } => {
+                    let ops = total_cmds as f64 / elapsed_secs.max(1) as f64;
+                    (
+                        ops < *threshold_ops_sec && total_cmds > 0,
+                        ops,
+                        format!("Throughput {:.1} ops/s below {:.1} ops/s", ops, threshold_ops_sec),
+                    )
+                }
+                AlertCondition::AnomalyDetected { z_score_threshold } => {
+                    let sess = sessions.read();
+                    let max_z = sess
+                        .values()
+                        .flat_map(|s| s.anomalies.iter())
+                        .map(|a| a.z_score)
+                        .fold(0.0_f64, f64::max);
+                    (
+                        max_z > *z_score_threshold,
+                        max_z,
+                        format!("Anomaly z-score {:.2} exceeds {:.2}", max_z, z_score_threshold),
+                    )
+                }
+            };
+
+            if should_fire {
+                rule.last_fired = Some(now);
+                fired.push(FiredAlert {
+                    rule_id: rule.id.clone(),
+                    rule_name: rule.name.clone(),
+                    severity: rule.severity.clone(),
+                    message,
+                    timestamp: now,
+                    metric_value,
+                });
+            }
+        }
+
+        fired
+    }
+}
+
+/// Private probe lifecycle registry.
+///
+/// Owns probe registration state, enforces eBPF constraints, and manages
+/// probe lifecycle.
+struct ProbeRegistry {
+    probes: RwLock<Vec<ProbeRegistration>>,
+}
+
+impl ProbeRegistry {
+    fn new() -> Self {
+        Self {
+            probes: RwLock::new(Vec::new()),
+        }
+    }
+
+    fn register(
+        &self,
+        spec: ProbeSpec,
+        config: &UnifiedObserverConfig,
+    ) -> Result<String, ObserveError> {
+        if !config.enabled {
+            return Err(ObserveError::Disabled);
+        }
+        if !config.ebpf_enabled {
+            if matches!(
+                spec.probe_type,
+                ProbeType::StorageIO | ProbeType::NetworkIO | ProbeType::MemoryAllocation
+            ) {
+                return Err(ObserveError::ProbeError(
+                    "eBPF probes require ebpf_enabled=true (Linux + root)".to_string(),
+                ));
+            }
+        }
+
+        let id = Uuid::new_v4().to_string();
+        let reg = ProbeRegistration {
+            id: id.clone(),
+            spec,
+            registered_at: now_epoch_secs(),
+            active: true,
+        };
+        self.probes.write().push(reg);
+        Ok(id)
+    }
+
+    fn unregister(&self, id: &str) -> bool {
+        let mut probes = self.probes.write();
+        let before = probes.len();
+        probes.retain(|p| p.id != id);
+        probes.len() < before
+    }
+
+    fn count(&self) -> usize {
+        self.probes.read().len()
+    }
+}
+
 pub struct UnifiedObserver {
     /// Observer configuration.
     config: UnifiedObserverConfig,
@@ -604,10 +791,10 @@ pub struct UnifiedObserver {
     sessions: RwLock<HashMap<String, ObserveSession>>,
     /// Global counters shared across all sessions.
     global_stats: GlobalObsStats,
-    /// User-defined alert rules.
-    alert_rules: RwLock<Vec<AlertRule>>,
-    /// Registered probes.
-    active_probes: RwLock<Vec<ProbeRegistration>>,
+    /// Alert rule evaluation engine.
+    alerts: AlertManager,
+    /// Probe lifecycle registry.
+    probes: ProbeRegistry,
 }
 
 impl UnifiedObserver {
@@ -617,8 +804,8 @@ impl UnifiedObserver {
             config,
             sessions: RwLock::new(HashMap::new()),
             global_stats: GlobalObsStats::default(),
-            alert_rules: RwLock::new(Vec::new()),
-            active_probes: RwLock::new(Vec::new()),
+            alerts: AlertManager::new(),
+            probes: ProbeRegistry::new(),
         }
     }
 
@@ -844,155 +1031,33 @@ impl UnifiedObserver {
     }
 
     /// Add an alert rule. Returns the rule id.
-    pub fn add_alert_rule(&self, mut rule: AlertRule) -> String {
-        if rule.id.is_empty() {
-            rule.id = Uuid::new_v4().to_string();
-        }
-        let id = rule.id.clone();
-        self.alert_rules.write().push(rule);
-        id
+    pub fn add_alert_rule(&self, rule: AlertRule) -> String {
+        self.alerts.add_rule(rule)
     }
 
     /// Remove an alert rule by id. Returns `true` if found.
     pub fn remove_alert_rule(&self, id: &str) -> bool {
-        let mut rules = self.alert_rules.write();
-        let before = rules.len();
-        rules.retain(|r| r.id != id);
-        rules.len() < before
+        self.alerts.remove_rule(id)
     }
 
     /// Evaluate all alert rules against current metrics and return any that fire.
     pub fn check_alerts(&self) -> Vec<FiredAlert> {
-        let now = now_epoch_secs();
-        let total_cmds = self.global_stats.total_commands.load(Ordering::Relaxed);
-        let total_errs = self.global_stats.total_errors.load(Ordering::Relaxed);
-        let total_slow = self.global_stats.total_slow_queries.load(Ordering::Relaxed);
-        let total_lat = self.global_stats.total_latency_us.load(Ordering::Relaxed);
-
-        let first = self.global_stats.first_command_at.load(Ordering::Relaxed);
-        let last = self.global_stats.last_command_at.load(Ordering::Relaxed);
-        let elapsed_secs = if last > first { last - first } else { 1 };
-        let elapsed_min = elapsed_secs as f64 / 60.0;
-
-        let mut fired = Vec::new();
-        let mut rules = self.alert_rules.write();
-
-        for rule in rules.iter_mut() {
-            // Cooldown check
-            if let Some(last_fired) = rule.last_fired {
-                if now.saturating_sub(last_fired) < rule.cooldown_secs {
-                    continue;
-                }
-            }
-
-            let (should_fire, metric_value, message) = match &rule.condition {
-                AlertCondition::SlowQueryRate { threshold_per_min } => {
-                    let rate = total_slow as f64 / elapsed_min.max(0.01);
-                    (
-                        rate > *threshold_per_min,
-                        rate,
-                        format!("Slow query rate {:.1}/min exceeds {:.1}/min", rate, threshold_per_min),
-                    )
-                }
-                AlertCondition::LatencyP99Above { threshold_us } => {
-                    // Approximate from global average (sessions have real histograms)
-                    let avg = if total_cmds > 0 {
-                        total_lat / total_cmds
-                    } else {
-                        0
-                    };
-                    (
-                        avg > *threshold_us,
-                        avg as f64,
-                        format!("Average latency {}µs exceeds {}µs threshold", avg, threshold_us),
-                    )
-                }
-                AlertCondition::ErrorRateAbove { threshold_pct } => {
-                    let rate = if total_cmds > 0 {
-                        total_errs as f64 / total_cmds as f64 * 100.0
-                    } else {
-                        0.0
-                    };
-                    (
-                        rate > *threshold_pct,
-                        rate,
-                        format!("Error rate {:.2}% exceeds {:.2}%", rate, threshold_pct),
-                    )
-                }
-                AlertCondition::ThroughputBelow { threshold_ops_sec } => {
-                    let ops = total_cmds as f64 / elapsed_secs.max(1) as f64;
-                    (
-                        ops < *threshold_ops_sec && total_cmds > 0,
-                        ops,
-                        format!("Throughput {:.1} ops/s below {:.1} ops/s", ops, threshold_ops_sec),
-                    )
-                }
-                AlertCondition::AnomalyDetected { z_score_threshold } => {
-                    let sessions = self.sessions.read();
-                    let max_z = sessions
-                        .values()
-                        .flat_map(|s| s.anomalies.iter())
-                        .map(|a| a.z_score)
-                        .fold(0.0_f64, f64::max);
-                    (
-                        max_z > *z_score_threshold,
-                        max_z,
-                        format!("Anomaly z-score {:.2} exceeds {:.2}", max_z, z_score_threshold),
-                    )
-                }
-            };
-
-            if should_fire {
-                rule.last_fired = Some(now);
-                fired.push(FiredAlert {
-                    rule_id: rule.id.clone(),
-                    rule_name: rule.name.clone(),
-                    severity: rule.severity.clone(),
-                    message,
-                    timestamp: now,
-                    metric_value,
-                });
-            }
-        }
-
-        fired
+        self.alerts.check(&self.global_stats, &self.sessions)
     }
 
-    /// Register a new probe. Returns the probe id.
+        /// Register a new probe. Returns the probe id.
     pub fn register_probe(&self, spec: ProbeSpec) -> Result<String, ObserveError> {
-        if !self.config.enabled {
-            return Err(ObserveError::Disabled);
-        }
-        if !self.config.ebpf_enabled {
-            if matches!(spec.probe_type, ProbeType::StorageIO | ProbeType::NetworkIO | ProbeType::MemoryAllocation) {
-                return Err(ObserveError::ProbeError(
-                    "eBPF probes require ebpf_enabled=true (Linux + root)".to_string(),
-                ));
-            }
-        }
-
-        let id = Uuid::new_v4().to_string();
-        let reg = ProbeRegistration {
-            id: id.clone(),
-            spec,
-            registered_at: now_epoch_secs(),
-            active: true,
-        };
-        self.active_probes.write().push(reg);
-        Ok(id)
+        self.probes.register(spec, &self.config)
     }
 
-    /// Unregister a probe by id. Returns `true` if found.
+        /// Unregister a probe by id. Returns `true` if found.
     pub fn unregister_probe(&self, id: &str) -> bool {
-        let mut probes = self.active_probes.write();
-        let before = probes.len();
-        probes.retain(|p| p.id != id);
-        probes.len() < before
+        self.probes.unregister(id)
     }
 
     /// Number of currently registered probes.
     pub fn active_probe_count(&self) -> usize {
-        self.active_probes.read().len()
+        self.probes.count()
     }
 
     /// Export a session report in the given format.
