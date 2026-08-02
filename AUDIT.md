@@ -51,7 +51,7 @@ All six SRP refactoring items completed and committed:
 | SRP-03 | `b382ae0`, `dc2b40c` | Extract backup codec.rs, then add the private BackupCodec actor |
 | SRP-04 | `557ac05` | Extract 6 parser submodules from advanced.rs + 1 from cluster.rs |
 | SRP-05 | `1faf2b0` | Delegate Config::set_param to leaf config struct owners |
-| SRP-06 | `d957625` | Extract AlertManager and ProbeRegistry from UnifiedObserver |
+| SRP-06 | `d957625`, `9265f05` | Extract AlertManager and ProbeRegistry, then compile and extend their characterization tests |
 
 All commits pass: `cargo fmt --all --check`, `cargo clippy --workspace --all-features -- -D warnings`, `cargo test --workspace --all-features --quiet`.
 
@@ -63,3 +63,4 @@ All commits pass: `cargo fmt --all --check`, `cargo clippy --workspace --all-fea
 - SRP-04: crdt + wasm parsers combined into crdt_wasm_parsers.rs to avoid thin modules
 - SRP-05: AuditConfig and EncryptionConfig single-arm handling kept inline in Config::set_param (too thin for own method)
 - SRP-06: check_alerts receives global_stats and sessions as parameters since AlertManager doesn't own them
+- SRP-06: unified_observer remains private to production; its module is included under `cfg(test)` so its characterization suite is compiled without adding a public interface
