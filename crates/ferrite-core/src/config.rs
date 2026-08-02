@@ -2042,6 +2042,115 @@ require_client_cert = true
     }
 
     #[test]
+    fn test_set_param_characterization_table() {
+        let cases = [
+            ("logging.format", "text", "pretty"),
+            ("persistence.aof_sync", "everysec", "everysecond"),
+            ("metrics.enabled", "false", "false"),
+            ("metrics.port", "9191", "9191"),
+            ("server.hz", "500", "500"),
+            ("server.max_memory_reject_threshold", "0.75", "0.75"),
+            ("storage.eviction_policy", "volatile-lfu", "volatile-lfu"),
+            ("audit.enabled", "true", "true"),
+            ("encryption.algorithm", "AES256GCM", "aes256gcm"),
+        ];
+
+        for (path, value, expected) in cases {
+            let mut config = Config::default();
+            assert!(
+                config
+                    .set_param(path, value)
+                    .expect("valid value should be accepted"),
+                "unexpected result for {path}={value}"
+            );
+            assert_eq!(
+                config.get_param(path).as_deref(),
+                Some(expected),
+                "unexpected stored value for {path}={value}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_set_param_error_and_restart_characterization_table() {
+        let invalid_cases = [
+            (
+                "logging.format",
+                "yaml",
+                "Configuration error: Invalid logging format: yaml. Expected: json, pretty",
+            ),
+            (
+                "persistence.aof_sync",
+                "sometimes",
+                "Configuration error: Invalid aof_sync value: sometimes. Expected: always, everysecond, no",
+            ),
+            (
+                "metrics.enabled",
+                "yes",
+                "Configuration error: Invalid boolean value: yes. Expected: true, false",
+            ),
+            (
+                "metrics.port",
+                "70000",
+                "Configuration error: Invalid port value: 70000",
+            ),
+            (
+                "server.hz",
+                "0",
+                "Configuration error: hz must be between 1 and 500",
+            ),
+            (
+                "server.max_memory_reject_threshold",
+                "1.1",
+                "Configuration error: max_memory_reject_threshold must be between 0.0 and 1.0",
+            ),
+            (
+                "storage.eviction_policy",
+                "lru",
+                "Configuration error: Invalid eviction policy: lru. Expected: noeviction, allkeys-lru, volatile-lru, allkeys-random, volatile-random, volatile-ttl, allkeys-lfu, volatile-lfu",
+            ),
+            (
+                "audit.enabled",
+                "yes",
+                "Configuration error: Invalid boolean value: yes. Expected: true, false",
+            ),
+            (
+                "encryption.algorithm",
+                "rot13",
+                "Configuration error: Invalid encryption algorithm: rot13. Expected: aes-256-gcm, chacha20-poly1305",
+            ),
+        ];
+
+        for (path, value, expected_error) in invalid_cases {
+            let mut config = Config::default();
+            let original = config.get_param(path);
+            let error = config
+                .set_param(path, value)
+                .expect_err("invalid value should be rejected");
+            assert_eq!(
+                error.to_string(),
+                expected_error,
+                "unexpected error for {path}"
+            );
+            assert_eq!(
+                config.get_param(path),
+                original,
+                "invalid value mutated {path}"
+            );
+        }
+
+        let mut config = Config::default();
+        let original_port = config.server.port;
+        assert!(!config
+            .set_param("server.port", "not-a-port")
+            .expect("restart-required parameters should not parse values"));
+        assert_eq!(config.server.port, original_port);
+        assert!(!config
+            .set_param("unknown.parameter", "value")
+            .expect("unknown parameters should be ignored"));
+    }
+
+    #[test]
     fn test_shared_config_list_params() {
         let config = Config::default();
         let shared = SharedConfig::new(config);
