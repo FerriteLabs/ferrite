@@ -16,6 +16,7 @@ use thiserror::Error;
 use tokio::sync::broadcast;
 use tracing::{debug, info, warn};
 
+use super::codec::BackupCodec;
 use super::storage::{BackupStorage, BackupStorageError, LocalBackupStorage};
 use crate::storage::{Store, Value};
 
@@ -210,13 +211,10 @@ pub struct RestoreResult {
     pub dry_run: bool,
 }
 
-/// Backup file header magic number
-const BACKUP_MAGIC: &[u8] = b"FERRITE_BKP";
-/// Backup format version
-const BACKUP_VERSION: u8 = 1;
-
 /// Backup manager
 pub struct BackupManager {
+    /// Compatibility-sensitive backup serialization and deserialization.
+    codec: BackupCodec,
     /// Configuration
     config: BackupConfig,
     /// Local storage backend
@@ -253,6 +251,7 @@ impl BackupManager {
         );
 
         Self {
+            codec: BackupCodec::default(),
             config,
             local_storage,
             cloud_storage: None,
@@ -413,12 +412,13 @@ impl BackupManager {
 
         // Read AOF entries since last backup
         let aof_data = self.read_aof_range(aof_path, last_sequence, current_sequence)?;
-        let entry_count = self.count_aof_entries(&aof_data);
+        let entry_count = self.codec.count_aof_entries(&aof_data);
         let uncompressed_size = aof_data.len() as u64;
 
         // Create incremental backup data structure
         let incremental_data =
-            self.serialize_incremental(&aof_data, &base_backup, last_sequence)?;
+            self.codec
+                .serialize_incremental(&aof_data, &base_backup, last_sequence)?;
 
         // Store the backup
         self.local_storage
@@ -599,7 +599,7 @@ impl BackupManager {
         let data = self.local_storage.retrieve(backup_name).await?;
 
         // Parse incremental format
-        let (aof_data, _base_backup, _start_seq) = self.deserialize_incremental(&data)?;
+        let (aof_data, _base_backup, _start_seq) = self.codec.deserialize_incremental(&data)?;
 
         // Replay AOF entries
         let entries = self.parse_aof_data(&aof_data);
@@ -710,7 +710,7 @@ impl BackupManager {
         let data = self.local_storage.retrieve(backup_name).await?;
 
         // Parse and validate
-        let (entries, metadata) = self.deserialize_backup(&data)?;
+        let (entries, metadata) = self.codec.deserialize_backup(&data)?;
 
         let mut keys_restored = 0u64;
         let mut databases_restored = Vec::new();
@@ -780,7 +780,7 @@ impl BackupManager {
 
         for name in backup_names {
             if let Ok(data) = self.local_storage.retrieve(&name).await {
-                if let Ok((_, mut metadata)) = self.deserialize_backup(&data) {
+                if let Ok((_, mut metadata)) = self.codec.deserialize_backup(&data) {
                     // Set the name from storage (metadata name is empty by default)
                     metadata.name = name;
                     infos.push(metadata);
@@ -817,7 +817,7 @@ impl BackupManager {
     /// Get backup info
     pub async fn get_backup_info(&self, backup_name: &str) -> BackupResult<BackupInfo> {
         let data = self.local_storage.retrieve(backup_name).await?;
-        let (_, metadata) = self.deserialize_backup(&data)?;
+        let (_, metadata) = self.codec.deserialize_backup(&data)?;
         Ok(metadata)
     }
 
@@ -843,8 +843,7 @@ impl BackupManager {
         let mut databases = Vec::new();
 
         // Write header
-        buffer.put_slice(BACKUP_MAGIC);
-        buffer.put_u8(BACKUP_VERSION);
+        self.codec.write_backup_header(&mut buffer);
 
         // Reserve space for metadata (will fill in later)
         let metadata_pos = buffer.len();
@@ -876,7 +875,7 @@ impl BackupManager {
                         ttl,
                     };
 
-                    self.serialize_entry(&mut buffer, &entry)?;
+                    self.codec.serialize_entry(&mut buffer, &entry)?;
                     key_count += 1;
                 }
             }
@@ -1236,8 +1235,6 @@ mod tests {
 
     #[test]
     fn test_incremental_serialize_deserialize() {
-        use std::io::Cursor;
-
         let temp_dir = TempDir::new().unwrap();
         let manager = create_test_manager(&temp_dir);
 
@@ -1257,12 +1254,13 @@ mod tests {
 
         // Serialize
         let serialized = manager
+            .codec
             .serialize_incremental(&aof_data, base_backup, start_sequence)
             .unwrap();
 
         // Deserialize
         let (parsed_aof, parsed_base, parsed_seq) =
-            manager.deserialize_incremental(&serialized).unwrap();
+            manager.codec.deserialize_incremental(&serialized).unwrap();
 
         assert_eq!(parsed_base, base_backup);
         assert_eq!(parsed_seq, start_sequence);
@@ -1282,7 +1280,7 @@ mod tests {
             aof_data.extend_from_slice(entry.as_bytes());
         }
 
-        let count = manager.count_aof_entries(&aof_data);
+        let count = manager.codec.count_aof_entries(&aof_data);
         assert_eq!(count, 3);
     }
 

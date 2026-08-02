@@ -11,14 +11,43 @@ use chrono::Utc;
 
 use crate::storage::Value;
 
-use super::manager::{BackupEntry, BackupError, BackupInfo, BackupManager, BackupResult};
+use super::manager::{BackupEntry, BackupError, BackupInfo, BackupResult};
 
 /// Backup file header magic number
-pub(super) const BACKUP_MAGIC: &[u8] = b"FERRITE_BKP";
+const BACKUP_MAGIC: &[u8] = b"FERRITE_BKP";
 /// Backup format version
-pub(super) const BACKUP_VERSION: u8 = 1;
+const BACKUP_VERSION: u8 = 1;
+/// Incremental backup header magic number
+const INCREMENTAL_MAGIC: &[u8] = b"FERRITE_INC";
+/// Incremental backup format version
+const INCREMENTAL_VERSION: u8 = 1;
 
-impl BackupManager {
+/// Owns compatibility-sensitive backup encoding and decoding decisions.
+#[derive(Debug, Clone, Copy)]
+pub(super) struct BackupCodec {
+    backup_magic: &'static [u8],
+    backup_version: u8,
+    incremental_magic: &'static [u8],
+    incremental_version: u8,
+}
+
+impl Default for BackupCodec {
+    fn default() -> Self {
+        Self {
+            backup_magic: BACKUP_MAGIC,
+            backup_version: BACKUP_VERSION,
+            incremental_magic: INCREMENTAL_MAGIC,
+            incremental_version: INCREMENTAL_VERSION,
+        }
+    }
+}
+
+impl BackupCodec {
+    pub(super) fn write_backup_header(&self, buffer: &mut BytesMut) {
+        buffer.put_slice(self.backup_magic);
+        buffer.put_u8(self.backup_version);
+    }
+
     pub(super) fn count_aof_entries(&self, data: &[u8]) -> u64 {
         let mut count = 0u64;
         let mut offset = 0;
@@ -52,8 +81,8 @@ impl BackupManager {
         let mut buffer = BytesMut::new();
 
         // Write incremental header
-        buffer.put_slice(b"FERRITE_INC");
-        buffer.put_u8(1); // Version
+        buffer.put_slice(self.incremental_magic);
+        buffer.put_u8(self.incremental_version);
 
         // Write base backup reference
         let base_bytes = base_backup.as_bytes();
@@ -92,7 +121,7 @@ impl BackupManager {
         // Verify header
         let mut header = [0u8; 11];
         cursor.read_exact(&mut header)?;
-        if &header != b"FERRITE_INC" {
+        if header.as_slice() != self.incremental_magic {
             return Err(BackupError::Invalid(
                 "Invalid incremental backup header".to_string(),
             ));
@@ -101,7 +130,7 @@ impl BackupManager {
         // Read version
         let mut version = [0u8; 1];
         cursor.read_exact(&mut version)?;
-        if version[0] != 1 {
+        if version[0] != self.incremental_version {
             return Err(BackupError::Invalid(format!(
                 "Unsupported incremental backup version: {}",
                 version[0]
@@ -245,10 +274,10 @@ impl BackupManager {
         let mut buf = [0u8; 11];
 
         // Read and verify header
-        std::io::Read::read_exact(&mut cursor, &mut buf[..BACKUP_MAGIC.len()])
+        std::io::Read::read_exact(&mut cursor, &mut buf[..self.backup_magic.len()])
             .map_err(|e| BackupError::Invalid(format!("Failed to read header: {}", e)))?;
 
-        if &buf[..BACKUP_MAGIC.len()] != BACKUP_MAGIC {
+        if &buf[..self.backup_magic.len()] != self.backup_magic {
             return Err(BackupError::Invalid(
                 "Invalid backup magic number".to_string(),
             ));
@@ -261,7 +290,7 @@ impl BackupManager {
             v[0]
         };
 
-        if version != BACKUP_VERSION {
+        if version != self.backup_version {
             return Err(BackupError::Invalid(format!(
                 "Unsupported backup version: {}",
                 version

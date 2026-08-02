@@ -59,7 +59,7 @@ All commits pass: `cargo fmt --all --check`, `cargo clippy --workspace --all-fea
 - SRP-01: WASM, timeseries, document, graph, RAG, JSON, bloom, query, advisor, FaaS, view, migrate, studio, gateway, budget methods left in advanced_ops.rs as they were not in the listed families
 - SRP-01: Kafka streaming handlers grouped with Redis stream commands in stream_ops.rs
 - SRP-02: Tests kept in blocking/mod.rs with pub(crate) visibility for test-accessed internals
-- SRP-03: Codec extracted as additional impl BackupManager block (unchanged move); BackupCodec struct deferred
+- SRP-03: Compatibility-sensitive encoding decisions are owned by a private BackupCodec used by BackupManager
 - SRP-04: crdt + wasm parsers combined into crdt_wasm_parsers.rs to avoid thin modules
 - SRP-05: AuditConfig and EncryptionConfig single-arm handling kept inline in Config::set_param (too thin for own method)
 - SRP-06: check_alerts receives global_stats and sessions as parameters since AlertManager doesn't own them
