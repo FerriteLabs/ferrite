@@ -9,8 +9,8 @@
 #[cfg(test)]
 mod tests {
     use std::collections::HashMap;
-    use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-    use std::sync::Arc;
+    use std::sync::atomic::{AtomicU64, Ordering};
+    use std::sync::{Arc, Barrier};
     use std::time::{Duration, Instant};
 
     /// Represents an operation in a Jepsen-style history
@@ -130,22 +130,23 @@ mod tests {
     fn test_register_linearizability_single_key() {
         let store = create_test_store();
         let history = Arc::new(std::sync::Mutex::new(Vec::new()));
-        let stop = Arc::new(AtomicBool::new(false));
         let write_counter = Arc::new(AtomicU64::new(0));
 
         let num_threads = 4;
-        let duration = Duration::from_secs(2);
+        let operations_per_thread = 2_000;
+        let start = Arc::new(Barrier::new(num_threads));
         let mut handles = Vec::new();
 
         for process_id in 0..num_threads {
             let store = store.clone();
             let history = history.clone();
-            let stop = stop.clone();
             let counter = write_counter.clone();
+            let start = start.clone();
 
             handles.push(std::thread::spawn(move || {
                 let key = "test_key".to_string();
-                while !stop.load(Ordering::Relaxed) {
+                start.wait();
+                for _ in 0..operations_per_thread {
                     let invoke_time = Instant::now();
 
                     if process_id % 2 == 0 {
@@ -176,14 +177,12 @@ mod tests {
             }));
         }
 
-        std::thread::sleep(duration);
-        stop.store(true, Ordering::Relaxed);
-
         for handle in handles {
             handle.join().expect("Thread panicked");
         }
 
         let history = history.lock().unwrap().clone();
+        assert_eq!(history.len(), num_threads * operations_per_thread);
         let checker = LinearizabilityChecker::new(history.clone());
 
         assert!(

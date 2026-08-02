@@ -443,12 +443,19 @@ fn help() -> Frame {
 mod tests {
     use super::*;
 
+    static TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    fn test_lock() -> std::sync::MutexGuard<'static, ()> {
+        TEST_LOCK.lock().expect("lucidity test lock poisoned")
+    }
+
     fn s(v: &[&str]) -> Vec<String> {
         v.iter().map(|x| (*x).to_string()).collect()
     }
 
     #[test]
     fn append_and_len() {
+        let _guard = test_lock();
         let before = match lucidity_command("LEN", &[]) {
             Frame::Integer(n) => n,
             other => panic!("expected integer, got {:?}", other),
@@ -466,6 +473,7 @@ mod tests {
 
     #[test]
     fn head_after_append() {
+        let _guard = test_lock();
         // Ensure at least one leaf exists.
         lucidity_command("APPEND", &s(&["luc:head:k", "v"]));
         if let Frame::Array(Some(items)) = lucidity_command("HEAD", &[]) {
@@ -478,6 +486,7 @@ mod tests {
 
     #[test]
     fn proof_and_verify() {
+        let _guard = test_lock();
         // Append a leaf; immediately get proof and verify while the log
         // is accessed under the same read lock to avoid other tests
         // appending in between and changing the root.
@@ -502,6 +511,7 @@ mod tests {
 
     #[test]
     fn del_appends_leaf() {
+        let _guard = test_lock();
         let before = match lucidity_command("LEN", &[]) {
             Frame::Integer(n) => n,
             _ => 0,
@@ -519,6 +529,7 @@ mod tests {
 
     #[test]
     fn forget_appends_tombstone() {
+        let _guard = test_lock();
         let before = match lucidity_command("LEN", &[]) {
             Frame::Integer(n) => n,
             _ => 0,
@@ -536,11 +547,13 @@ mod tests {
 
     #[test]
     fn unknown_subcommand_errors() {
+        let _guard = test_lock();
         assert!(matches!(lucidity_command("WAT", &[]), Frame::Error(_)));
     }
 
     #[test]
     fn missing_args_errors() {
+        let _guard = test_lock();
         assert!(matches!(
             lucidity_command("APPEND", &s(&["only-key"])),
             Frame::Error(_)
@@ -550,6 +563,7 @@ mod tests {
 
     #[test]
     fn save_load_via_store() {
+        let _guard = test_lock();
         let store = Arc::new(Store::new(1));
         let _ = lucidity_command_with_store(&store, "APPEND", &s(&["luc:save:k", "v"]));
         assert!(matches!(
@@ -564,6 +578,7 @@ mod tests {
 
     #[test]
     fn signer_returns_info() {
+        let _guard = test_lock();
         if let Frame::Array(Some(items)) = lucidity_command("SIGNER", &[]) {
             assert_eq!(items.len(), 2);
             assert!(matches!(&items[0], Frame::Bulk(Some(b)) if &b[..] == b"signer_id"));
@@ -574,6 +589,7 @@ mod tests {
 
     #[test]
     fn leaves_returns_array() {
+        let _guard = test_lock();
         lucidity_command("APPEND", &s(&["luc:leaves:k", "v"]));
         if let Frame::Array(Some(items)) = lucidity_command("LEAVES", &[]) {
             assert!(!items.is_empty(), "LEAVES should return at least 1 entry");
@@ -584,6 +600,7 @@ mod tests {
 
     #[test]
     fn help_returns_array() {
+        let _guard = test_lock();
         if let Frame::Array(Some(items)) = lucidity_command("HELP", &[]) {
             assert!(!items.is_empty(), "HELP should return help lines");
         } else {

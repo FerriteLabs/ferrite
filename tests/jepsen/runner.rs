@@ -9,6 +9,7 @@
 use std::time::{Duration, Instant};
 
 use super::fault_injection::{FaultEvent, FaultInjector};
+use super::linearizability::KvModel;
 use super::report::{ReportGenerator, TestResult, TimelineEvent};
 use super::workloads::{CounterWorkload, RegisterWorkload, SetWorkload};
 use super::{ConsistencyModel, HistoryEntry, NodeConfig, OpResult, Workload};
@@ -92,6 +93,8 @@ impl TestReport {
 // JepsenRunner
 // ---------------------------------------------------------------------------
 
+const OPERATION_INTERVAL: Duration = Duration::from_millis(1);
+
 /// Orchestrates Jepsen-style tests with workload generation, fault injection,
 /// history collection, linearizability checking, and reporting.
 pub struct JepsenRunner {
@@ -160,6 +163,7 @@ impl JepsenRunner {
         let mut pending_heals: Vec<(Duration, FaultEvent)> = Vec::new();
 
         let mut client_id: usize = 0;
+        let mut model = KvModel::new();
 
         while start.elapsed() < self.config.test_duration {
             let elapsed = start.elapsed();
@@ -219,7 +223,9 @@ impl JepsenRunner {
                     message: "simulated fault".to_string(),
                 }
             } else {
-                OpResult::Ok { value: None }
+                OpResult::Ok {
+                    value: model.apply(&op),
+                }
             };
 
             history.push(HistoryEntry {
@@ -231,6 +237,7 @@ impl JepsenRunner {
             });
 
             client_id += 1;
+            std::thread::sleep(OPERATION_INTERVAL);
 
             if client_id % 1000 == 0 && start.elapsed() >= self.config.test_duration {
                 break;
