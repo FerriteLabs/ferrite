@@ -560,6 +560,15 @@ pub enum MarketplaceError {
 mod tests {
     use super::*;
 
+    fn test_marketplace() -> (tempfile::TempDir, Marketplace) {
+        let dir = tempfile::tempdir().expect("create marketplace temp dir");
+        let config = MarketplaceConfig {
+            plugin_dir: dir.path().to_string_lossy().into_owned(),
+            ..Default::default()
+        };
+        (dir, Marketplace::new(config))
+    }
+
     #[test]
     fn test_default_config() {
         let config = MarketplaceConfig::default();
@@ -570,7 +579,7 @@ mod tests {
 
     #[test]
     fn test_install_and_uninstall() {
-        let marketplace = Marketplace::new(MarketplaceConfig::default());
+        let (_dir, marketplace) = test_marketplace();
 
         marketplace.install("test-plugin", "1.0.0").unwrap();
         assert!(marketplace.is_installed("test-plugin"));
@@ -582,7 +591,7 @@ mod tests {
 
     #[test]
     fn test_duplicate_install_error() {
-        let marketplace = Marketplace::new(MarketplaceConfig::default());
+        let (_dir, marketplace) = test_marketplace();
         marketplace.install("test-plugin", "1.0.0").unwrap();
 
         let result = marketplace.install("test-plugin", "1.0.0");
@@ -591,14 +600,14 @@ mod tests {
 
     #[test]
     fn test_uninstall_not_installed() {
-        let marketplace = Marketplace::new(MarketplaceConfig::default());
+        let (_dir, marketplace) = test_marketplace();
         let result = marketplace.uninstall("nonexistent");
         assert!(matches!(result, Err(MarketplaceError::NotInstalled(_))));
     }
 
     #[test]
     fn test_enable_disable() {
-        let marketplace = Marketplace::new(MarketplaceConfig::default());
+        let (_dir, marketplace) = test_marketplace();
         marketplace.install("test-plugin", "1.0.0").unwrap();
 
         marketplace.disable("test-plugin").unwrap();
@@ -612,7 +621,7 @@ mod tests {
 
     #[test]
     fn test_search_installed() {
-        let marketplace = Marketplace::new(MarketplaceConfig::default());
+        let (_dir, marketplace) = test_marketplace();
         marketplace.install("vector-search", "1.0.0").unwrap();
         marketplace.install("json-tools", "2.0.0").unwrap();
 
@@ -652,7 +661,7 @@ mod tests {
 
     #[test]
     fn test_search_catalog() {
-        let marketplace = Marketplace::new(MarketplaceConfig::default());
+        let (_dir, marketplace) = test_marketplace();
 
         let catalog = vec![
             PluginMetadata {
@@ -739,13 +748,14 @@ mod tests {
 
     #[test]
     fn test_install_size_limit() {
-        let config = MarketplaceConfig {
-            max_plugin_size: 10, // 10 bytes
+        let (dir, _) = test_marketplace();
+        let marketplace = Marketplace::new(MarketplaceConfig {
+            plugin_dir: dir.path().to_string_lossy().into_owned(),
+            max_plugin_size: 10,
             ..Default::default()
-        };
-        let marketplace = Marketplace::new(config);
+        });
 
-        let big_data = vec![0u8; 100]; // 100 bytes > 10 byte limit
+        let big_data = vec![0u8; 100];
         let result = marketplace.install_with_data("big-plugin", "1.0.0", Some(&big_data));
         assert!(matches!(
             result,
