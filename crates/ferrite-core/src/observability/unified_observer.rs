@@ -30,13 +30,6 @@ fn now_epoch_secs() -> u64 {
         .as_secs()
 }
 
-fn now_epoch_us() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_micros() as u64
-}
-
 // ---------------------------------------------------------------------------
 // Error
 // ---------------------------------------------------------------------------
@@ -660,7 +653,10 @@ impl AlertManager {
                     (
                         rate > *threshold_per_min,
                         rate,
-                        format!("Slow query rate {:.1}/min exceeds {:.1}/min", rate, threshold_per_min),
+                        format!(
+                            "Slow query rate {:.1}/min exceeds {:.1}/min",
+                            rate, threshold_per_min
+                        ),
                     )
                 }
                 AlertCondition::LatencyP99Above { threshold_us } => {
@@ -672,7 +668,10 @@ impl AlertManager {
                     (
                         avg > *threshold_us,
                         avg as f64,
-                        format!("Average latency {}µs exceeds {}µs threshold", avg, threshold_us),
+                        format!(
+                            "Average latency {}µs exceeds {}µs threshold",
+                            avg, threshold_us
+                        ),
                     )
                 }
                 AlertCondition::ErrorRateAbove { threshold_pct } => {
@@ -692,7 +691,10 @@ impl AlertManager {
                     (
                         ops < *threshold_ops_sec && total_cmds > 0,
                         ops,
-                        format!("Throughput {:.1} ops/s below {:.1} ops/s", ops, threshold_ops_sec),
+                        format!(
+                            "Throughput {:.1} ops/s below {:.1} ops/s",
+                            ops, threshold_ops_sec
+                        ),
                     )
                 }
                 AlertCondition::AnomalyDetected { z_score_threshold } => {
@@ -705,7 +707,10 @@ impl AlertManager {
                     (
                         max_z > *z_score_threshold,
                         max_z,
-                        format!("Anomaly z-score {:.2} exceeds {:.2}", max_z, z_score_threshold),
+                        format!(
+                            "Anomaly z-score {:.2} exceeds {:.2}",
+                            max_z, z_score_threshold
+                        ),
                     )
                 }
             };
@@ -921,7 +926,10 @@ impl UnifiedObserver {
                 // Command filter
                 if let Some(ref filter) = session.options.filter_commands {
                     let upper = cmd.to_uppercase();
-                    if !filter.iter().any(|f| f.eq_ignore_ascii_case(&upper) || f.eq_ignore_ascii_case(cmd)) {
+                    if !filter
+                        .iter()
+                        .any(|f| f.eq_ignore_ascii_case(&upper) || f.eq_ignore_ascii_case(cmd))
+                    {
                         return;
                     }
                 }
@@ -1016,7 +1024,7 @@ impl UnifiedObserver {
 
         let sessions = self.sessions.read();
         let active_sessions = sessions.values().filter(|s| s.active).count();
-        let active_probes = self.active_probes.read().len();
+        let active_probes = self.probes.count();
 
         LiveMetrics {
             ops_per_sec,
@@ -1045,12 +1053,12 @@ impl UnifiedObserver {
         self.alerts.check(&self.global_stats, &self.sessions)
     }
 
-        /// Register a new probe. Returns the probe id.
+    /// Register a new probe. Returns the probe id.
     pub fn register_probe(&self, spec: ProbeSpec) -> Result<String, ObserveError> {
         self.probes.register(spec, &self.config)
     }
 
-        /// Unregister a probe by id. Returns `true` if found.
+    /// Unregister a probe by id. Returns `true` if found.
     pub fn unregister_probe(&self, id: &str) -> bool {
         self.probes.unregister(id)
     }
@@ -1266,9 +1274,8 @@ fn build_report(session: &ObserveSession) -> ObserveReport {
         ));
     }
     if latency_summary.p99_us >= 50_000 {
-        recommendations.push(
-            "P99 latency ≥50ms — check disk I/O and network round-trips.".to_string(),
-        );
+        recommendations
+            .push("P99 latency ≥50ms — check disk I/O and network round-trips.".to_string());
     }
     let total_errors: u64 = session
         .command_breakdown
@@ -1276,7 +1283,8 @@ fn build_report(session: &ObserveSession) -> ObserveReport {
         .map(|a| a.error_count)
         .sum();
     if session.command_count > 0 && total_errors as f64 / session.command_count as f64 > 0.05 {
-        recommendations.push("Error rate >5%. Review error logs for recurring failures.".to_string());
+        recommendations
+            .push("Error rate >5%. Review error logs for recurring failures.".to_string());
     }
 
     ObserveReport {
@@ -1427,6 +1435,58 @@ mod tests {
     }
 
     #[test]
+    fn test_alert_conditions_and_cooldown() {
+        let obs = UnifiedObserver::new(UnifiedObserverConfig::default());
+        for condition in [
+            AlertCondition::SlowQueryRate {
+                threshold_per_min: 1.0,
+            },
+            AlertCondition::LatencyP99Above { threshold_us: 50 },
+            AlertCondition::ErrorRateAbove { threshold_pct: 1.0 },
+            AlertCondition::ThroughputBelow {
+                threshold_ops_sec: 2.0,
+            },
+        ] {
+            obs.add_alert_rule(AlertRule {
+                id: String::new(),
+                name: "condition".to_string(),
+                condition,
+                severity: AlertSeverity::Warning,
+                cooldown_secs: 60,
+                last_fired: None,
+            });
+        }
+
+        obs.record_command(None, "SLOW", 20_000, false);
+
+        assert_eq!(obs.check_alerts().len(), 4);
+        assert!(obs.check_alerts().is_empty());
+    }
+
+    #[test]
+    fn test_alert_rule_duplicate_id_characterization() {
+        let obs = UnifiedObserver::new(UnifiedObserverConfig::default());
+        for name in ["first", "replacement"] {
+            obs.add_alert_rule(AlertRule {
+                id: "stable-id".to_string(),
+                name: name.to_string(),
+                condition: AlertCondition::ErrorRateAbove { threshold_pct: 1.0 },
+                severity: AlertSeverity::Warning,
+                cooldown_secs: 0,
+                last_fired: None,
+            });
+        }
+
+        obs.record_command(None, "BAD", 100, false);
+        let alerts = obs.check_alerts();
+        assert_eq!(alerts.len(), 2);
+        assert_eq!(alerts[0].rule_name, "first");
+        assert_eq!(alerts[1].rule_name, "replacement");
+        assert!(obs.remove_alert_rule("stable-id"));
+        assert!(obs.check_alerts().is_empty());
+    }
+
+    #[test]
     fn test_probe_registration() {
         let mut cfg = UnifiedObserverConfig::default();
         cfg.ebpf_enabled = true;
@@ -1443,6 +1503,39 @@ mod tests {
         assert!(obs.unregister_probe(&id));
         assert_eq!(obs.active_probe_count(), 0);
         assert!(!obs.unregister_probe("nope"));
+    }
+
+    #[test]
+    fn test_probe_lifecycle_restrictions() {
+        let disabled = UnifiedObserver::new(UnifiedObserverConfig {
+            enabled: false,
+            ..UnifiedObserverConfig::default()
+        });
+        let command_probe = ProbeSpec {
+            probe_type: ProbeType::CommandLatency,
+            target: "GET".to_string(),
+            sampling_rate: 1.0,
+        };
+        assert!(matches!(
+            disabled.register_probe(command_probe.clone()),
+            Err(ObserveError::Disabled)
+        ));
+
+        let obs = UnifiedObserver::new(UnifiedObserverConfig::default());
+        let storage_probe = ProbeSpec {
+            probe_type: ProbeType::StorageIO,
+            target: "store".to_string(),
+            sampling_rate: 1.0,
+        };
+        assert!(matches!(
+            obs.register_probe(storage_probe),
+            Err(ObserveError::ProbeError(_))
+        ));
+
+        let id = obs.register_probe(command_probe).unwrap();
+        assert_eq!(obs.get_live_metrics().active_probes, 1);
+        assert!(obs.unregister_probe(&id));
+        assert_eq!(obs.get_live_metrics().active_probes, 0);
     }
 
     #[test]
