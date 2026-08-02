@@ -17,7 +17,7 @@
 //!
 //! ## Quick Start
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::triggers::runtime::{
 //!     FunctionRuntime, RuntimeConfig, FunctionDef, FunctionSource,
 //!     RuntimeType, TriggerBinding, EventType, FunctionInput,

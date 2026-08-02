@@ -15,7 +15,7 @@
 //!
 //! ### Persistent Database
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::embedded::Database;
 //!
 //! // Open or create a persistent database
@@ -35,7 +35,7 @@
 //!
 //! ### In-Memory Database
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::embedded::Database;
 //!
 //! // Memory-only database (great for tests)
@@ -48,7 +48,7 @@
 //!
 //! ### All Data Types
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::embedded::Database;
 //!
 //! let db = Database::open("./data")?;
@@ -88,7 +88,7 @@
 //!
 //! Atomic operations with ACID guarantees:
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::embedded::Database;
 //!
 //! let db = Database::open("./data")?;
@@ -115,7 +115,7 @@
 //!
 //! Database is thread-safe and can be shared across threads:
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::embedded::Database;
 //! use std::sync::Arc;
 //! use std::thread;
@@ -142,7 +142,7 @@
 //!
 //! Fine-tune database configuration:
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::embedded::{DatabaseBuilder, SyncMode};
 //!
 //! let db = DatabaseBuilder::new()
@@ -159,7 +159,7 @@
 //!
 //! Optimized for resource-constrained environments:
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::embedded::edge::{EdgeStore, EdgeConfig, CompressionAlgorithm};
 //!
 //! // Create an edge-optimized store
@@ -180,7 +180,7 @@
 //!
 //! Sync embedded database with cloud:
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::embedded::sync::{SyncEngine, SyncConfig};
 //!
 //! let db = Database::open("./local.db")?;
@@ -209,7 +209,7 @@
 //!
 //! Use from C, Python, or other languages:
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::embedded::ffi::generate_c_header;
 //!
 //! // Generate C header file

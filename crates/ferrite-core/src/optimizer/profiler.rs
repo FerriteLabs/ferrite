@@ -198,6 +198,8 @@ impl WorkloadProfiler {
             self.value_observations.fetch_add(1, Ordering::Relaxed);
         }
 
+        drop(stats);
+
         // Evict least-recent keys if we're tracking too many.
         if self.key_stats.len() > MAX_HOT_KEYS * 2 {
             self.evict_cold_keys();

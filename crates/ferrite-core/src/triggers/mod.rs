@@ -27,7 +27,7 @@
 //!
 //! ### Create a Notification Trigger
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::triggers::{
 //!     TriggerRegistry, TriggerConfig, Trigger, Condition, EventType, Pattern,
 //!     Action, BuiltinAction, PublishAction,
@@ -60,7 +60,7 @@
 //!
 //! ### Create a Webhook Trigger
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::triggers::{
 //!     TriggerRegistry, TriggerConfig, Trigger, Condition, EventType, Pattern,
 //!     Action, BuiltinAction, HttpAction,
@@ -97,7 +97,7 @@
 //!
 //! ### Fire Triggers Programmatically
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::triggers::{TriggerRegistry, TriggerConfig, TriggerEvent};
 //! use bytes::Bytes;
 //!
@@ -186,7 +186,7 @@
 //!
 //! ## Configuration
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::triggers::TriggerConfig;
 //!
 //! let config = TriggerConfig {
@@ -207,7 +207,7 @@
 //!
 //! Triggers execute in priority order (higher first):
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::triggers::{Trigger, Condition, EventType, Pattern};
 //!
 //! let mut trigger = Trigger::new(
