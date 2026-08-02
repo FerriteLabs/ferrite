@@ -48,7 +48,7 @@ All six SRP refactoring items completed and committed:
 | --- | --- | --- |
 | SRP-01 | `48d030f` | Split advanced_ops.rs into 8 command-family modules + tiering consolidation |
 | SRP-02 | `d103011` | Split blocking.rs into blocking/{list,stream,sorted_set}.rs |
-| SRP-03 | `b382ae0` | Extract backup codec.rs for serialization/deserialization |
+| SRP-03 | `b382ae0`, `dc2b40c` | Extract backup codec.rs, then add the private BackupCodec actor |
 | SRP-04 | `557ac05` | Extract 6 parser submodules from advanced.rs + 1 from cluster.rs |
 | SRP-05 | `1faf2b0` | Delegate Config::set_param to leaf config struct owners |
 | SRP-06 | `d957625` | Extract AlertManager and ProbeRegistry from UnifiedObserver |
