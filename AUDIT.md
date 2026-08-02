@@ -38,3 +38,28 @@
 - `crates/ferrite-core/src/query/parser.rs` remains out of scope because it is a cohesive grammar/parser implementation; size alone is not an SRP violation, and restructuring it would add parser risk unrelated to the requested command parser split.
 - `crates/ferrite-core/src/cluster/raft.rs` remains out of scope because consensus state transitions and persistence are intentionally co-located for invariant review; decomposing them requires a dedicated distributed-systems design pass.
 - `src/migration/rdb_parser.rs` remains out of scope because byte-level RDB parsing is a cohesive compatibility unit whose format and corruption handling need a dedicated golden corpus before structural changes.
+
+
+## Completion Status
+
+All six SRP refactoring items completed and committed:
+
+| ID | Commit | Summary |
+| --- | --- | --- |
+| SRP-01 | `48d030f` | Split advanced_ops.rs into 8 command-family modules + tiering consolidation |
+| SRP-02 | `d103011` | Split blocking.rs into blocking/{list,stream,sorted_set}.rs |
+| SRP-03 | `b382ae0` | Extract backup codec.rs for serialization/deserialization |
+| SRP-04 | `557ac05` | Extract 6 parser submodules from advanced.rs + 1 from cluster.rs |
+| SRP-05 | `1faf2b0` | Delegate Config::set_param to leaf config struct owners |
+| SRP-06 | `d957625` | Extract AlertManager and ProbeRegistry from UnifiedObserver |
+
+All commits pass: `cargo fmt --all --check`, `cargo clippy --workspace --all-features -- -D warnings`, `cargo test --workspace --all-features --quiet`.
+
+### Assumptions
+- SRP-01: WASM, timeseries, document, graph, RAG, JSON, bloom, query, advisor, FaaS, view, migrate, studio, gateway, budget methods left in advanced_ops.rs as they were not in the listed families
+- SRP-01: Kafka streaming handlers grouped with Redis stream commands in stream_ops.rs
+- SRP-02: Tests kept in blocking/mod.rs with pub(crate) visibility for test-accessed internals
+- SRP-03: Codec extracted as additional impl BackupManager block (unchanged move); BackupCodec struct deferred
+- SRP-04: crdt + wasm parsers combined into crdt_wasm_parsers.rs to avoid thin modules
+- SRP-05: AuditConfig and EncryptionConfig single-arm handling kept inline in Config::set_param (too thin for own method)
+- SRP-06: check_alerts receives global_stats and sessions as parameters since AlertManager doesn't own them
