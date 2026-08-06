@@ -57,5 +57,5 @@ body:
       options:
         - label: I will use only disposable, non-production infrastructure and synthetic data that can be lost.
           required: true
-        - label: I will use only the exact campaign artifact (Docker image digest) the campaign owner supplies, and will never use `latest` or a build of my own.
+        - label: I will use only the exact, complete Docker image digest reference (e.g. `ghcr.io/ferritelabs/ferrite@sha256:<digest>`) the campaign owner supplies, and will never use a tag, `latest`, or a build of my own.
           required: true

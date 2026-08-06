@@ -153,7 +153,8 @@ required_canonical_text = [
   "Launch gate",
   "CAMPAIGN_OPS_REF",
   "FERRITE_TEST_IMAGE",
-  "CAMPAIGN_IMAGE_DIGEST",
+  "CAMPAIGN_DIGEST",
+  "ghcr.io/ferritelabs/ferrite@sha256:<CAMPAIGN_DIGEST>",
   "never use `latest`",
   "Redis/client compatibility",
   "Durability/restart",
@@ -189,6 +190,10 @@ end
 fail("TESTER_PROGRAM.md must not present Homebrew as an available install path for the initial cohort") if canonical.match?(/homebrew formula/i)
 fail("TESTER_PROGRAM.md must not present a source build as an available install path for the initial cohort") if canonical.match?(/source commit.*built clean/i)
 
+# FERRITE_TEST_IMAGE is digest-only: a pinned tag is never an acceptable
+# campaign artifact, regardless of how "immutable" the owner claims it is.
+fail("TESTER_PROGRAM.md must not describe a pinned tag as an acceptable FERRITE_TEST_IMAGE value") if canonical.match?(/pinned tag is (?:acceptable|accepted)/i)
+
 {
   "README.md" => "[TESTER_PROGRAM.md](TESTER_PROGRAM.md)",
   "COMMUNITY.md" => "[Tester Program](./TESTER_PROGRAM.md)",
@@ -214,11 +219,14 @@ private_reporting_url = "https://github.com/ferritelabs/ferrite/security/advisor
 # GitHub private vulnerability reporting (Security Advisories) is the sole
 # canonical private security intake for this repository. These public-facing
 # assets must never resurrect the retired email/PGP/mailing-list channels or
-# claim that private reporting is unavailable/disabled, and must never depend
-# on GitHub Discussions, which is not enabled for this repository.
+# claim that private reporting is unavailable/disabled. GitHub Discussions is
+# enabled for this repository (see legitimate governance/CONTRIBUTING links
+# elsewhere), but the external tester program intentionally keeps its intake
+# on the Tester Interest/Report issue forms rather than Discussions, so these
+# specific tester-facing assets must not route around that intake.
 public_assets.each do |name, content|
   fail("#{name} must link to the canonical GitHub private vulnerability reporting intake") unless content.include?(private_reporting_url)
-  fail("#{name} must not link to GitHub Discussions (not enabled for this repository)") if content.match?(%r{github\.com/[\w-]+/[\w.-]+/discussions})
+  fail("#{name} must not link to GitHub Discussions; tester intake intentionally stays on the Tester Interest/Report forms") if content.match?(%r{github\.com/[\w-]+/[\w.-]+/discussions})
   fail("#{name} must not reference the retired security@ferritelabs.dev email intake") if content.match?(/security@ferritelabs\.dev/i)
   fail("#{name} must not reference a PGP key for security reporting") if content.match?(/\bPGP\b/i)
   fail("#{name} must not reference a security mailing list") if content.match?(/security mailing list/i)
@@ -230,13 +238,12 @@ end
 
 # --- Concrete campaign image detection -------------------------------------
 #
-# No hardcoded campaign artifact: a concrete tag (e.g. `:v0.4.0`, `:0.4.0`, or
-# a named candidate tag like `:release-candidate-1`) or a full 64-hex sha256
-# digest would silently violate the launch gate (the campaign owner has not
-# necessarily supplied one yet) and would go stale the moment a real campaign
-# image is issued. Illustrative placeholders that begin with `<` (e.g.
-# `<CAMPAIGN_IMAGE_TAG>`, `<CAMPAIGN_IMAGE_DIGEST>`) are allowed, as is the
-# literal digest placeholder prose `sha256:...`.
+# FERRITE_TEST_IMAGE is digest-only, full-reference: a tag (concrete, pinned,
+# or a placeholder like `:<CAMPAIGN_IMAGE_TAG>`) is never an acceptable
+# campaign artifact, and neither is a real (non-placeholder) 64-hex sha256
+# digest before launch. Only the complete repository-qualified placeholder
+# form `ghcr.io/ferritelabs/ferrite@sha256:<CAMPAIGN_DIGEST>` — or the literal
+# digest placeholder prose `sha256:...` — is allowed in public assets.
 #
 # The tag pattern is intentionally broad (matches Markdown backticks, plain
 # prose, and end-of-line) so it can't be defeated by wrapping a real tag in
@@ -244,8 +251,10 @@ end
 # `v0.4.0` or a named candidate tag).
 def concrete_image_violation(text)
   text.scan(%r{ghcr\.io/ferritelabs/ferrite:([^\s`"'()\[\]]+)}) do |(tag)|
-    next if tag.start_with?("<")
-    return "a concrete campaign image tag (#{tag.inspect})" if tag.match?(/\A[A-Za-z0-9]/)
+    # Every tag reference is rejected, including illustrative placeholders:
+    # FERRITE_TEST_IMAGE only ever accepts a full repository@sha256 digest,
+    # so a tag form (`repository:<anything>`) is never a valid example.
+    return "a campaign image tag reference (#{tag.inspect}); tags are never accepted, only a complete repository@sha256 digest"
   end
 
   if text.match?(/sha256:[0-9a-fA-F]{64}/)
@@ -266,8 +275,8 @@ def self_test_concrete_image_detection!
     "markdown backtick tag" => ["Run `ghcr.io/ferritelabs/ferrite:v0.4.0` locally.", true],
     "full sha256 digest" => ["Use ghcr.io/ferritelabs/ferrite@sha256:#{'a' * 64} for this campaign.", true],
     "bare sha256 digest" => ["Digest: sha256:#{'f' * 64}", true],
-    "tag placeholder" => ["Use ghcr.io/ferritelabs/ferrite:<CAMPAIGN_IMAGE_TAG> for this campaign.", false],
-    "digest placeholder" => ["Use ghcr.io/ferritelabs/ferrite@<CAMPAIGN_IMAGE_DIGEST> for this campaign.", false],
+    "tag placeholder is still rejected" => ["Use ghcr.io/ferritelabs/ferrite:<CAMPAIGN_IMAGE_TAG> for this campaign.", true],
+    "full digest placeholder is allowed" => ["Use ghcr.io/ferritelabs/ferrite@sha256:<CAMPAIGN_DIGEST> for this campaign.", false],
     "digest prose placeholder" => ["Digest: sha256:...", false],
     "latest tag is a separate check" => ["Use ghcr.io/ferritelabs/ferrite:latest for this campaign.", true]
   }
@@ -286,6 +295,56 @@ self_test_concrete_image_detection!
 public_assets.each do |name, content|
   violation = concrete_image_violation(content)
   fail("#{name} must not hardcode #{violation}") if violation
+end
+
+# --- FERRITE_TEST_IMAGE example completeness -------------------------------
+#
+# The core tester path must export a complete, repository-qualified image
+# reference — never a bare `sha256:...` value and never a bare placeholder
+# like `<CAMPAIGN_DIGEST>` on its own. Any `FERRITE_TEST_IMAGE=` example found
+# in a public asset must be either the canonical full placeholder or a
+# structurally complete `repository@sha256:<64 lowercase hex>` reference (a
+# real, non-placeholder digest is separately rejected pre-launch above by
+# concrete_image_violation).
+FULL_IMAGE_PLACEHOLDER = "ghcr.io/ferritelabs/ferrite@sha256:<CAMPAIGN_DIGEST>"
+COMPLETE_IMAGE_REFERENCE = %r{\Aghcr\.io/ferritelabs/ferrite@sha256:(<[A-Za-z0-9_]+>|[0-9a-f]{64})\z}
+
+def ferrite_test_image_example_violation(text)
+  text.scan(/FERRITE_TEST_IMAGE=(?:'([^']*)'|"([^"]*)"|(\S+))/) do |match|
+    value = match.compact.first
+    next if value.nil? || value.empty?
+    next if value.match?(COMPLETE_IMAGE_REFERENCE)
+
+    return "a FERRITE_TEST_IMAGE example (#{value.inspect}) that is not the complete repository-qualified digest reference (e.g. #{FULL_IMAGE_PLACEHOLDER})"
+  end
+
+  nil
+end
+
+def self_test_ferrite_test_image_example_detection!
+  cases = {
+    "full digest placeholder" => ["export FERRITE_TEST_IMAGE='ghcr.io/ferritelabs/ferrite@sha256:<CAMPAIGN_DIGEST>' # never latest or a tag", false],
+    "concrete digest is structurally complete" => ["export FERRITE_TEST_IMAGE='ghcr.io/ferritelabs/ferrite@sha256:#{'a' * 64}'", false],
+    "bare digest placeholder" => ["export FERRITE_TEST_IMAGE='<CAMPAIGN_IMAGE_DIGEST>'", true],
+    "bare sha256 value" => ["export FERRITE_TEST_IMAGE='sha256:#{'a' * 64}'", true],
+    "tag value" => ["export FERRITE_TEST_IMAGE='ghcr.io/ferritelabs/ferrite:v1.0.0'", true],
+    "no assignment present" => ["`FERRITE_TEST_IMAGE` has no fallback.", false]
+  }
+
+  cases.each do |label, (text, expect_violation)|
+    violation = ferrite_test_image_example_violation(text)
+    actual = !violation.nil?
+    unless actual == expect_violation
+      fail("self-test failed for #{label.inspect}: expected violation=#{expect_violation}, got #{actual.inspect} (#{violation})")
+    end
+  end
+end
+
+self_test_ferrite_test_image_example_detection!
+
+public_assets.each do |name, content|
+  violation = ferrite_test_image_example_violation(content)
+  fail("#{name} must not use #{violation}") if violation
 end
 
 fail("SECURITY.md must exist") unless File.file?(File.join(root, "SECURITY.md"))

@@ -18,10 +18,12 @@ have verified them on a clean machine:**
 
 1. `CAMPAIGN_OPS_REF` — an immutable [ferrite-ops](https://github.com/ferritelabs/ferrite-ops)
    reference (a tag or a full commit SHA; never `main` or a floating branch).
-2. `FERRITE_TEST_IMAGE` — an exact, immutable Docker image digest for the
-   candidate build. The initial cohort is Docker/Docker Compose only;
-   alternative installation cohorts (Homebrew, source build, Kubernetes) are
-   deferred until maintained tooling exists for them.
+2. `FERRITE_TEST_IMAGE` — the complete repository-qualified sha256 digest
+   reference for the candidate build (e.g.
+   `ghcr.io/ferritelabs/ferrite@sha256:<CAMPAIGN_DIGEST>`); never a tag. The
+   initial cohort is Docker/Docker Compose only; alternative installation
+   cohorts (Homebrew, source build, Kubernetes) are deferred until
+   maintained tooling exists for them.
 
 Do not begin a session against `main`/`latest` or any artifact you assembled
 yourself. If either reference is missing, unverifiable, or does not check
@@ -31,9 +33,9 @@ out/pull cleanly, stop and wait for the campaign owner to fix or reissue it.
 
 Use only the exact immutable reference the campaign owner supplies:
 
-- **Docker image** — an exact digest such as
-  `ghcr.io/ferritelabs/ferrite@<CAMPAIGN_IMAGE_DIGEST>`. A pinned tag is
-  acceptable only if the owner states it is immutable for the campaign.
+- **Docker image** — the complete repository-qualified digest reference,
+  for example `ghcr.io/ferritelabs/ferrite@sha256:<CAMPAIGN_DIGEST>`. A tag
+  (pinned or otherwise) is never accepted, only an exact sha256 digest.
   **Never use `latest`** or a locally built image when reporting a result.
 
 The initial cohort is Docker/Docker Compose only. Alternative installation
@@ -94,18 +96,18 @@ test -x scripts/tester.sh && ./scripts/tester.sh --help >/dev/null || {
   echo "scripts/tester.sh is missing or not runnable at <CAMPAIGN_OPS_REF>" >&2
   exit 1
 }
-export FERRITE_TEST_IMAGE='<CAMPAIGN_IMAGE_DIGEST>' # exact digest/tag the owner supplied; never latest
+export FERRITE_TEST_IMAGE='ghcr.io/ferritelabs/ferrite@sha256:<CAMPAIGN_DIGEST>' # complete repository-qualified digest the owner supplied; never latest or a tag
 ./scripts/tester.sh start
 ./scripts/tester.sh smoke
 ./scripts/tester.sh diagnostics
 ./scripts/tester.sh stop
 ```
 
-Both placeholders above (`<CAMPAIGN_OPS_REF>` and `<CAMPAIGN_IMAGE_DIGEST>`)
-must be replaced with the values the campaign owner publishes; there is no
-default. `FERRITE_TEST_IMAGE` has no fallback — `tester.sh` fails fast with an
-actionable error before touching Docker if it is unset, floating (`latest` or
-an implicit tag-less reference), or malformed.
+Both placeholders above (`<CAMPAIGN_OPS_REF>` and `<CAMPAIGN_DIGEST>`) must be
+replaced with the values the campaign owner publishes; there is no default.
+`FERRITE_TEST_IMAGE` has no fallback — `tester.sh` fails fast with an
+actionable error before touching Docker if it is unset, floating (`latest`),
+a tag, or not the complete repository-qualified sha256 digest reference.
 
 Only run `./scripts/tester.sh durability` if the campaign owner has explicitly
 enabled that track (they will state `FERRITE_TEST_ENABLE_DURABILITY=1`); it is

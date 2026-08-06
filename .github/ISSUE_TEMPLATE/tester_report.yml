@@ -36,7 +36,7 @@ body:
     id: version_image
     attributes:
       label: Version and exact artifact reference
-      description: Copy the campaign artifact exactly (Docker image digest). Never report `latest`.
+      description: Copy the exact, complete Docker image digest reference the campaign owner supplied. Never report a tag or `latest`.
       placeholder: "Ferrite candidate build — ghcr.io/ferritelabs/ferrite@sha256:..."
     validations:
       required: true
