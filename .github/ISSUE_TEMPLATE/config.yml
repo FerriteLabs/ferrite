@@ -6,3 +6,6 @@ contact_links:
   - name: 💬 Questions & Discussions
     url: https://github.com/ferritelabs/ferrite/discussions
     about: Ask questions or start a discussion
+  - name: 🧪 External Tester Program
+    url: https://github.com/ferritelabs/ferrite/blob/main/TESTER_PROGRAM.md
+    about: Learn about the external tester program, or use the "Tester Interest" / "Tester Report" forms above

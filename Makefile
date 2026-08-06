@@ -21,7 +21,7 @@ RUST_LOG ?= info
 
 .PHONY: all build release test bench lint fmt check clean doc run help quickstart ping smoke-test docker-ping
 .PHONY: docker docker-build docker-run docker-stop
-.PHONY: install-tools coverage install docs setup dev dev-full dev-test test-fast
+.PHONY: install-tools coverage install docs setup dev dev-full dev-test test-fast check-tester-assets
 
 all: check test build
 
@@ -165,6 +165,9 @@ docs-all: ## Generate documentation including dependencies
 
 check-docs: ## Report missing documentation across crates
 	@./scripts/check-docs.sh
+
+check-tester-assets: ## Validate external tester docs and issue forms
+	@./scripts/check-tester-assets.sh
 
 ##@ Cleanup Targets
 

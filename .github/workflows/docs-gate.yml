@@ -31,6 +31,7 @@ jobs:
                 "docs/${crate}.md" \
                 "docs/${crate}/README.md" \
                 "crates/ferrite-${crate}/README.md"; do
+                # shellcheck disable=SC2086
                 if ls $doc_path 1>/dev/null 2>&1; then
                   DOCS_FOUND=true
                   break
@@ -58,3 +59,6 @@ jobs:
             exit 1
           fi
           echo "✅ CHANGELOG.md has an [Unreleased] section."
+
+      - name: Validate external tester assets
+        run: ./scripts/check-tester-assets.sh

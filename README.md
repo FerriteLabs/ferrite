@@ -941,6 +941,7 @@ cargo build --release --all-features
 | [ADRs](docs/adrs/) | Architecture Decision Records |
 | [GOVERNANCE.md](GOVERNANCE.md) | Project governance and decision-making |
 | [COMMUNITY.md](COMMUNITY.md) | How to get involved |
+| [TESTER_PROGRAM.md](TESTER_PROGRAM.md) | Canonical external tester journey, safety guidance, and reporting |
 
 ### Tools
 
@@ -952,6 +953,11 @@ cargo build --release --all-features
 ## Contributing
 
 Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details.
+
+Not ready to contribute code? Join the [external tester program](TESTER_PROGRAM.md) instead —
+run baseline builds and report results via the
+[Tester Interest](https://github.com/ferritelabs/ferrite/issues/new?template=tester_interest.yml) and
+[Tester Report](https://github.com/ferritelabs/ferrite/issues/new?template=tester_report.yml) issue forms.
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)

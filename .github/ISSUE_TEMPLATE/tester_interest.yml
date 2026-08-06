@@ -1,0 +1,66 @@
+name: "External tester interest"
+description: "Volunteer for a Ferrite v0.4 non-production testing session"
+title: "[Tester interest] "
+labels:
+  - tester-program
+  - triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for volunteering. Read the [canonical Tester Program](https://github.com/ferritelabs/ferrite/blob/main/TESTER_PROGRAM.md) before submitting.
+        This is a public issue. Do not include email addresses, credentials, customer data, private hostnames, or other sensitive information.
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Starting environment
+      description: Where do you expect to run the disposable test?
+      options:
+        - Docker / Docker Compose
+        - Homebrew
+        - Source build
+        - Kubernetes
+        - Other non-production environment
+    validations:
+      required: true
+  - type: input
+    id: client
+    attributes:
+      label: Redis client or application
+      description: Name and version if known; do not include private application details.
+      placeholder: "redis-cli 7.x, redis-py 5.x, ioredis 5.x"
+    validations:
+      required: true
+  - type: dropdown
+    id: track
+    attributes:
+      label: Preferred track
+      options:
+        - Core journey only
+        - Redis/client compatibility
+        - Durability/restart
+        - Operations/metrics
+        - Performance comparison
+        - IDE tooling
+    validations:
+      required: true
+  - type: dropdown
+    id: availability
+    attributes:
+      label: Availability
+      description: Choose the closest amount of time you can reserve.
+      options:
+        - One 60–90 minute session
+        - Two 60–90 minute sessions
+        - Several sessions during the campaign
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Non-production acknowledgment
+      options:
+        - label: I will use only disposable, non-production infrastructure and synthetic data that can be lost.
+          required: true
+        - label: I will use the exact campaign image tag or digest and will never use `latest`.
+          required: true

@@ -8,6 +8,11 @@ Whether you're a seasoned Rust developer or just getting started with databases,
 
 ## Get Involved
 
+### 🧪 Test Ferrite v0.4
+
+Join the non-production [Tester Program](./TESTER_PROGRAM.md) for one canonical
+60–90 minute journey, safe diagnostics, and structured feedback.
+
 ### 🐛 Report Bugs
 
 Found something broken? [Open an issue](https://github.com/FerriteLabs/ferrite/issues/new?template=bug_report.md) with steps to reproduce, and we'll triage it quickly.
