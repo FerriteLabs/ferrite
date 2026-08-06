@@ -8,10 +8,12 @@ Whether you're a seasoned Rust developer or just getting started with databases,
 
 ## Get Involved
 
-### 🧪 Test Ferrite v0.4
+### 🧪 External Tester Program
 
 Join the non-production [Tester Program](./TESTER_PROGRAM.md) for one canonical
-60–90 minute journey, safe diagnostics, and structured feedback.
+60–90 minute journey, safe diagnostics, and structured feedback. A specific
+candidate/hardening campaign is scheduled and announced separately by the
+project; the current Ferrite version is tracked in [CHANGELOG.md](CHANGELOG.md).
 
 ### 🐛 Report Bugs
 

@@ -4,8 +4,9 @@ Organizations and individuals using Ferrite in production or evaluation.
 
 If you're using Ferrite, please consider adding your organization here — it helps the community understand real-world usage and encourages contributions.
 
-Evaluating v0.4 in a disposable environment? Follow the
-[Tester Program](TESTER_PROGRAM.md) before listing an evaluation here.
+Evaluating a candidate build in a disposable environment as part of the
+External Tester Program? Follow the [Tester Program](TESTER_PROGRAM.md)
+before listing an evaluation here.
 
 ## How to Add Your Organization
 

@@ -1,15 +1,12 @@
 name: "External tester report"
-description: "Report a completed Ferrite v0.4 tester session"
+description: "Report a completed Ferrite External Tester Program session"
 title: "[Tester report] "
-labels:
-  - tester-program
-  - triage
 body:
   - type: markdown
     attributes:
       value: |
         Submit one report per completed session, including successful sessions. Follow the severity and reproducibility definitions in the [canonical Tester Program](https://github.com/ferritelabs/ferrite/blob/main/TESTER_PROGRAM.md).
-        For a vulnerability, stop and use a [private security advisory](https://github.com/ferritelabs/ferrite/security/advisories/new) instead.
+        For a vulnerability, stop and report it privately instead: see the [Security Policy](https://github.com/ferritelabs/ferrite/blob/main/SECURITY.md#reporting-a-vulnerability) or email security@ferritelabs.dev.
   - type: dropdown
     id: track
     attributes:
@@ -38,9 +35,9 @@ body:
   - type: input
     id: version_image
     attributes:
-      label: Version and exact image tag or digest
-      description: Copy the campaign artifact exactly. Never report `latest`.
-      placeholder: "Ferrite 0.4.0 — ghcr.io/ferritelabs/ferrite@sha256:..."
+      label: Version and exact artifact reference
+      description: Copy the campaign artifact exactly (Docker image digest, Homebrew formula version, or source commit SHA). Never report `latest`.
+      placeholder: "Ferrite candidate build — ghcr.io/ferritelabs/ferrite@sha256:..."
     validations:
       required: true
   - type: dropdown

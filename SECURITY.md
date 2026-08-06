@@ -30,17 +30,19 @@ We take security vulnerabilities seriously and appreciate responsible disclosure
 
 **DO NOT** open a public GitHub issue for security vulnerabilities.
 
-Instead, please use one of these secure channels:
+GitHub private vulnerability reporting (Security Advisories) is **not
+currently enabled** for this repository, so the private "Report a
+vulnerability" form is not available. Use this channel instead:
 
-1. **GitHub Security Advisories** (Preferred):
-   - Navigate to the [Security tab](../../security/advisories/new)
-   - Click "Report a vulnerability"
-   - Fill out the private disclosure form
-
-2. **Email** (Alternative):
+1. **Email** (Canonical channel):
    - Send to **security@ferritelabs.dev**
    - Include "SECURITY" in the subject line
    - Encrypt sensitive details with our [PGP key](../../security) if available
+
+If private vulnerability reporting is enabled for this repository in the
+future, the [Security tab](../../security/advisories/new) will become an
+additional preferred channel; this document will be updated when that
+happens.
 
 ### What to Include
 
