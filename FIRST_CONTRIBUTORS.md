@@ -17,7 +17,7 @@ Welcome to **Ferrite** — a high-performance tiered-storage key-value store and
 **Clone and build:**
 
 ```bash
-git clone https://github.com/FerriteLabs/ferrite.git
+git clone https://github.com/ferritelabs/ferrite.git
 cd ferrite
 cargo build && cargo test --lib
 ```
@@ -660,12 +660,11 @@ docs: update command compatibility matrix
 ## 8. Getting Help
 
 **Before you ask:**
-- Search existing [GitHub Issues](https://github.com/FerriteLabs/ferrite/issues) and [Discussions](https://github.com/FerriteLabs/ferrite/discussions)
+- Search existing [GitHub Issues](https://github.com/ferritelabs/ferrite/issues)
 - Check the [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines
 - Read the [GOVERNANCE.md](GOVERNANCE.md) for project decision-making processes
 
 **Where to ask:**
-- **GitHub Discussions** — Questions, ideas, and show-and-tell. Best for design questions and "how does X work?" inquiries.
 - **GitHub Issues** — Bug reports and feature requests. Use the issue templates.
 - **Pull Request comments** — Ask for help directly on your PR. Maintainers are happy to guide you through reviews.
 

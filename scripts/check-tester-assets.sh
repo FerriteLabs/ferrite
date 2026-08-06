@@ -159,6 +159,7 @@ public_assets.each do |name, content|
   fail("#{name} must not link to GitHub Discussions (disabled for this repository)") if content.match?(%r{github\.com/[\w-]+/[\w.-]+/discussions})
   fail("#{name} must not link to private Security Advisories (disabled for this repository)") if content.match?(%r{security/advisories/new})
   fail("#{name} must use lowercase ferritelabs URLs") if content.match?(%r{github\.com/FerriteLabs})
+  fail("#{name} must describe a candidate/hardening campaign, not a pre-release") if content.match?(/\bpre-release\b/i)
   fail("#{name} must not reference a latest image") if content.match?(%r{ghcr\.io/ferritelabs/ferrite:latest})
   # No hardcoded campaign artifact: a concrete version tag (e.g. :0.4.0) or a
   # full 64-hex sha256 digest would silently violate the launch gate (the
@@ -172,6 +173,7 @@ end
 fail("SECURITY.md must exist") unless File.file?(File.join(root, "SECURITY.md"))
 security_policy = read(root, "SECURITY.md")
 fail("SECURITY.md must document the security contact email") unless security_policy.include?("security@ferritelabs.dev")
+fail("SECURITY.md must not link to disabled private Security Advisories") if security_policy.match?(%r{security/advisories/new})
 
 puts "Tester assets are valid."
 RUBY

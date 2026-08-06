@@ -17,21 +17,21 @@ project; the current Ferrite version is tracked in [CHANGELOG.md](CHANGELOG.md).
 
 ### 🐛 Report Bugs
 
-Found something broken? [Open an issue](https://github.com/FerriteLabs/ferrite/issues/new?template=bug_report.md) with steps to reproduce, and we'll triage it quickly.
+Found something broken? [Open an issue](https://github.com/ferritelabs/ferrite/issues/new?template=bug_report.md) with steps to reproduce, and we'll triage it quickly.
 
 ### 💡 Suggest Features
 
-Have an idea? Start a [GitHub Discussion](https://github.com/FerriteLabs/ferrite/discussions/categories/ideas) or open a [feature request](https://github.com/FerriteLabs/ferrite/issues/new?template=feature_request.md). We love hearing how people want to use Ferrite.
+Have an idea? Open a [feature request](https://github.com/ferritelabs/ferrite/issues/new?template=feature_request.md). We love hearing how people want to use Ferrite.
 
 ### 🔧 Contribute Code
 
 1. Check out our [Contributing Guide](./CONTRIBUTING.md) for setup instructions and PR workflow.
-2. Browse [`good first issue`](https://github.com/FerriteLabs/ferrite/labels/good%20first%20issue) labels for beginner-friendly tasks.
+2. Browse [`good first issue`](https://github.com/ferritelabs/ferrite/labels/good%20first%20issue) labels for beginner-friendly tasks.
 3. See the crate architecture in `crates/` — each is self-contained and a great place to start.
 
 ### 📖 Improve Documentation
 
-Docs live in [ferrite-docs](https://github.com/FerriteLabs/ferrite-docs). Typo fixes, new guides, and better examples are always welcome. Run the docs site locally with:
+Docs live in [ferrite-docs](https://github.com/ferritelabs/ferrite-docs). Typo fixes, new guides, and better examples are always welcome. Run the docs site locally with:
 
 ```bash
 cd ferrite-docs/website && npm install && npm start
@@ -45,15 +45,15 @@ More test coverage and real-world benchmarks help everyone. See `cargo test` and
 
 | Channel | Link |
 |---------|------|
-| **GitHub Discussions** | [FerriteLabs/ferrite/discussions](https://github.com/FerriteLabs/ferrite/discussions) |
-| **GitHub Issues** | [FerriteLabs/ferrite/issues](https://github.com/FerriteLabs/ferrite/issues) |
+| **GitHub Issues** | [ferritelabs/ferrite/issues](https://github.com/ferritelabs/ferrite/issues) |
+| **Tester interest / questions** | [Tester Interest form](https://github.com/ferritelabs/ferrite/issues/new?template=tester_interest.yml) |
 
 For security vulnerabilities, please email **security@ferritelabs.dev** instead of opening a public issue.
 
 ## Key Resources
 
 - [CONTRIBUTING.md](./CONTRIBUTING.md) — How to set up your dev environment and submit PRs
-- [Good First Issues](https://github.com/FerriteLabs/ferrite/labels/good%20first%20issue) — Curated tasks for new contributors
+- [Good First Issues](https://github.com/ferritelabs/ferrite/labels/good%20first%20issue) — Curated tasks for new contributors
 - [Architecture Overview](./docs/ARCHITECTURE.md) — Understand how Ferrite works under the hood
 - [Observability Guide](./docs/OPERATIONS.md) — Monitoring, metrics, and tracing for storage operations
 - [Code of Conduct](./CODE_OF_CONDUCT.md) — Our standards for a welcoming community

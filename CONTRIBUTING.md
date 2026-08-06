@@ -976,13 +976,13 @@ That's how Redis does it.  [without verification]
 Need assistance? We're here to help:
 
 **For Questions:**
-- Open a [GitHub Discussion](../../discussions)
-- Create an issue with the `question` label
-- Check existing issues and discussions first
+- Check the documentation and existing issues first
+- Use the relevant [issue form](https://github.com/ferritelabs/ferrite/issues/new/choose)
+- Ask for implementation help in comments on your pull request
 
 **For Architecture Questions:**
 - Refer to [CLAUDE.md](CLAUDE.md) for technical details
-- Ask in discussions for design guidance
+- Open a focused feature request when a design decision needs maintainer input
 - Reference the FASTER paper for storage engine questions
 
 **For Redis Compatibility:**

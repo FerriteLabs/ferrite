@@ -143,5 +143,5 @@ RUST_LOG=ferrite=debug ferrite --config ferrite.toml
 ## Getting Help
 
 - **GitHub Issues**: [ferritelabs/ferrite/issues](https://github.com/ferritelabs/ferrite/issues)
-- **Discussions**: [ferritelabs/ferrite/discussions](https://github.com/ferritelabs/ferrite/discussions)
+- **Tester questions**: [Tester Interest form](https://github.com/ferritelabs/ferrite/issues/new?template=tester_interest.yml)
 - **Documentation**: [ferritelabs.github.io/ferrite-docs](https://ferritelabs.github.io/ferrite-docs)

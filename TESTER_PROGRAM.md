@@ -6,7 +6,7 @@ version-neutral: it does not itself name a release or claim any image is
 currently available. The canonical current Ferrite version is documented in
 [CHANGELOG.md](CHANGELOG.md); it is tracked separately from this program.
 
-Ferrite and any campaign build are pre-release software: **never use
+Candidate campaign builds are for hardening and validation only: **never use
 production data, credentials, hosts, or workloads you cannot safely lose**.
 
 ## Launch gate

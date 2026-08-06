@@ -40,9 +40,7 @@ vulnerability" form is not available. Use this channel instead:
    - Encrypt sensitive details with our [PGP key](../../security) if available
 
 If private vulnerability reporting is enabled for this repository in the
-future, the [Security tab](../../security/advisories/new) will become an
-additional preferred channel; this document will be updated when that
-happens.
+future, this document will be updated with the governed channel.
 
 ### What to Include
 
@@ -766,12 +764,11 @@ As the project matures, we may establish a formal bug bounty program.
 ## Security Contacts
 
 **Primary Contact:**
-- **Email**: `josedab@gmail.com`
+- **Email**: `security@ferritelabs.dev`
 - **PGP Key**: Available in repository root (`SECURITY-PGP-KEY.asc`)
 
-**GitHub Security Advisories:**
-- Preferred method for private vulnerability disclosure
-- [Create a security advisory](../../security/advisories/new)
+GitHub private vulnerability reporting is not currently enabled. Follow the
+[Reporting a Vulnerability](#reporting-a-vulnerability) process above.
 
 ## Additional Resources
 
