@@ -217,7 +217,7 @@ def ops_commit_violation(text)
     return "wording that accepts a tag as ops provenance; only a full commit SHA is accepted"
   end
 
-  if text.match?(/(?<![0-9a-f])[0-9a-f]{40}(?![0-9a-f])/)
+  if text.match?(/(?<![0-9a-f])[0-9a-f]{40}(?![0-9a-f])/i)
     return "a concrete campaign ops commit SHA"
   end
 
@@ -232,7 +232,9 @@ def self_test_ops_commit_detection!
     "retired variable name" => ["git checkout <CAMPAIGN_OPS_REF>", true],
     "tag-or-commit wording" => ["an immutable reference (a tag or a full commit SHA)", true],
     "immutable tag wording" => ["publish an immutable tag for the campaign", true],
-    "concrete 40-hex sha" => ["Use commit #{'a' * 40} for this campaign.", true],
+    "lowercase concrete 40-hex sha" => ["Use commit #{'a' * 40} for this campaign.", true],
+    "uppercase concrete 40-hex sha" => ["Use commit #{'A' * 40} for this campaign.", true],
+    "mixed-case concrete 40-hex sha" => ["Use commit #{'aA' * 20} for this campaign.", true],
     "image digest is not an ops commit" => ["ghcr.io/ferritelabs/ferrite@sha256:#{'a' * 64}", false]
   }
 
@@ -257,29 +259,31 @@ end
 
 config = read(root, ".github/ISSUE_TEMPLATE/config.yml")
 fail("issue config must link TESTER_PROGRAM.md") unless config.include?("/blob/main/TESTER_PROGRAM.md")
-fail("issue config must link GitHub private vulnerability reporting") unless config.include?("https://github.com/ferritelabs/ferrite/security/advisories/new")
 
 community = read(root, "COMMUNITY.md")
 
-# Tester-specific intake assets: the canonical program document, the two
-# tester issue forms, and the issue-template configuration that routes to
-# them. Tester intake intentionally stays on the issue forms (structured,
-# triageable, one record per session), so these assets must not route around
-# it via Discussions.
+# Tester-specific intake assets: the canonical program document and the two
+# tester issue forms. Tester intake intentionally stays on the issue forms
+# (structured, triageable, one record per session), so these assets must not
+# route around it via Discussions. The general issue-template configuration
+# and community document intentionally surface Discussions and are excluded.
 tester_intake_assets = {
   "TESTER_PROGRAM.md" => canonical,
   ".github/ISSUE_TEMPLATE/tester_interest.yml" => read(root, ".github/ISSUE_TEMPLATE/tester_interest.yml"),
-  ".github/ISSUE_TEMPLATE/tester_report.yml" => read(root, ".github/ISSUE_TEMPLATE/tester_report.yml"),
-  ".github/ISSUE_TEMPLATE/config.yml" => config
+  ".github/ISSUE_TEMPLATE/tester_report.yml" => read(root, ".github/ISSUE_TEMPLATE/tester_report.yml")
 }
 
 # All public-facing assets, including the general community document. These
 # share the security-intake and campaign-artifact rules, but NOT the
 # Discussions prohibition: Discussions is enabled for this repository and is
 # a legitimate general community channel.
-public_assets = tester_intake_assets.merge("COMMUNITY.md" => community)
+public_assets = tester_intake_assets.merge(
+  ".github/ISSUE_TEMPLATE/config.yml" => config,
+  "COMMUNITY.md" => community
+)
 
 private_reporting_url = "https://github.com/ferritelabs/ferrite/security/advisories/new"
+discussions_url = "https://github.com/ferritelabs/ferrite/discussions"
 
 # GitHub private vulnerability reporting (Security Advisories) is the sole
 # canonical private security intake for this repository. These public-facing
@@ -293,12 +297,16 @@ tester_intake_assets.each do |name, content|
   fail("#{name} must not link to GitHub Discussions; tester intake intentionally stays on the Tester Interest/Report forms") if content.match?(%r{github\.com/[\w-]+/[\w.-]+/discussions})
 end
 
-# GitHub Discussions is enabled for this repository, so the general community
-# document must actually surface it (its absence previously reflected a
-# disabled feature and is now a stale omission), while still routing security
-# reports to the canonical private intake.
-fail("COMMUNITY.md must link to GitHub Discussions now that it is enabled") unless community.match?(%r{https://github\.com/ferritelabs/ferrite/discussions})
-fail("COMMUNITY.md must link to the canonical GitHub private vulnerability reporting intake") unless community.include?(private_reporting_url)
+# GitHub Discussions is enabled for this repository, so both general contact
+# surfaces must preserve it while still routing security reports to the
+# canonical private intake.
+{
+  ".github/ISSUE_TEMPLATE/config.yml" => config,
+  "COMMUNITY.md" => community
+}.each do |name, content|
+  fail("#{name} must link to GitHub Discussions now that it is enabled") unless content.include?(discussions_url)
+  fail("#{name} must link to the canonical GitHub private vulnerability reporting intake") unless content.include?(private_reporting_url)
+end
 
 public_assets.each do |name, content|
   fail("#{name} must link to the canonical GitHub private vulnerability reporting intake") unless content.include?(private_reporting_url)
