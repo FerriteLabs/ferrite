@@ -5,6 +5,7 @@
 | Channel | Use For | Link |
 |---------|---------|------|
 | **Documentation** | Guides, tutorials, API reference | [ferrite.rs](https://ferrite.rs) |
+| **GitHub Discussions** | Questions, ideas, show & tell | [Discussions](https://github.com/ferritelabs/ferrite/discussions) |
 | **Issue Tracker** | Bug reports and feature requests | [Issue forms](https://github.com/ferritelabs/ferrite/issues/new/choose) |
 | **Tester intake** | External tester interest and program questions | [Tester Interest form](https://github.com/ferritelabs/ferrite/issues/new?template=tester_interest.yml) |
 
@@ -15,7 +16,7 @@
 | Security vulnerabilities | Within 48 hours |
 | Bug reports | Within 1 week |
 | Feature requests | Triaged monthly |
-| Questions | Best effort |
+| Questions / discussions | Best effort |
 
 ## Before Filing an Issue
 

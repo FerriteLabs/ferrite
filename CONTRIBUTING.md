@@ -89,7 +89,7 @@ There are many ways to contribute to Ferrite:
 - **Submit code changes** for fixes or new features
 - **Improve documentation** to help users and developers
 - **Review pull requests** to share your expertise
-- **Answer questions** in the relevant issue or pull request
+- **Answer questions** in issues and [Discussions](https://github.com/ferritelabs/ferrite/discussions)
 
 ### Reporting Bugs
 
@@ -977,18 +977,18 @@ Need assistance? We're here to help:
 
 **For Questions:**
 - Check the documentation and existing issues first
-- Use the relevant [issue form](https://github.com/ferritelabs/ferrite/issues/new/choose)
+- Open a [GitHub Discussion](https://github.com/ferritelabs/ferrite/discussions)
 - Ask for implementation help in comments on your pull request
 
 **For Architecture Questions:**
 - Refer to [CLAUDE.md](CLAUDE.md) for technical details
-- Open a focused feature request when a design decision needs maintainer input
+- Ask in [Discussions](https://github.com/ferritelabs/ferrite/discussions) for design guidance
 - Reference the FASTER paper for storage engine questions
 
 **For Redis Compatibility:**
 - Check [Redis documentation](https://redis.io/docs/)
 - Look at existing command implementations
-- Ask a clarifying question on the relevant issue or pull request
+- Ask in [Discussions](https://github.com/ferritelabs/ferrite/discussions) for clarification
 
 **For Contributing Process:**
 - Re-read this guide
