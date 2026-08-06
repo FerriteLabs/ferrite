@@ -16,8 +16,11 @@ Interest can be registered before a campaign has artifacts — see
 start until the campaign owner has published both of the following, and you
 have verified them on a clean machine:**
 
-1. `CAMPAIGN_OPS_REF` — an immutable [ferrite-ops](https://github.com/ferritelabs/ferrite-ops)
-   reference (a tag or a full commit SHA; never `main` or a floating branch).
+1. `CAMPAIGN_OPS_COMMIT` — the full 40-character lowercase
+   [ferrite-ops](https://github.com/ferritelabs/ferrite-ops) commit SHA that
+   the campaign was validated against. Only an exact commit SHA is accepted:
+   a tag, `main`, any other branch, and an abbreviated SHA are all rejected,
+   because only a commit SHA is immutable and unambiguous.
 2. `FERRITE_TEST_IMAGE` — the complete repository-qualified sha256 digest
    reference for the candidate build (e.g.
    `ghcr.io/ferritelabs/ferrite@sha256:<CAMPAIGN_DIGEST>`); never a tag. The
@@ -28,6 +31,9 @@ have verified them on a clean machine:**
 Do not begin a session against `main`/`latest` or any artifact you assembled
 yourself. If either reference is missing, unverifiable, or does not check
 out/pull cleanly, stop and wait for the campaign owner to fix or reissue it.
+The core path below checks the commit out in detached HEAD state and verifies
+`git rev-parse HEAD` matches `CAMPAIGN_OPS_COMMIT` exactly before running any
+tooling; if that comparison fails, stop.
 
 ## Campaign artifact rule
 
@@ -70,9 +76,9 @@ production-ready; see
 - You can reserve 60–90 uninterrupted minutes.
 - Docker Engine and Docker Compose v2 are available (`docker compose version`).
 - Ports `6379` and `9090` are free, or you have chosen overrides.
-- The campaign owner has published both `CAMPAIGN_OPS_REF` and
-  `FERRITE_TEST_IMAGE` (see [Launch gate](#launch-gate)) and you have the
-  exact values.
+- The campaign owner has published both `CAMPAIGN_OPS_COMMIT` (a full
+  40-character lowercase commit SHA) and `FERRITE_TEST_IMAGE` (see
+  [Launch gate](#launch-gate)) and you have the exact values.
 - You will use synthetic data and can delete the tester volume afterward.
 - You have chosen a track and a client to record in your report.
 
@@ -85,15 +91,20 @@ information in a public issue.
 
 ## Core path
 
-Clone [ferrite-ops](https://github.com/ferritelabs/ferrite-ops) and check out
-the exact campaign reference before running its isolated tester tooling:
+Clone [ferrite-ops](https://github.com/ferritelabs/ferrite-ops), check out the
+exact campaign commit in detached HEAD state, and verify the checkout before
+running its isolated tester tooling:
 
 ```bash
 git clone https://github.com/ferritelabs/ferrite-ops.git
 cd ferrite-ops
-git checkout <CAMPAIGN_OPS_REF>
+git checkout --detach <CAMPAIGN_OPS_COMMIT>
+test "$(git rev-parse HEAD)" = "<CAMPAIGN_OPS_COMMIT>" || {
+  echo "HEAD is not <CAMPAIGN_OPS_COMMIT>; stop and re-request the campaign commit" >&2
+  exit 1
+}
 test -x scripts/tester.sh && ./scripts/tester.sh --help >/dev/null || {
-  echo "scripts/tester.sh is missing or not runnable at <CAMPAIGN_OPS_REF>" >&2
+  echo "scripts/tester.sh is missing or not runnable at <CAMPAIGN_OPS_COMMIT>" >&2
   exit 1
 }
 export FERRITE_TEST_IMAGE='ghcr.io/ferritelabs/ferrite@sha256:<CAMPAIGN_DIGEST>' # complete repository-qualified digest the owner supplied; never latest or a tag
@@ -103,8 +114,11 @@ export FERRITE_TEST_IMAGE='ghcr.io/ferritelabs/ferrite@sha256:<CAMPAIGN_DIGEST>'
 ./scripts/tester.sh stop
 ```
 
-Both placeholders above (`<CAMPAIGN_OPS_REF>` and `<CAMPAIGN_DIGEST>`) must be
-replaced with the values the campaign owner publishes; there is no default.
+Both placeholders above (`<CAMPAIGN_OPS_COMMIT>` and `<CAMPAIGN_DIGEST>`) must
+be replaced with the values the campaign owner publishes; there is no default.
+`<CAMPAIGN_OPS_COMMIT>` must be the full 40-character lowercase commit SHA —
+substituting a tag or branch name makes the `git rev-parse HEAD` comparison
+above fail, which is intended: record the commit, not a movable label.
 `FERRITE_TEST_IMAGE` has no fallback — `tester.sh` fails fast with an
 actionable error before touching Docker if it is unset, floating (`latest`),
 a tag, or not the complete repository-qualified sha256 digest reference.
@@ -149,6 +163,13 @@ data before sharing it.** For a security vulnerability, do not file a public
 tester report; report it privately using
 [GitHub private vulnerability reporting](https://github.com/ferritelabs/ferrite/security/advisories/new)
 as described in the [Security Policy](SECURITY.md#reporting-a-vulnerability).
+
+Every report must record the exact provenance of the session: the
+`ops_commit` field is the full 40-character lowercase `CAMPAIGN_OPS_COMMIT`
+you verified with `git rev-parse HEAD`, and the image field is the complete
+repository-qualified sha256 digest reference you used. Copy both verbatim; a
+tag, a branch name, an abbreviated SHA, or "same as published" is not a
+usable provenance record.
 
 Use these definitions in the
 [Tester Report form](https://github.com/ferritelabs/ferrite/issues/new?template=tester_report.yml):

@@ -64,8 +64,8 @@ end
 required_forms = {
   "tester_interest.yml" => %w[environment client track availability safety],
   "tester_report.yml" => %w[
-    track severity version_image install_method environment client steps expected
-    actual reproducibility regression redaction
+    track severity version_image ops_commit install_method environment client
+    steps expected actual reproducibility regression redaction
   ]
 }
 
@@ -151,7 +151,8 @@ canonical = read(root, "TESTER_PROGRAM.md")
 required_canonical_text = [
   "60–90 minutes",
   "Launch gate",
-  "CAMPAIGN_OPS_REF",
+  "CAMPAIGN_OPS_COMMIT",
+  "40-character",
   "FERRITE_TEST_IMAGE",
   "CAMPAIGN_DIGEST",
   "ghcr.io/ferritelabs/ferrite@sha256:<CAMPAIGN_DIGEST>",
@@ -161,7 +162,9 @@ required_canonical_text = [
   "Operations/metrics",
   "Performance comparison",
   "IDE tooling",
-  "git checkout <CAMPAIGN_OPS_REF>",
+  "git checkout --detach <CAMPAIGN_OPS_COMMIT>",
+  "git rev-parse HEAD",
+  "ops_commit",
   "./scripts/tester.sh start",
   "./scripts/tester.sh smoke",
   "./scripts/tester.sh durability",
@@ -194,6 +197,56 @@ fail("TESTER_PROGRAM.md must not present a source build as an available install 
 # campaign artifact, regardless of how "immutable" the owner claims it is.
 fail("TESTER_PROGRAM.md must not describe a pinned tag as an acceptable FERRITE_TEST_IMAGE value") if canonical.match?(/pinned tag is (?:acceptable|accepted)/i)
 
+# --- Ops tooling provenance (CAMPAIGN_OPS_COMMIT) ---------------------------
+#
+# The campaign's ferrite-ops provenance is a full 40-character lowercase
+# commit SHA and nothing else. The retired CAMPAIGN_OPS_REF spelling allowed a
+# tag, which is mutable (a tag can be moved or re-pointed after the campaign
+# owner verifies it), so public assets must not resurrect either the old
+# variable name or the "tag or commit" wording. A real, non-placeholder SHA is
+# also rejected pre-launch for the same reason a real image digest is: the
+# campaign owner publishes it out-of-band, and a hardcoded value in a document
+# would misattribute the campaign.
+def ops_commit_violation(text)
+  if text.include?("CAMPAIGN_OPS_REF")
+    return "the retired CAMPAIGN_OPS_REF spelling; use CAMPAIGN_OPS_COMMIT (a full 40-character lowercase commit SHA)"
+  end
+
+  if text.match?(/\btags?\s+or\s+(?:an?\s+)?(?:full\s+)?commit/i) ||
+     text.match?(/immutable\s+tag/i)
+    return "wording that accepts a tag as ops provenance; only a full commit SHA is accepted"
+  end
+
+  if text.match?(/(?<![0-9a-f])[0-9a-f]{40}(?![0-9a-f])/)
+    return "a concrete campaign ops commit SHA"
+  end
+
+  nil
+end
+
+def self_test_ops_commit_detection!
+  cases = {
+    "commit placeholder" => ["git checkout --detach <CAMPAIGN_OPS_COMMIT>", false],
+    "rev-parse verification" => ['test "$(git rev-parse HEAD)" = "<CAMPAIGN_OPS_COMMIT>"', false],
+    "explicit tag/branch prohibition is fine" => ["never a tag, a branch, or an abbreviated SHA", false],
+    "retired variable name" => ["git checkout <CAMPAIGN_OPS_REF>", true],
+    "tag-or-commit wording" => ["an immutable reference (a tag or a full commit SHA)", true],
+    "immutable tag wording" => ["publish an immutable tag for the campaign", true],
+    "concrete 40-hex sha" => ["Use commit #{'a' * 40} for this campaign.", true],
+    "image digest is not an ops commit" => ["ghcr.io/ferritelabs/ferrite@sha256:#{'a' * 64}", false]
+  }
+
+  cases.each do |label, (text, expect_violation)|
+    violation = ops_commit_violation(text)
+    actual = !violation.nil?
+    unless actual == expect_violation
+      fail("self-test failed for #{label.inspect}: expected violation=#{expect_violation}, got #{actual.inspect} (#{violation})")
+    end
+  end
+end
+
+self_test_ops_commit_detection!
+
 {
   "README.md" => "[TESTER_PROGRAM.md](TESTER_PROGRAM.md)",
   "COMMUNITY.md" => "[Tester Program](./TESTER_PROGRAM.md)",
@@ -206,13 +259,25 @@ config = read(root, ".github/ISSUE_TEMPLATE/config.yml")
 fail("issue config must link TESTER_PROGRAM.md") unless config.include?("/blob/main/TESTER_PROGRAM.md")
 fail("issue config must link GitHub private vulnerability reporting") unless config.include?("https://github.com/ferritelabs/ferrite/security/advisories/new")
 
-public_assets = {
+community = read(root, "COMMUNITY.md")
+
+# Tester-specific intake assets: the canonical program document, the two
+# tester issue forms, and the issue-template configuration that routes to
+# them. Tester intake intentionally stays on the issue forms (structured,
+# triageable, one record per session), so these assets must not route around
+# it via Discussions.
+tester_intake_assets = {
   "TESTER_PROGRAM.md" => canonical,
-  "COMMUNITY.md" => read(root, "COMMUNITY.md"),
   ".github/ISSUE_TEMPLATE/tester_interest.yml" => read(root, ".github/ISSUE_TEMPLATE/tester_interest.yml"),
   ".github/ISSUE_TEMPLATE/tester_report.yml" => read(root, ".github/ISSUE_TEMPLATE/tester_report.yml"),
   ".github/ISSUE_TEMPLATE/config.yml" => config
 }
+
+# All public-facing assets, including the general community document. These
+# share the security-intake and campaign-artifact rules, but NOT the
+# Discussions prohibition: Discussions is enabled for this repository and is
+# a legitimate general community channel.
+public_assets = tester_intake_assets.merge("COMMUNITY.md" => community)
 
 private_reporting_url = "https://github.com/ferritelabs/ferrite/security/advisories/new"
 
@@ -224,9 +289,19 @@ private_reporting_url = "https://github.com/ferritelabs/ferrite/security/advisor
 # elsewhere), but the external tester program intentionally keeps its intake
 # on the Tester Interest/Report issue forms rather than Discussions, so these
 # specific tester-facing assets must not route around that intake.
+tester_intake_assets.each do |name, content|
+  fail("#{name} must not link to GitHub Discussions; tester intake intentionally stays on the Tester Interest/Report forms") if content.match?(%r{github\.com/[\w-]+/[\w.-]+/discussions})
+end
+
+# GitHub Discussions is enabled for this repository, so the general community
+# document must actually surface it (its absence previously reflected a
+# disabled feature and is now a stale omission), while still routing security
+# reports to the canonical private intake.
+fail("COMMUNITY.md must link to GitHub Discussions now that it is enabled") unless community.match?(%r{https://github\.com/ferritelabs/ferrite/discussions})
+fail("COMMUNITY.md must link to the canonical GitHub private vulnerability reporting intake") unless community.include?(private_reporting_url)
+
 public_assets.each do |name, content|
   fail("#{name} must link to the canonical GitHub private vulnerability reporting intake") unless content.include?(private_reporting_url)
-  fail("#{name} must not link to GitHub Discussions; tester intake intentionally stays on the Tester Interest/Report forms") if content.match?(%r{github\.com/[\w-]+/[\w.-]+/discussions})
   fail("#{name} must not reference the retired security@ferritelabs.dev email intake") if content.match?(/security@ferritelabs\.dev/i)
   fail("#{name} must not reference a PGP key for security reporting") if content.match?(/\bPGP\b/i)
   fail("#{name} must not reference a security mailing list") if content.match?(/security mailing list/i)
@@ -295,6 +370,11 @@ self_test_concrete_image_detection!
 public_assets.each do |name, content|
   violation = concrete_image_violation(content)
   fail("#{name} must not hardcode #{violation}") if violation
+end
+
+public_assets.each do |name, content|
+  violation = ops_commit_violation(content)
+  fail("#{name} must not use #{violation}") if violation
 end
 
 # --- FERRITE_TEST_IMAGE example completeness -------------------------------

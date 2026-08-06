@@ -40,6 +40,14 @@ body:
       placeholder: "Ferrite candidate build — ghcr.io/ferritelabs/ferrite@sha256:..."
     validations:
       required: true
+  - type: input
+    id: ops_commit
+    attributes:
+      label: ferrite-ops tooling commit (CAMPAIGN_OPS_COMMIT)
+      description: The full 40-character lowercase ferrite-ops commit SHA you checked out with `git checkout --detach` and confirmed with `git rev-parse HEAD`. Never report a tag, a branch, or an abbreviated SHA.
+      placeholder: "The full 40-character lowercase SHA printed by git rev-parse HEAD"
+    validations:
+      required: true
   - type: dropdown
     id: install_method
     attributes:

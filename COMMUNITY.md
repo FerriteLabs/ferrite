@@ -15,6 +15,15 @@ Join the non-production [Tester Program](./TESTER_PROGRAM.md) for one canonical
 candidate/hardening campaign is scheduled and announced separately by the
 project; the current Ferrite version is tracked in [CHANGELOG.md](CHANGELOG.md).
 
+### 💬 Ask and Discuss
+
+General questions, ideas, and show-and-tell belong in
+[GitHub Discussions](https://github.com/ferritelabs/ferrite/discussions) —
+it is enabled for this repository. Two things intentionally stay off
+Discussions: security vulnerabilities (report those privately, see below) and
+external tester program intake, which uses the Tester Interest and Tester
+Report issue forms so every session has a structured, triageable record.
+
 ### 🐛 Report Bugs
 
 Found something broken? [Open an issue](https://github.com/ferritelabs/ferrite/issues/new?template=bug_report.md) with steps to reproduce, and we'll triage it quickly.
@@ -45,6 +54,7 @@ More test coverage and real-world benchmarks help everyone. See `cargo test` and
 
 | Channel | Link |
 |---------|------|
+| **GitHub Discussions** | [ferritelabs/ferrite/discussions](https://github.com/ferritelabs/ferrite/discussions) |
 | **GitHub Issues** | [ferritelabs/ferrite/issues](https://github.com/ferritelabs/ferrite/issues) |
 | **Tester interest / questions** | [Tester Interest form](https://github.com/ferritelabs/ferrite/issues/new?template=tester_interest.yml) |
 
@@ -57,6 +67,7 @@ For security vulnerabilities, do not open a public issue — report them private
 - [Architecture Overview](./docs/ARCHITECTURE.md) — Understand how Ferrite works under the hood
 - [Observability Guide](./docs/OPERATIONS.md) — Monitoring, metrics, and tracing for storage operations
 - [Code of Conduct](./CODE_OF_CONDUCT.md) — Our standards for a welcoming community
+- [GitHub Discussions](https://github.com/ferritelabs/ferrite/discussions) — Questions, ideas, and community conversation
 
 ## Contributor Recognition
 
