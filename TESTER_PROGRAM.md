@@ -75,6 +75,9 @@ production-ready; see
 
 - You can reserve 60–90 uninterrupted minutes.
 - Docker Engine and Docker Compose v2 are available (`docker compose version`).
+  Linux hosts require Docker Engine 28 or newer because older engines can
+  expose loopback-published ports to the local network.
+- Python 3 is available for the bounded host-side RESP and metrics probes.
 - Ports `6379` and `9090` are free, or you have chosen overrides.
 - The campaign owner has published both `CAMPAIGN_OPS_COMMIT` (a full
   40-character lowercase commit SHA) and `FERRITE_TEST_IMAGE` (see
