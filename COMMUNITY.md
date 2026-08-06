@@ -48,7 +48,7 @@ More test coverage and real-world benchmarks help everyone. See `cargo test` and
 | **GitHub Issues** | [ferritelabs/ferrite/issues](https://github.com/ferritelabs/ferrite/issues) |
 | **Tester interest / questions** | [Tester Interest form](https://github.com/ferritelabs/ferrite/issues/new?template=tester_interest.yml) |
 
-For security vulnerabilities, please email **security@ferritelabs.dev** instead of opening a public issue.
+For security vulnerabilities, do not open a public issue — report them privately using [GitHub private vulnerability reporting](https://github.com/ferritelabs/ferrite/security/advisories/new).
 
 ## Key Resources
 

@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         Submit one report per completed session, including successful sessions. Follow the severity and reproducibility definitions in the [canonical Tester Program](https://github.com/ferritelabs/ferrite/blob/main/TESTER_PROGRAM.md).
-        For a vulnerability, stop and report it privately instead: see the [Security Policy](https://github.com/ferritelabs/ferrite/blob/main/SECURITY.md#reporting-a-vulnerability) or email security@ferritelabs.dev.
+        For a vulnerability, stop and report it privately instead: see the [Security Policy](https://github.com/ferritelabs/ferrite/blob/main/SECURITY.md#reporting-a-vulnerability) or use [GitHub private vulnerability reporting](https://github.com/ferritelabs/ferrite/security/advisories/new).
   - type: dropdown
     id: track
     attributes:
@@ -25,7 +25,7 @@ body:
     attributes:
       label: Highest severity observed
       options:
-        - None
+        - No issues observed
         - Low
         - Medium
         - High
@@ -36,7 +36,7 @@ body:
     id: version_image
     attributes:
       label: Version and exact artifact reference
-      description: Copy the campaign artifact exactly (Docker image digest, Homebrew formula version, or source commit SHA). Never report `latest`.
+      description: Copy the campaign artifact exactly (Docker image digest). Never report `latest`.
       placeholder: "Ferrite candidate build — ghcr.io/ferritelabs/ferrite@sha256:..."
     validations:
       required: true
@@ -46,17 +46,13 @@ body:
       label: Install method
       options:
         - ferrite-ops tester Docker Compose
-        - Homebrew
-        - Source build
-        - Kubernetes
-        - Other
     validations:
       required: true
   - type: textarea
     id: environment
     attributes:
       label: Environment
-      description: OS, architecture, Docker/Compose or Kubernetes version, and relevant resource limits. Do not include private hostnames or addresses.
+      description: OS, architecture, Docker/Compose version, and relevant resource limits. Do not include private hostnames or addresses.
       placeholder: "Ubuntu 24.04, x86_64, Docker 27, Compose v2.29, 4 CPUs / 8 GiB"
     validations:
       required: true

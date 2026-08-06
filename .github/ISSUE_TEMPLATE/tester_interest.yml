@@ -6,19 +6,16 @@ body:
     attributes:
       value: |
         Thank you for volunteering. Read the [canonical Tester Program](https://github.com/ferritelabs/ferrite/blob/main/TESTER_PROGRAM.md) before submitting.
-        A candidate campaign (exact ops reference and artifact) has not necessarily been published yet — registering interest does not require one. This form is a temporary public intake until a dedicated channel exists.
+        A candidate campaign (exact ops reference and artifact) has not necessarily been published yet — registering interest does not require one.
         This is a public issue. Do not include email addresses, credentials, customer data, private hostnames, or other sensitive information.
+        Never disclose a suspected vulnerability in this public issue; use [GitHub private vulnerability reporting](https://github.com/ferritelabs/ferrite/security/advisories/new).
   - type: dropdown
     id: environment
     attributes:
       label: Starting environment
-      description: Where do you expect to run the disposable test?
+      description: The initial cohort is Docker / Docker Compose only. Alternative installation cohorts are deferred until maintained tooling exists.
       options:
         - Docker / Docker Compose
-        - Homebrew
-        - Source build
-        - Kubernetes
-        - Other non-production environment
     validations:
       required: true
   - type: input
@@ -60,5 +57,5 @@ body:
       options:
         - label: I will use only disposable, non-production infrastructure and synthetic data that can be lost.
           required: true
-        - label: I will use only the exact campaign artifact (Docker image digest, Homebrew formula version, or source commit) the campaign owner supplies, and will never use `latest` or a build of my own.
+        - label: I will use only the exact campaign artifact (Docker image digest) the campaign owner supplies, and will never use `latest` or a build of my own.
           required: true

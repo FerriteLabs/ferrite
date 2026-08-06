@@ -89,7 +89,7 @@ There are many ways to contribute to Ferrite:
 - **Submit code changes** for fixes or new features
 - **Improve documentation** to help users and developers
 - **Review pull requests** to share your expertise
-- **Answer questions** in issues and discussions
+- **Answer questions** in the relevant issue or pull request
 
 ### Reporting Bugs
 
@@ -988,7 +988,7 @@ Need assistance? We're here to help:
 **For Redis Compatibility:**
 - Check [Redis documentation](https://redis.io/docs/)
 - Look at existing command implementations
-- Ask in discussions for clarification
+- Ask a clarifying question on the relevant issue or pull request
 
 **For Contributing Process:**
 - Re-read this guide

@@ -18,10 +18,10 @@ have verified them on a clean machine:**
 
 1. `CAMPAIGN_OPS_REF` — an immutable [ferrite-ops](https://github.com/ferritelabs/ferrite-ops)
    reference (a tag or a full commit SHA; never `main` or a floating branch).
-2. `FERRITE_TEST_IMAGE` — an exact, immutable artifact reference for the
-   candidate build (a Docker image digest is preferred; a Homebrew formula
-   version/revision or a source commit SHA are acceptable alternatives when a
-   Docker image is not the artifact under test).
+2. `FERRITE_TEST_IMAGE` — an exact, immutable Docker image digest for the
+   candidate build. The initial cohort is Docker/Docker Compose only;
+   alternative installation cohorts (Homebrew, source build, Kubernetes) are
+   deferred until maintained tooling exists for them.
 
 Do not begin a session against `main`/`latest` or any artifact you assembled
 yourself. If either reference is missing, unverifiable, or does not check
@@ -31,17 +31,14 @@ out/pull cleanly, stop and wait for the campaign owner to fix or reissue it.
 
 Use only the exact immutable reference the campaign owner supplies:
 
-- **Docker image (primary)** — an exact digest such as
+- **Docker image** — an exact digest such as
   `ghcr.io/ferritelabs/ferrite@<CAMPAIGN_IMAGE_DIGEST>`. A pinned tag is
   acceptable only if the owner states it is immutable for the campaign.
   **Never use `latest`** or a locally built image when reporting a result.
-- **Homebrew formula** — the exact formula version/revision the owner names,
-  installed fresh (`brew uninstall`/`brew install`, not `brew upgrade` from an
-  older cache).
-- **Source commit** — the exact commit SHA the owner names, built clean from
-  that checkout.
 
-Record which artifact type and exact reference you used in your report.
+The initial cohort is Docker/Docker Compose only. Alternative installation
+cohorts (Homebrew, source build, Kubernetes) are deferred until maintained
+tooling exists for them. Record the exact reference you used in your report.
 
 ## Journey and tracks
 
@@ -56,12 +53,14 @@ submit a report. Choose any optional track if time permits:
 3. **Operations/metrics** — inspect health, `INFO`, logs, and metrics.
 4. **Performance comparison** — compare a small, disclosed, non-production
    workload without making general benchmark claims.
-5. **IDE tooling** — try the VS Code or JetBrains Ferrite tooling.
+5. **IDE tooling** — connect the VS Code or JetBrains Ferrite tooling to the
+   running Docker Compose instance.
 
-Docker with Docker Compose is the primary supported starting environment.
-Homebrew, a source build, and Kubernetes are advanced starting points for
-testers already comfortable debugging them. Participation does not imply that
-Ferrite or any deployment method is production-ready; see
+Docker with Docker Compose is the only supported starting environment for the
+initial cohort. Alternative installation cohorts (Homebrew, a source build,
+Kubernetes) are deferred until maintained tooling exists for them.
+Participation does not imply that Ferrite or any deployment method is
+production-ready; see
 [feature maturity and known limitations](docs/FEATURE_MATURITY.md).
 
 ## Entry checklist
@@ -79,9 +78,8 @@ Ferrite or any deployment method is production-ready; see
 
 First-time testers can register interest before a campaign is scheduled using
 the [Tester Interest form](https://github.com/ferritelabs/ferrite/issues/new?template=tester_interest.yml).
-This is a temporary public intake; it will be replaced by a dedicated channel
-once one exists. Do not put email addresses, credentials, customer data, or
-other sensitive information in a public issue.
+Do not put email addresses, credentials, customer data, or other sensitive
+information in a public issue.
 
 ## Core path
 
@@ -146,9 +144,9 @@ The diagnostics command intentionally excludes environment variables, secrets,
 full configuration, and database contents. Logs can still contain keys, client
 addresses, or values. **Open the archive and redact sensitive or identifying
 data before sharing it.** For a security vulnerability, do not file a public
-tester report; report it privately following the
-[Security Policy](SECURITY.md#reporting-a-vulnerability) (email
-**security@ferritelabs.dev**).
+tester report; report it privately using
+[GitHub private vulnerability reporting](https://github.com/ferritelabs/ferrite/security/advisories/new)
+as described in the [Security Policy](SECURITY.md#reporting-a-vulnerability).
 
 Use these definitions in the
 [Tester Report form](https://github.com/ferritelabs/ferrite/issues/new?template=tester_report.yml):
@@ -159,7 +157,7 @@ Use these definitions in the
 | High | Core path blocked, crash, or major compatibility failure with no practical workaround. |
 | Medium | Important behavior is wrong or degraded, but a workaround exists. |
 | Low | Minor defect, confusing output, or documentation/tooling issue. |
-| None | Session passed; no defect found. |
+| No issues observed | Session passed; no defect found. |
 
 | Reproducibility | Definition |
 |---|---|
@@ -185,6 +183,5 @@ The first cohort is complete when:
   docs before the next cohort.
 
 Program questions belong on the
-[Tester Interest form](https://github.com/ferritelabs/ferrite/issues/new?template=tester_interest.yml)
-until a dedicated community channel is available; completed sessions belong in
-the Tester Report form above.
+[Tester Interest form](https://github.com/ferritelabs/ferrite/issues/new?template=tester_interest.yml);
+completed sessions belong in the Tester Report form above.
