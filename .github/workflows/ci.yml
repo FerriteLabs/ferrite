@@ -280,7 +280,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: changes
     if: needs.changes.outputs.any-rust == 'true'
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@nightly
@@ -290,7 +289,8 @@ jobs:
       - name: Install cargo-udeps
         uses: taiki-e/install-action@cargo-udeps
       - name: Check unused dependencies
-        run: cargo +nightly udeps --workspace
+        continue-on-error: true
+        run: cargo +nightly udeps --workspace --all-targets
 
   # ── Semver compatibility check ─────────────────────────────────────────────
   semver:
