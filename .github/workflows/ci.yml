@@ -164,8 +164,11 @@ jobs:
         with:
           shared-key: test-${{ matrix.os }}
       - name: Test (full workspace)
-        if: needs.changes.outputs.core == 'true' || needs.changes.outputs.top-level == 'true'
+        if: (needs.changes.outputs.core == 'true' || needs.changes.outputs.top-level == 'true') && runner.os != 'Windows'
         run: cargo test --workspace
+      - name: Test (full workspace, serialized on Windows)
+        if: (needs.changes.outputs.core == 'true' || needs.changes.outputs.top-level == 'true') && runner.os == 'Windows'
+        run: cargo test --workspace -- --test-threads=1
       - name: Test (changed extensions only)
         if: needs.changes.outputs.core != 'true' && needs.changes.outputs.top-level != 'true' && needs.changes.outputs.extensions == 'true'
         shell: bash
@@ -197,6 +200,7 @@ jobs:
   all-features:
     name: All Features Check
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: changes
     if: needs.changes.outputs.any-rust == 'true'
     steps:
@@ -205,8 +209,6 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: all-features
-      - name: Check (all features)
-        run: cargo check --workspace --all-features
       - name: Clippy (all features)
         run: cargo clippy --workspace --all-features -- -D warnings
       - name: Test (all features)
