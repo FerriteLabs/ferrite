@@ -1,5 +1,6 @@
 //! Federation and multi-region active-active command implementations on CommandExecutor.
 
+#[cfg(feature = "experimental")]
 use std::sync::OnceLock;
 
 use crate::protocol::Frame;

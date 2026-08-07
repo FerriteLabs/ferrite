@@ -12,7 +12,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use tokio::sync::Notify;
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 
 use super::primary::ReplicationPrimary;
 use super::{ReplicationRole, SharedReplicationState};
