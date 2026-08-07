@@ -26,7 +26,7 @@ resolver = "2"
 [workspace.package]
 version = "0.4.0"
 edition = "2021"
-rust-version = "1.80"
+rust-version = "1.88"
 authors = ["Jose David Baena"]
 license = "Apache-2.0"
 repository = "https://github.com/ferritelabs/ferrite"
@@ -101,6 +101,7 @@ single_match_else = "allow"
 redundant_clone = "allow"
 derive_partial_eq_without_eq = "allow"
 map_unwrap_or = "allow"
+unnecessary_map_or = "allow"
 needless_borrows_for_generic_args = "allow"
 unnested_or_patterns = "allow"
 explicit_iter_loop = "allow"
@@ -214,7 +215,7 @@ num_cpus = "1.17.0"
 scopeguard = "1.2.0"
 crc32fast = "1.4"
 flate2 = "1.0"
-lz4_flex = "0.11.3"
+lz4_flex = "0.11.6"
 memmap2 = "0.9"
 clap = { version = "4", features = ["derive", "env", "string"] }
 
@@ -235,7 +236,6 @@ ndarray = { version = "0.16" }
 clap_complete = { version = "4" }
 rustyline = { version = "14" }
 colored = { version = "2" }
-atty = { version = "0.2" }
 ratatui = { version = "0.29", features = ["all-widgets"] }
 crossterm = { version = "0.28", features = ["event-stream"] }
 
@@ -345,7 +345,6 @@ chacha20poly1305 = { workspace = true, optional = true }
 clap_complete = { workspace = true, optional = true }
 rustyline = { workspace = true, optional = true }
 colored = { workspace = true, optional = true }
-atty = { workspace = true, optional = true }
 wasmtime = { workspace = true, optional = true }
 ort = { workspace = true, optional = true }
 ndarray = { workspace = true, optional = true }
@@ -384,7 +383,10 @@ scripting = ["mlua"]
 tls = ["rustls", "tokio-rustls", "rustls-pemfile"]
 cloud = ["ferrite-cloud", "ferrite-core/cloud"]
 crypto = ["ferrite-core/crypto"]
-cli = ["rustyline", "colored", "atty", "clap_complete"]
+cli = ["rustyline", "colored", "clap_complete"]
+# Compatibility alias for downstream 0.4 manifests that enabled the former
+# optional dependency feature directly.
+atty = []
 forge-runtime = ["ferrite-forge/runtime"]
 all = ["default", "experimental", "scripting", "cloud", "crypto", "otel", "tui", "wasm", "onnx", "io-uring"]
 

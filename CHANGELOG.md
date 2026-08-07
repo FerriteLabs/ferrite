@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Raised the core workspace MSRV to Rust 1.88 to match the committed dependency graph and security-supported dependency releases.
+
 ## [0.4.0] - 2026-04-20
 
 *Moonshot Extensions — six new experimental crates, four new command families, and AI agent SDK integrations.*

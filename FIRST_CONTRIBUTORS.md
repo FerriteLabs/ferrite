@@ -10,7 +10,7 @@ Welcome to **Ferrite** — a high-performance tiered-storage key-value store and
 
 **Prerequisites:**
 
-- Rust 1.80+ (`rustup update stable`)
+- Rust 1.88+ (`rustup update stable`)
 - Git
 - Linux recommended for full io_uring support; macOS/Windows work with fallback I/O
 

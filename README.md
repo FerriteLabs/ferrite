@@ -11,7 +11,7 @@ A high-performance, tiered-storage key-value store designed as a drop-in Redis r
 [![Documentation](https://docs.rs/ferrite/badge.svg)](https://docs.rs/ferrite)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
 [![MSRV](https://img.shields.io/crates/msrv/ferrite?label=MSRV)](https://crates.io/crates/ferrite)
-[![Rust](https://img.shields.io/badge/rust-1.80%2B-orange)](https://www.rust-lang.org/)
+[![Rust](https://img.shields.io/badge/rust-1.88%2B-orange)](https://www.rust-lang.org/)
 [![codecov](https://codecov.io/gh/ferritelabs/ferrite/branch/main/graph/badge.svg)](https://codecov.io/gh/ferritelabs/ferrite)
 [![Redis Compat](https://img.shields.io/badge/Redis%20Compat-92%25-brightgreen)](docs/REDIS_COMPAT.md)
 
@@ -324,7 +324,7 @@ measure on your hardware.
 
 ### Prerequisites
 
-- **Rust** 1.80+ MSRV (install via [rustup](https://rustup.rs/); contributors use the 1.88 toolchain pinned in `rust-toolchain.toml`)
+- **Rust** 1.88+ (install via [rustup](https://rustup.rs/); the contributor toolchain is pinned in `rust-toolchain.toml`)
 - **Git** for source control
 - **Redis CLI** for manual testing (optional)
 - **Linux only**: io_uring requires kernel 5.11+ and `--features io-uring`

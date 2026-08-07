@@ -394,8 +394,8 @@ prepare-release: clean ci bench ## Prepare for release
 	@echo "$(GREEN)$(BOLD)Ready for release!$(NC)"
 
 msrv: ## Check Minimum Supported Rust Version
-	@echo "$(BLUE)$(BOLD)Checking MSRV (1.80)...$(NC)"
-	@$(CARGO) +1.80 check --all-features
+	@echo "$(BLUE)$(BOLD)Checking MSRV (1.88)...$(NC)"
+	@$(CARGO) +1.88 check --all-features
 	@echo "$(GREEN)MSRV check passed!$(NC)"
 
 completions: ## Generate shell completions for bash, zsh, fish
