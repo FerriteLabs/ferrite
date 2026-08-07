@@ -89,19 +89,22 @@ impl LogEntryType {
                 }
                 let db = payload[0];
                 let key_len = u32::from_le_bytes(payload[1..5].try_into().ok()?) as usize;
-                if payload.len() < 5 + key_len + 4 {
+                let key_end = 5usize.checked_add(key_len)?;
+                let value_len_end = key_end.checked_add(4)?;
+                if payload.len() < value_len_end {
                     return None;
                 }
-                let key = Bytes::copy_from_slice(&payload[5..5 + key_len]);
+                let key = Bytes::copy_from_slice(&payload[5..key_end]);
                 let value_len =
-                    u32::from_le_bytes(payload[5 + key_len..5 + key_len + 4].try_into().ok()?)
-                        as usize;
+                    u32::from_le_bytes(payload[key_end..value_len_end].try_into().ok()?) as usize;
                 let value = if value_len == 0 {
                     None
                 } else {
-                    Some(Bytes::copy_from_slice(
-                        &payload[5 + key_len + 4..5 + key_len + 4 + value_len],
-                    ))
+                    let value_end = value_len_end.checked_add(value_len)?;
+                    if payload.len() < value_end {
+                        return None;
+                    }
+                    Some(Bytes::copy_from_slice(&payload[value_len_end..value_end]))
                 };
                 Some(LogEntryType::Write { db, key, value })
             }
@@ -114,6 +117,11 @@ impl LogEntryType {
                     return None;
                 }
                 let count = u32::from_le_bytes(payload[0..4].try_into().ok()?) as usize;
+                let txn_bytes = count.checked_mul(8)?;
+                let required_len = 4usize.checked_add(txn_bytes)?;
+                if payload.len() < required_len {
+                    return None;
+                }
                 let mut active_txns = Vec::with_capacity(count);
                 for i in 0..count {
                     let offset = 4 + i * 8;
@@ -632,6 +640,22 @@ mod tests {
         } else {
             panic!("Expected Write entry");
         }
+    }
+
+    #[test]
+    fn test_write_payload_rejects_oversized_value_length() {
+        let mut payload = vec![0];
+        payload.extend_from_slice(&0u32.to_le_bytes());
+        payload.extend_from_slice(&u32::MAX.to_le_bytes());
+
+        assert!(LogEntryType::from_bytes(0x02, &payload).is_none());
+    }
+
+    #[test]
+    fn test_checkpoint_payload_rejects_oversized_count() {
+        let payload = [0x9b, 0x9b, 0x9b, 0x9b];
+
+        assert!(LogEntryType::from_bytes(0x06, &payload).is_none());
     }
 
     #[test]
