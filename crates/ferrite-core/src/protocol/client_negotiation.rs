@@ -612,20 +612,33 @@ impl ClientNegotiator {
         client_id: u64,
         config: TrackingConfig,
     ) -> Result<(), NegotiationError> {
+        {
+            let entry = self
+                .clients
+                .get(&client_id)
+                .ok_or(NegotiationError::ClientNotFound(client_id))?;
+            if entry.tracking.is_some() {
+                return Err(NegotiationError::TrackingAlreadyEnabled);
+            }
+        }
+
+        // Validate before taking the mutable client guard. DashMap guards are
+        // not reentrant, so a nested lookup can deadlock on the same shard.
+        if let Some(redirect) = config.redirect_id {
+            if !self.clients.contains_key(&redirect) {
+                return Err(NegotiationError::RedirectTargetNotFound(redirect));
+            }
+        }
+
         let mut entry = self
             .clients
             .get_mut(&client_id)
             .ok_or(NegotiationError::ClientNotFound(client_id))?;
 
+        // Another caller may have enabled tracking while redirect validation
+        // ran without the client guard.
         if entry.tracking.is_some() {
             return Err(NegotiationError::TrackingAlreadyEnabled);
-        }
-
-        // Validate redirect target exists.
-        if let Some(redirect) = config.redirect_id {
-            if !self.clients.contains_key(&redirect) {
-                return Err(NegotiationError::RedirectTargetNotFound(redirect));
-            }
         }
 
         let effective_mode = if config.bcast {
@@ -984,6 +997,20 @@ mod tests {
         let err = n
             .enable_tracking(id, TrackingConfig::default())
             .unwrap_err();
+        assert_eq!(err, NegotiationError::TrackingAlreadyEnabled);
+    }
+
+    #[test]
+    fn enable_tracking_already_enabled_precedes_missing_redirect() {
+        let (n, id) = negotiator_with_client();
+        n.enable_tracking(id, TrackingConfig::default()).unwrap();
+
+        let config = TrackingConfig {
+            redirect_id: Some(9999),
+            ..Default::default()
+        };
+        let err = n.enable_tracking(id, config).unwrap_err();
+
         assert_eq!(err, NegotiationError::TrackingAlreadyEnabled);
     }
 
