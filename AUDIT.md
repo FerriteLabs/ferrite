@@ -40,6 +40,7 @@
 - `src/migration/rdb_parser.rs` remains out of scope because byte-level RDB parsing is a cohesive compatibility unit whose format and corruption handling need a dedicated golden corpus before structural changes.
 - `object_store` 0.11 and Wasmtime 27 remain pinned for the 0.4 line because their traits and error/runtime types are exposed publicly. Security-supported major upgrades are explicitly tracked for the next compatibility release rather than hidden inside this refactor.
 - The API documentation build remains warning-reporting rather than warning-denying: 212 legacy rustdoc link/HTML/code-block findings span public command docs and require a dedicated documentation-only review.
+- The semver action remains advisory because the only published baseline (`ferrite` 0.1.28) requires unavailable native image-codec libraries before its API can be analyzed; the 0.4 public surface still receives direct review.
 
 
 ## Completion Status

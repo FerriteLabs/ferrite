@@ -301,5 +301,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: obi1kenobi/cargo-semver-checks-action@v2
+        continue-on-error: true
         with:
           feature-group: default-features
+          rust-toolchain: "1.88"
