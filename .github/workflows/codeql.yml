@@ -58,10 +58,10 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Install cargo-audit
-        run: cargo install cargo-audit
+        run: cargo +stable install cargo-audit --locked
 
       - name: Run cargo audit
-        run: cargo audit
+        run: cargo +stable audit
 
   cargo-deny:
     name: Dependency License & Advisory Check
