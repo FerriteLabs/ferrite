@@ -25,19 +25,17 @@
 //! - SQ polling for lowest latency
 //! - Linked operations for atomic sequences
 
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 use std::fs::{File, OpenOptions};
 use std::io::{self, Read, Seek, SeekFrom, Write};
-use std::os::unix::io::{AsRawFd, FromRawFd, RawFd};
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use bytes::Bytes;
-use parking_lot::{Mutex, RwLock};
 
-use super::buffer::{IoBuffer, IoBufferPool, BUFFER_SIZE};
+use super::buffer::IoBufferPool;
 use super::engine::{
     BatchIoEngine, BoxFuture, IoEngine, IoEngineConfig, IoOperation, IoResult, IoStats, ReadResult,
     WriteResult,
@@ -92,32 +90,18 @@ impl From<IoEngineConfig> for UringConfig {
     }
 }
 
-/// File descriptor entry for registration
-struct FileEntry {
-    /// File descriptor
-    fd: RawFd,
-    /// Registered index (if registered)
-    registered_index: Option<u32>,
-    /// Reference count
-    refcount: AtomicU64,
-}
-
 /// io_uring based I/O engine
 pub struct UringEngine {
     /// Engine configuration
     config: IoEngineConfig,
     /// io_uring configuration
     uring_config: UringConfig,
-    /// Open file descriptors
-    files: RwLock<HashMap<PathBuf, Arc<FileEntry>>>,
     /// Buffer pool
     buffer_pool: Arc<IoBufferPool>,
     /// I/O statistics
-    stats: IoStats,
+    stats: Arc<IoStats>,
     /// Whether engine is running
     running: AtomicBool,
-    /// Next operation ID
-    next_op_id: AtomicU64,
 }
 
 impl UringEngine {
@@ -141,19 +125,16 @@ impl UringEngine {
         Ok(Self {
             config,
             uring_config,
-            files: RwLock::new(HashMap::new()),
             buffer_pool,
-            stats: IoStats::default(),
+            stats: Arc::new(IoStats::default()),
             running: AtomicBool::new(true),
-            next_op_id: AtomicU64::new(1),
         })
     }
 
     /// Check if io_uring is supported
     fn check_uring_support() -> io::Result<bool> {
         // Check kernel version >= 5.1
-        let uname = nix::sys::utsname::uname()
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
+        let uname = nix::sys::utsname::uname().map_err(|e| io::Error::other(e.to_string()))?;
 
         let release = uname.release().to_string_lossy();
         let parts: Vec<&str> = release.split('.').collect();
@@ -170,52 +151,19 @@ impl UringEngine {
         Ok(false)
     }
 
-    /// Open or get cached file descriptor
-    fn get_file(&self, path: &Path, create: bool, write: bool) -> io::Result<Arc<FileEntry>> {
-        // Check cache first
-        {
-            let files = self.files.read();
-            if let Some(entry) = files.get(path) {
-                entry.refcount.fetch_add(1, Ordering::Relaxed);
-                return Ok(entry.clone());
-            }
-        }
-
-        // Open the file
-        let file = OpenOptions::new()
-            .read(true)
-            .write(write)
-            .create(create)
-            .open(path)?;
-
-        let fd = file.as_raw_fd();
-        std::mem::forget(file); // We manage the fd ourselves
-
-        let entry = Arc::new(FileEntry {
-            fd,
-            registered_index: None,
-            refcount: AtomicU64::new(1),
-        });
-
-        // Cache the entry
-        let mut files = self.files.write();
-        files.insert(path.to_path_buf(), entry.clone());
-
-        Ok(entry)
-    }
-
-    /// Get the next operation ID
-    fn next_op_id(&self) -> u64 {
-        self.next_op_id.fetch_add(1, Ordering::Relaxed)
-    }
-
     /// Perform a synchronous read (fallback for unsupported operations)
-    fn sync_read(&self, path: &Path, offset: u64, len: usize) -> io::Result<ReadResult> {
+    fn sync_read(
+        buffer_pool: &IoBufferPool,
+        stats: &IoStats,
+        path: &Path,
+        offset: u64,
+        len: usize,
+    ) -> io::Result<ReadResult> {
         let start = Instant::now();
         let mut file = File::open(path)?;
         file.seek(SeekFrom::Start(offset))?;
 
-        let mut buffer = self.buffer_pool.acquire();
+        let mut buffer = buffer_pool.acquire();
         let mut data = vec![0u8; len];
         let bytes_read = file.read(&mut data)?;
 
@@ -223,7 +171,7 @@ impl UringEngine {
         buffer.set_len(bytes_read);
 
         let latency = start.elapsed().as_nanos() as u64;
-        self.stats.record_read(bytes_read, latency);
+        stats.record_read(bytes_read, latency);
 
         Ok(ReadResult {
             bytes_read,
@@ -233,16 +181,25 @@ impl UringEngine {
     }
 
     /// Perform a synchronous write
-    fn sync_write(&self, path: &Path, offset: u64, data: &[u8]) -> io::Result<WriteResult> {
+    fn sync_write(
+        stats: &IoStats,
+        path: &Path,
+        offset: u64,
+        data: &[u8],
+    ) -> io::Result<WriteResult> {
         let start = Instant::now();
-        let mut file = OpenOptions::new().write(true).create(true).open(path)?;
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(false)
+            .open(path)?;
 
         file.seek(SeekFrom::Start(offset))?;
         let bytes_written = file.write(data)?;
         file.flush()?;
 
         let latency = start.elapsed().as_nanos() as u64;
-        self.stats.record_write(bytes_written, latency);
+        stats.record_write(bytes_written, latency);
 
         Ok(WriteResult {
             bytes_written,
@@ -251,20 +208,16 @@ impl UringEngine {
     }
 
     /// Perform a synchronous append
-    fn sync_append(&self, path: &Path, data: &[u8]) -> io::Result<WriteResult> {
+    fn sync_append(stats: &IoStats, path: &Path, data: &[u8]) -> io::Result<WriteResult> {
         let start = Instant::now();
-        let mut file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .append(true)
-            .open(path)?;
+        let mut file = OpenOptions::new().create(true).append(true).open(path)?;
 
         let offset = file.seek(SeekFrom::End(0))?;
         let bytes_written = file.write(data)?;
         file.flush()?;
 
         let latency = start.elapsed().as_nanos() as u64;
-        self.stats.record_write(bytes_written, latency);
+        stats.record_write(bytes_written, latency);
 
         Ok(WriteResult {
             bytes_written,
@@ -289,21 +242,12 @@ impl IoEngine for UringEngine {
             // Full io_uring integration would use tokio-uring here
             tokio::task::spawn_blocking({
                 let path = path.to_path_buf();
-                let engine = self as *const UringEngine;
-                move || {
-                    // SAFETY: Dereferencing engine pointer is safe because:
-                    // SAFETY: Dereferencing raw pointer to UringEngine is safe because:
-                    // 1. The UringEngine reference `&'a self` is borrowed for the lifetime 'a
-                    // 2. The BoxFuture returned holds this borrow and is awaited to completion
-                    // 3. spawn_blocking's JoinHandle is awaited before the async block returns
-                    // 4. Therefore &self is guaranteed to be valid for the entire spawn_blocking duration
-                    // Violation would cause use-after-free if engine is dropped before task completes
-                    let engine = unsafe { &*engine };
-                    engine.sync_read(&path, offset, len)
-                }
+                let buffer_pool = Arc::clone(&self.buffer_pool);
+                let stats = Arc::clone(&self.stats);
+                move || Self::sync_read(&buffer_pool, &stats, &path, offset, len)
             })
             .await
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
+            .map_err(io::Error::other)?
         })
     }
 
@@ -317,20 +261,11 @@ impl IoEngine for UringEngine {
         Box::pin(async move {
             tokio::task::spawn_blocking({
                 let path = path.to_path_buf();
-                let engine = self as *const UringEngine;
-                move || {
-                    // SAFETY: Dereferencing engine pointer is safe because:
-                    // 1. The UringEngine reference `&'a self` is borrowed for the lifetime 'a
-                    // 2. The BoxFuture returned holds this borrow and is awaited to completion
-                    // 3. spawn_blocking's JoinHandle is awaited before the async block returns
-                    // 4. Therefore &self is guaranteed to be valid for the entire spawn_blocking duration
-                    // Violation would cause use-after-free if engine is dropped before task completes
-                    let engine = unsafe { &*engine };
-                    engine.sync_write(&path, offset, &data_vec)
-                }
+                let stats = Arc::clone(&self.stats);
+                move || Self::sync_write(&stats, &path, offset, &data_vec)
             })
             .await
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
+            .map_err(io::Error::other)?
         })
     }
 
@@ -343,20 +278,11 @@ impl IoEngine for UringEngine {
         Box::pin(async move {
             tokio::task::spawn_blocking({
                 let path = path.to_path_buf();
-                let engine = self as *const UringEngine;
-                move || {
-                    // SAFETY: Dereferencing engine pointer is safe because:
-                    // 1. The UringEngine reference `&'a self` is borrowed for the lifetime 'a
-                    // 2. The BoxFuture returned holds this borrow and is awaited to completion
-                    // 3. spawn_blocking's JoinHandle is awaited before the async block returns
-                    // 4. Therefore &self is guaranteed to be valid for the entire spawn_blocking duration
-                    // Violation would cause use-after-free if engine is dropped before task completes
-                    let engine = unsafe { &*engine };
-                    engine.sync_append(&path, &data_vec)
-                }
+                let stats = Arc::clone(&self.stats);
+                move || Self::sync_append(&stats, &path, &data_vec)
             })
             .await
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
+            .map_err(io::Error::other)?
         })
     }
 
@@ -387,7 +313,7 @@ impl IoEngine for UringEngine {
                 }
             })
             .await
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
+            .map_err(io::Error::other)?
         })
     }
 
@@ -401,7 +327,7 @@ impl IoEngine for UringEngine {
                 }
             })
             .await
-            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?
+            .map_err(io::Error::other)?
         })
     }
 
@@ -427,7 +353,7 @@ impl IoEngine for UringEngine {
     }
 
     fn stats(&self) -> &IoStats {
-        &self.stats
+        self.stats.as_ref()
     }
 
     fn config(&self) -> &IoEngineConfig {
@@ -451,22 +377,8 @@ impl IoEngine for UringEngine {
 impl Drop for UringEngine {
     fn drop(&mut self) {
         self.running.store(false, Ordering::Release);
-
-        // Close all cached file descriptors
-        let files = self.files.write();
-        for (_, entry) in files.iter() {
-            // SAFETY: We own these file descriptors
-            unsafe {
-                let _ = File::from_raw_fd(entry.fd);
-                // File will be dropped and closed
-            }
-        }
     }
 }
-
-// SAFETY: UringEngine uses thread-safe synchronization
-unsafe impl Send for UringEngine {}
-unsafe impl Sync for UringEngine {}
 
 /// Batch operation result
 struct BatchResult {
@@ -492,16 +404,10 @@ impl BatchIoEngine for UringEngine {
             let mut handles = Vec::with_capacity(batch_size);
 
             for (idx, op) in ops.into_iter().enumerate() {
-                let engine_ptr = self as *const UringEngine;
+                let buffer_pool = Arc::clone(&self.buffer_pool);
+                let stats = Arc::clone(&self.stats);
                 let handle = tokio::task::spawn_blocking(move || {
-                    // SAFETY: Dereferencing engine_ptr is safe because:
-                    // 1. The UringEngine reference `&'a self` is borrowed for the lifetime 'a
-                    // 2. The BoxFuture returned holds this borrow and is awaited to completion
-                    // 3. All spawn_blocking JoinHandles are collected and awaited before return
-                    // 4. Therefore &self is guaranteed to be valid for all spawned task durations
-                    // Violation would cause use-after-free if engine is dropped before tasks complete
-                    let engine = unsafe { &*engine_ptr };
-                    let result = engine.execute_op_sync(&op);
+                    let result = Self::execute_op_sync(&buffer_pool, &stats, &op);
                     BatchResult {
                         op_index: idx,
                         result: result.map(|r| r as usize),
@@ -511,7 +417,7 @@ impl BatchIoEngine for UringEngine {
             }
 
             // Collect results in order
-            let mut results = vec![Ok(0usize); batch_size];
+            let mut results = (0..batch_size).map(|_| Ok(0usize)).collect::<Vec<_>>();
             for handle in handles {
                 match handle.await {
                     Ok(batch_result) => {
@@ -519,7 +425,7 @@ impl BatchIoEngine for UringEngine {
                     }
                     Err(e) => {
                         // JoinError - task panicked or was cancelled
-                        return Err(io::Error::new(io::ErrorKind::Other, e.to_string()));
+                        return Err(io::Error::other(e.to_string()));
                     }
                 }
             }
@@ -535,41 +441,38 @@ impl BatchIoEngine for UringEngine {
 
 impl UringEngine {
     /// Execute an I/O operation synchronously (for batch processing)
-    fn execute_op_sync(&self, op: &IoOperation) -> IoResult<u64> {
+    fn execute_op_sync(
+        buffer_pool: &IoBufferPool,
+        stats: &IoStats,
+        op: &IoOperation,
+    ) -> IoResult<u64> {
         match op {
             IoOperation::Read { path, offset, len } => {
-                let result = self.sync_read(path, *offset, *len)?;
+                let result = Self::sync_read(buffer_pool, stats, path, *offset, *len)?;
                 Ok(result.bytes_read as u64)
             }
             IoOperation::Write { path, offset, data } => {
-                let result = self.sync_write(path, *offset, data)?;
+                let result = Self::sync_write(stats, path, *offset, data)?;
                 Ok(result.bytes_written as u64)
             }
             IoOperation::Append { path, data } => {
-                let result = self.sync_append(path, data)?;
+                let result = Self::sync_append(stats, path, data)?;
                 Ok(result.bytes_written as u64)
             }
             IoOperation::Fsync { path } => {
                 let file = File::open(path)?;
                 file.sync_all()?;
-                self.stats.fsyncs.fetch_add(1, Ordering::Relaxed);
+                stats.fsyncs.fetch_add(1, Ordering::Relaxed);
                 Ok(0)
             }
             IoOperation::Fdatasync { path } => {
                 let file = File::open(path)?;
                 file.sync_data()?;
-                self.stats.fsyncs.fetch_add(1, Ordering::Relaxed);
+                stats.fsyncs.fetch_add(1, Ordering::Relaxed);
                 Ok(0)
             }
-            IoOperation::Open { .. } => {
-                // Opens are handled lazily via get_file
-                Ok(0)
-            }
-            IoOperation::Close { path } => {
-                let mut files = self.files.write();
-                files.remove(path);
-                Ok(0)
-            }
+            IoOperation::Open { .. } => Ok(0),
+            IoOperation::Close { .. } => Ok(0),
         }
     }
 }
