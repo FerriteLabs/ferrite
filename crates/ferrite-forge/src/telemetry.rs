@@ -53,7 +53,10 @@ impl TelemetrySnapshot {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
     use std::time::Duration;
+
+    static TEST_LOCK: Mutex<()> = Mutex::new(());
 
     fn reset_counters() {
         FN_CALLS_TOTAL.store(0, Ordering::Relaxed);
@@ -63,6 +66,7 @@ mod tests {
 
     #[test]
     fn snapshot_captures_current_values() {
+        let _guard = TEST_LOCK.lock().expect("telemetry test lock poisoned");
         reset_counters();
         FN_CALLS_TOTAL.store(10, Ordering::Relaxed);
         FN_CALL_ERRORS_TOTAL.store(3, Ordering::Relaxed);
@@ -76,6 +80,7 @@ mod tests {
 
     #[test]
     fn record_call_increments_counter() {
+        let _guard = TEST_LOCK.lock().expect("telemetry test lock poisoned");
         reset_counters();
         record_call("my_fn", Duration::from_millis(5));
         record_call("my_fn", Duration::from_millis(10));
@@ -84,6 +89,7 @@ mod tests {
 
     #[test]
     fn record_call_error_increments_error_counter() {
+        let _guard = TEST_LOCK.lock().expect("telemetry test lock poisoned");
         reset_counters();
         record_call_error("bad_fn", "timeout");
         assert_eq!(FN_CALL_ERRORS_TOTAL.load(Ordering::Relaxed), 1);
