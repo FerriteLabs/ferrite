@@ -1568,7 +1568,7 @@ mod tests {
 
         let empty_topic = ConnectorConfig::Kafka {
             brokers: vec!["b:9092".to_string()],
-            topic: "".to_string(),
+            topic: String::new(),
             client_id: "c".to_string(),
             compression: KafkaCompression::None,
             acks: KafkaAcks::One,
@@ -1578,7 +1578,7 @@ mod tests {
         let empty_client = ConnectorConfig::Kafka {
             brokers: vec!["b:9092".to_string()],
             topic: "t".to_string(),
-            client_id: "".to_string(),
+            client_id: String::new(),
             compression: KafkaCompression::None,
             acks: KafkaAcks::One,
         };
@@ -1597,7 +1597,7 @@ mod tests {
 
         let empty_subject = ConnectorConfig::Nats {
             servers: vec!["nats://localhost:4222".to_string()],
-            subject: "".to_string(),
+            subject: String::new(),
             stream: None,
             credentials: None,
         };
@@ -1607,7 +1607,7 @@ mod tests {
     #[test]
     fn test_pg_config_validation() {
         let empty_conn = ConnectorConfig::PostgreSQL {
-            connection_string: "".to_string(),
+            connection_string: String::new(),
             table: "t".to_string(),
             schema: "public".to_string(),
             mode: PgMode::Insert,
@@ -1616,7 +1616,7 @@ mod tests {
 
         let empty_table = ConnectorConfig::PostgreSQL {
             connection_string: "postgres://localhost/db".to_string(),
-            table: "".to_string(),
+            table: String::new(),
             schema: "public".to_string(),
             mode: PgMode::Insert,
         };
@@ -1625,7 +1625,7 @@ mod tests {
         let empty_schema = ConnectorConfig::PostgreSQL {
             connection_string: "postgres://localhost/db".to_string(),
             table: "t".to_string(),
-            schema: "".to_string(),
+            schema: String::new(),
             mode: PgMode::Insert,
         };
         assert!(empty_schema.validate().is_err());
@@ -1634,7 +1634,7 @@ mod tests {
     #[test]
     fn test_s3_config_validation() {
         let empty_bucket = ConnectorConfig::S3 {
-            bucket: "".to_string(),
+            bucket: String::new(),
             prefix: "p/".to_string(),
             region: "us-east-1".to_string(),
             format: S3Format::Json,
@@ -1644,8 +1644,8 @@ mod tests {
 
         let empty_region = ConnectorConfig::S3 {
             bucket: "b".to_string(),
-            prefix: "".to_string(),
-            region: "".to_string(),
+            prefix: String::new(),
+            region: String::new(),
             format: S3Format::Json,
             partition: S3Partition::Daily,
         };
@@ -1655,7 +1655,7 @@ mod tests {
     #[test]
     fn test_webhook_config_validation() {
         let empty_url = ConnectorConfig::Webhook {
-            url: "".to_string(),
+            url: String::new(),
             method: "POST".to_string(),
             headers: HashMap::new(),
             auth: None,
@@ -1664,7 +1664,7 @@ mod tests {
 
         let empty_method = ConnectorConfig::Webhook {
             url: "https://example.com".to_string(),
-            method: "".to_string(),
+            method: String::new(),
             headers: HashMap::new(),
             auth: None,
         };

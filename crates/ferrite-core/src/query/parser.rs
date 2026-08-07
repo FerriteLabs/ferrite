@@ -110,7 +110,7 @@ fn suggest_keyword(word: &str) -> Option<&'static str> {
         let dist = edit_distance(&upper, kw);
         // Only suggest if edit distance is small relative to word length
         let threshold = if kw.len() <= 3 { 1 } else { 2 };
-        if dist > 0 && dist <= threshold && best.map_or(true, |(_, d)| dist < d) {
+        if dist > 0 && dist <= threshold && best.is_none_or(|(_, d)| dist < d) {
             best = Some((kw, dist));
         }
     }

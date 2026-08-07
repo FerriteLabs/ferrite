@@ -468,7 +468,7 @@ mod tests {
             Frame::Integer(n) => n,
             other => panic!("expected integer, got {:?}", other),
         };
-        assert!(after >= before + 1, "LEN should increase after APPEND");
+        assert!(after > before, "LEN should increase after APPEND");
     }
 
     #[test]
@@ -524,7 +524,7 @@ mod tests {
             Frame::Integer(n) => n,
             _ => 0,
         };
-        assert!(after >= before + 1, "LEN should increase after DEL");
+        assert!(after > before, "LEN should increase after DEL");
     }
 
     #[test]
@@ -542,7 +542,7 @@ mod tests {
             Frame::Integer(n) => n,
             _ => 0,
         };
-        assert!(after >= before + 1, "LEN should increase after FORGET");
+        assert!(after > before, "LEN should increase after FORGET");
     }
 
     #[test]

@@ -735,11 +735,8 @@ mod tests {
         let accurate = RagConfig::accurate();
 
         // Fast should have larger chunk size
-        match &fast.chunking.strategy {
-            ChunkingStrategy::FixedSize { size, .. } => {
-                assert!(*size >= 512);
-            }
-            _ => {}
+        if let ChunkingStrategy::FixedSize { size, .. } = &fast.chunking.strategy {
+            assert!(*size >= 512);
         }
 
         // Accurate should enable hybrid search

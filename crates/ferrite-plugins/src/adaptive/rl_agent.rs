@@ -70,7 +70,7 @@ impl TieringState {
             .enumerate()
             .map(|(i, &v)| {
                 // Cyclical features (indices 9–12) range [-1, 1]; normalise to [0, 1].
-                let normalised = if i >= 9 { (v + 1.0) / 2.0 } else { v };
+                let normalised = if i >= 9 { f64::midpoint(v, 1.0) } else { v };
                 let clamped = normalised.clamp(0.0, 1.0);
                 let bin = (clamped * bins as f64) as usize;
                 bin.min(bins - 1)

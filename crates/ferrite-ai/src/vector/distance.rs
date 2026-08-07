@@ -307,6 +307,6 @@ mod tests {
         // Just verify it doesn't crash and returns a valid number
         let sim = cosine_similarity(&a, &b);
         assert!(sim.is_finite());
-        assert!(sim >= -1.0 && sim <= 1.0);
+        assert!((-1.0..=1.0).contains(&sim));
     }
 }

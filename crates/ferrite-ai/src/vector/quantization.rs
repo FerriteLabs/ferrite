@@ -290,7 +290,7 @@ impl ProductQuantizer {
             if idx < self.codebooks[s].len() {
                 vector.extend_from_slice(&self.codebooks[s][idx]);
             } else {
-                vector.extend(std::iter::repeat(0.0).take(self.subspace_dim));
+                vector.extend(std::iter::repeat_n(0.0, self.subspace_dim));
             }
         }
         vector

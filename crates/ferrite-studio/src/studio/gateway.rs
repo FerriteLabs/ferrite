@@ -1220,7 +1220,7 @@ mod tests {
     fn test_graphql_empty_query() {
         let gateway = ApiGateway::new(GatewayConfig::default());
         let req = GraphQLRequest {
-            query: "".to_string(),
+            query: String::new(),
             variables: None,
             operation_name: None,
         };
@@ -1514,7 +1514,7 @@ mod tests {
         gateway.execute_graphql(&ok_req);
 
         let bad_req = GraphQLRequest {
-            query: "".to_string(),
+            query: String::new(),
             variables: None,
             operation_name: None,
         };

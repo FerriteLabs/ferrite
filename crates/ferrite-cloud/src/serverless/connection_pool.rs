@@ -1349,7 +1349,7 @@ mod tests {
 
     #[test]
     fn test_target_type_variants() {
-        let types = vec![
+        let types = [
             TargetType::AwsLambda,
             TargetType::CloudflareWorker,
             TargetType::VercelEdge,

@@ -834,7 +834,7 @@ mod tests {
         assert_eq!(ranks.len(), 5);
 
         // All ranks should be positive
-        for (_, rank) in &ranks {
+        for rank in ranks.values() {
             assert!(*rank > 0.0);
         }
 

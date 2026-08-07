@@ -1518,7 +1518,7 @@ mod tests {
             .in_(Some("WORKS_AT"))
             .collect();
         // Alice and Bob both work at Acme, so traversal yields Alice and Bob
-        assert!(coworkers.len() >= 1);
+        assert!(!coworkers.is_empty());
     }
 
     // --- New beta-quality feature tests ---

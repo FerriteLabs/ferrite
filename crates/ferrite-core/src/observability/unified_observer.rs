@@ -755,15 +755,15 @@ impl ProbeRegistry {
         if !config.enabled {
             return Err(ObserveError::Disabled);
         }
-        if !config.ebpf_enabled {
-            if matches!(
+        if !config.ebpf_enabled
+            && matches!(
                 spec.probe_type,
                 ProbeType::StorageIO | ProbeType::NetworkIO | ProbeType::MemoryAllocation
-            ) {
-                return Err(ObserveError::ProbeError(
-                    "eBPF probes require ebpf_enabled=true (Linux + root)".to_string(),
-                ));
-            }
+            )
+        {
+            return Err(ObserveError::ProbeError(
+                "eBPF probes require ebpf_enabled=true (Linux + root)".to_string(),
+            ));
         }
 
         let id = Uuid::new_v4().to_string();

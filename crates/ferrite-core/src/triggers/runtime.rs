@@ -1134,7 +1134,6 @@ mod tests {
         assert!(output.success);
         assert_eq!(output.result, Some("lua:lua_exec:ok".to_string()));
         assert!(!output.logs.is_empty());
-        assert!(output.execution_time_us > 0 || output.execution_time_us == 0);
     }
 
     #[tokio::test]

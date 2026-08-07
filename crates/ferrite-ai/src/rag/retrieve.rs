@@ -349,7 +349,7 @@ impl VectorStore {
         let _ = self.stats.avg_search_latency_us.fetch_update(
             Ordering::Relaxed,
             Ordering::Relaxed,
-            |old| Some((old + elapsed) / 2),
+            |old| Some(u64::midpoint(old, elapsed)),
         );
 
         Ok(results)

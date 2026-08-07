@@ -444,7 +444,7 @@ mod tests {
     fn test_replace_root() {
         let mut doc = json!({"foo": "bar"});
         let ops = vec![PatchOp::Replace {
-            path: "".into(),
+            path: String::new(),
             value: json!({"completely": "new"}),
         }];
         apply_patch(&mut doc, &ops).unwrap();

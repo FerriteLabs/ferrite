@@ -2029,7 +2029,7 @@ mod tests {
     #[test]
     fn test_studio_console_accessor() {
         let studio = Studio::new(StudioConfig::default());
-        assert!(studio.console().available_commands().len() > 0);
+        assert!(!studio.console().available_commands().is_empty());
     }
 
     #[test]

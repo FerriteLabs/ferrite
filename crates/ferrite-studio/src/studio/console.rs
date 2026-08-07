@@ -699,7 +699,7 @@ mod tests {
     #[test]
     fn test_console_default() {
         let console = Console::default();
-        assert!(console.available_commands().len() > 0);
+        assert!(!console.available_commands().is_empty());
     }
 
     #[test]

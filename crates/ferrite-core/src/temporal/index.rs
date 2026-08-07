@@ -205,8 +205,8 @@ impl VersionChain {
         ascending: bool,
     ) -> Vec<VersionEntry> {
         let iter = self.versions.iter().filter(|v| {
-            let after_from = from.map_or(true, |f| v.timestamp >= f);
-            let before_to = to.map_or(true, |t| v.timestamp <= t);
+            let after_from = from.is_none_or(|f| v.timestamp >= f);
+            let before_to = to.is_none_or(|t| v.timestamp <= t);
             after_from && before_to
         });
 

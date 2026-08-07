@@ -890,7 +890,7 @@ mod tests {
 
         // Should return a positive value (current time)
         let time = result.unwrap();
-        assert!(time > 0 || time < 0); // i32 overflow is possible but it's still a valid call
+        assert!(time != 0); // i32 overflow is possible but it's still a valid call
         assert_eq!(ctx.usage.host_calls, 1);
     }
 

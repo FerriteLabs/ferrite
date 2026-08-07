@@ -176,7 +176,7 @@ impl VectorIndex {
             DistanceMetric::DotProduct => {
                 // Normalize dot product to 0-1 range
                 let dot = dot_product(a, b);
-                (dot + 1.0) / 2.0 // Assuming normalized vectors
+                f32::midpoint(dot, 1.0) // Assuming normalized vectors
             }
         }
     }

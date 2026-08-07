@@ -344,8 +344,8 @@ mod tests {
         assert!(status.is_condition_true(CONDITION_SCALING));
         let cond = status.get_condition(CONDITION_SCALING).unwrap();
         assert_eq!(cond.reason.as_deref(), Some(REASON_SCALING_UP));
-        assert!(cond.message.as_deref().unwrap().contains("3"));
-        assert!(cond.message.as_deref().unwrap().contains("5"));
+        assert!(cond.message.as_deref().unwrap().contains('3'));
+        assert!(cond.message.as_deref().unwrap().contains('5'));
     }
 
     #[test]

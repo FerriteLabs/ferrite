@@ -90,7 +90,7 @@ pub fn geohash_encode(coord: &GeoCoord) -> f64 {
 
     while bit < GEO_STEP * 2 {
         // Longitude bit
-        let mid = (lon_range.0 + lon_range.1) / 2.0;
+        let mid = f64::midpoint(lon_range.0, lon_range.1);
         if coord.longitude >= mid {
             hash |= 1 << (63 - bit);
             lon_range.0 = mid;
@@ -100,7 +100,7 @@ pub fn geohash_encode(coord: &GeoCoord) -> f64 {
         bit += 1;
 
         // Latitude bit
-        let mid = (lat_range.0 + lat_range.1) / 2.0;
+        let mid = f64::midpoint(lat_range.0, lat_range.1);
         if coord.latitude >= mid {
             hash |= 1 << (63 - bit);
             lat_range.0 = mid;
@@ -124,7 +124,7 @@ pub fn geohash_decode(hash: f64) -> GeoCoord {
     for bit in 0..(GEO_STEP * 2) {
         if bit % 2 == 0 {
             // Longitude bit
-            let mid = (lon_range.0 + lon_range.1) / 2.0;
+            let mid = f64::midpoint(lon_range.0, lon_range.1);
             if (hash >> (63 - bit)) & 1 == 1 {
                 lon_range.0 = mid;
             } else {
@@ -132,7 +132,7 @@ pub fn geohash_decode(hash: f64) -> GeoCoord {
             }
         } else {
             // Latitude bit
-            let mid = (lat_range.0 + lat_range.1) / 2.0;
+            let mid = f64::midpoint(lat_range.0, lat_range.1);
             if (hash >> (63 - bit)) & 1 == 1 {
                 lat_range.0 = mid;
             } else {
@@ -142,8 +142,8 @@ pub fn geohash_decode(hash: f64) -> GeoCoord {
     }
 
     GeoCoord {
-        longitude: (lon_range.0 + lon_range.1) / 2.0,
-        latitude: (lat_range.0 + lat_range.1) / 2.0,
+        longitude: f64::midpoint(lon_range.0, lon_range.1),
+        latitude: f64::midpoint(lat_range.0, lat_range.1),
     }
 }
 

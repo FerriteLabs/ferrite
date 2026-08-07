@@ -453,7 +453,7 @@ mod tests {
         mgr.report_node_version("node2".to_string(), ClusterVersion::new(1, 1, 0));
 
         let summary = mgr.version_summary();
-        assert!(summary.len() >= 1);
+        assert!(!summary.is_empty());
     }
 
     #[test]
