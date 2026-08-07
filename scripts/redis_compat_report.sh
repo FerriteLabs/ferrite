@@ -31,9 +31,9 @@ TEST_OUTPUT=$(cargo test --test redis_compatibility ${CARGO_ARGS} -- --format te
 # ── Parse results ─────────────────────────────────────────────────────────────
 
 # Count test results from cargo test output
-PASSED=$(echo "$TEST_OUTPUT" | grep -cE '^\s*test .+ \.\.\. ok$' || echo 0)
-FAILED=$(echo "$TEST_OUTPUT" | grep -cE '^\s*test .+ \.\.\. FAILED$' || echo 0)
-IGNORED=$(echo "$TEST_OUTPUT" | grep -cE '^\s*test .+ \.\.\. ignored$' || echo 0)
+PASSED=$(echo "$TEST_OUTPUT" | grep -cE '^\s*test .+ \.\.\. ok$' || true)
+FAILED=$(echo "$TEST_OUTPUT" | grep -cE '^\s*test .+ \.\.\. FAILED$' || true)
+IGNORED=$(echo "$TEST_OUTPUT" | grep -cE '^\s*test .+ \.\.\. ignored$' || true)
 
 # Also try the summary line as fallback
 if [[ "$PASSED" -eq 0 && "$FAILED" -eq 0 ]]; then
@@ -66,7 +66,7 @@ categorise() {
         *string*)       cat="String" ;;
         *list*)         cat="List" ;;
         *hash*)         cat="Hash" ;;
-        *set_s*|*set_no*|*set_sadd*|*set_srem*|*set_smembers*|*set_sismember*|*set_scard*|*set_sunion*|*set_sinter*|*set_sdiff*|*set_spop*|*set_srand*)
+        *set_s*|*set_no*)
                         cat="Set" ;;
         *zset*|*sorted*) cat="Sorted Set" ;;
         *key_*|*unlink*|*rename*|*scan*|*random*|*touch*)
@@ -127,7 +127,11 @@ emit ""
 emit "| Category | Passed | Failed | Ignored | Pass Rate |"
 emit "|----------|-------:|-------:|--------:|----------:|"
 
-ALL_CATS=$(echo "${!CAT_PASS[@]} ${!CAT_FAIL[@]} ${!CAT_IGNORE[@]}" | tr ' ' '\n' | sort -u)
+ALL_CATS=$(
+    printf '%s\n' "${!CAT_PASS[@]}" "${!CAT_FAIL[@]}" "${!CAT_IGNORE[@]}" |
+        sed '/^$/d' |
+        sort -u
+)
 
 for cat in $ALL_CATS; do
     p=${CAT_PASS[$cat]:-0}
