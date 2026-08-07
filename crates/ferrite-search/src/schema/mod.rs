@@ -37,7 +37,7 @@
 //! // Register the schema
 //! let registry = SchemaRegistry::new();
 //! registry.register(user_schema)?;
-//! ```ignore
+//! ```
 //!
 //! ### Evolve a Schema
 //!

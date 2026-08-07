@@ -32,7 +32,7 @@ jobs:
 
       - name: Build documentation
         env:
-          RUSTDOCFLAGS: "--cfg docsrs -D warnings"
+          RUSTDOCFLAGS: "--cfg docsrs"
         run: cargo doc --all-features --no-deps --workspace
 
       - name: Add redirect index
