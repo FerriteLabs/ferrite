@@ -302,4 +302,4 @@ jobs:
       - uses: actions/checkout@v4
       - uses: obi1kenobi/cargo-semver-checks-action@v2
         with:
-          feature-group: all-features
+          feature-group: default-features
