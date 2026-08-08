@@ -1272,7 +1272,9 @@ mod tests {
     #[test]
     fn test_multi_series_aggregate() {
         let engine = TimeSeriesEngine::new().unwrap();
-        let now = sample::Timestamp::now();
+        let now = sample::Timestamp::now()
+            .truncate(Duration::from_secs(60))
+            .add(Duration::from_secs(30));
 
         // Two series, same metric, different hosts
         for i in 0..5 {
@@ -1312,7 +1314,9 @@ mod tests {
     #[test]
     fn test_multi_series_aggregate_with_filter() {
         let engine = TimeSeriesEngine::new().unwrap();
-        let now = sample::Timestamp::now();
+        let now = sample::Timestamp::now()
+            .truncate(Duration::from_secs(60))
+            .add(Duration::from_secs(30));
 
         for i in 0..3 {
             let ts = now.sub(Duration::from_secs(3 - i));
