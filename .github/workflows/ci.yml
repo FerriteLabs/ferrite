@@ -196,7 +196,23 @@ jobs:
       - run: cargo test --workspace --all-features
       - run: cargo clippy --workspace --all-features -- -D warnings
 
-  # ── All-features check (catches feature-gated bugs) ─────────────────────────
+  # ── All-features checks (catch feature-gated bugs) ──────────────────────────
+  all-features-clippy:
+    name: All Features Clippy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: changes
+    if: needs.changes.outputs.any-rust == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.88
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: all-features-clippy
+      - run: cargo clippy --workspace --all-features -- -D warnings
+
   all-features:
     name: All Features Check
     runs-on: ubuntu-latest
@@ -208,11 +224,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.88
       - uses: Swatinem/rust-cache@v2
         with:
-          shared-key: all-features
-      - name: Clippy (all features)
-        run: cargo clippy --workspace --all-features -- -D warnings
-      - name: Test (all features)
-        run: cargo test --workspace --all-features
+          shared-key: all-features-test
+      - run: cargo test --workspace --all-features
 
   # ── Security scanning ───────────────────────────────────────────────────────
   security:
