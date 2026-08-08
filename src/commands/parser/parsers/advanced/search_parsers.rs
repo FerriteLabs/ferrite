@@ -174,14 +174,14 @@ pub(crate) fn parse_ft_search(args: &[Frame]) -> Result<Command> {
             "RETURN" => {
                 i += 1;
                 if i < args.len() {
-                    let count = get_int(&args[i])? as usize;
+                    let count = usize::try_from(get_int(&args[i])?)
+                        .map_err(|_| FerriteError::NotInteger)?;
                     i += 1;
-                    for _ in 0..count {
-                        if i < args.len() {
-                            return_fields.push(get_string(&args[i])?);
-                            i += 1;
-                        }
+                    let field_count = count.min(args.len() - i);
+                    for field in &args[i..i + field_count] {
+                        return_fields.push(get_string(field)?);
                     }
+                    i += field_count;
                 }
             }
             "FILTER" => {

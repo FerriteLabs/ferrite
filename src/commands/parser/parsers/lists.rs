@@ -210,20 +210,17 @@ pub(crate) fn parse_lmpop(args: &[Frame]) -> Result<Command> {
         return Err(FerriteError::WrongArity("LMPOP".to_string()));
     }
 
-    let numkeys = get_int(&args[0])? as usize;
-    if numkeys == 0 || args.len() < 2 + numkeys {
+    let numkeys = usize::try_from(get_int(&args[0])?).map_err(|_| FerriteError::Syntax)?;
+    let direction_idx = numkeys.checked_add(1).ok_or(FerriteError::Syntax)?;
+    if numkeys == 0 || direction_idx >= args.len() {
         return Err(FerriteError::Syntax);
     }
 
     let mut keys = Vec::with_capacity(numkeys);
-    for item in args.iter().take(numkeys + 1).skip(1) {
+    for item in args.iter().skip(1).take(numkeys) {
         keys.push(get_bytes(item)?);
     }
 
-    let direction_idx = 1 + numkeys;
-    if direction_idx >= args.len() {
-        return Err(FerriteError::Syntax);
-    }
     let direction = parse_direction(&args[direction_idx])?;
 
     let mut count = 1;
@@ -262,8 +259,9 @@ pub(crate) fn parse_blmpop(args: &[Frame]) -> Result<Command> {
         ));
     }
 
-    let numkeys = get_int(&args[1])? as usize;
-    if numkeys == 0 || args.len() < 3 + numkeys {
+    let numkeys = usize::try_from(get_int(&args[1])?).map_err(|_| FerriteError::Syntax)?;
+    let direction_idx = numkeys.checked_add(2).ok_or(FerriteError::Syntax)?;
+    if numkeys == 0 || direction_idx >= args.len() {
         return Err(FerriteError::Syntax);
     }
 
@@ -272,10 +270,6 @@ pub(crate) fn parse_blmpop(args: &[Frame]) -> Result<Command> {
         keys.push(get_bytes(item)?);
     }
 
-    let direction_idx = 2 + numkeys;
-    if direction_idx >= args.len() {
-        return Err(FerriteError::Syntax);
-    }
     let direction = parse_direction(&args[direction_idx])?;
 
     let mut count = 1;

@@ -149,23 +149,17 @@ pub(crate) fn parse_wasm_call(args: &[Frame]) -> Result<Command> {
     }
 
     let name = get_string(&args[0])?;
-    let numkeys = get_int(&args[1])? as usize;
-
-    let mut keys = Vec::new();
-    let mut wasm_args = Vec::new();
-
-    let mut i = 2;
-    for _ in 0..numkeys {
-        if i < args.len() {
-            keys.push(get_bytes(&args[i])?);
-            i += 1;
-        }
-    }
-
-    while i < args.len() {
-        wasm_args.push(get_bytes(&args[i])?);
-        i += 1;
-    }
+    let numkeys = usize::try_from(get_int(&args[1])?).map_err(|_| FerriteError::NotInteger)?;
+    let key_count = numkeys.min(args.len() - 2);
+    let args_start = key_count + 2;
+    let keys = args[2..args_start]
+        .iter()
+        .map(get_bytes)
+        .collect::<Result<Vec<_>>>()?;
+    let wasm_args = args[args_start..]
+        .iter()
+        .map(get_bytes)
+        .collect::<Result<Vec<_>>>()?;
 
     Ok(Command::WasmCall {
         name,
@@ -180,23 +174,17 @@ pub(crate) fn parse_wasm_call_ro(args: &[Frame]) -> Result<Command> {
     }
 
     let name = get_string(&args[0])?;
-    let numkeys = get_int(&args[1])? as usize;
-
-    let mut keys = Vec::new();
-    let mut wasm_args = Vec::new();
-
-    let mut i = 2;
-    for _ in 0..numkeys {
-        if i < args.len() {
-            keys.push(get_bytes(&args[i])?);
-            i += 1;
-        }
-    }
-
-    while i < args.len() {
-        wasm_args.push(get_bytes(&args[i])?);
-        i += 1;
-    }
+    let numkeys = usize::try_from(get_int(&args[1])?).map_err(|_| FerriteError::NotInteger)?;
+    let key_count = numkeys.min(args.len() - 2);
+    let args_start = key_count + 2;
+    let keys = args[2..args_start]
+        .iter()
+        .map(get_bytes)
+        .collect::<Result<Vec<_>>>()?;
+    let wasm_args = args[args_start..]
+        .iter()
+        .map(get_bytes)
+        .collect::<Result<Vec<_>>>()?;
 
     Ok(Command::WasmCallRo {
         name,

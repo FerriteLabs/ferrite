@@ -118,16 +118,19 @@ pub(crate) fn parse_sintercard(args: &[Frame]) -> Result<Command> {
     // First argument is numkeys
     let numkeys_str = get_string(&args[0])?;
     let numkeys: usize = numkeys_str.parse().map_err(|_| FerriteError::NotInteger)?;
+    let keys_end = numkeys
+        .checked_add(1)
+        .ok_or_else(|| FerriteError::WrongArity("SINTERCARD".to_string()))?;
 
-    if args.len() < 1 + numkeys {
+    if args.len() < keys_end {
         return Err(FerriteError::WrongArity("SINTERCARD".to_string()));
     }
 
-    let keys: Result<Vec<Bytes>> = args[1..=numkeys].iter().map(get_bytes).collect();
+    let keys: Result<Vec<Bytes>> = args[1..keys_end].iter().map(get_bytes).collect();
     let keys = keys?;
 
     let mut limit = None;
-    let mut i = 1 + numkeys;
+    let mut i = keys_end;
     while i < args.len() {
         let opt = get_string(&args[i])?.to_uppercase();
         match opt.as_str() {
