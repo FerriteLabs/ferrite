@@ -1227,7 +1227,9 @@ mod tests {
     #[test]
     fn test_range_aggregate_sum() {
         let engine = TimeSeriesEngine::new().unwrap();
-        let now = sample::Timestamp::now();
+        let now = sample::Timestamp::now()
+            .truncate(Duration::from_secs(60))
+            .add(Duration::from_secs(30));
 
         for i in 0..3 {
             let ts = now.sub(Duration::from_secs(3 - i));

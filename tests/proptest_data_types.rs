@@ -474,6 +474,7 @@ proptest! {
         members_a in prop::collection::hash_set(string_value_strategy(), 1..20),
         members_b in prop::collection::hash_set(string_value_strategy(), 1..20)
     ) {
+        prop_assume!(key_a != key_b);
         let store = Store::new(16);
         let ka = Bytes::from(key_a);
         let kb = Bytes::from(key_b);
