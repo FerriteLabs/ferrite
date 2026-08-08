@@ -54,8 +54,15 @@ jobs:
       - name: Run vector search benchmarks
         run: set -o pipefail; cargo bench --bench vector_bench -- --output-format bencher ${{ github.event_name == 'pull_request' && '--sample-size 10 --warm-up-time 1 --measurement-time 1' || '' }} 2>&1 | tee vector-output.txt
 
-      - name: Combine benchmark results
-        run: cat throughput-output.txt latency-output.txt tiered-output.txt vector-output.txt > combined-output.txt
+      - name: Convert benchmark results
+        run: |
+          python3 -m unittest discover -s scripts -p 'test_criterion_bencher_to_json.py'
+          python3 scripts/criterion_bencher_to_json.py \
+            throughput-output.txt \
+            latency-output.txt \
+            tiered-output.txt \
+            vector-output.txt \
+            --output benchmark-results.json
 
       - name: Restore benchmark history
         uses: actions/cache@v4
@@ -69,8 +76,8 @@ jobs:
         uses: benchmark-action/github-action-benchmark@v1
         with:
           name: Ferrite Benchmarks
-          tool: 'cargo'
-          output-file-path: combined-output.txt
+          tool: customSmallerIsBetter
+          output-file-path: benchmark-results.json
           external-data-json-path: ./benchmark-cache/benchmark-data.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           # On PRs: comment with comparison
