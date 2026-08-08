@@ -485,6 +485,13 @@ name = "pubsub"
 name = "lua_scripting"
 required-features = ["scripting"]
 
+[patch.crates-io]
+# Wasmtime 27 longjmps through `extern "C"` libcalls on Windows, which Rust
+# correctly aborts as a non-unwinding boundary. Keep the public 27.x API while
+# allowing those internal trap frames to unwind until the next compatibility
+# release can upgrade Wasmtime.
+wasmtime = { path = "vendor/wasmtime-27.0.0" }
+
 # Optimize dependencies even in dev mode — reduces code size and speeds up tests.
 # Your own crate stays at opt-level 0 for fast iteration.
 [profile.dev.package."*"]
