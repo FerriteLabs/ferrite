@@ -18,7 +18,6 @@ pub const BUFFER_SIZE: usize = 64 * 1024;
 /// Alignment for direct I/O (4KB page alignment)
 pub const BUFFER_ALIGNMENT: usize = 4096;
 
-#[derive(Debug)]
 struct AlignedMemory {
     ptr: NonNull<u8>,
     len: usize,
@@ -35,6 +34,12 @@ impl AlignedMemory {
             .unwrap_or_else(|| std::alloc::handle_alloc_error(layout));
 
         Self { ptr, len, layout }
+    }
+}
+
+impl std::fmt::Debug for AlignedMemory {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.deref().fmt(formatter)
     }
 }
 
