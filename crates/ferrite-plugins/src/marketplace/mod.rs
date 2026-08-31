@@ -60,7 +60,7 @@ use serde::{Deserialize, Serialize};
 /// Configuration for the plugin marketplace.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MarketplaceConfig {
-    /// Registry URL for fetching plugin metadata.
+    /// Registry URL for fetching plugin metadata. Empty keeps remote operations offline.
     pub registry_url: String,
     /// Local plugin directory.
     pub plugin_dir: String,
@@ -77,7 +77,7 @@ pub struct MarketplaceConfig {
 impl Default for MarketplaceConfig {
     fn default() -> Self {
         Self {
-            registry_url: "https://marketplace.ferrite.dev/api/v1".to_string(),
+            registry_url: String::new(),
             plugin_dir: "./plugins".to_string(),
             auto_update: false,
             security_scan: true,
@@ -575,6 +575,7 @@ mod tests {
         assert!(config.security_scan);
         assert!(!config.auto_update);
         assert_eq!(config.sdk_version, "1.0.0");
+        assert!(config.registry_url.is_empty());
     }
 
     #[test]

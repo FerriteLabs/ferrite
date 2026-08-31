@@ -81,7 +81,7 @@ cargo install ferrite
 
 ## 문서
 
-- 📖 [전체 문서](https://ferrite.rs)
+- 📖 [전체 문서](https://github.com/ferritelabs/ferrite-docs)
 - 🏗️ [아키텍처 개요](docs/ARCHITECTURE.md)
 - 🔄 [Redis 호환성](docs/REDIS_COMPAT.md)
 - 🗺️ [로드맵](ROADMAP.md)

@@ -44,11 +44,11 @@ an individual is officially representing the community in public spaces.
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to the community leaders responsible for enforcement at
-**security@ferritelabs.dev**.
+The project does not currently advertise an organization email address. For non-sensitive enforcement questions, contact the Ferrite maintainers through [GitHub Discussions](https://github.com/ferritelabs/ferrite/discussions).
 
-All complaints will be reviewed and investigated promptly and fairly.
+Do not include complaint details, personal information, or other sensitive material in a public issue or discussion. Ask only to arrange private coordination with a maintainer. Suspected security vulnerabilities must be reported through [GitHub private vulnerability reporting](https://github.com/ferritelabs/ferrite/security/advisories/new), not through a public community channel.
+
+All complaints received through an appropriate private channel will be reviewed and investigated promptly and fairly.
 
 ## Attribution
 

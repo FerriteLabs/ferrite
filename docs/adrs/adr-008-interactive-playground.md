@@ -1,4 +1,4 @@
-# ADR-008: Interactive Playground (try.ferrite.dev)
+# ADR-008: Interactive Playground (Verified Owned Domain Required)
 
 ## Status
 
@@ -6,11 +6,11 @@
 
 ## Context
 
-Ferrite needs to lower the barrier to trying the database. Currently, users must install Rust 1.80+, build from source or pull a Docker image, and run a server. An interactive web playground at `try.ferrite.dev` would let users experiment with Ferrite commands in their browser — similar to [try.redis.io](https://try.redis.io/) and the [Dragonfly Playground](https://www.dragonflydb.io/docs/getting-started).
+Ferrite needs to lower the barrier to trying the database. Currently, users must install Rust 1.80+, build from source or pull a Docker image, and run a server. An interactive web playground would let users experiment with Ferrite commands in their browser — similar to [try.redis.io](https://try.redis.io/) and the [Dragonfly Playground](https://www.dragonflydb.io/docs/getting-started). Until FerriteLabs verifies an organization-owned domain, DNS, TLS, and a deployed service, playground status is tracked in the [Ferrite repository](https://github.com/ferritelabs/ferrite).
 
 ## Decision
 
-We will build a web-based interactive REPL for Ferrite, accessible at `try.ferrite.dev`.
+We will build a web-based interactive REPL for Ferrite at a verified organization-owned domain. No hosted playground URL is advertised until the ownership and deployment gate is complete.
 
 ### Architecture Options Evaluated
 
@@ -51,7 +51,7 @@ We will build a web-based interactive REPL for Ferrite, accessible at `try.ferri
    - Pre-loaded with sample data (demo:users, demo:products, demo:vectors)
 
 **Session Flow:**
-1. User opens try.ferrite.dev → SPA loads
+1. User opens the verified playground URL → SPA loads
 2. User types first command → API allocates a sandbox from the pool
 3. Commands sent via WebSocket → API forwards to sandbox Ferrite via RESP
 4. Session expires after 60s idle → sandbox recycled

@@ -81,7 +81,7 @@ cargo install ferrite
 
 ## 文档
 
-- 📖 [完整文档](https://ferrite.rs)
+- 📖 [完整文档](https://github.com/ferritelabs/ferrite-docs)
 - 🏗️ [架构概述](docs/ARCHITECTURE.md)
 - 🔄 [Redis 兼容性](docs/REDIS_COMPAT.md)
 - 🗺️ [发展路线图](ROADMAP.md)

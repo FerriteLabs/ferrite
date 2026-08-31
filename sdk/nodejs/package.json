@@ -25,14 +25,14 @@
     "vector-search",
     "client"
   ],
-  "author": "Ferrite Labs <hello@ferritelabs.dev>",
+  "author": "Ferrite Labs",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/ferritelabs/ferrite.git",
     "directory": "sdk/nodejs"
   },
-  "homepage": "https://docs.ferritelabs.dev/sdk/typescript",
+  "homepage": "https://github.com/ferritelabs/ferrite-docs",
   "bugs": {
     "url": "https://github.com/ferritelabs/ferrite/issues"
   },

@@ -339,7 +339,7 @@ pub fn config(
 
 /// Handle MODULE command
 pub fn module(subcommand: &str, args: &[Bytes]) -> Frame {
-    const MODULE_ERR: &str = "ERR Ferrite does not support Redis modules. Ferrite uses native Rust crates for extensibility. See https://ferrite.dev/docs/extensions for details.";
+    const MODULE_ERR: &str = "ERR Ferrite does not support Redis modules. Ferrite uses native Rust crates for extensibility. See https://github.com/ferritelabs/ferrite-docs for details.";
 
     match subcommand {
         "LIST" => Frame::array(vec![]),
@@ -493,6 +493,16 @@ mod tests {
             Frame::Array(None) => {} // Also valid for empty
             _ => panic!("Expected empty array"),
         }
+    }
+
+    #[test]
+    fn test_module_load_uses_reachable_documentation_fallback() {
+        assert_eq!(
+            module("LOAD", &[Bytes::from_static(b"extension.so")]),
+            Frame::Error(Bytes::from_static(
+                b"ERR Ferrite does not support Redis modules. Ferrite uses native Rust crates for extensibility. See https://github.com/ferritelabs/ferrite-docs for details."
+            ))
+        );
     }
 
     #[test]

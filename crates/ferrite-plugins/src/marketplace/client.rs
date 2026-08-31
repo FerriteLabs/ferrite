@@ -9,7 +9,9 @@
 //! ```rust,ignore
 //! use ferrite_plugins::marketplace::client::MarketplaceClient;
 //!
-//! let client = MarketplaceClient::new("https://marketplace.ferrite.dev/api/v1");
+//! // Supply a registry API you control. Deployment code and status are tracked at:
+//! // https://github.com/ferritelabs/ferrite
+//! let client = MarketplaceClient::new("https://registry.example.com/api/v1");
 //! let results = client.search("vector").await?;
 //! let wasm = client.download("validate-email", "1.0.0").await?;
 //! ```
@@ -97,19 +99,23 @@ pub struct MarketplaceClient {
 impl MarketplaceClient {
     /// Create a new client pointing at the given registry URL.
     pub fn new(registry_url: &str) -> Self {
+        let registry_url = registry_url.trim_end_matches('/').to_string();
+        let offline = registry_url.is_empty();
         Self {
-            registry_url: registry_url.to_string(),
+            registry_url,
             catalog_cache: parking_lot::RwLock::new(Vec::new()),
-            offline: std::sync::atomic::AtomicBool::new(false),
+            offline: std::sync::atomic::AtomicBool::new(offline),
         }
     }
 
     /// Create a client with a pre-populated local catalog (for testing/offline use).
     pub fn with_catalog(registry_url: &str, catalog: Vec<PluginMetadata>) -> Self {
+        let registry_url = registry_url.trim_end_matches('/').to_string();
+        let offline = registry_url.is_empty();
         Self {
-            registry_url: registry_url.to_string(),
+            registry_url,
             catalog_cache: parking_lot::RwLock::new(catalog),
-            offline: std::sync::atomic::AtomicBool::new(false),
+            offline: std::sync::atomic::AtomicBool::new(offline),
         }
     }
 
@@ -382,6 +388,16 @@ mod tests {
 
         // Download fails in offline mode
         let result = client.download("validate-email", "1.0.0").await;
+        assert!(matches!(result, Err(MarketplaceError::RegistryError(_))));
+    }
+
+    #[tokio::test]
+    async fn test_empty_registry_url_starts_offline() {
+        let client = MarketplaceClient::new("");
+        assert!(client.is_offline());
+        assert!(client.registry_url().is_empty());
+
+        let result = client.refresh_catalog().await;
         assert!(matches!(result, Err(MarketplaceError::RegistryError(_))));
     }
 }

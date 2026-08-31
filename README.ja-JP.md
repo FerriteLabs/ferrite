@@ -81,7 +81,7 @@ cargo install ferrite
 
 ## ドキュメント
 
-- 📖 [完全なドキュメント](https://ferrite.rs)
+- 📖 [完全なドキュメント](https://github.com/ferritelabs/ferrite-docs)
 - 🏗️ [アーキテクチャ概要](docs/ARCHITECTURE.md)
 - 🔄 [Redis 互換性](docs/REDIS_COMPAT.md)
 - 🗺️ [ロードマップ](ROADMAP.md)

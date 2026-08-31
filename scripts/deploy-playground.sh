@@ -2,7 +2,7 @@
 # =============================================================================
 # Deploy Ferrite Web Playground
 # =============================================================================
-# Builds and deploys play.ferrite.dev
+# Builds and deploys the Ferrite web playground; configure an owned deployment domain before use.
 #
 # Usage:
 #   ./scripts/deploy-playground.sh              # Build and run locally
