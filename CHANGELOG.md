@@ -7,9 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - Unreleased (planned)
+
+*Planned compatibility, correctness, and release-hardening release for the work completed on `refactor/clean-code-srp`.*
+
+### Added
+
+- Added a launch-gated, version-neutral external tester program with interest and report forms, Docker-only digest-pinned cohort instructions, exact operations commit verification, automated asset checks, and canonical private vulnerability reporting.
+- Added a non-secret reusable crates.io preflight shared by manual dry-runs and both release pipelines, with synchronized metadata checks, explicit publication order, protected-environment approval for real publication, and tag/version/changelog validation.
+
 ### Changed
 
-- Raised the core workspace MSRV to Rust 1.88 to match the committed dependency graph and security-supported dependency releases.
+- Split advanced command execution into command-family modules, blocking coordination into list/stream/sorted-set owners, backup serialization into a private codec, advanced and cluster parsing into family modules, runtime configuration mutation into leaf owners, and observability state into `AlertManager` and `ProbeRegistry`, preserving existing public APIs and characterized behavior.
+- Raised the workspace MSRV to Rust 1.88 to match the committed dependency graph and security-supported dependency releases.
+- Reworked CI around the repository toolchain with portable quality gates, isolated and sharded all-feature lint/test jobs, bounded Windows execution, stable benchmark sampling and normalization, cached benchmark history, advisory legacy semver reporting, and restored API documentation checks.
+- Removed the legacy duplicate full-release workflow so the signed, attested `release.yml` pipeline is the sole tag-release actor.
+
+### Fixed
+
+- Restored the full workspace verification baseline, stabilized nondeterministic aggregate, time-series, Forge telemetry, marketplace filesystem, Redis compatibility, search, streaming, embedded, temporal, trigger, and Jepsen test cases, and bounded expensive all-feature execution.
+- Restored Linux I/O portability and fallback-file sync correctness, preserved aligned allocation layout and debug output, and preserved Windows Wasmtime traps while retaining the public Wasmtime 27 API.
+- Prevented client-tracking shard deadlocks, bounded counted command arguments and corrupted WAL record lengths, kept the example configuration runnable, and repaired current fuzz entry points and semantic RESP frame comparisons.
+
+### Security
+
+- Aligned the Rust dependency graph with supported security patch levels, added explicit cargo-audit policy for deferred compatibility-sensitive upgrades, stabilized compatibility and audit CI jobs, and hardened release publication against silent dry-run failures or accidental credentialed publication.
+- After live verification on 2026-09-02 found that `ferrite.dev` had no DNS and `ferrite.rs` served a parked email-hosting page, replaced user-facing documentation, support, startup, example, take-home, and unsupported-module URLs with reachable GitHub documentation, Discussions, repository, or private vulnerability reporting fallbacks; marketplace registry defaults now remain explicitly offline until a real registry API exists.
+- Added a crates.io package-identity preflight after confirming the existing `ferrite-core` name belongs to an unrelated project; publication remains blocked until ownership is transferred or a separately reviewed crate-renaming plan is approved.
+- Restricted real crates.io publication to the exact matching release tag and added an explicit resume point for safely continuing dependency-ordered publication after partial success.
+- After live verification on 2026-09-02 found that `ferritelabs.dev` did not resolve, removed `security@ferritelabs.dev`, `hello@ferritelabs.dev`, and `docs.ferritelabs.dev` from current public conduct and SDK metadata while retaining organization names and GitHub-based support, documentation, and private-reporting channels.
+
+## [0.4.1] - 2026-04-22
+
+*Maintenance tag for the 0.4 package line; workspace package metadata remained at 0.4.0.*
+
+### Added
+
+- Added dedicated Node.js and Python Mnemo publication workflows.
+
+### Changed
+
+- Updated the README for the moonshot crates, 19-crate workspace architecture, and install script, synchronized crate-count and Rust-version documentation, clarified example key/value size limits, and pinned `nix` to 0.29 for compatibility.
+
+### Fixed
+
+- Synchronized all Ferrite entries in the committed lockfile to workspace package version 0.4.0.
 
 ## [0.4.0] - 2026-04-20
 
@@ -97,7 +139,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Homebrew formula broken `depends_on` line (concatenated with comment)
 - COMMUNITY.md removed dead Discord "Coming soon" placeholder
-- SECURITY.md replaced vague email guidance with explicit security@ferritelabs.dev
+- SECURITY.md replaced vague email guidance with explicit security@ferritelabs.dev (historical; this unconfigured-domain address was retired in the planned 0.5.0 work)
 
 ## [0.2.0] - 2026-02-28
 
@@ -167,7 +209,10 @@ Initial release targeting feature parity with Redis core functionality.
 - TLS 1.2/1.3 support for encrypted connections
 - Secure password hashing with Argon2
 
-[Unreleased]: https://github.com/ferritelabs/ferrite/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/ferritelabs/ferrite/compare/v0.4.1...HEAD
+[0.5.0]: https://github.com/ferritelabs/ferrite/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/ferritelabs/ferrite/compare/v0.4.0...v0.4.1
+[0.4.0]: https://github.com/ferritelabs/ferrite/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ferritelabs/ferrite/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/ferritelabs/ferrite/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/ferritelabs/ferrite/releases/tag/v0.1.0

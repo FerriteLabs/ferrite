@@ -64,7 +64,7 @@ redis-cli INFO
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ferritelabs/ferrite/main/scripts/install.sh | bash
-# or: curl -fsSL https://raw.githubusercontent.com/ferritelabs/ferrite/main/scripts/install.sh | bash -s -- v0.4.0
+# or: curl -fsSL https://raw.githubusercontent.com/ferritelabs/ferrite/main/scripts/install.sh | bash -s -- v0.5.0
 ```
 
 The installer writes a default config to `~/.config/ferrite/ferrite.toml` (unless

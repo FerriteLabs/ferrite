@@ -24,7 +24,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.4.0"
+version = "0.5.0"
 edition = "2021"
 rust-version = "1.88"
 authors = ["Jose David Baena"]
@@ -148,25 +148,25 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [workspace.dependencies]
 # ── Workspace crates ──────────────────────────────────────────────────────────
-ferrite-core = { path = "crates/ferrite-core" }
-ferrite-search = { path = "crates/ferrite-search" }
-ferrite-ai = { path = "crates/ferrite-ai" }
-ferrite-graph = { path = "crates/ferrite-graph" }
-ferrite-timeseries = { path = "crates/ferrite-timeseries" }
-ferrite-document = { path = "crates/ferrite-document" }
-ferrite-streaming = { path = "crates/ferrite-streaming" }
-ferrite-cloud = { path = "crates/ferrite-cloud" }
-ferrite-k8s = { path = "crates/ferrite-k8s" }
-ferrite-enterprise = { path = "crates/ferrite-enterprise" }
-ferrite-plugins = { path = "crates/ferrite-plugins" }
-ferrite-studio = { path = "crates/ferrite-studio" }
-ferrite-mnemo = { path = "crates/ferrite-mnemo" }
-ferrite-forge = { path = "crates/ferrite-forge" }
-ferrite-concord = { path = "crates/ferrite-concord" }
-ferrite-chronicle = { path = "crates/ferrite-chronicle" }
-ferrite-lucidity = { path = "crates/ferrite-lucidity" }
-ferrite-pangea = { path = "crates/ferrite-pangea" }
-ferrite-spike-bridge = { path = "crates/ferrite-spike-bridge" }
+ferrite-core = { version = "0.5.0", path = "crates/ferrite-core" }
+ferrite-search = { version = "0.5.0", path = "crates/ferrite-search" }
+ferrite-ai = { version = "0.5.0", path = "crates/ferrite-ai" }
+ferrite-graph = { version = "0.5.0", path = "crates/ferrite-graph" }
+ferrite-timeseries = { version = "0.5.0", path = "crates/ferrite-timeseries" }
+ferrite-document = { version = "0.5.0", path = "crates/ferrite-document" }
+ferrite-streaming = { version = "0.5.0", path = "crates/ferrite-streaming" }
+ferrite-cloud = { version = "0.5.0", path = "crates/ferrite-cloud" }
+ferrite-k8s = { version = "0.5.0", path = "crates/ferrite-k8s" }
+ferrite-enterprise = { version = "0.5.0", path = "crates/ferrite-enterprise" }
+ferrite-plugins = { version = "0.5.0", path = "crates/ferrite-plugins" }
+ferrite-studio = { version = "0.5.0", path = "crates/ferrite-studio" }
+ferrite-mnemo = { version = "0.5.0", path = "crates/ferrite-mnemo" }
+ferrite-forge = { version = "0.5.0", path = "crates/ferrite-forge" }
+ferrite-concord = { version = "0.5.0", path = "crates/ferrite-concord" }
+ferrite-chronicle = { version = "0.5.0", path = "crates/ferrite-chronicle" }
+ferrite-lucidity = { version = "0.5.0", path = "crates/ferrite-lucidity" }
+ferrite-pangea = { version = "0.5.0", path = "crates/ferrite-pangea" }
+ferrite-spike-bridge = { version = "0.5.0", path = "crates/ferrite-spike-bridge" }
 
 # ── Async runtime ─────────────────────────────────────────────────────────────
 tokio = { version = "1", features = ["full"] }

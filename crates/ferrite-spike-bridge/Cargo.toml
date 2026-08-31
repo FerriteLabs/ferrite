@@ -16,12 +16,12 @@ categories = ["database"]
 workspace = true
 
 [dependencies]
-ferrite-chronicle = { path = "../ferrite-chronicle" }
-ferrite-concord = { path = "../ferrite-concord" }
-ferrite-forge = { path = "../ferrite-forge", features = ["runtime"] }
-ferrite-lucidity = { path = "../ferrite-lucidity" }
-ferrite-mnemo = { path = "../ferrite-mnemo" }
-ferrite-pangea = { path = "../ferrite-pangea" }
+ferrite-chronicle.workspace = true
+ferrite-concord.workspace = true
+ferrite-forge = { workspace = true, features = ["runtime"] }
+ferrite-lucidity.workspace = true
+ferrite-mnemo.workspace = true
+ferrite-pangea.workspace = true
 parking_lot.workspace = true
 serde.workspace = true
 serde_json.workspace = true
