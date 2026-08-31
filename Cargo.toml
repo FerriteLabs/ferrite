@@ -177,23 +177,23 @@ bytes = { version = "1", features = ["serde"] }
 dashmap = "6"
 crossbeam = "0.8"
 parking_lot = "0.12"
-ordered-float = { version = "4", features = ["serde"] }
+ordered-float = { version = "5", features = ["serde"] }
 
 # ── Error handling ────────────────────────────────────────────────────────────
-thiserror = "1"
+thiserror = "2"
 anyhow = "1"
 
 # ── Serialization ─────────────────────────────────────────────────────────────
 serde = { version = "1", features = ["derive"] }
 serde_json = "1.0.145"
-toml = "0.8"
-bincode = "1"
+toml = "1.1"
+bincode = "3"
 
 # ── Observability ─────────────────────────────────────────────────────────────
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
 metrics = "0.24"
-metrics-exporter-prometheus = "0.16"
+metrics-exporter-prometheus = "0.18"
 log = "0.4"
 
 # ── HTTP ──────────────────────────────────────────────────────────────────────
@@ -203,18 +203,18 @@ http-body-util = "0.1"
 reqwest = { version = "0.12", features = ["json", "rustls-tls", "blocking"], default-features = false }
 
 # ── Utilities ─────────────────────────────────────────────────────────────────
-rand = "0.8"
+rand = "0.9"
 regex = "1.11"
 chrono = { version = "0.4.42", features = ["serde"] }
 uuid = { version = "1.19.0", features = ["v4"] }
-base64 = "0.22.1"
+base64 = "0.23.1"
 humantime = "2.1"
 urlencoding = "2.1"
 num_cpus = "1.17.0"
 scopeguard = "1.2.0"
 crc32fast = "1.4"
 flate2 = "1.0"
-lz4_flex = "0.11.3"
+lz4_flex = "0.14.0"
 memmap2 = "0.9"
 clap = { version = "4", features = ["derive", "env", "string"] }
 
@@ -222,32 +222,32 @@ clap = { version = "4", features = ["derive", "env", "string"] }
 rustls = { version = "0.23" }
 tokio-rustls = { version = "0.26" }
 rustls-pemfile = { version = "2" }
-object_store = { version = "0.11", features = ["aws", "azure", "gcp"] }
-mlua = { version = "0.10", features = ["lua54", "vendored", "serialize"] }
-argon2 = { version = "0.5" }
-chacha20poly1305 = { version = "0.10" }
-sha2 = "0.10"
-wasmtime = { version = "27" }
+object_store = { version = "0.14", features = ["aws", "azure", "gcp"] }
+mlua = { version = "0.12", features = ["lua54", "vendored", "serialize"] }
+argon2 = { version = "0.6" }
+chacha20poly1305 = { version = "0.11" }
+sha2 = "0.11"
+wasmtime = { version = "42" }
 ort = { version = "2.0.0-rc.11" }
-ndarray = { version = "0.16" }
+ndarray = { version = "0.17" }
 
 # ── CLI / TUI ────────────────────────────────────────────────────────────────
 clap_complete = { version = "4" }
-rustyline = { version = "14" }
-colored = { version = "2" }
+rustyline = { version = "17" }
+colored = { version = "3" }
 atty = { version = "0.2" }
-ratatui = { version = "0.29", features = ["all-widgets"] }
-crossterm = { version = "0.28", features = ["event-stream"] }
+ratatui = { version = "0.30", features = ["all-widgets"] }
+crossterm = { version = "0.29", features = ["event-stream"] }
 
 # ── OpenTelemetry ─────────────────────────────────────────────────────────────
-opentelemetry = { version = "0.22" }
-opentelemetry_sdk = { version = "0.22", features = ["rt-tokio"] }
-opentelemetry-otlp = { version = "0.15", features = ["tonic"] }
-tracing-opentelemetry = { version = "0.23" }
-opentelemetry-semantic-conventions = { version = "0.14" }
+opentelemetry = { version = "0.32" }
+opentelemetry_sdk = { version = "0.32", features = ["rt-tokio"] }
+opentelemetry-otlp = { version = "0.32", features = ["tonic"] }
+tracing-opentelemetry = { version = "0.33" }
+opentelemetry-semantic-conventions = { version = "0.32" }
 
 # ── Dev dependencies ──────────────────────────────────────────────────────────
-criterion = { version = "0.5", features = ["html_reports"] }
+criterion = { version = "0.8", features = ["html_reports"] }
 proptest = "1"
 tokio-test = "0.4"
 tempfile = "3"
