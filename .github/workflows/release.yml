@@ -61,7 +61,7 @@ jobs:
           if [ "${{ matrix.cross }}" = "true" ]; then
             export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
           fi
-          cargo build --release --target ${{ matrix.target }} --bin ferrite --bin ferrite-cli
+          cargo build --release --target "${{ matrix.target }}" --bin ferrite --bin ferrite-cli
         env:
           RUSTFLAGS: -Dwarnings
 
@@ -70,11 +70,11 @@ jobs:
           TAG="${GITHUB_REF#refs/tags/}"
           ARCHIVE_NAME="ferrite-${TAG}-${{ matrix.target }}"
           mkdir -p "${ARCHIVE_NAME}"
-          cp target/${{ matrix.target }}/release/ferrite "${ARCHIVE_NAME}/"
-          cp target/${{ matrix.target }}/release/ferrite-cli "${ARCHIVE_NAME}/"
+          cp "target/${{ matrix.target }}/release/ferrite" "${ARCHIVE_NAME}/"
+          cp "target/${{ matrix.target }}/release/ferrite-cli" "${ARCHIVE_NAME}/"
           cp README.md LICENSE CHANGELOG.md "${ARCHIVE_NAME}/"
           tar czf "${ARCHIVE_NAME}.tar.gz" "${ARCHIVE_NAME}"
-          echo "ARCHIVE=${ARCHIVE_NAME}.tar.gz" >> $GITHUB_ENV
+          echo "ARCHIVE=${ARCHIVE_NAME}.tar.gz" >> "$GITHUB_ENV"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -166,8 +166,8 @@ jobs:
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
           VERSION="${TAG#v}"
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push Docker image
         id: docker-build

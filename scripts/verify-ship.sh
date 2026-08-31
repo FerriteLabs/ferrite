@@ -2,7 +2,7 @@
 # =============================================================================
 # Ferrite Ship Verification
 # =============================================================================
-# Checks all prerequisites before shipping v0.2.0
+# Checks all prerequisites before shipping the current workspace version.
 #
 # Usage: ./scripts/verify-ship.sh
 
@@ -28,9 +28,10 @@ check() {
 }
 
 cd "$(git rev-parse --show-toplevel)"
+VERSION=$(awk -F'"' '/^version = / {print $2; exit}' Cargo.toml)
 
 echo "═══════════════════════════════════════════════════════════════"
-echo "  Ferrite v0.2.0 Ship Verification"
+echo "  Ferrite v${VERSION} Ship Verification"
 echo "═══════════════════════════════════════════════════════════════"
 echo ""
 
@@ -72,7 +73,7 @@ echo "Documentation:"
 echo ""
 echo "CI/CD:"
 [[ -f .github/workflows/ci.yml ]] && check "CI workflow exists" "pass" || check "CI workflow" "fail"
-[[ -f .github/workflows/release-full.yml ]] && check "Release workflow exists" "pass" || check "Release workflow" "fail"
+[[ -f .github/workflows/release.yml ]] && check "Release workflow exists" "pass" || check "Release workflow" "fail"
 [[ -f .github/workflows/compat-dashboard.yml ]] && check "Compat dashboard workflow exists" "pass" || check "Compat dashboard" "fail"
 
 echo ""
@@ -90,7 +91,6 @@ echo "Ecosystem:"
 
 echo ""
 echo "Version:"
-VERSION=$(grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
 check "Current version: $VERSION" "pass"
 
 echo ""
