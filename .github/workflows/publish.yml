@@ -1,11 +1,8 @@
-# Publish crates to crates.io
+# Publish crates to crates.io.
 #
-# Triggered manually or on tag push matching 'publish-v*'.
-# Publishes crates in dependency order: ferrite-core first, then extensions.
-#
-# Prerequisites:
-#   - CARGO_REGISTRY_TOKEN secret must be set in repo settings
-#   - All crates must have valid metadata (description, license, readme)
+# This workflow is manual-only. Its default dry-run calls the same non-secret
+# reusable preflight used by the release pipelines. Real publication additionally
+# requires dry_run=false, the protected release environment, and a registry token.
 
 name: Publish to crates.io
 
@@ -20,6 +17,14 @@ on:
         description: 'Specific crate to publish (blank = all in order)'
         type: string
         default: ''
+      start_at:
+        description: 'Resume all-crate publication at this crate after a partial success'
+        type: string
+        default: ''
+      expected_version:
+        description: 'Expected tagged workspace version, optionally prefixed with v'
+        type: string
+        required: true
 
 permissions:
   contents: read
@@ -28,78 +33,123 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  preflight:
+    name: Crates publication preflight
+    uses: ./.github/workflows/publish-preflight.yml
+    with:
+      crate: ${{ inputs.crate }}
+      expected_version: ${{ inputs.expected_version }}
+
+  authorize:
+    name: Verify tagged publication
+    needs: preflight
+    if: ${{ inputs.dry_run == false }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require an exact release tag
+        env:
+          EXPECTED_VERSION: ${{ inputs.expected_version }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$EXPECTED_VERSION" ]]; then
+            echo "::error::expected_version is required for publication"
+            exit 1
+          fi
+          VERSION="${EXPECTED_VERSION#v}"
+          if [[ "$GITHUB_REF" != "refs/tags/v${VERSION}" ]]; then
+            echo "::error::Real publication must run from refs/tags/v${VERSION}; selected ref is ${GITHUB_REF}"
+            exit 1
+          fi
+          if [[ "$GITHUB_REF_NAME" != "v${VERSION}" ]]; then
+            echo "::error::Selected tag ${GITHUB_REF_NAME} does not match expected version ${VERSION}"
+            exit 1
+          fi
+
   publish:
     name: Publish
+    needs: [preflight, authorize]
+    if: ${{ inputs.dry_run == false }}
     runs-on: ubuntu-latest
+    environment: release
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.88
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Verify metadata
-        run: |
-          for crate in \
-            ferrite-core \
-            ferrite-search \
-            ferrite-ai \
-            ferrite-graph \
-            ferrite-timeseries \
-            ferrite-document \
-            ferrite-streaming \
-            ferrite-cloud \
-            ferrite-k8s \
-            ferrite-enterprise \
-            ferrite-plugins \
-            ferrite-studio \
-            ferrite-mnemo \
-            ferrite-forge \
-            ferrite-lucidity \
-            ferrite-chronicle \
-            ferrite-concord \
-            ferrite-pangea \
-            ferrite-spike-bridge; do
-            echo "Checking $crate..."
-            cargo publish --dry-run -p "$crate" 2>&1 | tail -3
-          done
-
-      - name: Publish crates (dependency order)
-        if: ${{ !inputs.dry_run }}
+      - name: Publish crates in dependency order
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          REQUESTED_CRATE: ${{ inputs.crate }}
+          RESUME_AT: ${{ inputs.start_at }}
         run: |
-          CRATES=(
-            ferrite-core
-            ferrite-search
-            ferrite-ai
-            ferrite-graph
-            ferrite-timeseries
-            ferrite-document
-            ferrite-streaming
-            ferrite-cloud
-            ferrite-k8s
-            ferrite-enterprise
-            ferrite-plugins
-            ferrite-studio
-            ferrite-mnemo
-            ferrite-forge
-            ferrite-lucidity
-            ferrite-chronicle
-            ferrite-concord
-            ferrite-pangea
-            ferrite-spike-bridge
-          )
+          set -euo pipefail
+          mapfile -t crates < .github/publish-crates.txt
 
-          # If a specific crate is requested, publish only that
-          if [ -n "${{ inputs.crate }}" ]; then
-            CRATES=("${{ inputs.crate }}")
+          if [[ -z "${CARGO_REGISTRY_TOKEN:-}" ]]; then
+            echo "::error::CARGO_REGISTRY_TOKEN is required for publication"
+            exit 1
           fi
 
-          for crate in "${CRATES[@]}"; do
+          if [[ -n "$REQUESTED_CRATE" ]]; then
+            if [[ -n "$RESUME_AT" ]]; then
+              echo "::error::crate and start_at are mutually exclusive"
+              exit 1
+            fi
+            if [[ " ${crates[*]} " != *" $REQUESTED_CRATE "* ]]; then
+              echo "::error::Unknown or non-publishable crate: $REQUESTED_CRATE"
+              exit 1
+            fi
+            crates=("$REQUESTED_CRATE")
+          elif [[ -n "$RESUME_AT" ]] && [[ " ${crates[*]} " != *" $RESUME_AT "* ]]; then
+            echo "::error::Resume crate is not in the publication list: $RESUME_AT"
+            exit 1
+          fi
+
+          VERSION=$(python3 - <<'PY'
+          import json
+          import subprocess
+
+          metadata = json.loads(
+              subprocess.check_output(
+                  ["cargo", "metadata", "--locked", "--no-deps", "--format-version", "1"]
+              )
+          )
+          print(next(package["version"] for package in metadata["packages"] if package["name"] == "ferrite-core"))
+          PY
+          )
+
+          wait_for_registry() {
+            local crate="$1"
+            for attempt in {1..30}; do
+              if cargo info --registry crates-io "${crate}@${VERSION}" >/dev/null 2>&1; then
+                return 0
+              fi
+              echo "Waiting for ${crate} ${VERSION} in the crates.io index (${attempt}/30)..."
+              sleep 10
+            done
+            echo "::error::${crate} ${VERSION} did not appear in the crates.io index"
+            return 1
+          }
+
+          resume_reached=false
+          [[ -z "$RESUME_AT" ]] && resume_reached=true
+          for crate in "${crates[@]}"; do
+            if ! $resume_reached; then
+              if [[ "$crate" == "$RESUME_AT" ]]; then
+                resume_reached=true
+              else
+                if ! cargo info --registry crates-io "${crate}@${VERSION}" >/dev/null 2>&1; then
+                  echo "::error::Cannot resume at ${RESUME_AT}: ${crate} ${VERSION} is not visible on crates.io"
+                  exit 1
+                fi
+                echo "Verified already published crate before resume point: $crate ${VERSION}"
+                continue
+              fi
+            fi
             echo "Publishing $crate..."
-            cargo publish -p "$crate" --no-verify
-            # Wait for crates.io index to update before publishing dependents
-            echo "Waiting for index update..."
-            sleep 30
+            cargo publish --dry-run --locked -p "$crate"
+            cargo publish --locked -p "$crate"
+            wait_for_registry "$crate"
           done

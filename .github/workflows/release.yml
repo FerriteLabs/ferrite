@@ -15,9 +15,16 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  crates-preflight:
+    name: Crates publication preflight
+    uses: ./.github/workflows/publish-preflight.yml
+    with:
+      expected_version: ${{ github.ref_name }}
+
   # ── Build release binaries ──────────────────────────────────────────────────
   build:
     name: Build (${{ matrix.target }})
+    needs: crates-preflight
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

@@ -1,0 +1,136 @@
+# Reusable, non-publishing crates.io preflight.
+#
+# This workflow never receives registry credentials and cannot publish. It is
+# called by publish.yml for manual dry-runs and by the tag release pipeline.
+
+name: Crates publication preflight
+
+on:
+  workflow_call:
+    inputs:
+      crate:
+        description: 'Specific crate to validate (blank = all in order)'
+        type: string
+        default: ''
+      expected_version:
+        description: 'Expected workspace version, optionally prefixed with v'
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  preflight:
+    name: Preflight
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify crates.io package identities
+        env:
+          CRATES_IO_TRUSTED_OWNER: ${{ vars.CRATES_IO_TRUSTED_OWNER }}
+        run: |
+          set -euo pipefail
+          args=()
+          if [[ -n "${CRATES_IO_TRUSTED_OWNER:-}" ]]; then
+            args+=(--trusted-owner "$CRATES_IO_TRUSTED_OWNER")
+          fi
+          python3 scripts/check_crates_io_ownership.py "${args[@]}"
+
+      - uses: dtolnay/rust-toolchain@1.88
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Verify release metadata
+        env:
+          EXPECTED_VERSION: ${{ inputs.expected_version }}
+        run: |
+          set -euo pipefail
+          cargo metadata --locked --no-deps --format-version 1 > cargo-metadata.json
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          metadata = json.loads(Path("cargo-metadata.json").read_text())
+          packages = {package["name"]: package for package in metadata["packages"]}
+          publishable = Path(".github/publish-crates.txt").read_text().splitlines()
+          expected = os.environ["EXPECTED_VERSION"].removeprefix("v")
+          versions = {packages[name]["version"] for name in publishable}
+
+          if len(versions) != 1:
+              raise SystemExit(f"publishable crate versions are not synchronized: {sorted(versions)}")
+
+          workspace_version = versions.pop()
+          if expected and workspace_version != expected:
+              raise SystemExit(
+                  f"workspace version {workspace_version} does not match expected {expected}"
+              )
+
+          if expected:
+              changelog = Path("CHANGELOG.md").read_text().splitlines()
+              release_heading = next(
+                  (line for line in changelog if line.startswith(f"## [{expected}]")),
+                  None,
+              )
+              if release_heading is None:
+                  raise SystemExit(f"CHANGELOG.md has no [{expected}] release heading")
+              if os.environ["GITHUB_REF"].startswith("refs/tags/") and (
+                  "unreleased" in release_heading.lower() or "planned" in release_heading.lower()
+              ):
+                  raise SystemExit(f"tagged release still has a planned heading: {release_heading}")
+
+          for name in publishable:
+              package = packages[name]
+              if package["publish"] == []:
+                  raise SystemExit(f"{name} has publish = false but is in the publish list")
+              for field in ("description", "license", "repository"):
+                  if not package.get(field):
+                      raise SystemExit(f"{name} is missing package.{field}")
+              readme = package.get("readme")
+              if readme:
+                  manifest_dir = Path(package["manifest_path"]).parent
+                  if not (manifest_dir / readme).is_file():
+                      raise SystemExit(f"{name} readme does not exist: {readme}")
+
+          for name in ("ferrite-enterprise", "ferrite-k8s", "ferrite-studio"):
+              if packages[name]["publish"] != []:
+                  raise SystemExit(f"{name} must remain excluded with publish = false")
+
+          print(f"Validated {len(publishable)} public crates at version {workspace_version}")
+          PY
+          rm cargo-metadata.json
+
+      - name: Run crates.io dry-run checks
+        env:
+          REQUESTED_CRATE: ${{ inputs.crate }}
+        run: |
+          set -euo pipefail
+          mapfile -t crates < .github/publish-crates.txt
+
+          if [[ -n "$REQUESTED_CRATE" ]]; then
+            if [[ " ${crates[*]} " != *" $REQUESTED_CRATE "* ]]; then
+              echo "::error::Unknown or non-publishable crate: $REQUESTED_CRATE"
+              exit 1
+            fi
+            crates=("$REQUESTED_CRATE")
+          fi
+
+          for crate in "${crates[@]}"; do
+            echo "::group::Dry-run $crate"
+            case "$crate" in
+              ferrite-forge|ferrite-spike-bridge)
+                echo "::notice::$crate has synchronized internal dependencies that are unavailable on crates.io before this release is published"
+                echo "::notice::Validating its metadata and tests now; the protected publish job runs cargo publish --dry-run after its dependencies reach the index"
+                cargo test --locked --all-features -p "$crate"
+                ;;
+              *)
+                cargo publish --dry-run --locked -p "$crate"
+                ;;
+            esac
+            echo "::endgroup::"
+          done
