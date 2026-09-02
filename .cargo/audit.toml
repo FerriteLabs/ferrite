@@ -1,7 +1,10 @@
 [advisories]
 # object_store 0.14 and Wasmtime 36 fix these advisories, but both dependencies
 # appear in Ferrite's public API. Their major-version upgrades are deferred to
-# the next compatibility release instead of silently breaking 0.4 consumers.
+# the next compatibility release instead of silently breaking 0.5 consumers.
+# RUSTSEC-2026-0258 remains only on h2 0.3.27 through the optional
+# OpenTelemetry 0.22 / tonic 0.11 stack. The h2 0.4 line is patched to 0.4.16;
+# upgrade the telemetry stack before the next release line.
 ignore = [
     "RUSTSEC-2026-0195",
     "RUSTSEC-2026-0194",
@@ -21,4 +24,5 @@ ignore = [
     "RUSTSEC-2026-0095",
     "RUSTSEC-2025-0118",
     "RUSTSEC-2026-0091",
+    "RUSTSEC-2026-0258",
 ]

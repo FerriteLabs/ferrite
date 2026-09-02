@@ -61,6 +61,22 @@ class ReleaseScriptTests(unittest.TestCase):
     def test_legacy_full_release_workflow_is_removed(self) -> None:
         self.assertFalse((ROOT / ".github" / "workflows" / "release-full.yml").exists())
 
+    def test_h2_advisory_is_scoped_to_the_legacy_optional_stack(self) -> None:
+        lockfile = tomllib.loads((ROOT / "Cargo.lock").read_text(encoding="utf-8"))
+        h2_versions = {
+            package["version"]
+            for package in lockfile["package"]
+            if package["name"] == "h2"
+        }
+        self.assertIn("0.3.27", h2_versions)
+        self.assertIn("0.4.16", h2_versions)
+        self.assertNotIn("0.4.12", h2_versions)
+
+        for path in (ROOT / "deny.toml", ROOT / ".cargo" / "audit.toml"):
+            policy = path.read_text(encoding="utf-8")
+            self.assertIn("RUSTSEC-2026-0258", policy)
+            self.assertIn("OpenTelemetry 0.22 / tonic 0.11", policy)
+
 
 class FakeResponse(io.BytesIO):
     def __enter__(self):

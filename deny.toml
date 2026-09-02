@@ -17,7 +17,10 @@ yanked = "warn"
 
 # Ignore specific advisories (add rationale in comments)
 # object_store 0.14 and Wasmtime 36 are public-type compatibility breaks.
-# Keep the 0.4 API stable and resolve these in the next compatibility release.
+# Keep the 0.5 API stable and resolve these in the next compatibility release.
+# RUSTSEC-2026-0258 remains only on h2 0.3.27 through the optional
+# OpenTelemetry 0.22 / tonic 0.11 stack; the independently used h2 0.4 line is
+# patched to 0.4.16. Upgrade the telemetry stack before the next release line.
 ignore = [
     "RUSTSEC-2026-0195",
     "RUSTSEC-2026-0194",
@@ -37,6 +40,7 @@ ignore = [
     "RUSTSEC-2026-0095",
     "RUSTSEC-2025-0118",
     "RUSTSEC-2026-0091",
+    "RUSTSEC-2026-0258",
 ]
 
 [licenses]
