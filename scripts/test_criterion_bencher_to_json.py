@@ -6,6 +6,22 @@ from criterion_bencher_to_json import convert_files, parse_bencher_output
 
 
 class CriterionBencherToJsonTests(unittest.TestCase):
+    def test_parses_real_single_line_bencher_output(self) -> None:
+        output = "test get_throughput/get_existing ... bench:         162 ns/iter (+/- 3)\n"
+
+        self.assertEqual(
+            parse_bencher_output(output, "throughput-output.txt"),
+            [
+                {
+                    "name": "get_throughput/get_existing",
+                    "unit": "ns/iter",
+                    "value": 162,
+                    "range": "3",
+                    "extra": "throughput-output.txt",
+                }
+            ],
+        )
+
     def test_parses_criterion_bencher_output_with_diagnostic(self) -> None:
         output = """\
 test group/operation ... Criterion.rs ERROR: missing baseline

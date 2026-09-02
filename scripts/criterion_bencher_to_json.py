@@ -13,6 +13,9 @@ TEST_LINE = re.compile(r"^test (.+?) \.\.\.")
 BENCH_LINE = re.compile(
     r"^bench:\s+([0-9,]+)\s+ns/iter\s+\(\+/-\s+([0-9,]+)\)"
 )
+COMBINED_BENCH_LINE = re.compile(
+    r"^test (.+?) \.\.\. bench:\s+([0-9,]+)\s+ns/iter\s+\(\+/-\s+([0-9,]+)\)"
+)
 
 
 def parse_bencher_output(output: str, source: str) -> list[dict[str, int | str]]:
@@ -21,6 +24,19 @@ def parse_bencher_output(output: str, source: str) -> list[dict[str, int | str]]
     current_name: str | None = None
 
     for line in output.splitlines():
+        if match := COMBINED_BENCH_LINE.match(line):
+            results.append(
+                {
+                    "name": match.group(1),
+                    "unit": "ns/iter",
+                    "value": int(match.group(2).replace(",", "")),
+                    "range": match.group(3).replace(",", ""),
+                    "extra": source,
+                }
+            )
+            current_name = None
+            continue
+
         if match := TEST_LINE.match(line):
             current_name = match.group(1)
             continue
