@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Restored the full workspace verification baseline, stabilized nondeterministic aggregate, time-series, Forge telemetry, marketplace filesystem, Redis compatibility, search, streaming, embedded, temporal, trigger, and Jepsen test cases, and bounded expensive all-feature execution.
+- Restored the Node.js SDK CI path with a dependency-free TypeScript lint gate, ts-jest configuration, and an advisory-free lockfile.
 - Restored Linux I/O portability and fallback-file sync correctness, preserved aligned allocation layout and debug output, and preserved Windows Wasmtime traps while retaining the public Wasmtime 27 API.
 - Prevented client-tracking shard deadlocks, bounded counted command arguments and corrupted WAL record lengths, kept the example configuration runnable, and repaired current fuzz entry points and semantic RESP frame comparisons.
 

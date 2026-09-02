@@ -13,9 +13,20 @@
     "watch": "tsc --watch",
     "test": "jest",
     "test:watch": "jest --watch",
-    "lint": "eslint src/ tests/",
+    "lint": "tsc --noEmit",
     "clean": "rm -rf dist",
     "prepublishOnly": "npm run clean && npm run build"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/tests"
+    ],
+    "moduleFileExtensions": [
+      "ts",
+      "js"
+    ]
   },
   "keywords": [
     "ferrite",
@@ -29,7 +40,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ferritelabs/ferrite.git",
+    "url": "git+https://github.com/ferritelabs/ferrite.git",
     "directory": "sdk/nodejs"
   },
   "homepage": "https://github.com/ferritelabs/ferrite-docs",
