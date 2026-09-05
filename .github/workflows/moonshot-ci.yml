@@ -32,8 +32,8 @@ jobs:
       top-level: ${{ steps.filter.outputs.top-level }}
       any-moonshot: ${{ steps.filter.outputs.any-moonshot }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@v7
+      - uses: dorny/paths-filter@v4
         id: filter
         with:
           filters: |
@@ -72,7 +72,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.any-moonshot == 'true' || needs.changes.outputs.top-level == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
@@ -142,7 +142,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.any-moonshot == 'true' || needs.changes.outputs.top-level == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
