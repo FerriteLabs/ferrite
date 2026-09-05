@@ -20,7 +20,7 @@ serde.workspace = true
 thiserror.workspace = true
 parking_lot.workspace = true
 sha2.workspace = true
-ed25519-dalek = { version = "2", features = ["rand_core"] }
+ed25519-dalek = { version = "3", features = ["rand_core"] }
 rand.workspace = true
 
 [dev-dependencies]
