@@ -40,9 +40,9 @@ jobs:
     name: Performance Benchmarks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: dtolnay/rust-toolchain@1.88
+      - uses: dtolnay/rust-toolchain@1.120
 
       - uses: Swatinem/rust-cache@v2
         with:
@@ -71,7 +71,7 @@ jobs:
             --output benchmark-results.json
 
       - name: Restore benchmark history
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: benchmark-cache
           key: benchmark-${{ github.event_name == 'push' && 'main' || 'pr' }}-${{ github.sha }}
