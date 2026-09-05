@@ -2,7 +2,13 @@ blank_issues_enabled: false
 contact_links:
   - name: 🔒 Security Vulnerability
     url: https://github.com/ferritelabs/ferrite/security/advisories/new
-    about: Report security vulnerabilities privately via GitHub Security Advisories
+    about: Do not open a public issue. Report privately using GitHub private vulnerability reporting (Security Advisories).
   - name: 💬 Questions & Discussions
     url: https://github.com/ferritelabs/ferrite/discussions
-    about: Ask questions or start a discussion
+    about: Ask questions or start a discussion.
+  - name: 🧪 Tester interest / questions
+    url: https://github.com/ferritelabs/ferrite/issues/new?template=tester_interest.yml
+    about: Volunteer for the external tester program, or ask a program question.
+  - name: 🧪 External Tester Program
+    url: https://github.com/ferritelabs/ferrite/blob/main/TESTER_PROGRAM.md
+    about: Learn about the external tester program, or use the "Tester Interest" / "Tester Report" forms above

@@ -1319,7 +1319,7 @@ mod tests {
     #[test]
     fn test_default_impls() {
         let _reg = MetricsRegistry::default();
-        let _gen = GrafanaDashboardGenerator::default();
+        let _gen = GrafanaDashboardGenerator;
         let _ks = KeyspaceMetrics::default();
         let _pm = PersistenceMetrics::default();
         let _rm = ReplicationMetrics::default();

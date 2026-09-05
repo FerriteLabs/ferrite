@@ -7,17 +7,41 @@ exclude-dev = false
 
 [advisories]
 # The database of security advisories
-db-path = "~/.cargo/advisory-db"
+db-path = "~/.cargo/cargo-deny-advisory-db"
 db-urls = ["https://github.com/rustsec/advisory-db"]
 
-# How to handle advisories
-vulnerability = "deny"
-unmaintained = "warn"
+# cargo-audit reports unmaintained advisories as non-fatal warnings.
+unmaintained = "none"
+unsound = "workspace"
 yanked = "warn"
-notice = "warn"
 
 # Ignore specific advisories (add rationale in comments)
-ignore = []
+# object_store 0.14 and Wasmtime 36 are public-type compatibility breaks.
+# Keep the 0.5 API stable and resolve these in the next compatibility release.
+# RUSTSEC-2026-0258 remains only on h2 0.3.27 through the optional
+# OpenTelemetry 0.22 / tonic 0.11 stack; the independently used h2 0.4 line is
+# patched to 0.4.16. Upgrade the telemetry stack before the next release line.
+ignore = [
+    "RUSTSEC-2026-0195",
+    "RUSTSEC-2026-0194",
+    "RUSTSEC-2026-0086",
+    "RUSTSEC-2026-0096",
+    "RUSTSEC-2026-0222",
+    "RUSTSEC-2026-0020",
+    "RUSTSEC-2026-0092",
+    "RUSTSEC-2026-0021",
+    "RUSTSEC-2026-0093",
+    "RUSTSEC-2026-0087",
+    "RUSTSEC-2026-0088",
+    "RUSTSEC-2026-0089",
+    "RUSTSEC-2025-0046",
+    "RUSTSEC-2026-0094",
+    "RUSTSEC-2026-0085",
+    "RUSTSEC-2026-0095",
+    "RUSTSEC-2025-0118",
+    "RUSTSEC-2026-0091",
+    "RUSTSEC-2026-0258",
+]
 
 [licenses]
 # Confidence threshold for license detection
@@ -30,18 +54,16 @@ allow = [
     "Apache-2.0 WITH LLVM-exception",
     "BSD-2-Clause",
     "BSD-3-Clause",
+    "BSL-1.0",
+    "CDLA-Permissive-2.0",
     "ISC",
     "Zlib",
     "MPL-2.0",
+    "OpenSSL",
+    "Unicode-3.0",
     "Unicode-DFS-2016",
     "CC0-1.0",
     "Unlicense",
-]
-
-# Licenses that trigger errors
-deny = [
-    "GPL-3.0",
-    "AGPL-3.0",
 ]
 
 # Clarifications for specific crates
@@ -49,11 +71,6 @@ deny = [
 name = "ring"
 expression = "MIT AND ISC AND OpenSSL"
 license-files = [{ path = "LICENSE", hash = 0xbd0eed23 }]
-
-[[licenses.clarify]]
-name = "encoding_rs"
-expression = "(Apache-2.0 OR MIT) AND BSD-3-Clause"
-license-files = [{ path = "LICENSE", hash = 0x5eb68ed6 }]
 
 [bans]
 # How to handle multiple versions of the same crate

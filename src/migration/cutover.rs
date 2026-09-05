@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 
 /// Cutover configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -267,6 +267,6 @@ options: >-
 
 ## More Information
 
-- [Ferrite Documentation](https://ferrite.dev/docs)
+- [Ferrite Documentation](https://github.com/ferritelabs/ferrite-docs)
 - [GitHub Actions Service Containers](https://docs.github.com/en/actions/using-containerized-services)
 - [Ferrite Docker Hub](https://hub.docker.com/r/ferritecache/ferrite)

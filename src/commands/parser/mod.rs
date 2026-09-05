@@ -3426,6 +3426,80 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_sintercard_rejects_overflowing_numkeys() {
+        let numkeys = usize::MAX.to_string();
+        let frame = make_command(&["SINTERCARD", &numkeys]);
+        let result = Command::from_frame(frame);
+
+        assert!(matches!(
+            result,
+            Err(FerriteError::WrongArity(command)) if command == "SINTERCARD"
+        ));
+    }
+
+    #[test]
+    fn test_parse_sorted_set_rejects_overflowing_numkeys() {
+        let numkeys = usize::MAX.to_string();
+
+        for command in ["ZUNION", "ZINTERCARD", "ZMPOP"] {
+            let frame = make_command(&[command, &numkeys]);
+            let result = Command::from_frame(frame);
+
+            assert!(matches!(
+                result,
+                Err(FerriteError::WrongArity(error_command)) if error_command == command
+            ));
+        }
+    }
+
+    #[test]
+    fn test_parse_list_pop_rejects_negative_numkeys() {
+        for parts in [
+            &["LMPOP", "-1", "key", "LEFT"][..],
+            &["BLMPOP", "0", "-1", "key", "LEFT"][..],
+        ] {
+            let result = Command::from_frame(make_command(parts));
+            assert!(matches!(result, Err(FerriteError::Syntax)));
+        }
+    }
+
+    #[test]
+    fn test_parse_rejects_negative_collection_counts() {
+        for parts in [
+            &["WASM.CALL", "function", "-1"][..],
+            &["WASM.CALL_RO", "function", "-1"][..],
+            &["FT.SEARCH", "index", "*", "RETURN", "-1"][..],
+        ] {
+            let result = Command::from_frame(make_command(parts));
+            assert!(matches!(result, Err(FerriteError::NotInteger)));
+        }
+    }
+
+    #[test]
+    fn test_parse_accepts_valid_counted_commands() {
+        for parts in [
+            &["SINTERCARD", "2", "first", "second"][..],
+            &["ZUNION", "2", "first", "second"][..],
+            &["ZUNIONSTORE", "destination", "2", "first", "second"][..],
+            &["ZINTER", "2", "first", "second"][..],
+            &["ZINTERSTORE", "destination", "2", "first", "second"][..],
+            &["ZINTERCARD", "2", "first", "second"][..],
+            &["ZDIFF", "2", "first", "second"][..],
+            &["ZDIFFSTORE", "destination", "2", "first", "second"][..],
+            &["ZMPOP", "2", "first", "second", "MIN"][..],
+            &["BZMPOP", "0", "2", "first", "second", "MAX"][..],
+            &["LMPOP", "2", "first", "second", "LEFT"][..],
+            &["BLMPOP", "0", "2", "first", "second", "RIGHT"][..],
+        ] {
+            assert!(
+                Command::from_frame(make_command(parts)).is_ok(),
+                "failed to parse {}",
+                parts[0]
+            );
+        }
+    }
+
+    #[test]
     fn test_parse_getrange() {
         let frame = make_command(&["GETRANGE", "mykey", "0", "10"]);
         let cmd = Command::from_frame(frame).unwrap();

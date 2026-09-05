@@ -9,7 +9,7 @@
 [![Build Status](https://github.com/ferritelabs/ferrite/actions/workflows/ci.yml/badge.svg)](https://github.com/ferritelabs/ferrite/actions/workflows/ci.yml)
 [![Crates.io](https://img.shields.io/crates/v/ferrite.svg)](https://crates.io/crates/ferrite)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
-[![Rust](https://img.shields.io/badge/rust-1.80%2B-orange)](https://www.rust-lang.org/)
+[![Rust](https://img.shields.io/badge/rust-1.88%2B-orange)](https://www.rust-lang.org/)
 
 ## クイックスタート（60秒）
 
@@ -81,7 +81,7 @@ cargo install ferrite
 
 ## ドキュメント
 
-- 📖 [完全なドキュメント](https://ferrite.rs)
+- 📖 [完全なドキュメント](https://github.com/ferritelabs/ferrite-docs)
 - 🏗️ [アーキテクチャ概要](docs/ARCHITECTURE.md)
 - 🔄 [Redis 互換性](docs/REDIS_COMPAT.md)
 - 🗺️ [ロードマップ](ROADMAP.md)

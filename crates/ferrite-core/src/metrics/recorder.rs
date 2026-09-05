@@ -180,19 +180,6 @@ pub fn init_metrics() {
     );
 }
 
-#[cfg(test)]
-mod tests {
-    // Note: Testing metrics requires setting up a recorder
-    // These tests would normally use metrics_util::debugging::DebuggingRecorder
-    // For now, we just verify the functions compile correctly
-
-    #[test]
-    fn test_metrics_functions_exist() {
-        // This test just verifies all metric functions are callable
-        // In a real test, we'd set up a debugging recorder and verify values
-    }
-}
-
 // ── Rate limiting & backpressure metrics ─────────────────────────────────────
 
 /// Record a rate-limited (rejected) command.
@@ -213,4 +200,17 @@ pub fn record_backpressure_rejected() {
 /// Set the current memory backpressure ratio (0.0-1.0).
 pub fn set_backpressure_memory_ratio(ratio: f64) {
     gauge!("ferrite_backpressure_memory_ratio").set(ratio);
+}
+
+#[cfg(test)]
+mod tests {
+    // Note: Testing metrics requires setting up a recorder
+    // These tests would normally use metrics_util::debugging::DebuggingRecorder
+    // For now, we just verify the functions compile correctly
+
+    #[test]
+    fn test_metrics_functions_exist() {
+        // This test just verifies all metric functions are callable
+        // In a real test, we'd set up a debugging recorder and verify values
+    }
 }

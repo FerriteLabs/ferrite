@@ -7,6 +7,9 @@ on:
       - 'src/**'
       - 'crates/*/src/**'
       - 'benches/**'
+      - 'scripts/criterion_bencher_to_json.py'
+      - 'scripts/test_criterion_bencher_to_json.py'
+      - '.github/workflows/benchmarks.yml'
       - 'Cargo.toml'
       - 'Cargo.lock'
   pull_request:
@@ -15,6 +18,9 @@ on:
       - 'src/**'
       - 'crates/*/src/**'
       - 'benches/**'
+      - 'scripts/criterion_bencher_to_json.py'
+      - 'scripts/test_criterion_bencher_to_json.py'
+      - '.github/workflows/benchmarks.yml'
       - 'Cargo.toml'
       - 'Cargo.lock'
 
@@ -36,42 +42,53 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.88
 
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: bench
 
       - name: Run throughput benchmarks
-        run: cargo bench --bench throughput -- --output-format bencher | tee throughput-output.txt
+        run: set -o pipefail; cargo bench --bench throughput -- --output-format bencher ${{ github.event_name == 'pull_request' && '--sample-size 10 --warm-up-time 1 --measurement-time 1' || '' }} 2>&1 | tee throughput-output.txt
 
       - name: Run latency benchmarks
-        run: cargo bench --bench latency -- --output-format bencher | tee latency-output.txt
+        run: set -o pipefail; cargo bench --bench latency -- --output-format bencher ${{ github.event_name == 'pull_request' && '--sample-size 10 --warm-up-time 1 --measurement-time 1' || '' }} 2>&1 | tee latency-output.txt
 
       - name: Run tiered storage benchmarks
-        run: cargo bench --bench tiered_storage -- --output-format bencher | tee tiered-output.txt
+        run: set -o pipefail; cargo bench --bench tiered_storage -- --output-format bencher ${{ github.event_name == 'pull_request' && '--sample-size 10 --warm-up-time 1 --measurement-time 1' || '' }} 2>&1 | tee tiered-output.txt
 
       - name: Run vector search benchmarks
-        run: cargo bench --bench vector_bench -- --output-format bencher | tee vector-output.txt
+        run: set -o pipefail; cargo bench --bench vector_bench -- --output-format bencher ${{ github.event_name == 'pull_request' && '--sample-size 10 --warm-up-time 1 --measurement-time 1' || '' }} 2>&1 | tee vector-output.txt
 
-      - name: Combine benchmark results
-        run: cat throughput-output.txt latency-output.txt tiered-output.txt vector-output.txt > combined-output.txt
+      - name: Convert benchmark results
+        run: |
+          python3 -m unittest discover -s scripts -p 'test_criterion_bencher_to_json.py'
+          python3 scripts/criterion_bencher_to_json.py \
+            throughput-output.txt \
+            latency-output.txt \
+            tiered-output.txt \
+            vector-output.txt \
+            --output benchmark-results.json
+
+      - name: Restore benchmark history
+        uses: actions/cache@v4
+        with:
+          path: benchmark-cache
+          key: benchmark-${{ github.event_name == 'push' && 'main' || 'pr' }}-${{ github.sha }}
+          restore-keys: |
+            benchmark-main-
 
       - name: Store benchmark results
         uses: benchmark-action/github-action-benchmark@v1
         with:
           name: Ferrite Benchmarks
-          tool: 'cargo'
-          output-file-path: combined-output.txt
+          tool: customSmallerIsBetter
+          output-file-path: benchmark-results.json
+          external-data-json-path: ./benchmark-cache/benchmark-data.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          # On main: update the benchmark data
-          auto-push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           # On PRs: comment with comparison
           comment-on-alert: true
           alert-threshold: '110%'
           comment-always: ${{ github.event_name == 'pull_request' }}
           fail-on-alert: ${{ github.event_name == 'pull_request' }}
           alert-comment-cc-users: '@josedab'
-          # Store results in gh-pages branch
-          gh-pages-branch: gh-pages
-          benchmark-data-dir-path: dev/bench

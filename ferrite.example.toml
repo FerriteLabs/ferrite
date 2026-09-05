@@ -55,14 +55,13 @@ backend = "hybridlog"
 # Number of databases (like Redis DB 0-15).
 databases = 16
 
-# Maximum memory for the hot tier. Accepts bytes or human-readable units.
-# Examples: 1073741824, "1GB", "512MB"
-max_memory = "1GB"
+# Maximum memory for the hot tier, in bytes.
+max_memory = 1073741824
 
 # Eviction policy when max_memory is reached.
-# Options: noeviction, allkeys-lru, volatile-lru, allkeys-random,
+# Options: no-eviction, allkeys-lru, volatile-lru, allkeys-random,
 #          volatile-random, volatile-ttl
-eviction_policy = "noeviction"
+eviction_policy = "no-eviction"
 
 # Maximum key size in bytes (default: 512 bytes).
 # Prevents memory exhaustion from oversized keys.
@@ -96,8 +95,8 @@ checkpoint_interval = 3600
 # Log level: "trace", "debug", "info", "warn", "error".
 level = "info"
 
-# Log format: "text" or "json".
-format = "text"
+# Log format: "pretty" or "json".
+format = "pretty"
 
 # ─── Metrics ─────────────────────────────────────────────────────────────
 

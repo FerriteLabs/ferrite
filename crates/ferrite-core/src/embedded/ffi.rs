@@ -37,6 +37,12 @@ use std::ptr;
 use std::slice;
 use std::sync::Arc;
 
+#[allow(clippy::unnecessary_cast)]
+unsafe fn c_char_slice<'a>(value: *const c_char, len: usize) -> &'a [u8] {
+    // SAFETY: The caller guarantees that `value` is valid for `len` bytes.
+    unsafe { slice::from_raw_parts(value as *const u8, len) }
+}
+
 /// Opaque handle to a Ferrite database
 pub struct FerriteDb {
     store: Arc<EdgeStore>,
@@ -275,7 +281,7 @@ pub unsafe extern "C" fn ferrite_set(
     let db = &*db;
 
     // Convert key to string
-    let key_bytes = slice::from_raw_parts(key as *const u8, key_len);
+    let key_bytes = c_char_slice(key, key_len);
     let key_str = match std::str::from_utf8(key_bytes) {
         Ok(s) => s,
         Err(_) => return FerriteError::InvalidUtf8,
@@ -331,7 +337,7 @@ pub unsafe extern "C" fn ferrite_get(
     let db = &*db;
 
     // Convert key to string
-    let key_bytes = slice::from_raw_parts(key as *const u8, key_len);
+    let key_bytes = c_char_slice(key, key_len);
     let key_str = match std::str::from_utf8(key_bytes) {
         Ok(s) => s,
         Err(_) => {
@@ -387,7 +393,7 @@ pub unsafe extern "C" fn ferrite_delete(
 
     let db = &*db;
 
-    let key_bytes = slice::from_raw_parts(key as *const u8, key_len);
+    let key_bytes = c_char_slice(key, key_len);
     let key_str = match std::str::from_utf8(key_bytes) {
         Ok(s) => s,
         Err(_) => return -1,
@@ -424,7 +430,7 @@ pub unsafe extern "C" fn ferrite_exists(
 
     let db = &*db;
 
-    let key_bytes = slice::from_raw_parts(key as *const u8, key_len);
+    let key_bytes = c_char_slice(key, key_len);
     let key_str = match std::str::from_utf8(key_bytes) {
         Ok(s) => s,
         Err(_) => return -1,

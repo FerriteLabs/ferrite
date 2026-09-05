@@ -731,7 +731,7 @@ mod tests {
         // Three consumers
         let _r3 = group.join("c3".into(), HashMap::new()).await;
         let assignments = group.assignments().await;
-        for (_, parts) in &assignments {
+        for parts in assignments.values() {
             assert_eq!(parts.len(), 2);
         }
     }

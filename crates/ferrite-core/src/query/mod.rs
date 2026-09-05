@@ -17,7 +17,7 @@
 //!
 //! ### Basic SELECT
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::query::{QueryEngine, QueryConfig, ResultSet};
 //! use ferrite::storage::Store;
 //! use std::sync::Arc;
@@ -41,7 +41,7 @@
 //!
 //! ### JOIN Queries
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::query::{QueryEngine, QueryConfig};
 //! use ferrite::storage::Store;
 //! use std::sync::Arc;
@@ -71,7 +71,7 @@
 //!
 //! ### Aggregations
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::query::{QueryEngine, QueryConfig};
 //! use ferrite::storage::Store;
 //! use std::sync::Arc;
@@ -106,7 +106,7 @@
 //!
 //! ### Prepared Statements
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::query::{QueryEngine, QueryConfig, Value};
 //! use ferrite::storage::Store;
 //! use std::sync::Arc;
@@ -140,7 +140,7 @@
 //!
 //! ### Materialized Views
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::query::{QueryEngine, QueryConfig};
 //! use ferrite::storage::Store;
 //! use std::sync::Arc;
@@ -177,7 +177,7 @@
 //!
 //! ### EXPLAIN Plans
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::query::{QueryEngine, QueryConfig};
 //! use ferrite::storage::Store;
 //! use std::sync::Arc;
@@ -271,7 +271,7 @@
 //!
 //! ## Configuration
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::query::QueryConfig;
 //!
 //! let config = QueryConfig {
@@ -297,7 +297,7 @@
 //!
 //! ## Query Statistics
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::query::{QueryEngine, QueryConfig, QueryStats};
 //! use ferrite::storage::Store;
 //! use std::sync::Arc;

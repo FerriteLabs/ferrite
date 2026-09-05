@@ -1,6 +1,7 @@
 //! Data-sovereignty routing — per-key region pinning rules.
 
 use serde::{Deserialize, Serialize};
+use std::cmp::Reverse;
 
 /// A routing rule that pins keys matching a pattern to a specific region.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -25,7 +26,7 @@ impl SovereigntyRouter {
 
     pub fn add_rule(&mut self, rule: RoutingRule) {
         self.rules.push(rule);
-        self.rules.sort_by(|a, b| b.priority.cmp(&a.priority));
+        self.rules.sort_by_key(|rule| Reverse(rule.priority));
     }
 
     /// Match key against rules (highest priority first).

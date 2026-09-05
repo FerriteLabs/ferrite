@@ -1,0 +1,61 @@
+name: "External tester interest"
+description: "Volunteer for a Ferrite External Tester Program non-production testing session"
+title: "[Tester interest] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for volunteering. Read the [canonical Tester Program](https://github.com/ferritelabs/ferrite/blob/main/TESTER_PROGRAM.md) before submitting.
+        A candidate campaign (exact ops reference and artifact) has not necessarily been published yet — registering interest does not require one.
+        This is a public issue. Do not include email addresses, credentials, customer data, private hostnames, or other sensitive information.
+        Never disclose a suspected vulnerability in this public issue; use [GitHub private vulnerability reporting](https://github.com/ferritelabs/ferrite/security/advisories/new).
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Starting environment
+      description: The initial cohort is Docker / Docker Compose only. Alternative installation cohorts are deferred until maintained tooling exists.
+      options:
+        - Docker / Docker Compose
+    validations:
+      required: true
+  - type: input
+    id: client
+    attributes:
+      label: Redis client or application
+      description: Name and version if known; do not include private application details.
+      placeholder: "redis-cli 7.x, redis-py 5.x, ioredis 5.x"
+    validations:
+      required: true
+  - type: dropdown
+    id: track
+    attributes:
+      label: Preferred track
+      options:
+        - Core journey only
+        - Redis/client compatibility
+        - Durability/restart
+        - Operations/metrics
+        - Performance comparison
+        - IDE tooling
+    validations:
+      required: true
+  - type: dropdown
+    id: availability
+    attributes:
+      label: Availability
+      description: Choose the closest amount of time you can reserve.
+      options:
+        - One 60–90 minute session
+        - Two 60–90 minute sessions
+        - Several sessions during the campaign
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Non-production acknowledgment
+      options:
+        - label: I will use only disposable, non-production infrastructure and synthetic data that can be lost.
+          required: true
+        - label: I will use only the exact, complete Docker image digest reference (e.g. `ghcr.io/ferritelabs/ferrite@sha256:<digest>`) the campaign owner supplies, and will never use a tag, `latest`, or a build of my own.
+          required: true

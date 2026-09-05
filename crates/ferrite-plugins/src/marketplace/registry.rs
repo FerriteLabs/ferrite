@@ -363,7 +363,7 @@ use parking_lot::RwLock;
 /// Configuration for the extension registry.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RegistryConfig {
-    /// URL of the remote registry.
+    /// URL of the remote registry. Empty keeps remote registry operations disabled.
     pub registry_url: String,
     /// Local cache directory for downloaded extensions.
     pub cache_dir: String,
@@ -378,7 +378,7 @@ pub struct RegistryConfig {
 impl Default for RegistryConfig {
     fn default() -> Self {
         Self {
-            registry_url: "https://marketplace.ferrite.dev".into(),
+            registry_url: String::new(),
             cache_dir: "./extensions_cache".into(),
             max_installed: 100,
             auto_update: false,
@@ -998,6 +998,11 @@ mod tests {
 
         reg.uninstall("rate-limiter").expect("uninstall");
         assert!(reg.list_installed().is_empty());
+    }
+
+    #[test]
+    fn test_default_registry_has_no_remote_endpoint() {
+        assert!(RegistryConfig::default().registry_url.is_empty());
     }
 
     #[test]

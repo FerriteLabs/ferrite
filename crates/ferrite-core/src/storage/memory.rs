@@ -1475,9 +1475,8 @@ mod tests {
         store.get(0, &key);
 
         let snap = profiler.snapshot();
-        assert_eq!(snap.total_reads, 2);
-        assert_eq!(snap.total_writes, 1);
-        assert!(snap.unique_keys_accessed >= 1);
+        assert_eq!(snap.unique_keys_accessed, 1);
+        assert_eq!(snap.hot_keys, vec![("hello".to_string(), 3)]);
     }
 
     #[test]

@@ -21,16 +21,9 @@ pre-release-commit-message = "chore: release {{version}}"
 # Push to remote after release
 push-remote = "origin"
 
-# Publish to crates.io in dependency order
-publish = true
-
-# Crates.io publish ordering (leaves first, root last):
-# 1. Extension crates (no workspace deps — can publish in any order)
-#    ferrite-search, ferrite-ai, ferrite-graph, ferrite-timeseries,
-#    ferrite-document, ferrite-streaming, ferrite-cloud, ferrite-k8s,
-#    ferrite-enterprise, ferrite-plugins, ferrite-studio
-# 2. ferrite-core (no workspace deps)
-# 3. ferrite (top-level — depends on all above)
+# crates.io publication is intentionally separate from tagging. Run the
+# protected publish.yml workflow explicitly after its preflight succeeds.
+publish = false
 
 # Pre-release checks
 allow-branch = ["main"]

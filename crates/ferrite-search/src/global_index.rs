@@ -812,7 +812,7 @@ mod tests {
     fn test_invalid_definition() {
         let mgr = GlobalIndexManager::new(GlobalIndexConfig::default());
         let mut def = sample_definition("x");
-        def.name = "".to_string();
+        def.name = String::new();
         let err = mgr.create_index(def).unwrap_err();
         assert!(matches!(err, GlobalIndexError::InvalidDefinition(_)));
 

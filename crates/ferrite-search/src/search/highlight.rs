@@ -580,7 +580,7 @@ mod tests {
         assert_eq!(mark.post_tag, "</mark>");
 
         let ansi = HighlightConfig::ansi();
-        assert!(ansi.pre_tag.contains("\x1b"));
+        assert!(ansi.pre_tag.contains('\x1b'));
     }
 
     #[test]

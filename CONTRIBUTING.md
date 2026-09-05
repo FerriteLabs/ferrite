@@ -74,7 +74,7 @@ This project adheres to a code of conduct that we expect all contributors to fol
 ## Getting Started
 
 Before you begin:
-- **Rust 1.80+** required (check with `rustc --version`)
+- **Rust 1.88+** required (check with `rustc --version`)
 - Familiarize yourself with the [project documentation](CLAUDE.md) to understand Ferrite's architecture
 - Read the [Redis protocol specification](https://redis.io/docs/reference/protocol-spec/) for protocol work
 - For storage engine contributions, review the [FASTER paper](https://www.microsoft.com/en-us/research/uploads/prod/2018/03/faster-sigmod18.pdf)
@@ -89,7 +89,7 @@ There are many ways to contribute to Ferrite:
 - **Submit code changes** for fixes or new features
 - **Improve documentation** to help users and developers
 - **Review pull requests** to share your expertise
-- **Answer questions** in issues and discussions
+- **Answer questions** in issues and [Discussions](https://github.com/ferritelabs/ferrite/discussions)
 
 ### Reporting Bugs
 
@@ -119,7 +119,7 @@ What actually happened (include error messages)
 
 ## Environment
 - **OS**: Linux/macOS/Windows (version)
-- **Rust**: 1.80+ (output of `rustc --version`)
+- **Rust**: 1.88+ (output of `rustc --version`)
 - **Ferrite**: v0.1.0 or commit hash
 - **Kernel** (Linux only): 5.15.0 (for io_uring issues)
 
@@ -976,19 +976,19 @@ That's how Redis does it.  [without verification]
 Need assistance? We're here to help:
 
 **For Questions:**
-- Open a [GitHub Discussion](../../discussions)
-- Create an issue with the `question` label
-- Check existing issues and discussions first
+- Check the documentation and existing issues first
+- Open a [GitHub Discussion](https://github.com/ferritelabs/ferrite/discussions)
+- Ask for implementation help in comments on your pull request
 
 **For Architecture Questions:**
 - Refer to [CLAUDE.md](CLAUDE.md) for technical details
-- Ask in discussions for design guidance
+- Ask in [Discussions](https://github.com/ferritelabs/ferrite/discussions) for design guidance
 - Reference the FASTER paper for storage engine questions
 
 **For Redis Compatibility:**
 - Check [Redis documentation](https://redis.io/docs/)
 - Look at existing command implementations
-- Ask in discussions for clarification
+- Ask in [Discussions](https://github.com/ferritelabs/ferrite/discussions) for clarification
 
 **For Contributing Process:**
 - Re-read this guide

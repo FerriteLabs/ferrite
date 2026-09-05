@@ -1,0 +1,129 @@
+name: "External tester report"
+description: "Report a completed Ferrite External Tester Program session"
+title: "[Tester report] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Submit one report per completed session, including successful sessions. Follow the severity and reproducibility definitions in the [canonical Tester Program](https://github.com/ferritelabs/ferrite/blob/main/TESTER_PROGRAM.md).
+        For a vulnerability, stop and report it privately instead: see the [Security Policy](https://github.com/ferritelabs/ferrite/blob/main/SECURITY.md#reporting-a-vulnerability) or use [GitHub private vulnerability reporting](https://github.com/ferritelabs/ferrite/security/advisories/new).
+  - type: dropdown
+    id: track
+    attributes:
+      label: Track completed
+      options:
+        - Core journey only
+        - Redis/client compatibility
+        - Durability/restart
+        - Operations/metrics
+        - Performance comparison
+        - IDE tooling
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Highest severity observed
+      options:
+        - No issues observed
+        - Low
+        - Medium
+        - High
+        - Critical
+    validations:
+      required: true
+  - type: input
+    id: version_image
+    attributes:
+      label: Version and exact artifact reference
+      description: Copy the exact, complete Docker image digest reference the campaign owner supplied. Never report a tag or `latest`.
+      placeholder: "Ferrite candidate build — ghcr.io/ferritelabs/ferrite@sha256:..."
+    validations:
+      required: true
+  - type: input
+    id: ops_commit
+    attributes:
+      label: ferrite-ops tooling commit (CAMPAIGN_OPS_COMMIT)
+      description: The full 40-character lowercase ferrite-ops commit SHA you checked out with `git checkout --detach` and confirmed with `git rev-parse HEAD`. Never report a tag, a branch, or an abbreviated SHA.
+      placeholder: "The full 40-character lowercase SHA printed by git rev-parse HEAD"
+    validations:
+      required: true
+  - type: dropdown
+    id: install_method
+    attributes:
+      label: Install method
+      options:
+        - ferrite-ops tester Docker Compose
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, architecture, Docker/Compose version, and relevant resource limits. Do not include private hostnames or addresses.
+      placeholder: "Ubuntu 24.04, x86_64, Docker 27, Compose v2.29, 4 CPUs / 8 GiB"
+    validations:
+      required: true
+  - type: input
+    id: client
+    attributes:
+      label: Redis client or application
+      placeholder: "redis-py 5.0.8"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps performed
+      description: Include the smallest exact sequence that demonstrates the result.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: dropdown
+    id: reproducibility
+    attributes:
+      label: Reproducibility
+      options:
+        - Always
+        - Intermittent
+        - Once
+        - Not retried
+        - Not applicable — passing session
+    validations:
+      required: true
+  - type: dropdown
+    id: regression
+    attributes:
+      label: Regression from a previously tested Ferrite version?
+      options:
+        - "Yes"
+        - "No"
+        - Unknown
+        - Not applicable
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Redacted diagnostics
+      description: Optional archive link or relevant excerpt. Review it locally first; do not attach secrets, full configuration, environment variables, or user data.
+  - type: checkboxes
+    id: redaction
+    attributes:
+      label: Diagnostics and redaction acknowledgment
+      options:
+        - label: I reviewed all shared diagnostics and removed secrets, personal data, private addresses, and user data.
+          required: true
+        - label: I understand this public report is not the place to disclose a security vulnerability.
+          required: true

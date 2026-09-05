@@ -5,6 +5,7 @@
 
 use std::io::{self, Read, Write};
 use std::ops::{Deref, DerefMut};
+use std::ptr::NonNull;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
@@ -17,11 +18,65 @@ pub const BUFFER_SIZE: usize = 64 * 1024;
 /// Alignment for direct I/O (4KB page alignment)
 pub const BUFFER_ALIGNMENT: usize = 4096;
 
+struct AlignedMemory {
+    ptr: NonNull<u8>,
+    len: usize,
+    layout: std::alloc::Layout,
+}
+
+impl AlignedMemory {
+    fn zeroed(len: usize, alignment: usize) -> Self {
+        let layout = std::alloc::Layout::from_size_align(len.max(1), alignment)
+            .expect("Invalid buffer layout");
+
+        // SAFETY: layout has non-zero size and a valid power-of-two alignment.
+        let ptr = NonNull::new(unsafe { std::alloc::alloc_zeroed(layout) })
+            .unwrap_or_else(|| std::alloc::handle_alloc_error(layout));
+
+        Self { ptr, len, layout }
+    }
+}
+
+impl std::fmt::Debug for AlignedMemory {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.deref().fmt(formatter)
+    }
+}
+
+// SAFETY: AlignedMemory uniquely owns its allocation and exposes access only
+// through shared or exclusive Rust borrows.
+unsafe impl Send for AlignedMemory {}
+// SAFETY: Shared access exposes only immutable bytes; mutation requires &mut self.
+unsafe impl Sync for AlignedMemory {}
+
+impl Deref for AlignedMemory {
+    type Target = [u8];
+
+    fn deref(&self) -> &Self::Target {
+        // SAFETY: ptr owns at least len initialized bytes for this object's lifetime.
+        unsafe { std::slice::from_raw_parts(self.ptr.as_ptr(), self.len) }
+    }
+}
+
+impl DerefMut for AlignedMemory {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        // SAFETY: ptr is uniquely borrowed and owns at least len initialized bytes.
+        unsafe { std::slice::from_raw_parts_mut(self.ptr.as_ptr(), self.len) }
+    }
+}
+
+impl Drop for AlignedMemory {
+    fn drop(&mut self) {
+        // SAFETY: ptr was allocated with this exact layout and has not been freed.
+        unsafe { std::alloc::dealloc(self.ptr.as_ptr(), self.layout) };
+    }
+}
+
 /// A buffer aligned for direct I/O operations
 #[derive(Debug)]
 pub struct IoBuffer {
     /// The underlying aligned memory
-    data: Box<[u8]>,
+    data: AlignedMemory,
     /// Current position for read/write operations
     pos: usize,
     /// Amount of valid data in the buffer
@@ -38,21 +93,8 @@ impl IoBuffer {
 
     /// Create a buffer with custom alignment
     pub fn with_alignment(size: usize, alignment: usize) -> Self {
-        // Allocate aligned memory
-        let layout =
-            std::alloc::Layout::from_size_align(size, alignment).expect("Invalid buffer layout");
-
-        // SAFETY: Layout is valid and we initialize with zeros
-        let ptr = unsafe { std::alloc::alloc_zeroed(layout) };
-        if ptr.is_null() {
-            std::alloc::handle_alloc_error(layout);
-        }
-
-        // SAFETY: ptr is valid, aligned, and size bytes
-        let data = unsafe { Box::from_raw(std::ptr::slice_from_raw_parts_mut(ptr, size)) };
-
         Self {
-            data,
+            data: AlignedMemory::zeroed(size, alignment),
             pos: 0,
             len: 0,
             buffer_id: None,
@@ -456,6 +498,15 @@ mod tests {
         let buf = IoBuffer::new(4096);
         let ptr = buf.as_ptr() as usize;
         assert_eq!(ptr % BUFFER_ALIGNMENT, 0);
+    }
+
+    #[test]
+    fn test_buffer_custom_alignment_and_drop() {
+        for _ in 0..128 {
+            let mut buf = IoBuffer::with_alignment(1000, 8192);
+            assert_eq!((buf.as_ptr() as usize) % 8192, 0);
+            assert!(buf.as_mut_slice().iter().all(|byte| *byte == 0));
+        }
     }
 
     #[test]

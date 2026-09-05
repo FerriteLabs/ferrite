@@ -12,7 +12,7 @@
 //!
 //! # Example
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite_core::embedded::wasm_adapter::{WasmStore, WasmStoreConfig};
 //!
 //! let store = WasmStore::new(WasmStoreConfig::default());

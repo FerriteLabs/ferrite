@@ -48,7 +48,7 @@ commit "docs: add first-contributor guide with 20 good-first-issues" \
 
 # ── Commit 3: CI/CD workflows ───────────────────────────────────────────────
 commit "ci: add release pipeline, compat dashboard, and security audit" \
-    .github/workflows/release-full.yml \
+    .github/workflows/release.yml \
     .github/workflows/compat-dashboard.yml \
     scripts/security-audit.sh \
     scripts/tcl-compat.sh

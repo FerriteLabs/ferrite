@@ -1893,7 +1893,7 @@ impl CommandExecutor {
     }
 
     pub(super) fn module(&self, subcommand: &str, args: &[Bytes]) -> Frame {
-        const MODULE_ERR: &str = "ERR Ferrite does not support Redis modules. Ferrite uses native Rust crates for extensibility. See https://ferrite.dev/docs/extensions for details.";
+        const MODULE_ERR: &str = "ERR Ferrite does not support Redis modules. Ferrite uses native Rust crates for extensibility. See https://github.com/ferritelabs/ferrite-docs for details.";
 
         match subcommand {
             "LIST" => {

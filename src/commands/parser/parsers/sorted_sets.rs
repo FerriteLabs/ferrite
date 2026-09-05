@@ -309,6 +309,12 @@ pub(crate) fn parse_zmscore(args: &[Frame]) -> Result<Command> {
     })
 }
 
+fn checked_key_end(command: &str, key_start: usize, numkeys: usize) -> Result<usize> {
+    key_start
+        .checked_add(numkeys)
+        .ok_or_else(|| FerriteError::WrongArity(command.to_string()))
+}
+
 /// Helper to parse WEIGHTS, AGGREGATE, and WITHSCORES options for ZUNION/ZINTER
 pub(crate) fn parse_zset_op_options(
     args: &[Frame],
@@ -375,12 +381,13 @@ pub(crate) fn parse_zunion(args: &[Frame]) -> Result<Command> {
 
     let numkeys_str = get_string(&args[0])?;
     let numkeys: usize = numkeys_str.parse().map_err(|_| FerriteError::NotInteger)?;
+    let keys_end = checked_key_end("ZUNION", 1, numkeys)?;
 
-    if args.len() < 1 + numkeys {
+    if args.len() < keys_end {
         return Err(FerriteError::WrongArity("ZUNION".to_string()));
     }
 
-    let keys: Result<Vec<Bytes>> = args[1..=numkeys].iter().map(get_bytes).collect();
+    let keys: Result<Vec<Bytes>> = args[1..keys_end].iter().map(get_bytes).collect();
     let keys = keys?;
 
     let (weights, aggregate, withscores) = parse_zset_op_options(args, numkeys)?;
@@ -402,12 +409,13 @@ pub(crate) fn parse_zunionstore(args: &[Frame]) -> Result<Command> {
     let destination = get_bytes(&args[0])?;
     let numkeys_str = get_string(&args[1])?;
     let numkeys: usize = numkeys_str.parse().map_err(|_| FerriteError::NotInteger)?;
+    let keys_end = checked_key_end("ZUNIONSTORE", 2, numkeys)?;
 
-    if args.len() < 2 + numkeys {
+    if args.len() < keys_end {
         return Err(FerriteError::WrongArity("ZUNIONSTORE".to_string()));
     }
 
-    let keys: Result<Vec<Bytes>> = args[2..2 + numkeys].iter().map(get_bytes).collect();
+    let keys: Result<Vec<Bytes>> = args[2..keys_end].iter().map(get_bytes).collect();
     let keys = keys?;
 
     let (weights, aggregate, _) = parse_zset_op_options_store(&args[1..], numkeys)?;
@@ -481,12 +489,13 @@ pub(crate) fn parse_zinter(args: &[Frame]) -> Result<Command> {
 
     let numkeys_str = get_string(&args[0])?;
     let numkeys: usize = numkeys_str.parse().map_err(|_| FerriteError::NotInteger)?;
+    let keys_end = checked_key_end("ZINTER", 1, numkeys)?;
 
-    if args.len() < 1 + numkeys {
+    if args.len() < keys_end {
         return Err(FerriteError::WrongArity("ZINTER".to_string()));
     }
 
-    let keys: Result<Vec<Bytes>> = args[1..=numkeys].iter().map(get_bytes).collect();
+    let keys: Result<Vec<Bytes>> = args[1..keys_end].iter().map(get_bytes).collect();
     let keys = keys?;
 
     let (weights, aggregate, withscores) = parse_zset_op_options(args, numkeys)?;
@@ -508,12 +517,13 @@ pub(crate) fn parse_zinterstore(args: &[Frame]) -> Result<Command> {
     let destination = get_bytes(&args[0])?;
     let numkeys_str = get_string(&args[1])?;
     let numkeys: usize = numkeys_str.parse().map_err(|_| FerriteError::NotInteger)?;
+    let keys_end = checked_key_end("ZINTERSTORE", 2, numkeys)?;
 
-    if args.len() < 2 + numkeys {
+    if args.len() < keys_end {
         return Err(FerriteError::WrongArity("ZINTERSTORE".to_string()));
     }
 
-    let keys: Result<Vec<Bytes>> = args[2..2 + numkeys].iter().map(get_bytes).collect();
+    let keys: Result<Vec<Bytes>> = args[2..keys_end].iter().map(get_bytes).collect();
     let keys = keys?;
 
     let (weights, aggregate, _) = parse_zset_op_options_store(&args[1..], numkeys)?;
@@ -534,16 +544,17 @@ pub(crate) fn parse_zintercard(args: &[Frame]) -> Result<Command> {
 
     let numkeys_str = get_string(&args[0])?;
     let numkeys: usize = numkeys_str.parse().map_err(|_| FerriteError::NotInteger)?;
+    let keys_end = checked_key_end("ZINTERCARD", 1, numkeys)?;
 
-    if args.len() < 1 + numkeys {
+    if args.len() < keys_end {
         return Err(FerriteError::WrongArity("ZINTERCARD".to_string()));
     }
 
-    let keys: Result<Vec<Bytes>> = args[1..=numkeys].iter().map(get_bytes).collect();
+    let keys: Result<Vec<Bytes>> = args[1..keys_end].iter().map(get_bytes).collect();
     let keys = keys?;
 
     let mut limit = None;
-    let mut i = 1 + numkeys;
+    let mut i = keys_end;
     while i < args.len() {
         let opt = get_string(&args[i])?.to_uppercase();
         match opt.as_str() {
@@ -571,17 +582,18 @@ pub(crate) fn parse_zdiff(args: &[Frame]) -> Result<Command> {
 
     let numkeys_str = get_string(&args[0])?;
     let numkeys: usize = numkeys_str.parse().map_err(|_| FerriteError::NotInteger)?;
+    let keys_end = checked_key_end("ZDIFF", 1, numkeys)?;
 
-    if args.len() < 1 + numkeys {
+    if args.len() < keys_end {
         return Err(FerriteError::WrongArity("ZDIFF".to_string()));
     }
 
-    let keys: Result<Vec<Bytes>> = args[1..=numkeys].iter().map(get_bytes).collect();
+    let keys: Result<Vec<Bytes>> = args[1..keys_end].iter().map(get_bytes).collect();
     let keys = keys?;
 
     let mut withscores = false;
-    if args.len() > 1 + numkeys {
-        let opt = get_string(&args[1 + numkeys])?.to_uppercase();
+    if args.len() > keys_end {
+        let opt = get_string(&args[keys_end])?.to_uppercase();
         if opt == "WITHSCORES" {
             withscores = true;
         } else {
@@ -601,12 +613,13 @@ pub(crate) fn parse_zdiffstore(args: &[Frame]) -> Result<Command> {
     let destination = get_bytes(&args[0])?;
     let numkeys_str = get_string(&args[1])?;
     let numkeys: usize = numkeys_str.parse().map_err(|_| FerriteError::NotInteger)?;
+    let keys_end = checked_key_end("ZDIFFSTORE", 2, numkeys)?;
 
-    if args.len() < 2 + numkeys {
+    if args.len() < keys_end {
         return Err(FerriteError::WrongArity("ZDIFFSTORE".to_string()));
     }
 
-    let keys: Result<Vec<Bytes>> = args[2..2 + numkeys].iter().map(get_bytes).collect();
+    let keys: Result<Vec<Bytes>> = args[2..keys_end].iter().map(get_bytes).collect();
     let keys = keys?;
 
     Ok(Command::ZDiffStore { destination, keys })
@@ -822,15 +835,19 @@ pub(crate) fn parse_zmpop(args: &[Frame]) -> Result<Command> {
 
     let numkeys_str = get_string(&args[0])?;
     let numkeys: usize = numkeys_str.parse().map_err(|_| FerriteError::NotInteger)?;
+    let keys_end = checked_key_end("ZMPOP", 1, numkeys)?;
+    let options_start = keys_end
+        .checked_add(1)
+        .ok_or_else(|| FerriteError::WrongArity("ZMPOP".to_string()))?;
 
-    if args.len() < 1 + numkeys + 1 {
+    if args.len() < options_start {
         return Err(FerriteError::WrongArity("ZMPOP".to_string()));
     }
 
-    let keys: Result<Vec<Bytes>> = args[1..=numkeys].iter().map(get_bytes).collect();
+    let keys: Result<Vec<Bytes>> = args[1..keys_end].iter().map(get_bytes).collect();
     let keys = keys?;
 
-    let direction_str = get_string(&args[1 + numkeys])?.to_uppercase();
+    let direction_str = get_string(&args[keys_end])?.to_uppercase();
     let direction = match direction_str.as_str() {
         "MIN" => ZPopDirection::Min,
         "MAX" => ZPopDirection::Max,
@@ -838,7 +855,7 @@ pub(crate) fn parse_zmpop(args: &[Frame]) -> Result<Command> {
     };
 
     let mut count = None;
-    let mut i = 2 + numkeys;
+    let mut i = options_start;
     while i < args.len() {
         let opt = get_string(&args[i])?.to_uppercase();
         if opt == "COUNT" {
@@ -876,15 +893,19 @@ pub(crate) fn parse_bzmpop(args: &[Frame]) -> Result<Command> {
         .map_err(|_| FerriteError::NotFloat)?;
     let numkeys_str = get_string(&args[1])?;
     let numkeys: usize = numkeys_str.parse().map_err(|_| FerriteError::NotInteger)?;
+    let keys_end = checked_key_end("BZMPOP", 2, numkeys)?;
+    let options_start = keys_end
+        .checked_add(1)
+        .ok_or_else(|| FerriteError::WrongArity("BZMPOP".to_string()))?;
 
-    if args.len() < 2 + numkeys + 1 {
+    if args.len() < options_start {
         return Err(FerriteError::WrongArity("BZMPOP".to_string()));
     }
 
-    let keys: Result<Vec<Bytes>> = args[2..2 + numkeys].iter().map(get_bytes).collect();
+    let keys: Result<Vec<Bytes>> = args[2..keys_end].iter().map(get_bytes).collect();
     let keys = keys?;
 
-    let direction_str = get_string(&args[2 + numkeys])?.to_uppercase();
+    let direction_str = get_string(&args[keys_end])?.to_uppercase();
     let direction = match direction_str.as_str() {
         "MIN" => ZPopDirection::Min,
         "MAX" => ZPopDirection::Max,
@@ -892,7 +913,7 @@ pub(crate) fn parse_bzmpop(args: &[Frame]) -> Result<Command> {
     };
 
     let mut count = None;
-    let mut i = 3 + numkeys;
+    let mut i = options_start;
     while i < args.len() {
         let opt = get_string(&args[i])?.to_uppercase();
         if opt == "COUNT" {

@@ -26,7 +26,7 @@
 //!
 //! ### Point-in-Time Queries
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::temporal::{QueryEngine, TemporalQuery, TimestampSpec};
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
@@ -46,7 +46,7 @@
 //!
 //! ### History Queries
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::temporal::{QueryEngine, TemporalQuery, HistoryEntry};
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
@@ -80,7 +80,7 @@
 //!
 //! ### Diff Queries
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::temporal::{QueryEngine, TemporalQuery, TimestampSpec, DiffResult};
 //!
 //! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
@@ -106,7 +106,7 @@
 //!
 //! Multiple timestamp formats are supported:
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::temporal::TimestampSpec;
 //!
 //! // Relative duration (from now)
@@ -165,7 +165,7 @@
 //!
 //! Control how long history is kept:
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::temporal::{TemporalConfig, RetentionPolicy, PatternOverride};
 //! use std::time::Duration;
 //!

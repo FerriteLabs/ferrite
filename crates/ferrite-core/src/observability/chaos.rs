@@ -1119,7 +1119,7 @@ impl RuntimeChaosEngine {
         let mut faults = self.faults.write();
         let now = Instant::now();
         let before = faults.len();
-        faults.retain(|f| f.expires_at.map_or(true, |exp| now <= exp));
+        faults.retain(|f| f.expires_at.is_none_or(|exp| now <= exp));
         let removed = before - faults.len();
         self.total_healed
             .fetch_add(removed as u64, Ordering::Relaxed);

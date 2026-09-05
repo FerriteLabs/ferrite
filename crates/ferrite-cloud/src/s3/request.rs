@@ -272,7 +272,7 @@ mod tests {
     #[test]
     fn test_parse_multipart() {
         let mut query = HashMap::new();
-        query.insert("uploads".to_string(), "".to_string());
+        query.insert("uploads".to_string(), String::new());
         let op = S3Operation::parse("POST", "/bucket/key", &query);
         assert_eq!(op, Some(S3Operation::InitiateMultipartUpload));
     }

@@ -33,4 +33,4 @@ runtime = ["wasmtime"]
 [dev-dependencies]
 tokio-test.workspace = true
 wat = "1"
-ferrite-mnemo = { path = "../ferrite-mnemo" }
+ferrite-mnemo.workspace = true

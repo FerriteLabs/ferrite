@@ -460,8 +460,8 @@ fn estimate_rss_bytes() -> u64 {
             task_info(
                 mach_task_self(),
                 MACH_TASK_BASIC_INFO,
-                &mut info,
-                &mut count,
+                &raw mut info,
+                &raw mut count,
             )
         };
         if kr == 0 {

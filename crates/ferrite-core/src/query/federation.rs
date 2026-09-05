@@ -807,7 +807,7 @@ mod tests {
 
         let health = engine.source_health("h");
         assert!(health.is_some());
-        assert!(health.as_ref().map_or(false, |h| h.reachable));
+        assert!(health.as_ref().is_some_and(|h| h.reachable));
     }
 
     #[test]

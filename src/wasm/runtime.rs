@@ -337,8 +337,10 @@ impl WasmRuntime {
                 let duration = start.elapsed();
                 self.record_execution(false, duration);
 
-                let error_msg = format!("{}", e);
-                let classified = if error_msg.contains("fuel") {
+                let error_chain = format!("{e:#}").to_ascii_lowercase();
+                let fuel_exhausted = store.get_fuel().is_ok_and(|remaining| remaining == 0)
+                    || error_chain.contains("fuel");
+                let classified = if fuel_exhausted {
                     "fuel limit exceeded during execution".to_string()
                 } else if duration > timeout {
                     format!("execution timeout after {:?}", timeout)
@@ -464,7 +466,7 @@ mod tests {
             0x00, 0x61, 0x73, 0x6D, // magic
             0x01, 0x00, 0x00, 0x00, // version
             // Type section
-            0x01, 0x0C, // section id=1, size=12
+            0x01, 0x0B, // section id=1, size=11
             0x02, // 2 types
             0x60, 0x02, 0x7F, 0x7F, 0x01, 0x7F, // (i32, i32) -> i32
             0x60, 0x00, 0x01, 0x7F, // () -> i32
@@ -474,14 +476,14 @@ mod tests {
             0x00, // func 0 uses type 0
             0x01, // func 1 uses type 1
             // Export section
-            0x07, 0x11, // section id=7, size=17
+            0x07, 0x0E, // section id=7, size=14
             0x02, // 2 exports
             0x03, 0x61, 0x64, 0x64, // "add"
             0x00, 0x00, // func index 0
             0x04, 0x6D, 0x61, 0x69, 0x6E, // "main"
             0x00, 0x01, // func index 1
             // Code section
-            0x0A, 0x0F, // section id=10, size=15
+            0x0A, 0x0E, // section id=10, size=14
             0x02, // 2 functions
             // func 0 body (add): local.get 0, local.get 1, i32.add, end
             0x07, // body size=7

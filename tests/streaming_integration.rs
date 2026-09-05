@@ -16,12 +16,15 @@ fn test_stream_event_creation() {
 }
 
 #[test]
-fn test_stream_event_with_metadata() {
+fn test_stream_event_with_header() {
     let event = StreamEvent::new(Some("key".to_string()), serde_json::json!("value"))
         .with_header("source", "test")
         .with_partition(0);
 
-    assert_eq!(event.get_str("source"), Some("test"));
+    assert_eq!(
+        event.headers.get("source").map(String::as_str),
+        Some("test")
+    );
 }
 
 #[test]

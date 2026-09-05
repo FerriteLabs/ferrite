@@ -141,7 +141,7 @@ pub fn write_with_mid_corruption(path: &Path, total: usize, corrupt_at: usize) -
     let mut offsets = Vec::new();
 
     for i in 0..total {
-        let start = file.seek(SeekFrom::Current(0))?;
+        let start = file.stream_position()?;
         offsets.push(start);
         let key = format!("key:{:06}", i);
         let value = format!("value:{:06}", i);

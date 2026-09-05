@@ -495,34 +495,14 @@ impl Config {
         }
 
         match key {
-            ConfigKey::LoggingLevel => {
-                self.logging.level = value.to_string();
-                Ok(true)
+            ConfigKey::LoggingLevel | ConfigKey::LoggingFormat => {
+                self.logging.set_param(key, value)
             }
-            ConfigKey::PersistenceAofSync => {
-                let policy = match value.to_lowercase().as_str() {
-                    "always" => SyncPolicy::Always,
-                    "everysecond" | "everysec" => SyncPolicy::EverySecond,
-                    "no" => SyncPolicy::No,
-                    _ => {
-                        return Err(FerriteError::Config(format!(
-                            "Invalid aof_sync value: {}. Expected: always, everysecond, no",
-                            value
-                        )))
-                    }
-                };
-                self.persistence.aof_sync = policy;
-                Ok(true)
-            }
-            ConfigKey::MetricsEnabled => {
-                let enabled = value.parse::<bool>().map_err(|_| {
-                    FerriteError::Config(format!(
-                        "Invalid boolean value: {}. Expected: true, false",
-                        value
-                    ))
-                })?;
-                self.metrics.enabled = enabled;
-                Ok(true)
+            ConfigKey::PersistenceAofSync
+            | ConfigKey::PersistenceAofEnabled
+            | ConfigKey::PersistenceCheckpointEnabled => self.persistence.set_param(key, value),
+            ConfigKey::MetricsEnabled | ConfigKey::MetricsBind | ConfigKey::MetricsPort => {
+                self.metrics.set_param(key, value)
             }
             ConfigKey::AuditEnabled => {
                 let enabled = value.parse::<bool>().map_err(|_| {
@@ -534,101 +514,23 @@ impl Config {
                 self.audit.enabled = enabled;
                 Ok(true)
             }
-            ConfigKey::ServerTcpKeepalive => {
-                let keepalive = value.parse::<u64>().map_err(|_| {
-                    FerriteError::Config(format!("Invalid integer value: {}", value))
-                })?;
-                self.server.tcp_keepalive = keepalive;
-                Ok(true)
-            }
-            ConfigKey::ServerTimeout => {
-                let timeout = value.parse::<u64>().map_err(|_| {
-                    FerriteError::Config(format!("Invalid integer value: {}", value))
-                })?;
-                self.server.timeout = timeout;
-                Ok(true)
-            }
-            ConfigKey::ServerMaxConnections => {
-                let max_conn = value.parse::<usize>().map_err(|_| {
-                    FerriteError::Config(format!("Invalid integer value: {}", value))
-                })?;
-                self.server.max_connections = max_conn;
-                Ok(true)
-            }
-            ConfigKey::ServerProtoMaxBulkLen => {
-                let v = value.parse::<usize>().map_err(|_| {
-                    FerriteError::Config(format!("Invalid integer value: {}", value))
-                })?;
-                self.server.proto_max_bulk_len = v;
-                Ok(true)
-            }
-            ConfigKey::ServerProtoMaxMultiBulkLen => {
-                let v = value.parse::<usize>().map_err(|_| {
-                    FerriteError::Config(format!("Invalid integer value: {}", value))
-                })?;
-                self.server.proto_max_multi_bulk_len = v;
-                Ok(true)
-            }
-            ConfigKey::ServerProtoMaxNestingDepth => {
-                let v = value.parse::<usize>().map_err(|_| {
-                    FerriteError::Config(format!("Invalid integer value: {}", value))
-                })?;
-                self.server.proto_max_nesting_depth = v;
-                Ok(true)
-            }
-            ConfigKey::StorageMaxKeySize => {
-                let v = value.parse::<usize>().map_err(|_| {
-                    FerriteError::Config(format!("Invalid integer value: {}", value))
-                })?;
-                self.storage.max_key_size = v;
-                Ok(true)
-            }
-            ConfigKey::StorageMaxValueSize => {
-                let v = value.parse::<usize>().map_err(|_| {
-                    FerriteError::Config(format!("Invalid integer value: {}", value))
-                })?;
-                self.storage.max_value_size = v;
-                Ok(true)
-            }
-            ConfigKey::PersistenceAofEnabled => {
-                let enabled = value.parse::<bool>().map_err(|_| {
-                    FerriteError::Config(format!("Invalid boolean value: {}", value))
-                })?;
-                self.persistence.aof_enabled = enabled;
-                Ok(true)
-            }
-            ConfigKey::PersistenceCheckpointEnabled => {
-                let enabled = value.parse::<bool>().map_err(|_| {
-                    FerriteError::Config(format!("Invalid boolean value: {}", value))
-                })?;
-                self.persistence.checkpoint_enabled = enabled;
-                Ok(true)
-            }
-            ConfigKey::LoggingFormat => {
-                let fmt = match value.to_lowercase().as_str() {
-                    "json" => LogFormat::Json,
-                    "pretty" | "text" => LogFormat::Pretty,
-                    _ => {
-                        return Err(FerriteError::Config(format!(
-                            "Invalid logging format: {}. Expected: json, pretty",
-                            value
-                        )));
-                    }
-                };
-                self.logging.format = fmt;
-                Ok(true)
-            }
-            ConfigKey::MetricsBind => {
-                self.metrics.bind = value.to_string();
-                Ok(true)
-            }
-            ConfigKey::MetricsPort => {
-                let port = value
-                    .parse::<u16>()
-                    .map_err(|_| FerriteError::Config(format!("Invalid port value: {}", value)))?;
-                self.metrics.port = port;
-                Ok(true)
-            }
+            ConfigKey::ServerTcpKeepalive
+            | ConfigKey::ServerTimeout
+            | ConfigKey::ServerMaxConnections
+            | ConfigKey::ServerProtoMaxBulkLen
+            | ConfigKey::ServerProtoMaxMultiBulkLen
+            | ConfigKey::ServerProtoMaxNestingDepth
+            | ConfigKey::ServerSlowlogLogSlowerThan
+            | ConfigKey::ServerSlowlogMaxLen
+            | ConfigKey::ServerHz
+            | ConfigKey::ServerNotifyKeyspaceEvents
+            | ConfigKey::ServerRateLimitPerSec
+            | ConfigKey::ServerRateLimitBurst
+            | ConfigKey::ServerMaxMemory
+            | ConfigKey::ServerMaxMemoryRejectThreshold => self.server.set_param(key, value),
+            ConfigKey::StorageMaxKeySize
+            | ConfigKey::StorageMaxValueSize
+            | ConfigKey::StorageEvictionPolicy => self.storage.set_param(key, value),
             ConfigKey::EncryptionAlgorithm => {
                 let algo = match value.to_lowercase().as_str() {
                     "aes-256-gcm" | "aes256gcm" => EncryptionAlgorithm::Aes256Gcm,
@@ -643,88 +545,6 @@ impl Config {
                     }
                 };
                 self.encryption.algorithm = algo;
-                Ok(true)
-            }
-            ConfigKey::StorageEvictionPolicy => {
-                let policy = EvictionPolicy::from_redis_str(value).ok_or_else(|| {
-                    FerriteError::Config(format!(
-                        "Invalid eviction policy: {}. Expected: noeviction, allkeys-lru, volatile-lru, allkeys-random, volatile-random, volatile-ttl, allkeys-lfu, volatile-lfu",
-                        value
-                    ))
-                })?;
-                self.storage.eviction_policy = policy;
-                Ok(true)
-            }
-            ConfigKey::ServerSlowlogLogSlowerThan => {
-                let threshold = value.parse::<i64>().map_err(|_| {
-                    FerriteError::Config(format!("Invalid integer value: {}", value))
-                })?;
-                self.server.slowlog_log_slower_than = threshold;
-                Ok(true)
-            }
-            ConfigKey::ServerSlowlogMaxLen => {
-                let max_len = value.parse::<usize>().map_err(|_| {
-                    FerriteError::Config(format!("Invalid integer value: {}", value))
-                })?;
-                self.server.slowlog_max_len = max_len;
-                Ok(true)
-            }
-            ConfigKey::ServerHz => {
-                let hz = value.parse::<u32>().map_err(|_| {
-                    FerriteError::Config(format!("Invalid integer value: {}", value))
-                })?;
-                if !(1..=500).contains(&hz) {
-                    return Err(FerriteError::Config(
-                        "hz must be between 1 and 500".to_string(),
-                    ));
-                }
-                self.server.hz = hz;
-                Ok(true)
-            }
-            ConfigKey::ServerNotifyKeyspaceEvents => {
-                // Validate the flag string
-                if !value.is_empty() {
-                    crate::runtime::KeyspaceNotifier::parse_flags(value).ok_or_else(|| {
-                        FerriteError::Config(format!(
-                            "Invalid notify-keyspace-events value: {}. Valid flags: K E g $ l s h z x e t m A",
-                            value
-                        ))
-                    })?;
-                }
-                self.server.notify_keyspace_events = value.to_string();
-                Ok(true)
-            }
-            ConfigKey::ServerRateLimitPerSec => {
-                let v = value.parse::<u64>().map_err(|_| {
-                    FerriteError::Config(format!("Invalid integer value: {}", value))
-                })?;
-                self.server.rate_limit_per_sec = v;
-                Ok(true)
-            }
-            ConfigKey::ServerRateLimitBurst => {
-                let v = value.parse::<u64>().map_err(|_| {
-                    FerriteError::Config(format!("Invalid integer value: {}", value))
-                })?;
-                self.server.rate_limit_burst = v;
-                Ok(true)
-            }
-            ConfigKey::ServerMaxMemory => {
-                let v = value.parse::<u64>().map_err(|_| {
-                    FerriteError::Config(format!("Invalid integer value: {}", value))
-                })?;
-                self.server.max_memory = v;
-                Ok(true)
-            }
-            ConfigKey::ServerMaxMemoryRejectThreshold => {
-                let v = value
-                    .parse::<f64>()
-                    .map_err(|_| FerriteError::Config(format!("Invalid float value: {}", value)))?;
-                if !(0.0..=1.0).contains(&v) {
-                    return Err(FerriteError::Config(
-                        "max_memory_reject_threshold must be between 0.0 and 1.0".to_string(),
-                    ));
-                }
-                self.server.max_memory_reject_threshold = v;
                 Ok(true)
             }
             _ => Ok(false),
@@ -968,6 +788,114 @@ impl ServerConfig {
             max_nesting_depth: self.proto_max_nesting_depth,
         }
     }
+
+    fn set_param(&mut self, key: ConfigKey, value: &str) -> Result<bool> {
+        match key {
+            ConfigKey::ServerTcpKeepalive => {
+                self.tcp_keepalive = value.parse::<u64>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid integer value: {}", value))
+                })?;
+                Ok(true)
+            }
+            ConfigKey::ServerTimeout => {
+                self.timeout = value.parse::<u64>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid integer value: {}", value))
+                })?;
+                Ok(true)
+            }
+            ConfigKey::ServerMaxConnections => {
+                self.max_connections = value.parse::<usize>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid integer value: {}", value))
+                })?;
+                Ok(true)
+            }
+            ConfigKey::ServerProtoMaxBulkLen => {
+                self.proto_max_bulk_len = value.parse::<usize>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid integer value: {}", value))
+                })?;
+                Ok(true)
+            }
+            ConfigKey::ServerProtoMaxMultiBulkLen => {
+                self.proto_max_multi_bulk_len = value.parse::<usize>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid integer value: {}", value))
+                })?;
+                Ok(true)
+            }
+            ConfigKey::ServerProtoMaxNestingDepth => {
+                self.proto_max_nesting_depth = value.parse::<usize>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid integer value: {}", value))
+                })?;
+                Ok(true)
+            }
+            ConfigKey::ServerSlowlogLogSlowerThan => {
+                self.slowlog_log_slower_than = value.parse::<i64>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid integer value: {}", value))
+                })?;
+                Ok(true)
+            }
+            ConfigKey::ServerSlowlogMaxLen => {
+                self.slowlog_max_len = value.parse::<usize>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid integer value: {}", value))
+                })?;
+                Ok(true)
+            }
+            ConfigKey::ServerHz => {
+                let hz = value.parse::<u32>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid integer value: {}", value))
+                })?;
+                if !(1..=500).contains(&hz) {
+                    return Err(FerriteError::Config(
+                        "hz must be between 1 and 500".to_string(),
+                    ));
+                }
+                self.hz = hz;
+                Ok(true)
+            }
+            ConfigKey::ServerNotifyKeyspaceEvents => {
+                if !value.is_empty() {
+                    crate::runtime::KeyspaceNotifier::parse_flags(value).ok_or_else(|| {
+                        FerriteError::Config(format!(
+                            "Invalid notify-keyspace-events value: {}. Valid flags: K E g $ l s h z x e t m A",
+                            value
+                        ))
+                    })?;
+                }
+                self.notify_keyspace_events = value.to_string();
+                Ok(true)
+            }
+            ConfigKey::ServerRateLimitPerSec => {
+                self.rate_limit_per_sec = value.parse::<u64>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid integer value: {}", value))
+                })?;
+                Ok(true)
+            }
+            ConfigKey::ServerRateLimitBurst => {
+                self.rate_limit_burst = value.parse::<u64>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid integer value: {}", value))
+                })?;
+                Ok(true)
+            }
+            ConfigKey::ServerMaxMemory => {
+                self.max_memory = value.parse::<u64>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid integer value: {}", value))
+                })?;
+                Ok(true)
+            }
+            ConfigKey::ServerMaxMemoryRejectThreshold => {
+                let v = value
+                    .parse::<f64>()
+                    .map_err(|_| FerriteError::Config(format!("Invalid float value: {}", value)))?;
+                if !(0.0..=1.0).contains(&v) {
+                    return Err(FerriteError::Config(
+                        "max_memory_reject_threshold must be between 0.0 and 1.0".to_string(),
+                    ));
+                }
+                self.max_memory_reject_threshold = v;
+                Ok(true)
+            }
+            _ => Ok(false),
+        }
+    }
 }
 
 /// Storage backend type
@@ -1118,6 +1046,36 @@ impl Default for StorageConfig {
     }
 }
 
+impl StorageConfig {
+    fn set_param(&mut self, key: ConfigKey, value: &str) -> Result<bool> {
+        match key {
+            ConfigKey::StorageMaxKeySize => {
+                self.max_key_size = value.parse::<usize>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid integer value: {}", value))
+                })?;
+                Ok(true)
+            }
+            ConfigKey::StorageMaxValueSize => {
+                self.max_value_size = value.parse::<usize>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid integer value: {}", value))
+                })?;
+                Ok(true)
+            }
+            ConfigKey::StorageEvictionPolicy => {
+                let policy = EvictionPolicy::from_redis_str(value).ok_or_else(|| {
+                    FerriteError::Config(format!(
+                        "Invalid eviction policy: {}. Expected: noeviction, allkeys-lru, volatile-lru, allkeys-random, volatile-random, volatile-ttl, allkeys-lfu, volatile-lfu",
+                        value
+                    ))
+                })?;
+                self.eviction_policy = policy;
+                Ok(true)
+            }
+            _ => Ok(false),
+        }
+    }
+}
+
 /// Persistence configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
@@ -1151,6 +1109,41 @@ impl Default for PersistenceConfig {
             checkpoint_enabled: true,
             checkpoint_interval: Duration::from_secs(300), // 5 minutes
             checkpoint_dir: PathBuf::from("./data/checkpoints"),
+        }
+    }
+}
+
+impl PersistenceConfig {
+    fn set_param(&mut self, key: ConfigKey, value: &str) -> Result<bool> {
+        match key {
+            ConfigKey::PersistenceAofSync => {
+                let policy = match value.to_lowercase().as_str() {
+                    "always" => SyncPolicy::Always,
+                    "everysecond" | "everysec" => SyncPolicy::EverySecond,
+                    "no" => SyncPolicy::No,
+                    _ => {
+                        return Err(FerriteError::Config(format!(
+                            "Invalid aof_sync value: {}. Expected: always, everysecond, no",
+                            value
+                        )))
+                    }
+                };
+                self.aof_sync = policy;
+                Ok(true)
+            }
+            ConfigKey::PersistenceAofEnabled => {
+                self.aof_enabled = value.parse::<bool>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid boolean value: {}", value))
+                })?;
+                Ok(true)
+            }
+            ConfigKey::PersistenceCheckpointEnabled => {
+                self.checkpoint_enabled = value.parse::<bool>().map_err(|_| {
+                    FerriteError::Config(format!("Invalid boolean value: {}", value))
+                })?;
+                Ok(true)
+            }
+            _ => Ok(false),
         }
     }
 }
@@ -1200,6 +1193,31 @@ impl MetricsConfig {
     pub fn address(&self) -> String {
         format!("{}:{}", self.bind, self.port)
     }
+
+    fn set_param(&mut self, key: ConfigKey, value: &str) -> Result<bool> {
+        match key {
+            ConfigKey::MetricsEnabled => {
+                self.enabled = value.parse::<bool>().map_err(|_| {
+                    FerriteError::Config(format!(
+                        "Invalid boolean value: {}. Expected: true, false",
+                        value
+                    ))
+                })?;
+                Ok(true)
+            }
+            ConfigKey::MetricsBind => {
+                self.bind = value.to_string();
+                Ok(true)
+            }
+            ConfigKey::MetricsPort => {
+                self.port = value
+                    .parse::<u16>()
+                    .map_err(|_| FerriteError::Config(format!("Invalid port value: {}", value)))?;
+                Ok(true)
+            }
+            _ => Ok(false),
+        }
+    }
 }
 
 /// Logging configuration
@@ -1222,6 +1240,32 @@ impl Default for LoggingConfig {
             level: "info".to_string(),
             format: LogFormat::Pretty,
             file: None,
+        }
+    }
+}
+
+impl LoggingConfig {
+    fn set_param(&mut self, key: ConfigKey, value: &str) -> Result<bool> {
+        match key {
+            ConfigKey::LoggingLevel => {
+                self.level = value.to_string();
+                Ok(true)
+            }
+            ConfigKey::LoggingFormat => {
+                let fmt = match value.to_lowercase().as_str() {
+                    "json" => LogFormat::Json,
+                    "pretty" | "text" => LogFormat::Pretty,
+                    _ => {
+                        return Err(FerriteError::Config(format!(
+                            "Invalid logging format: {}. Expected: json, pretty",
+                            value
+                        )));
+                    }
+                };
+                self.format = fmt;
+                Ok(true)
+            }
+            _ => Ok(false),
         }
     }
 }
@@ -1995,6 +2039,115 @@ require_client_cert = true
 
         // Restart-required parameter
         assert!(!shared.set_param("server.port", "6380").unwrap());
+    }
+
+    #[test]
+    fn test_set_param_characterization_table() {
+        let cases = [
+            ("logging.format", "text", "pretty"),
+            ("persistence.aof_sync", "everysec", "everysecond"),
+            ("metrics.enabled", "false", "false"),
+            ("metrics.port", "9191", "9191"),
+            ("server.hz", "500", "500"),
+            ("server.max_memory_reject_threshold", "0.75", "0.75"),
+            ("storage.eviction_policy", "volatile-lfu", "volatile-lfu"),
+            ("audit.enabled", "true", "true"),
+            ("encryption.algorithm", "AES256GCM", "aes256gcm"),
+        ];
+
+        for (path, value, expected) in cases {
+            let mut config = Config::default();
+            assert!(
+                config
+                    .set_param(path, value)
+                    .expect("valid value should be accepted"),
+                "unexpected result for {path}={value}"
+            );
+            assert_eq!(
+                config.get_param(path).as_deref(),
+                Some(expected),
+                "unexpected stored value for {path}={value}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_set_param_error_and_restart_characterization_table() {
+        let invalid_cases = [
+            (
+                "logging.format",
+                "yaml",
+                "Configuration error: Invalid logging format: yaml. Expected: json, pretty",
+            ),
+            (
+                "persistence.aof_sync",
+                "sometimes",
+                "Configuration error: Invalid aof_sync value: sometimes. Expected: always, everysecond, no",
+            ),
+            (
+                "metrics.enabled",
+                "yes",
+                "Configuration error: Invalid boolean value: yes. Expected: true, false",
+            ),
+            (
+                "metrics.port",
+                "70000",
+                "Configuration error: Invalid port value: 70000",
+            ),
+            (
+                "server.hz",
+                "0",
+                "Configuration error: hz must be between 1 and 500",
+            ),
+            (
+                "server.max_memory_reject_threshold",
+                "1.1",
+                "Configuration error: max_memory_reject_threshold must be between 0.0 and 1.0",
+            ),
+            (
+                "storage.eviction_policy",
+                "lru",
+                "Configuration error: Invalid eviction policy: lru. Expected: noeviction, allkeys-lru, volatile-lru, allkeys-random, volatile-random, volatile-ttl, allkeys-lfu, volatile-lfu",
+            ),
+            (
+                "audit.enabled",
+                "yes",
+                "Configuration error: Invalid boolean value: yes. Expected: true, false",
+            ),
+            (
+                "encryption.algorithm",
+                "rot13",
+                "Configuration error: Invalid encryption algorithm: rot13. Expected: aes-256-gcm, chacha20-poly1305",
+            ),
+        ];
+
+        for (path, value, expected_error) in invalid_cases {
+            let mut config = Config::default();
+            let original = config.get_param(path);
+            let error = config
+                .set_param(path, value)
+                .expect_err("invalid value should be rejected");
+            assert_eq!(
+                error.to_string(),
+                expected_error,
+                "unexpected error for {path}"
+            );
+            assert_eq!(
+                config.get_param(path),
+                original,
+                "invalid value mutated {path}"
+            );
+        }
+
+        let mut config = Config::default();
+        let original_port = config.server.port;
+        assert!(!config
+            .set_param("server.port", "not-a-port")
+            .expect("restart-required parameters should not parse values"));
+        assert_eq!(config.server.port, original_port);
+        assert!(!config
+            .set_param("unknown.parameter", "value")
+            .expect("unknown parameters should be ignored"));
     }
 
     #[test]

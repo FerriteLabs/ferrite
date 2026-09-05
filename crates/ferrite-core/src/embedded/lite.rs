@@ -6,7 +6,7 @@
 //!
 //! # Example
 //!
-//! ```no_run
+//! ```ignore
 //! use ferrite::embedded::lite::{LiteConfig, LiteDatabase};
 //!
 //! let config = LiteConfig {

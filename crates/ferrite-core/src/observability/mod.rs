@@ -53,6 +53,8 @@ pub mod query_profiler;
 pub mod recommendations;
 pub mod slow_query_log;
 pub mod trace;
+#[cfg(test)]
+mod unified_observer;
 
 pub use analyzer::{QueryAnalysis, QueryAnalyzer, SlowQuery};
 pub use anomaly::{

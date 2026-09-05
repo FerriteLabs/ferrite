@@ -372,7 +372,7 @@ impl CheckpointManager {
             if path.extension().and_then(|s| s.to_str()) == Some("meta") {
                 match self.load_checkpoint_metadata(&path) {
                     Ok(metadata) => {
-                        if latest.as_ref().map_or(true, |l| metadata.id > l.id) {
+                        if latest.as_ref().is_none_or(|l| metadata.id > l.id) {
                             latest = Some(metadata);
                         }
                     }

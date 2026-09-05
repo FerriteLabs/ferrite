@@ -110,7 +110,7 @@ Results are output to `comparison/results/` as CSV and Markdown summary tables.
 
 | Tool | Install |
 |------|---------|
-| Rust 1.80+ | `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \| sh` |
+| Rust 1.88+ | `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \| sh` |
 | Docker + Compose v2 | [docs.docker.com](https://docs.docker.com/get-docker/) |
 | redis-benchmark | `brew install redis` / `apt install redis-tools` |
 | memtier_benchmark | Included in Docker benchmark image |

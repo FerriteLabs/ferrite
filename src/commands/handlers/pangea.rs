@@ -629,7 +629,7 @@ mod tests {
         ));
         match pangea_command("READ", &s(&[key])) {
             Frame::Bulk(Some(b)) => {
-                assert_eq!(&b[..], b"hello", "READ should return allocated value")
+                assert_eq!(&b[..], b"hello", "READ should return allocated value");
             }
             other => panic!("expected hello, got {:?}", other),
         }

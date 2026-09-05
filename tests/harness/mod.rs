@@ -63,12 +63,12 @@ impl TestCluster {
     #[allow(dead_code)]
     pub fn replicate_key(&self, db: u8, key: &str, replica_idx: usize) {
         let k = Bytes::from(key.to_string());
-        match self.primary.get(db.into(), &k) {
+        match self.primary.get(db, &k) {
             Some(value) => {
-                self.replicas[replica_idx].set(db.into(), k, value);
+                self.replicas[replica_idx].set(db, k, value);
             }
             None => {
-                self.replicas[replica_idx].del(db.into(), &[k]);
+                self.replicas[replica_idx].del(db, &[k]);
             }
         }
     }
@@ -100,7 +100,7 @@ impl TestCluster {
     #[allow(dead_code)]
     pub fn primary_set(&self, db: u8, key: &str, value: &str) {
         self.primary.set(
-            db.into(),
+            db,
             Bytes::from(key.to_string()),
             Value::String(Bytes::from(value.to_string())),
         );
@@ -109,7 +109,7 @@ impl TestCluster {
     /// Get a string value from the primary store (convenience wrapper).
     #[allow(dead_code)]
     pub fn primary_get(&self, db: u8, key: &str) -> Option<String> {
-        match self.primary.get(db.into(), &Bytes::from(key.to_string())) {
+        match self.primary.get(db, &Bytes::from(key.to_string())) {
             Some(Value::String(data)) => Some(String::from_utf8_lossy(&data).into_owned()),
             _ => None,
         }

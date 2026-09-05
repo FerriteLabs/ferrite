@@ -198,7 +198,7 @@ impl IoEngine for FallbackEngine {
 
     fn sync<'a>(&'a self, path: &'a Path) -> BoxFuture<'a, IoResult<()>> {
         Box::pin(async move {
-            let file = File::open(path).await?;
+            let file = OpenOptions::new().write(true).open(path).await?;
             file.sync_all().await?;
             self.stats
                 .fsyncs
@@ -209,7 +209,7 @@ impl IoEngine for FallbackEngine {
 
     fn datasync<'a>(&'a self, path: &'a Path) -> BoxFuture<'a, IoResult<()>> {
         Box::pin(async move {
-            let file = File::open(path).await?;
+            let file = OpenOptions::new().write(true).open(path).await?;
             file.sync_data().await?;
             self.stats
                 .fsyncs

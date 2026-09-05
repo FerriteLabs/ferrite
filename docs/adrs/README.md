@@ -23,7 +23,7 @@ a high-performance tiered-storage key-value store designed as a drop-in Redis re
 
 | ADR | Title | Status | Date |
 |-----|-------|--------|------|
-| [ADR-008](adr-008-interactive-playground.md) | Interactive Playground (try.ferrite.dev) | Proposed | 2026-02-20 |
+| [ADR-008](adr-008-interactive-playground.md) | Interactive Playground (verified owned domain required) | Proposed | 2026-02-20 |
 | [ADR-009](adr-009-redis-modules-api.md) | Redis Modules API Compatibility | Proposed | 2026-02-20 |
 | [ADR-010](adr-010-ai-native-caching.md) | AI-Native Caching Niche | Proposed | 2026-02-20 |
 | [ADR-011](adr-011-kubernetes-sidecar.md) | Kubernetes Sidecar Mode | Proposed | 2026-02-20 |

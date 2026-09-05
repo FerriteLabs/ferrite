@@ -1489,7 +1489,7 @@ fn compat_server_flushall_clears_all_databases() {
 
 #[test]
 fn compat_server_info_resp_format() {
-    let frame = parse_resp(b"$11\r\n# Server\r\n\r\n");
+    let frame = parse_resp(b"$10\r\n# Server\r\n\r\n");
     match frame {
         Frame::Bulk(Some(_)) => {}
         other => panic!("Expected Bulk, got {:?}", other),

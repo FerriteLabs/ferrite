@@ -10,14 +10,14 @@ Welcome to **Ferrite** — a high-performance tiered-storage key-value store and
 
 **Prerequisites:**
 
-- Rust 1.80+ (`rustup update stable`)
+- Rust 1.88+ (`rustup update stable`)
 - Git
 - Linux recommended for full io_uring support; macOS/Windows work with fallback I/O
 
 **Clone and build:**
 
 ```bash
-git clone https://github.com/FerriteLabs/ferrite.git
+git clone https://github.com/ferritelabs/ferrite.git
 cd ferrite
 cargo build && cargo test --lib
 ```
@@ -660,7 +660,7 @@ docs: update command compatibility matrix
 ## 8. Getting Help
 
 **Before you ask:**
-- Search existing [GitHub Issues](https://github.com/FerriteLabs/ferrite/issues) and [Discussions](https://github.com/FerriteLabs/ferrite/discussions)
+- Search existing [GitHub Issues](https://github.com/ferritelabs/ferrite/issues) and [Discussions](https://github.com/ferritelabs/ferrite/discussions)
 - Check the [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines
 - Read the [GOVERNANCE.md](GOVERNANCE.md) for project decision-making processes
 

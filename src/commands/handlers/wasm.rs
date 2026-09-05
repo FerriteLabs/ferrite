@@ -285,9 +285,9 @@ pub async fn list(with_stats: bool) -> Frame {
     let registry = get_registry();
     let functions = registry.list();
 
-    // Also include functions from UDF registry
     #[cfg(feature = "wasm")]
-    {
+    let functions = {
+        let mut functions = functions;
         if let Some(udf_registry) = get_udf_registry() {
             for name in udf_registry.list() {
                 if !functions.contains(&name) {
@@ -295,7 +295,8 @@ pub async fn list(with_stats: bool) -> Frame {
                 }
             }
         }
-    }
+        functions
+    };
 
     if with_stats {
         let items: Vec<Frame> = functions
@@ -452,10 +453,9 @@ pub async fn stats() -> Frame {
     let function_count = registry.list().len();
 
     #[cfg(feature = "wasm")]
-    let mut extra_stats = Vec::new();
-
-    #[cfg(feature = "wasm")]
-    {
+    let (function_count, extra_stats) = {
+        let mut function_count = function_count;
+        let mut extra_stats = Vec::new();
         if let Some(udf_registry) = get_udf_registry() {
             let udf_stats = udf_registry.stats();
             function_count = function_count.max(udf_stats.function_count);
@@ -470,7 +470,8 @@ pub async fn stats() -> Frame {
                 Frame::Integer(udf_stats.failed_calls as i64),
             ]);
         }
-    }
+        (function_count, extra_stats)
+    };
 
     let result = vec![
         Frame::bulk("wasm_enabled"),
@@ -486,7 +487,11 @@ pub async fn stats() -> Frame {
     ];
 
     #[cfg(feature = "wasm")]
-    result.extend(extra_stats);
+    let result = {
+        let mut result = result;
+        result.extend(extra_stats);
+        result
+    };
 
     Frame::array(result)
 }

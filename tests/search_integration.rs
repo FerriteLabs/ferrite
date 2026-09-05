@@ -68,11 +68,12 @@ fn test_search_empty_index() {
 }
 
 #[test]
-fn test_search_nonexistent_index() {
+fn test_search_nonexistent_index_returns_empty() {
     let engine = SearchEngine::new().expect("engine should create");
     let results = engine.search_with_options(
         Query::term("title", "query"),
         SearchOptions::with_limit(10).index("nonexistent"),
     );
-    assert!(results.is_err(), "search on missing index should error");
+    let hits = results.expect("search on missing index should succeed");
+    assert!(hits.is_empty(), "missing index should return no hits");
 }

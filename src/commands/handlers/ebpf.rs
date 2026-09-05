@@ -49,6 +49,9 @@ fn ebpf_status() -> Frame {
         Frame::bulk("eBPF tracing requires Linux 5.15+ with CAP_BPF"),
     ];
 
+    #[cfg(target_os = "linux")]
+    let mut fields = fields;
+
     // On Linux, append native tracer diagnostics
     #[cfg(target_os = "linux")]
     {
@@ -132,6 +135,9 @@ fn ebpf_stats() -> Frame {
         Frame::bulk("uptime_secs"),
         Frame::integer(stats.uptime_secs as i64),
     ];
+
+    #[cfg(target_os = "linux")]
+    let mut fields = fields;
 
     // On Linux, append native tracer statistics
     #[cfg(target_os = "linux")]

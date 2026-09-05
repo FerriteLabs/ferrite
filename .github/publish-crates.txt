@@ -1,0 +1,16 @@
+ferrite-core
+ferrite-search
+ferrite-ai
+ferrite-graph
+ferrite-timeseries
+ferrite-document
+ferrite-streaming
+ferrite-cloud
+ferrite-plugins
+ferrite-mnemo
+ferrite-forge
+ferrite-lucidity
+ferrite-chronicle
+ferrite-concord
+ferrite-pangea
+ferrite-spike-bridge

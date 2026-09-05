@@ -9,7 +9,7 @@
 [![Build Status](https://github.com/ferritelabs/ferrite/actions/workflows/ci.yml/badge.svg)](https://github.com/ferritelabs/ferrite/actions/workflows/ci.yml)
 [![Crates.io](https://img.shields.io/crates/v/ferrite.svg)](https://crates.io/crates/ferrite)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](LICENSE)
-[![Rust](https://img.shields.io/badge/rust-1.80%2B-orange)](https://www.rust-lang.org/)
+[![Rust](https://img.shields.io/badge/rust-1.88%2B-orange)](https://www.rust-lang.org/)
 
 ## 快速开始（60 秒）
 
@@ -81,7 +81,7 @@ cargo install ferrite
 
 ## 文档
 
-- 📖 [完整文档](https://ferrite.rs)
+- 📖 [完整文档](https://github.com/ferritelabs/ferrite-docs)
 - 🏗️ [架构概述](docs/ARCHITECTURE.md)
 - 🔄 [Redis 兼容性](docs/REDIS_COMPAT.md)
 - 🗺️ [发展路线图](ROADMAP.md)

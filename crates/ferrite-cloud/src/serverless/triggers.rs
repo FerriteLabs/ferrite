@@ -423,7 +423,7 @@ mod tests {
 
     #[test]
     fn test_event_operations() {
-        let ops = vec![EventOperation::Set, EventOperation::Delete];
+        let ops = [EventOperation::Set, EventOperation::Delete];
         assert!(ops.contains(&EventOperation::Set));
         assert!(!ops.contains(&EventOperation::HSet));
     }

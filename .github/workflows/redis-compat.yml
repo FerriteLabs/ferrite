@@ -24,6 +24,10 @@ on:
   schedule:
     - cron: '0 6 * * 1'  # Every Monday at 06:00 UTC
 
+permissions:
+  contents: read
+  pull-requests: write
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -141,7 +145,7 @@ jobs:
         run: |
           ./target/release/ferrite --port 6379 &
           FERRITE_PID=$!
-          echo "FERRITE_PID=${FERRITE_PID}" >> $GITHUB_ENV
+          echo "FERRITE_PID=${FERRITE_PID}" >> "$GITHUB_ENV"
           sleep 2
           # Verify server is running
           ./target/release/ferrite-cli PING
@@ -214,7 +218,7 @@ jobs:
         if: always()
         run: |
           if [ -n "${FERRITE_PID}" ]; then
-            kill ${FERRITE_PID} 2>/dev/null || true
+            kill "${FERRITE_PID}" 2>/dev/null || true
           fi
 
   tcl-smoke-tests:
@@ -255,8 +259,8 @@ jobs:
         if: always()
         run: |
           if [ -f tcl-results/summary.md ]; then
-            echo "## Redis TCL Test Results" >> $GITHUB_STEP_SUMMARY
-            cat tcl-results/summary.md >> $GITHUB_STEP_SUMMARY
+            echo "## Redis TCL Test Results" >> "$GITHUB_STEP_SUMMARY"
+            cat tcl-results/summary.md >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Comment PR with results

@@ -18,17 +18,12 @@ use crate::schema::MemoryRecord;
 // ---------------------------------------------------------------------------
 
 /// Selects the vector similarity function used for the semantic component.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum SimilarityFn {
+    #[default]
     Cosine,
     DotProduct,
     Euclidean,
-}
-
-impl Default for SimilarityFn {
-    fn default() -> Self {
-        Self::Cosine
-    }
 }
 
 // ---------------------------------------------------------------------------

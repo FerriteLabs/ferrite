@@ -11,7 +11,7 @@ mod output;
 mod repl;
 mod stat;
 
-use std::io::{self, BufRead};
+use std::io::{self, BufRead, IsTerminal};
 use std::process::ExitCode;
 use std::time::Duration;
 
@@ -165,7 +165,7 @@ async fn main() -> ExitCode {
     }
 
     // Check if stdin is a TTY for interactive mode
-    if atty::is(atty::Stream::Stdin) {
+    if io::stdin().is_terminal() {
         // Interactive REPL mode
         let mut repl_instance =
             match repl::Repl::new(client, args.format, args.host.clone(), args.port, args.db) {

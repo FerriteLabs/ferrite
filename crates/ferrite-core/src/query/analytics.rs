@@ -648,7 +648,7 @@ impl AnalyticsEngine {
                 field_val.is_some() && field_val != Some(&serde_json::Value::Null)
             }
             FilterOp::Eq => field_val.is_some_and(|v| *v == filter.value),
-            FilterOp::Ne => field_val.map_or(true, |v| *v != filter.value),
+            FilterOp::Ne => field_val.is_none_or(|v| *v != filter.value),
             FilterOp::Gt => self.compare_values(field_val, &filter.value, |a, b| a > b),
             FilterOp::Lt => self.compare_values(field_val, &filter.value, |a, b| a < b),
             FilterOp::Gte => self.compare_values(field_val, &filter.value, |a, b| a >= b),

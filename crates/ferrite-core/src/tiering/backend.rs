@@ -820,7 +820,7 @@ mod tests {
 
     #[test]
     fn test_error_from_io() {
-        let io_err = std::io::Error::new(std::io::ErrorKind::Other, "disk full");
+        let io_err = std::io::Error::other("disk full");
         let err: ColdStorageError = io_err.into();
         assert!(matches!(err, ColdStorageError::IoError(_)));
     }

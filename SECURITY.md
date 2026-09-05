@@ -28,19 +28,15 @@ We take security vulnerabilities seriously and appreciate responsible disclosure
 
 ### How to Report
 
-**DO NOT** open a public GitHub issue for security vulnerabilities.
+**DO NOT** open a public GitHub issue for security vulnerabilities. Never
+disclose a suspected vulnerability in a public issue, pull request, or
+discussion.
 
-Instead, please use one of these secure channels:
-
-1. **GitHub Security Advisories** (Preferred):
-   - Navigate to the [Security tab](../../security/advisories/new)
-   - Click "Report a vulnerability"
-   - Fill out the private disclosure form
-
-2. **Email** (Alternative):
-   - Send to **security@ferritelabs.dev**
-   - Include "SECURITY" in the subject line
-   - Encrypt sensitive details with our [PGP key](../../security) if available
+Report vulnerabilities privately using
+[GitHub private vulnerability reporting](https://github.com/ferritelabs/ferrite/security/advisories/new).
+This is the sole canonical channel for private security reports: it creates a
+draft security advisory that is visible only to maintainers until a fix is
+coordinated and the advisory is published.
 
 ### What to Include
 
@@ -723,8 +719,7 @@ Security updates and advisories are published through:
 
 1. **GitHub Security Advisories**: Primary channel for CVE notifications
 2. **Release Notes**: Security fixes highlighted in release notes
-3. **Security Mailing List**: Opt-in mailing list for security announcements
-4. **RSS Feed**: GitHub releases feed
+3. **RSS Feed**: GitHub releases feed
 
 ### Subscribing to Security Notifications
 
@@ -732,8 +727,7 @@ To stay informed about security updates:
 
 1. **Watch this repository** with "Releases only" or "All activity"
 2. **Subscribe to GitHub Security Advisories** for this repository
-3. **Join the security mailing list**
-4. **Follow release notes** for each version
+3. **Follow release notes** for each version
 
 ### Security Update Process
 
@@ -763,13 +757,11 @@ As the project matures, we may establish a formal bug bounty program.
 
 ## Security Contacts
 
-**Primary Contact:**
-- **Email**: `josedab@gmail.com`
-- **PGP Key**: Available in repository root (`SECURITY-PGP-KEY.asc`)
-
-**GitHub Security Advisories:**
-- Preferred method for private vulnerability disclosure
-- [Create a security advisory](../../security/advisories/new)
+Report vulnerabilities privately using
+[GitHub private vulnerability reporting](https://github.com/ferritelabs/ferrite/security/advisories/new).
+This is the sole canonical channel for private security reports; see
+[Reporting a Vulnerability](#reporting-a-vulnerability) above. Do not email or
+open a public issue for security reports.
 
 ## Additional Resources
 
@@ -785,4 +777,4 @@ As the project matures, we may establish a formal bug bounty program.
 
 ---
 
-Thank you for helping keep Ferrite and its users secure! If you have questions about this security policy, please open a GitHub Discussion or contact the maintainers.
+Thank you for helping keep Ferrite and its users secure! If you have questions about this security policy (not a vulnerability report), please open a relevant GitHub issue or contact the maintainers.

@@ -65,7 +65,7 @@ world function-host {
 ## Submission
 
 - **GitHub repository** (preferred): public or private (add `ferrite-hiring` as a collaborator).
-- **Tarball**: if you prefer not to use GitHub, email a `.tar.gz` to `careers@ferrite.dev`.
+- **Alternative submission**: if you cannot use GitHub, open a [GitHub Discussion](https://github.com/ferritelabs/ferrite/discussions) before starting to arrange another submission method; do not post submission materials publicly.
 
 Include a `TIME_LOG.md` noting roughly how you spent your 4 hours (e.g., "1h design,
 2h implementation, 0.5h tests, 0.5h docs"). This helps us calibrate, not judge.
@@ -74,5 +74,4 @@ Include a `TIME_LOG.md` noting roughly how you spent your 4 hours (e.g., "1h des
 
 ## Questions?
 
-If anything is unclear, email `careers@ferrite.dev` or open a GitHub Discussion. We'd
-rather answer a question than have you spend time guessing our intent.
+If anything is unclear, open a [GitHub Discussion](https://github.com/ferritelabs/ferrite/discussions). We'd rather answer a question than have you spend time guessing our intent. Report suspected vulnerabilities only through [GitHub private vulnerability reporting](https://github.com/ferritelabs/ferrite/security/advisories/new).

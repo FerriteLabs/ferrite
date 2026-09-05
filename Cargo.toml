@@ -24,9 +24,9 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "0.4.0"
+version = "0.5.0"
 edition = "2021"
-rust-version = "1.80"
+rust-version = "1.88"
 authors = ["Jose David Baena"]
 license = "Apache-2.0"
 repository = "https://github.com/ferritelabs/ferrite"
@@ -101,6 +101,7 @@ single_match_else = "allow"
 redundant_clone = "allow"
 derive_partial_eq_without_eq = "allow"
 map_unwrap_or = "allow"
+unnecessary_map_or = "allow"
 needless_borrows_for_generic_args = "allow"
 unnested_or_patterns = "allow"
 explicit_iter_loop = "allow"
@@ -147,25 +148,25 @@ rustdoc-args = ["--cfg", "docsrs"]
 
 [workspace.dependencies]
 # ── Workspace crates ──────────────────────────────────────────────────────────
-ferrite-core = { path = "crates/ferrite-core" }
-ferrite-search = { path = "crates/ferrite-search" }
-ferrite-ai = { path = "crates/ferrite-ai" }
-ferrite-graph = { path = "crates/ferrite-graph" }
-ferrite-timeseries = { path = "crates/ferrite-timeseries" }
-ferrite-document = { path = "crates/ferrite-document" }
-ferrite-streaming = { path = "crates/ferrite-streaming" }
-ferrite-cloud = { path = "crates/ferrite-cloud" }
-ferrite-k8s = { path = "crates/ferrite-k8s" }
-ferrite-enterprise = { path = "crates/ferrite-enterprise" }
-ferrite-plugins = { path = "crates/ferrite-plugins" }
-ferrite-studio = { path = "crates/ferrite-studio" }
-ferrite-mnemo = { path = "crates/ferrite-mnemo" }
-ferrite-forge = { path = "crates/ferrite-forge" }
-ferrite-concord = { path = "crates/ferrite-concord" }
-ferrite-chronicle = { path = "crates/ferrite-chronicle" }
-ferrite-lucidity = { path = "crates/ferrite-lucidity" }
-ferrite-pangea = { path = "crates/ferrite-pangea" }
-ferrite-spike-bridge = { path = "crates/ferrite-spike-bridge" }
+ferrite-core = { version = "0.5.0", path = "crates/ferrite-core" }
+ferrite-search = { version = "0.5.0", path = "crates/ferrite-search" }
+ferrite-ai = { version = "0.5.0", path = "crates/ferrite-ai" }
+ferrite-graph = { version = "0.5.0", path = "crates/ferrite-graph" }
+ferrite-timeseries = { version = "0.5.0", path = "crates/ferrite-timeseries" }
+ferrite-document = { version = "0.5.0", path = "crates/ferrite-document" }
+ferrite-streaming = { version = "0.5.0", path = "crates/ferrite-streaming" }
+ferrite-cloud = { version = "0.5.0", path = "crates/ferrite-cloud" }
+ferrite-k8s = { version = "0.5.0", path = "crates/ferrite-k8s" }
+ferrite-enterprise = { version = "0.5.0", path = "crates/ferrite-enterprise" }
+ferrite-plugins = { version = "0.5.0", path = "crates/ferrite-plugins" }
+ferrite-studio = { version = "0.5.0", path = "crates/ferrite-studio" }
+ferrite-mnemo = { version = "0.5.0", path = "crates/ferrite-mnemo" }
+ferrite-forge = { version = "0.5.0", path = "crates/ferrite-forge" }
+ferrite-concord = { version = "0.5.0", path = "crates/ferrite-concord" }
+ferrite-chronicle = { version = "0.5.0", path = "crates/ferrite-chronicle" }
+ferrite-lucidity = { version = "0.5.0", path = "crates/ferrite-lucidity" }
+ferrite-pangea = { version = "0.5.0", path = "crates/ferrite-pangea" }
+ferrite-spike-bridge = { version = "0.5.0", path = "crates/ferrite-spike-bridge" }
 
 # ── Async runtime ─────────────────────────────────────────────────────────────
 tokio = { version = "1", features = ["full"] }
@@ -214,7 +215,7 @@ num_cpus = "1.17.0"
 scopeguard = "1.2.0"
 crc32fast = "1.4"
 flate2 = "1.0"
-lz4_flex = "0.11.3"
+lz4_flex = "0.11.6"
 memmap2 = "0.9"
 clap = { version = "4", features = ["derive", "env", "string"] }
 
@@ -228,14 +229,13 @@ argon2 = { version = "0.5" }
 chacha20poly1305 = { version = "0.10" }
 sha2 = "0.10"
 wasmtime = { version = "27" }
-ort = { version = "2.0.0-rc.11" }
+ort = { version = "=2.0.0-rc.11" }
 ndarray = { version = "0.16" }
 
 # ── CLI / TUI ────────────────────────────────────────────────────────────────
 clap_complete = { version = "4" }
 rustyline = { version = "14" }
 colored = { version = "2" }
-atty = { version = "0.2" }
 ratatui = { version = "0.29", features = ["all-widgets"] }
 crossterm = { version = "0.28", features = ["event-stream"] }
 
@@ -345,7 +345,6 @@ chacha20poly1305 = { workspace = true, optional = true }
 clap_complete = { workspace = true, optional = true }
 rustyline = { workspace = true, optional = true }
 colored = { workspace = true, optional = true }
-atty = { workspace = true, optional = true }
 wasmtime = { workspace = true, optional = true }
 ort = { workspace = true, optional = true }
 ndarray = { workspace = true, optional = true }
@@ -384,7 +383,10 @@ scripting = ["mlua"]
 tls = ["rustls", "tokio-rustls", "rustls-pemfile"]
 cloud = ["ferrite-cloud", "ferrite-core/cloud"]
 crypto = ["ferrite-core/crypto"]
-cli = ["rustyline", "colored", "atty", "clap_complete"]
+cli = ["rustyline", "colored", "clap_complete"]
+# Compatibility alias for downstream 0.4 manifests that enabled the former
+# optional dependency feature directly.
+atty = []
 forge-runtime = ["ferrite-forge/runtime"]
 all = ["default", "experimental", "scripting", "cloud", "crypto", "otel", "tui", "wasm", "onnx", "io-uring"]
 
@@ -482,6 +484,13 @@ name = "pubsub"
 [[example]]
 name = "lua_scripting"
 required-features = ["scripting"]
+
+[patch.crates-io]
+# Wasmtime 27 longjmps through `extern "C"` libcalls on Windows, which Rust
+# correctly aborts as a non-unwinding boundary. Keep the public 27.x API while
+# allowing those internal trap frames to unwind until the next compatibility
+# release can upgrade Wasmtime.
+wasmtime = { path = "vendor/wasmtime-27.0.0" }
 
 # Optimize dependencies even in dev mode — reduces code size and speeds up tests.
 # Your own crate stays at opt-level 0 for fast iteration.

@@ -297,7 +297,7 @@ impl Reranker {
         for (rank, result) in results.iter_mut().enumerate() {
             let rrf_score = 1.0 / (k as f32 + rank as f32 + 1.0);
             // Combine original score with RRF
-            result.score = (result.score + rrf_score) / 2.0;
+            result.score = f32::midpoint(result.score, rrf_score);
         }
 
         // Re-sort by combined score
